@@ -33,8 +33,10 @@ async function lookupStaffAndVendor(loginId) {
 
 async function resolveFormLogin(loginId, password) {
     const { staff, vendor } = await lookupStaffAndVendor(loginId);
+    const hasStaffAccount = !!(staff && isStaffRole(staff.role));
+    const hasVendorAccount = !!vendor;
 
-    if (staff && isStaffRole(staff.role)) {
+    if (hasStaffAccount) {
         const valid = await verifyStaffPassword(staff, loginId, password);
         if (valid) {
             const company = getStaffCompanyName(staff);
@@ -49,7 +51,7 @@ async function resolveFormLogin(loginId, password) {
         }
     }
 
-    if (vendor) {
+    if (hasVendorAccount) {
         const vendorCheck = await verifyLoginPassword(vendor, loginId, password);
         if (vendorCheck.valid) {
             if (vendorCheck.migratePassword != null) {
@@ -83,7 +85,11 @@ async function resolveFormLogin(loginId, password) {
         }
     }
 
-    return { ok: false };
+    if (!hasStaffAccount && !hasVendorAccount) {
+        return { ok: false, reason: "NOT_REGISTERED" };
+    }
+
+    return { ok: false, reason: "BAD_PASSWORD" };
 }
 
 function resolveGuestLogin(password) {

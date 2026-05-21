@@ -43,25 +43,38 @@
         }
     }
 
+    function mapLoginResponse(data) {
+        if (!data || !data.ok) return null;
+        return {
+            role: data.role,
+            userId: data.userId,
+            token: data.token,
+            companyName: data.companyName || "",
+            displayName: data.displayName || data.companyName || data.userId || ""
+        };
+    }
+
     function verifyFormCredentialsAsync(id, pw) {
         if (!global.THEJHON_API || !THEJHON_API.login) {
             return Promise.reject(new Error("API를 불러오지 못했습니다. 페이지를 새로고침해 주세요."));
         }
         return THEJHON_API.login(id, pw)
-            .then(function (data) {
-                if (!data || !data.ok) return null;
-                return {
-                    role: data.role,
-                    userId: data.userId,
-                    token: data.token,
-                    companyName: data.companyName || "",
-                    displayName: data.displayName || data.companyName || data.userId || ""
-                };
-            })
+            .then(mapLoginResponse)
             .catch(function (err) {
+                if (err && err.data && err.data.code === "NOT_REGISTERED") {
+                    var notReg = new Error(
+                        err.data.error || "더존 관리자에게 회원 등록을 요청해야 합니다."
+                    );
+                    notReg.code = "NOT_REGISTERED";
+                    throw notReg;
+                }
                 if (err && err.message) throw err;
                 throw new Error("로그인에 실패했습니다. 잠시 후 다시 시도해 주세요.");
             });
+    }
+
+    function loginAsGuestAsync() {
+        return verifyFormCredentialsAsync(GUEST_ID, "guest");
     }
 
     function setFormSession(userId, role, token, companyName, displayName) {
@@ -193,6 +206,7 @@
         ADMIN_ID: SUPERVISOR_ID,
         isStaffRole: isStaffRole,
         verifyFormCredentialsAsync: verifyFormCredentialsAsync,
+        loginAsGuestAsync: loginAsGuestAsync,
         setFormSession: setFormSession,
         setOAuthSession: setOAuthSession,
         clearSession: clearSession,

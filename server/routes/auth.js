@@ -25,7 +25,18 @@ router.post("/login", async (req, res) => {
 
         const result = await resolveFormLogin(loginId, password);
         if (!result.ok) {
-            return res.status(401).json({ ok: false, error: "아이디 또는 비밀번호가 올바르지 않습니다." });
+            if (result.reason === "NOT_REGISTERED") {
+                return res.status(404).json({
+                    ok: false,
+                    code: "NOT_REGISTERED",
+                    error: "더존 관리자에게 회원 등록을 요청해야 합니다."
+                });
+            }
+            return res.status(401).json({
+                ok: false,
+                code: "BAD_PASSWORD",
+                error: "아이디 또는 비밀번호가 올바르지 않습니다."
+            });
         }
 
         const token = signToken({ role: result.role, userId: result.userId });

@@ -182,22 +182,48 @@
                     alert("인증 스크립트(auth.js)를 불러오지 못했습니다.");
                     return;
                 }
+                function applyLoginSession(ok) {
+                    THEJHON_AUTH.setFormSession(
+                        ok.userId,
+                        ok.role,
+                        ok.token,
+                        ok.companyName,
+                        ok.displayName
+                    );
+                    goAfterLogin();
+                }
+
                 THEJHON_AUTH.verifyFormCredentialsAsync(id, pw)
                     .then(function (ok) {
                         if (!ok) {
                             alert("아이디 또는 비밀번호가 올바르지 않습니다.");
                             return;
                         }
-                        THEJHON_AUTH.setFormSession(
-                            ok.userId,
-                            ok.role,
-                            ok.token,
-                            ok.companyName,
-                            ok.displayName
-                        );
-                        goAfterLogin();
+                        applyLoginSession(ok);
                     })
                     .catch(function (err) {
+                        if (err && err.code === "NOT_REGISTERED") {
+                            alert(
+                                err.message ||
+                                    "더존 관리자에게 회원 등록을 요청해야 합니다."
+                            );
+                            if (!confirm("게스트로 로그인 하겠습니까?")) return;
+                            THEJHON_AUTH.loginAsGuestAsync()
+                                .then(function (guestOk) {
+                                    if (!guestOk) {
+                                        alert("게스트 로그인을 사용할 수 없습니다.");
+                                        return;
+                                    }
+                                    applyLoginSession(guestOk);
+                                })
+                                .catch(function (guestErr) {
+                                    alert(
+                                        (guestErr && guestErr.message) ||
+                                            "게스트 로그인에 실패했습니다."
+                                    );
+                                });
+                            return;
+                        }
                         alert((err && err.message) || "로그인에 실패했습니다.");
                     });
             });
@@ -208,7 +234,7 @@
                         alert("인증 스크립트(auth.js)를 불러오지 못했습니다.");
                         return;
                     }
-                    THEJHON_AUTH.verifyFormCredentialsAsync("guest", "guest").then(function (ok) {
+                    THEJHON_AUTH.loginAsGuestAsync().then(function (ok) {
                         if (!ok) {
                             alert("게스트 로그인을 사용할 수 없습니다.");
                             return;
