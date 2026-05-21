@@ -184,16 +184,15 @@ async function connectDbOnce() {
             await safeCreateIndex(database.collection("vendors"), { loginId: 1 }, { unique: true });
 
             const staff = require("./lib/staff");
-            const { ensureDefaultStaffSeeds, migrateStaffCollection } = require("./lib/staffFields");
+            const {
+                ensureDefaultStaffSeeds,
+                migrateStaffCollection
+            } = require("./lib/staffFields");
             await staff.ensureStaffIndexes(database);
+            await ensureDefaultStaffSeeds(database);
             await migrateStaffCollection(database);
             const { migrateVendorsCollection } = require("./lib/vendorFields");
             await migrateVendorsCollection(database);
-            try {
-                await ensureDefaultStaffSeeds(database);
-            } catch (seedErr) {
-                console.error("[thejohn] staff seed warning:", seedErr.message);
-            }
             try {
                 const { ensureLoginFieldsMigrated } = require("./lib/loginResolve");
                 await ensureLoginFieldsMigrated(database);

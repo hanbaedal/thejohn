@@ -134,6 +134,9 @@
         },
         login: function (loginId, password) {
             return request("POST", "/api/auth/login", { loginId: loginId, password: password });
+        },
+        checkSession: function () {
+            return request("GET", "/api/auth/session");
         }
     };
 })(typeof window !== "undefined" ? window : this);

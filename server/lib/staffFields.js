@@ -32,6 +32,14 @@ const DEFAULT_STAFF_ACCOUNTS = [
     }
 ];
 
+const DEFAULT_STAFF_IDS = DEFAULT_STAFF_ACCOUNTS.map(function (s) {
+    return s.id;
+});
+
+const EXPECTED_STAFF_LOGIN_IDS = DEFAULT_STAFF_ACCOUNTS.map(function (s) {
+    return s.loginId;
+});
+
 const SUPERVISOR_LOGIN = DEFAULT_STAFF_ACCOUNTS[0].loginId;
 
 function str(v) {
@@ -126,11 +134,27 @@ function legacyStaffUnset() {
     };
 }
 
+/** 같은 loginId를 쓰는 옛 문서 제거 (고유 인덱스 충돌 방지) */
+async function removeStaffLoginIdConflicts(col, seed) {
+    const loginIds = [seed.loginId];
+    if (seed.loginId === "thejohn") loginIds.push("thejhon");
+
+    await col.deleteMany({
+        loginId: { $in: loginIds },
+        id: { $ne: seed.id }
+    });
+}
+
 async function ensureDefaultStaffSeeds(db) {
     const col = db.collection("staff");
     const pwFromEnv = String(process.env.THEJHON_SEED_SUPERVISOR_PASSWORD || "").trim();
 
+    await col.deleteOne({ id: "st_supervisor_thejohn" });
+    await col.deleteOne({ id: "st_supervisor_thejhon" });
+
     for (const seed of DEFAULT_STAFF_ACCOUNTS) {
+        await removeStaffLoginIdConflicts(col, seed);
+
         const password =
             seed.loginId === "thejohn" && pwFromEnv ? pwFromEnv : seed.password;
         const built = buildFromBody(
@@ -146,23 +170,14 @@ async function ensureDefaultStaffSeeds(db) {
         );
         const existing = await col.findOne({ id: seed.id });
         const doc = toDbDoc(seed.id, built, existing);
-        await col.updateOne(
-            { id: seed.id },
-            {
-                $set: doc,
-                $unset: legacyStaffUnset(),
-                $setOnInsert: { createdAt: Date.now() }
-            },
-            { upsert: true }
-        );
-        console.log("[staff] synced:", built.loginId, built.role);
+
+        await col.replaceOne({ id: seed.id }, doc, { upsert: true });
+        console.log("[staff] synced:", doc.loginId, doc.role, doc.id);
     }
 
-    await col.deleteOne({ id: "st_supervisor_thejohn" });
-    await col.deleteOne({ id: "st_supervisor_thejhon" });
     await col.deleteMany({
         loginId: { $in: ["thejohn", "thejhon", "aksangsa"] },
-        id: { $nin: DEFAULT_STAFF_ACCOUNTS.map((s) => s.id) }
+        id: { $nin: DEFAULT_STAFF_IDS }
     });
 }
 
@@ -172,8 +187,7 @@ async function migrateStaffCollection(db) {
     let n = 0;
     for (const doc of docs) {
         if (!doc.id) continue;
-        const isDefault = DEFAULT_STAFF_ACCOUNTS.some((s) => s.id === doc.id);
-        if (isDefault) continue;
+        if (DEFAULT_STAFF_IDS.includes(doc.id)) continue;
 
         const pw = getStoredPassword(doc);
         const built = buildFromBody(
@@ -193,13 +207,21 @@ async function migrateStaffCollection(db) {
     if (n) console.log("[staff] migrated field names:", n);
 }
 
-const EXPECTED_STAFF_LOGIN_IDS = DEFAULT_STAFF_ACCOUNTS.map(function (s) {
-    return s.loginId;
-});
+async function findExpectedStaffInDb(db) {
+    const col = db.collection("staff");
+    return col
+        .find({
+            $or: [{ id: { $in: DEFAULT_STAFF_IDS } }, { loginId: { $in: EXPECTED_STAFF_LOGIN_IDS } }],
+            active: { $ne: false }
+        })
+        .project({ id: 1, loginId: 1, role: 1, st_company: 1, _id: 0 })
+        .toArray();
+}
 
 module.exports = {
     F,
     DEFAULT_STAFF_ACCOUNTS,
+    DEFAULT_STAFF_IDS,
     EXPECTED_STAFF_LOGIN_IDS,
     SUPERVISOR_LOGIN,
     toPublic,
@@ -209,5 +231,6 @@ module.exports = {
     getCeoName,
     ensureDefaultStaffSeeds,
     migrateStaffCollection,
+    findExpectedStaffInDb,
     legacyStaffUnset
 };

@@ -1,5 +1,5 @@
 const express = require("express");
-const { signToken } = require("../middleware/auth");
+const { signToken, extractBearer, verifyToken } = require("../middleware/auth");
 const { normalizeId, resolveFormLogin, resolveGuestLogin } = require("../lib/loginResolve");
 
 const router = express.Router();
@@ -51,6 +51,24 @@ router.post("/login", async (req, res) => {
     } catch (e) {
         console.error("POST /api/auth/login", e);
         return res.status(500).json({ ok: false, error: "로그인 처리 중 오류가 발생했습니다." });
+    }
+});
+
+router.get("/session", function (req, res) {
+    const token = extractBearer(req);
+    if (!token) {
+        return res.json({ ok: true, loggedIn: false, error: "토큰 없음" });
+    }
+    try {
+        const payload = verifyToken(token);
+        return res.json({
+            ok: true,
+            loggedIn: true,
+            role: payload.role,
+            userId: payload.userId
+        });
+    } catch (e) {
+        return res.json({ ok: true, loggedIn: false, error: "세션이 만료되었습니다." });
     }
 });
 

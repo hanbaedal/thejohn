@@ -372,12 +372,15 @@
 
             submitBtn.disabled = true;
             var p = editingId ? api.updateVendor(editingId, body) : api.createVendor(body);
-            p.then(function () {
+            p.then(function (saved) {
                 resetForm();
-                return loadList();
+                return loadList().then(function () {
+                    return saved;
+                });
             })
-                .then(function () {
-                    setStatus(editingId ? "수정했습니다." : "저장했습니다.");
+                .then(function (saved) {
+                    var idMsg = saved && saved.id ? " (ID: " + saved.id + ")" : "";
+                    setStatus((editingId ? "수정했습니다." : "MongoDB vendors에 저장했습니다.") + idMsg);
                 })
                 .catch(function (err) {
                     var msg = apiErrorMessage(err, "저장에 실패했습니다.");
@@ -417,6 +420,33 @@
         return;
     }
 
-    setStatus("관리자 로그인됨 · 저장 시 MongoDB vendors 컬렉션에 기록됩니다.");
-    loadList();
+    api.checkSession()
+        .then(function (sess) {
+            if (!sess || !sess.loggedIn) {
+                throw new Error(
+                    (sess && sess.error) ||
+                        "브라우저에만 로그인된 상태입니다. 로그아웃 후 thejohn/aksangsa로 다시 로그인해 주세요."
+                );
+            }
+            if (sess.role !== "admin" && sess.role !== "supervisor") {
+                throw new Error("관리자(스테프) 세션이 아닙니다. 업체 계정으로는 저장할 수 없습니다.");
+            }
+            setStatus(
+                "관리자 로그인 확인됨 (" +
+                    sess.userId +
+                    ") · 저장 시 MongoDB vendors 컬렉션에 기록됩니다."
+            );
+            return loadList();
+        })
+        .catch(function (err) {
+            setStatus(apiErrorMessage(err, err.message), true);
+            setFormDisabled(true);
+            if (window.THEJHON_AUTH && THEJHON_AUTH.clearSession) {
+                THEJHON_AUTH.clearSession();
+            }
+            if (listEl) {
+                listEl.innerHTML =
+                    '<p class="vr-card-note"><a href="login.html?next=vendor-register.html">다시 로그인</a>한 뒤 저장해 주세요. (오래된 세션은 DB 저장이 되지 않습니다)</p>';
+            }
+        });
 })();

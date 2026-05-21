@@ -111,12 +111,8 @@ app.get("/api/health", async function (req, res) {
             loginSource: "mongodb collections staff and vendors (not source code)"
         };
         if (isDbReady()) {
-            const { EXPECTED_STAFF_LOGIN_IDS } = require("./lib/staffFields");
-            const docs = await getDb()
-                .collection("staff")
-                .find({ loginId: { $in: EXPECTED_STAFF_LOGIN_IDS }, active: { $ne: false } })
-                .project({ loginId: 1, role: 1, st_company: 1, _id: 0 })
-                .toArray();
+            const { EXPECTED_STAFF_LOGIN_IDS, findExpectedStaffInDb } = require("./lib/staffFields");
+            const docs = await findExpectedStaffInDb(getDb());
             payload.staffInDb = docs;
             payload.staffExpected = EXPECTED_STAFF_LOGIN_IDS;
             payload.staffOk = EXPECTED_STAFF_LOGIN_IDS.every(function (id) {
@@ -153,14 +149,23 @@ app.get("/api/env-check", (req, res) => {
     });
 });
 
-app.post("/api/admin/reconnect-db", function (req, res) {
-    connectDb()
-        .then(function () {
-            res.json({ ok: true, db: true });
-        })
-        .catch(function (err) {
-            res.status(503).json({ ok: false, db: false, error: err.message });
+app.post("/api/admin/reconnect-db", async function (req, res) {
+    try {
+        await connectDb();
+        const { ensureDefaultStaffSeeds, findExpectedStaffInDb, EXPECTED_STAFF_LOGIN_IDS } =
+            require("./lib/staffFields");
+        await ensureDefaultStaffSeeds(getDb());
+        const staffInDb = await findExpectedStaffInDb(getDb());
+        const staffOk = EXPECTED_STAFF_LOGIN_IDS.every(function (id) {
+            return staffInDb.some(function (d) {
+                return d.loginId === id;
+            });
         });
+        const vendorCount = await getDb().collection("vendors").countDocuments();
+        res.json({ ok: true, db: true, staffOk, staffInDb, vendorCount });
+    } catch (err) {
+        res.status(503).json({ ok: false, db: false, error: err.message });
+    }
 });
 
 app.use("/api/auth", requireDb, authRoutes);

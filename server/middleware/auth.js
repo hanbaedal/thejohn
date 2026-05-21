@@ -37,4 +37,8 @@ function requireRole(...roles) {
     };
 }
 
-module.exports = { signToken, extractBearer, requireRole };
+function verifyToken(token) {
+    return jwt.verify(token, getJwtSecret());
+}
+
+module.exports = { signToken, extractBearer, requireRole, verifyToken, getJwtSecret };
