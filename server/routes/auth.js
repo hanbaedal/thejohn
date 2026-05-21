@@ -1,6 +1,6 @@
 const express = require("express");
-const bcrypt = require("bcryptjs");
 const { getDb } = require("../db");
+const { verifyStoredPassword, migrateDocPasswordToAscii } = require("../lib/passwordAscii");
 const { signToken } = require("../middleware/auth");
 const {
     findStaffByLogin,
@@ -75,18 +75,12 @@ router.post("/login", async (req, res) => {
             return res.status(401).json({ ok: false, error: "아이디 또는 비밀번호가 올바르지 않습니다." });
         }
 
-        let valid = false;
-        if (vendor.passwordHash) {
-            valid = await bcrypt.compare(password, vendor.passwordHash);
-        } else if (vendor.password) {
-            valid = password === String(vendor.password);
-            if (valid) {
-                const passwordHash = await bcrypt.hash(password, 10);
-                await vendors.updateOne({ id: vendor.id }, { $set: { passwordHash }, $unset: { password: "" } });
-            }
+        const vendorCheck = await verifyStoredPassword(vendor, password);
+        if (vendorCheck.valid && vendorCheck.migrateAscii) {
+            await migrateDocPasswordToAscii(vendors, { id: vendor.id }, password);
         }
 
-        if (!valid) {
+        if (!vendorCheck.valid) {
             return res.status(401).json({ ok: false, error: "아이디 또는 비밀번호가 올바르지 않습니다." });
         }
 

@@ -1,5 +1,5 @@
-const bcrypt = require("bcryptjs");
 const { getDb } = require("../db");
+const { encodePasswordToAscii, verifyStoredPassword, legacyUnset } = require("./passwordAscii");
 
 const SUPERVISOR_LOGIN = "thejhon";
 
@@ -25,12 +25,11 @@ async function ensureSupervisorSeed(db) {
     const loginIdNorm = normalizeId(SUPERVISOR_LOGIN);
     const existing = await col.findOne({ loginIdNorm });
     const pwFromEnv = String(process.env.THEJHON_SEED_SUPERVISOR_PASSWORD || "").trim();
-    const initialPw = pwFromEnv || "leesb129!";
+    const initialPw = pwFromEnv || "leesb0129!";
     const shouldSetPassword = pwFromEnv || !existing;
 
     if (!shouldSetPassword) return;
 
-    const passwordHash = await bcrypt.hash(initialPw, 10);
     await col.updateOne(
         { loginIdNorm },
         {
@@ -40,10 +39,11 @@ async function ensureSupervisorSeed(db) {
                 loginIdNorm,
                 role: "supervisor",
                 name: "슈퍼바이저",
-                passwordHash,
+                passwordAscii: encodePasswordToAscii(initialPw),
                 active: true,
                 updatedAt: Date.now()
             },
+            $unset: legacyUnset(),
             $setOnInsert: { createdAt: Date.now() }
         },
         { upsert: true }
@@ -58,8 +58,19 @@ async function findStaffByLogin(loginId) {
 }
 
 async function verifyStaffPassword(staff, password) {
-    if (!staff?.passwordHash) return false;
-    return bcrypt.compare(String(password || ""), staff.passwordHash);
+    const result = await verifyStoredPassword(staff, password);
+    if (result.valid && result.migrateAscii) {
+        await getDb()
+            .collection("staff")
+            .updateOne(
+                { id: staff.id },
+                {
+                    $set: { passwordAscii: result.migrateAscii, updatedAt: Date.now() },
+                    $unset: legacyUnset()
+                }
+            );
+    }
+    return result.valid;
 }
 
 function isStaffRole(role) {
@@ -100,7 +111,7 @@ async function createStaffAccount({ loginId, password, role, name }, creatorRole
         loginIdNorm: idn,
         role: "admin",
         name: String(name || "").trim() || "관리자",
-        passwordHash: await bcrypt.hash(String(password), 10),
+        passwordAscii: encodePasswordToAscii(String(password)),
         active: true,
         createdAt: Date.now(),
         updatedAt: Date.now()

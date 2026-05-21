@@ -30,7 +30,7 @@ router.get("/", requireRole("supervisor", "admin"), async (req, res) => {
         const items = await getDb()
             .collection("staff")
             .find({ active: { $ne: false } })
-            .project({ passwordHash: 0 })
+            .project({ passwordAscii: 0, passwordHash: 0, password: 0 })
             .sort({ role: 1, loginId: 1 })
             .toArray();
         res.json({ ok: true, items });

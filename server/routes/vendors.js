@@ -1,6 +1,6 @@
 const express = require("express");
-const bcrypt = require("bcryptjs");
 const { getDb } = require("../db");
+const { encodePasswordToAscii } = require("../lib/passwordAscii");
 const { requireRole } = require("../middleware/auth");
 
 const router = express.Router();
@@ -86,12 +86,11 @@ router.post("/", requireRole("supervisor", "admin"), async (req, res) => {
         const dup = await vendors.findOne({ loginIdNorm: idn });
         if (dup) return res.status(409).json({ ok: false, error: "이미 사용 중인 아이디입니다." });
 
-        const passwordHash = await bcrypt.hash(password, 10);
         const doc = {
             id: newId(),
             loginId,
             loginIdNorm: idn,
-            passwordHash,
+            passwordAscii: encodePasswordToAscii(password),
             companyName,
             ceo: String(req.body.ceo || "").trim(),
             ceoPhone: String(req.body.ceoPhone || "").trim(),
@@ -153,16 +152,16 @@ router.put("/:id", requireRole("supervisor", "admin"), async (req, res) => {
                     : existing.logo || "",
             note: String(req.body.note || "").trim(),
             updatedAt: Date.now(),
-            passwordHash: existing.passwordHash
+            passwordAscii: existing.passwordAscii || ""
         };
 
         if (password) {
             if (password.length < 4) {
                 return res.status(400).json({ ok: false, error: "비밀번호는 4자 이상으로 입력해 주세요." });
             }
-            doc.passwordHash = await bcrypt.hash(password, 10);
-        } else if (!doc.passwordHash && existing.password) {
-            doc.passwordHash = await bcrypt.hash(String(existing.password), 10);
+            doc.passwordAscii = encodePasswordToAscii(password);
+        } else if (!doc.passwordAscii && existing.password) {
+            doc.passwordAscii = encodePasswordToAscii(String(existing.password));
         }
 
         await vendors.replaceOne({ id }, doc);
