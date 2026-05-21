@@ -661,6 +661,12 @@ a.company-division-card p {
     }
 }
 
+/* 로그인 폼은 login.html(page-login)에서만 표시 */
+body:not(.page-login) .login-page,
+body:not(.page-login) .login-card {
+    display: none !important;
+}
+
 /* 로그인 페이지 (헤더·푸터 공통 레이아웃과 함께 사용) */
 .page-login .login-page {
     display: flex;

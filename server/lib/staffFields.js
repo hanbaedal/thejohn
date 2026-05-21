@@ -7,7 +7,10 @@ const F = {
     ceoTel: "st_ceo_tel"
 };
 
-/** 기본 관리자 계정 (서버 기동 시 staff 컬렉션에 upsert) */
+/**
+ * 기본 관리자 계정 — 서버 기동 시 MongoDB staff 컬렉션에만 기록(upsert).
+ * 로그인 검증은 소스가 아니라 DB staff·vendors 조회(loginResolve.js)만 사용합니다.
+ */
 const DEFAULT_STAFF_ACCOUNTS = [
     {
         id: "st_admin_thejohn",
@@ -190,9 +193,14 @@ async function migrateStaffCollection(db) {
     if (n) console.log("[staff] migrated field names:", n);
 }
 
+const EXPECTED_STAFF_LOGIN_IDS = DEFAULT_STAFF_ACCOUNTS.map(function (s) {
+    return s.loginId;
+});
+
 module.exports = {
     F,
     DEFAULT_STAFF_ACCOUNTS,
+    EXPECTED_STAFF_LOGIN_IDS,
     SUPERVISOR_LOGIN,
     toPublic,
     buildFromBody,

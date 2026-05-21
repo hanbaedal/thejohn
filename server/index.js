@@ -10,7 +10,14 @@ const fs = require("fs");
 const path = require("path");
 const express = require("express");
 const cors = require("cors");
-const { connectDb, isDbReady, getLastDbError, hasMongoConfig, buildUriFromParts } = require("./db");
+const {
+    connectDb,
+    getDb,
+    isDbReady,
+    getLastDbError,
+    hasMongoConfig,
+    buildUriFromParts
+} = require("./db");
 
 const authRoutes = require("./routes/auth");
 const staffRoutes = require("./routes/staff");
@@ -94,13 +101,34 @@ app.use(
 );
 app.use(express.json({ limit: "15mb" }));
 
-app.get("/api/health", (req, res) => {
-    res.json({
-        ok: true,
-        service: "thejhon-homepage",
-        db: isDbReady(),
-        dbError: isDbReady() ? "" : getLastDbError()
-    });
+app.get("/api/health", async function (req, res) {
+    try {
+        const payload = {
+            ok: true,
+            service: "thejhon-homepage",
+            db: isDbReady(),
+            dbError: isDbReady() ? "" : getLastDbError(),
+            loginSource: "mongodb collections staff and vendors (not source code)"
+        };
+        if (isDbReady()) {
+            const { EXPECTED_STAFF_LOGIN_IDS } = require("./lib/staffFields");
+            const docs = await getDb()
+                .collection("staff")
+                .find({ loginId: { $in: EXPECTED_STAFF_LOGIN_IDS }, active: { $ne: false } })
+                .project({ loginId: 1, role: 1, st_company: 1, _id: 0 })
+                .toArray();
+            payload.staffInDb = docs;
+            payload.staffExpected = EXPECTED_STAFF_LOGIN_IDS;
+            payload.staffOk = EXPECTED_STAFF_LOGIN_IDS.every(function (id) {
+                return docs.some(function (d) {
+                    return d.loginId === id;
+                });
+            });
+        }
+        res.json(payload);
+    } catch (e) {
+        res.status(500).json({ ok: false, error: e.message });
+    }
 });
 
 app.get("/api/env-check", (req, res) => {

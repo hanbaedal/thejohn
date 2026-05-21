@@ -11,6 +11,17 @@
 | `st_ceo_tel` | 대표자 연락처 |
 | `role` | `admin` (관리자) · 필요 시 `supervisor` |
 
+## 소스 코드 vs MongoDB
+
+| 위치 | 역할 |
+|------|------|
+| `server/lib/staffFields.js` | 최초·재배포 시 **staff에 넣을 값 정의**(시드) |
+| MongoDB **`staff` 컬렉션** | 실제 저장·**로그인 시 여기서만 조회** |
+
+로그인 API(`/api/auth/login`)는 소스 비밀번호를 보지 않고, `staff`·`vendors` 문서의 `loginId` / `loginIdNorm`(비밀번호)만 검사합니다.
+
+확인: https://thejohn.onrender.com/api/health → `staffOk: true`, `staffInDb`에 `thejohn`, `aksangsa`
+
 ## staff 컬렉션 기본 등록 (서버 기동 시 자동 동기화)
 
 | 구분 | 아이디 | 비밀번호 | 업체이름 | 대표자 | 연락처 |
