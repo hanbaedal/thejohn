@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>상품등록 — 더존</title>
+    <link rel="stylesheet" href="common.css">
+    <style>
+        .pr-form { max-width: 36rem; margin: 0 auto 2rem; padding: 1.25rem 1.1rem; background: #fff; border: 1px solid #e0e6ed; border-radius: 10px; box-shadow: 0 2px 12px rgba(10, 77, 156, 0.06); }
+        .pr-field { margin-bottom: 1rem; }
+        .pr-field label { display: block; font-size: 0.8rem; font-weight: 600; color: #3d5166; margin-bottom: 0.35rem; }
+        .pr-field input[type="text"],
+        .pr-field input[type="number"],
+        .pr-field textarea { width: 100%; padding: 0.6rem 0.7rem; font-size: 1rem; font-family: inherit; border: 1px solid #c5d0dc; border-radius: 6px; }
+        .pr-field-row { display: flex; flex-wrap: wrap; gap: 0.75rem 1rem; align-items: flex-end; margin-bottom: 1rem; }
+        .pr-field-row .pr-field-half { flex: 1 1 10rem; min-width: 0; margin-bottom: 0; }
+        .pr-field-row .pr-field-half label { display: block; font-size: 0.8rem; font-weight: 600; color: #3d5166; margin-bottom: 0.35rem; }
+        .pr-field-row .pr-field-half input { width: 100%; padding: 0.6rem 0.7rem; font-size: 1rem; font-family: inherit; border: 1px solid #c5d0dc; border-radius: 6px; }
+        .pr-field-row .pr-field-half input:focus { outline: none; border-color: var(--dz-blue); box-shadow: 0 0 0 2px rgba(10, 77, 156, 0.2); }
+        .pr-field input:focus, .pr-field textarea:focus { outline: none; border-color: var(--dz-blue); box-shadow: 0 0 0 2px rgba(10, 77, 156, 0.2); }
+        .pr-field input[type="file"] { font-size: 0.875rem; }
+        .pr-hint { margin: 0.35rem 0 0; font-size: 0.75rem; color: #6b7c8e; }
+        .pr-photo-preview { display: block; max-width: 100%; max-height: 12rem; margin-top: 0.5rem; border-radius: 6px; border: 1px solid #e0e6ed; object-fit: contain; background: #f8fafc; }
+        .pr-actions { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 1.1rem; }
+        .pr-actions .btn { border: 2px solid var(--dz-blue); background: #fff; color: var(--dz-blue); padding: 0.45rem 1rem; font-size: 0.875rem; font-weight: 600; border-radius: 6px; cursor: pointer; font-family: inherit; text-decoration: none; display: inline-flex; align-items: center; justify-content: center; }
+        .pr-actions .btn-primary { background: var(--dz-blue); color: #fff; }
+        .pr-actions .btn-secondary { border-color: #c5d0dc; color: #3d5166; background: #f4f6f9; }
+        .pr-status { margin: 0 0 1rem; font-size: 0.85rem; color: #3d5166; min-height: 1.25rem; }
+        .pr-list { max-width: 42rem; margin: 0 auto; }
+        .pr-list h2 { font-size: 1.1rem; margin: 0 0 0.75rem; color: #1a2b3c; }
+        .pr-card { background: #fff; border: 1px solid #e0e6ed; border-radius: 10px; padding: 1rem 1.1rem; margin-bottom: 0.85rem; box-shadow: 0 1px 6px rgba(10, 77, 156, 0.05); }
+        .pr-card-head { display: flex; gap: 1rem; align-items: flex-start; flex-wrap: wrap; }
+        .pr-card-img { width: 6.5rem; height: 6.5rem; object-fit: cover; border-radius: 6px; border: 1px solid #e0e6ed; flex-shrink: 0; background: #f4f6f9; }
+        .pr-card-img--empty { display: flex; align-items: center; justify-content: center; font-size: 0.75rem; color: #8a9bab; text-align: center; padding: 0.35rem; }
+        .pr-card-body { flex: 1; min-width: 0; }
+        .pr-card-title { margin: 0 0 0.35rem; font-size: 1.05rem; font-weight: 700; color: #052a4d; }
+        .pr-card-price { margin: 0 0 0.5rem; font-size: 0.95rem; font-weight: 600; color: var(--dz-blue); display: flex; flex-wrap: wrap; align-items: baseline; gap: 0.35rem 0.75rem; }
+        .pr-card-spec { font-weight: 600; color: #3d556d; font-size: 0.88rem; }
+        .pr-card-content { margin: 0; font-size: 0.9rem; line-height: 1.55; color: #3d5166; white-space: pre-wrap; word-break: break-word; }
+        .pr-card-actions { margin-top: 0.75rem; display: flex; gap: 0.45rem; flex-wrap: wrap; }
+        .pr-card-actions button { font-size: 0.8125rem; padding: 0.35rem 0.65rem; border-radius: 6px; cursor: pointer; font-family: inherit; font-weight: 600; border: 1px solid #c5d0dc; background: #fff; color: #3d5166; }
+        .pr-card-actions button.pr-btn-del { border-color: #e8a4a4; color: #a12c2c; background: #fff8f8; }
+    </style>
+    <script src="thejhon-api.js"></script>
+    <script src="auth.js"></script>
+    <script src="nav.js" defer></script>
+</head>
+<body>
+    <header class="site-header">
+        <div class="site-header-start">
+            <a href="index.html" class="dz-logo" aria-label="더존 홈">더존</a>
+            <nav class="site-header-nav" aria-label="주요 메뉴">
+                <div class="nav-dropdown" data-nav-dropdown="company">
+                    <a href="company.html" class="header-nav-link nav-dropdown-trigger" aria-haspopup="true" aria-expanded="false" aria-controls="companySubmenu">회사소개</a>
+                    <div id="companySubmenu" class="nav-dropdown-panel" role="menu" aria-label="회사소개 하위 메뉴">
+                        <a href="company-livestock.html" class="nav-dropdown-item" role="menuitem">축산 부문</a>
+                        <a href="company-seafood.html" class="nav-dropdown-item" role="menuitem">수산물 부문</a>
+                        <a href="company-meals.html" class="nav-dropdown-item" role="menuitem">식사 부문</a>
+                        <a href="company-banchan.html" class="nav-dropdown-item" role="menuitem">반찬 부문</a>
+                    </div>
+                </div>
+                <a href="products.html" class="header-nav-link">상품소개</a>
+                <a href="product-register.html" class="header-nav-link is-current" aria-current="page">상품등록</a>
+                <a href="vendor-register.html" class="header-nav-link">업체등록</a>
+                <div class="nav-dropdown" data-nav-dropdown="support">
+                    <a href="support.html" class="header-nav-link nav-dropdown-trigger" aria-haspopup="true" aria-expanded="false" aria-controls="supportSubmenu">고객센터</a>
+                    <div id="supportSubmenu" class="nav-dropdown-panel" role="menu" aria-label="고객센터 하위 메뉴">
+                        <a href="support-partners.html" class="nav-dropdown-item" role="menuitem">파트너회사 소개</a>
+                        <a href="support-library.html" class="nav-dropdown-item" role="menuitem">최근소식</a>
+                        <a href="support-qna.html" class="nav-dropdown-item" role="menuitem">자유게시판</a>
+                        <a href="support-inquiry.html" class="nav-dropdown-item" role="menuitem">문의사항</a>
+                    </div>
+                </div>
+                <span class="header-nav-link is-static" title="준비 중입니다">카페</span>
+            </nav>
+        </div>
+        <nav class="site-header-actions" aria-label="계정">
+            <time class="header-date" id="headerToday" datetime=""></time>
+            <button type="button" class="btn btn-logout" id="btnLogout" hidden>로그아웃</button>
+        </nav>
+    </header>
+    <main class="page-main page-main--hide-scrollbar">
+        <h1>상품등록</h1>
+        <p id="pr-status" class="pr-status" role="status" aria-live="polite"></p>
+        <form id="pr-form" class="pr-form" novalidate>
+            <input type="hidden" id="pr-edit-id" value="">
+            <div class="pr-field">
+                <label for="pr-title">제목</label>
+                <input type="text" id="pr-title" name="title" required maxlength="200" autocomplete="off" placeholder="상품 제목">
+            </div>
+            <div class="pr-field pr-field-row">
+                <div class="pr-field-half">
+                    <label for="pr-price">가격 (원)</label>
+                    <input type="number" id="pr-price" name="price" min="0" step="1" required inputmode="numeric" placeholder="0">
+                </div>
+                <div class="pr-field-half">
+                    <label for="pr-spec">규격</label>
+                    <input type="text" id="pr-spec" name="spec" maxlength="120" autocomplete="off" placeholder="예: 500g, 1박스 20입">
+                </div>
+            </div>
+            <div class="pr-field">
+                <label for="pr-photo">사진</label>
+                <input type="file" id="pr-photo" name="photo" accept="image/*">
+                <p id="pr-photo-hint" class="pr-hint">수정 시 새 파일을 선택하지 않으면 기존 사진을 유지합니다.</p>
+                <img id="pr-photo-preview" class="pr-photo-preview" alt="선택한 이미지 미리보기" width="120" height="120" hidden>
+            </div>
+            <div class="pr-field">
+                <label for="pr-content">내용</label>
+                <textarea id="pr-content" name="content" rows="5" required maxlength="8000" placeholder="상품 설명"></textarea>
+            </div>
+            <div class="pr-actions">
+                <button type="submit" class="btn btn-primary" id="pr-submit">저장</button>
+                <button type="button" class="btn btn-secondary" id="pr-cancel-edit" hidden>편집 취소</button>
+            </div>
+        </form>
+        <section class="pr-list" id="pr-list-wrap" aria-labelledby="pr-list-heading">
+            <h2 id="pr-list-heading">등록된 상품</h2>
+            <div id="pr-list"></div>
+        </section>
+    </main>
+    <footer class="site-footer">
+        <div class="site-footer-inner">
+            <dl class="site-footer-grid">
+                <div class="site-footer-item">
+                    <dt>상호</dt>
+                    <dd>(주)더존</dd>
+                </div>
+                <div class="site-footer-item">
+                    <dt>대표</dt>
+                    <dd>이상범</dd>
+                </div>
+                <div class="site-footer-item">
+                    <dt>휴대폰</dt>
+                    <dd><a class="footer-tel" href="tel:+821029288196">010-2928-8196</a></dd>
+                </div>
+                <div class="site-footer-item">
+                    <dt>이메일</dt>
+                    <dd><a href="mailto:leesb0129@daum.net">leesb0129@daum.net</a></dd>
+                </div>
+                <div class="site-footer-item">
+                    <dt>전화</dt>
+                    <dd><a class="footer-tel" href="tel:+82326665255">032-666-5255</a></dd>
+                </div>
+                <div class="site-footer-item">
+                    <dt>팩스</dt>
+                    <dd>032-662-5246</dd>
+                </div>
+                <div class="site-footer-item">
+                    <dt>사업자등록번호</dt>
+                    <dd>130-45-32935</dd>
+                </div>
+                <div class="site-footer-item">
+                    <dt>통신판매업신고</dt>
+                    <dd>제0000-서울강남-0000호</dd>
+                </div>
+                <div class="site-footer-item site-footer-item--full">
+                    <dt>주소</dt>
+                    <dd>경기도 부천시 원미구 부천로 130번길 5, 삼도빌딩 1층</dd>
+                </div>
+            </dl>
+        </div>
+    </footer>
+    <script>
+        (function () {
+            var todayEl = document.getElementById("headerToday");
+            if (todayEl) {
+                var now = new Date();
+                var y = now.getFullYear();
+                var m = String(now.getMonth() + 1).padStart(2, "0");
+                var d = String(now.getDate()).padStart(2, "0");
+                todayEl.dateTime = y + "-" + m + "-" + d;
+                todayEl.textContent = now.toLocaleDateString("ko-KR", {
+                    year: "numeric",
+                    month: "long",
+                    day: "numeric",
+                    weekday: "long"
+                });
+            }
+            var logoutBtn = document.getElementById("btnLogout");
+            function syncAuthUi() {
+                var loggedIn = window.THEJHON_AUTH && THEJHON_AUTH.isLoggedIn();
+                if (logoutBtn) logoutBtn.hidden = !loggedIn;
+            }
+            if (logoutBtn) {
+                logoutBtn.addEventListener("click", function () {
+                    if (window.THEJHON_AUTH) THEJHON_AUTH.clearSession();
+                    location.reload();
+                });
+            }
+            syncAuthUi();
+        })();
+    </script>
+    <script src="product-register.js"></script>
+</body>
+</html>

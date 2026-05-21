@@ -1,0 +1,176 @@
+/* 고객센터: 최근소식 · 자유게시판 · 문의사항 공통 */
+.sp-lead {
+    margin: 0 0 1rem;
+    color: #3d556d;
+    line-height: 1.55;
+    max-width: 42rem;
+}
+.sp-status {
+    margin: 0 0 0.75rem;
+    font-size: 0.85rem;
+    min-height: 1.2rem;
+    color: #3d5166;
+}
+.sp-status.sp-status--err {
+    color: #a12c2c;
+}
+.sp-panel {
+    max-width: min(100%, 42rem);
+    margin: 0 auto 1.25rem;
+    padding: 0.85rem 1rem;
+    background: #fff;
+    border: 1px solid #e0e6ed;
+    border-radius: 8px;
+    box-shadow: 0 1px 6px rgba(10, 77, 156, 0.05);
+}
+.sp-subheading {
+    margin: 0 0 0.65rem;
+    font-size: 1rem;
+    font-weight: 800;
+    color: #052a4d;
+}
+.sp-form .sp-field {
+    margin-bottom: 0.65rem;
+}
+.sp-form label {
+    display: block;
+    font-size: 0.72rem;
+    font-weight: 600;
+    color: #5a6b7d;
+    margin-bottom: 0.25rem;
+}
+.sp-form input[type="text"],
+.sp-form textarea,
+.sp-form select {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 0.4rem 0.5rem;
+    font-size: 0.875rem;
+    font-family: inherit;
+    border: 1px solid #c5d0dc;
+    border-radius: 4px;
+}
+.sp-form textarea {
+    resize: vertical;
+    min-height: 6rem;
+    line-height: 1.5;
+}
+.sp-form input:focus,
+.sp-form textarea:focus,
+.sp-form select:focus {
+    outline: none;
+    border-color: var(--dz-blue);
+    box-shadow: 0 0 0 1px rgba(10, 77, 156, 0.2);
+}
+.sp-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.45rem;
+    margin-top: 0.5rem;
+}
+.sp-btn {
+    font-size: 0.8125rem;
+    font-weight: 600;
+    padding: 0.4rem 0.85rem;
+    border-radius: 5px;
+    cursor: pointer;
+    font-family: inherit;
+    border: 1px solid #c5d0dc;
+    background: #f4f6f9;
+    color: #3d5166;
+}
+.sp-btn--primary {
+    border: 2px solid var(--dz-blue);
+    background: var(--dz-blue);
+    color: #fff;
+}
+.sp-btn--secondary {
+    border-color: #c5d0dc;
+    background: #fff;
+}
+.sp-btn--danger {
+    border-color: #e8a4a4;
+    color: #a12c2c;
+    background: #fff8f8;
+}
+.sp-list {
+    max-width: min(100%, 42rem);
+    margin: 0 auto;
+}
+.sp-card {
+    background: #fff;
+    border: 1px solid #e0e6ed;
+    border-radius: 8px;
+    padding: 0.85rem 1rem;
+    margin-bottom: 0.75rem;
+    box-shadow: 0 1px 4px rgba(10, 77, 156, 0.04);
+}
+.sp-card-title {
+    margin: 0 0 0.35rem;
+    font-size: 1.05rem;
+    font-weight: 800;
+    color: #052a4d;
+    line-height: 1.3;
+}
+.sp-card-meta {
+    margin: 0 0 0.5rem;
+    font-size: 0.78rem;
+    color: #7a8a9c;
+}
+.sp-card-body {
+    margin: 0;
+    font-size: 0.875rem;
+    line-height: 1.6;
+    color: #3d5166;
+    word-break: break-word;
+}
+.sp-card-body--pre {
+    white-space: pre-wrap;
+}
+.sp-card-actions {
+    margin-top: 0.55rem;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem;
+}
+.sp-empty {
+    margin: 0;
+    padding: 1rem;
+    text-align: center;
+    color: #3d5166;
+    background: #f4f6f9;
+    border-radius: 8px;
+    border: 1px dashed #c5d0dc;
+}
+.sp-hint {
+    margin: 0 0 1rem;
+    padding: 0.75rem 1rem;
+    font-size: 0.84rem;
+    line-height: 1.5;
+    color: #3d5166;
+    background: #f0f7fc;
+    border: 1px solid #cfe8f4;
+    border-radius: 8px;
+    max-width: min(100%, 42rem);
+}
+.sp-hint a {
+    color: var(--dz-blue);
+    font-weight: 600;
+}
+.sp-badge {
+    display: inline-block;
+    font-size: 0.68rem;
+    font-weight: 700;
+    padding: 0.12rem 0.45rem;
+    border-radius: 4px;
+    margin-left: 0.35rem;
+    vertical-align: middle;
+}
+.sp-badge--open {
+    background: #fff4e5;
+    color: #8a5a00;
+}
+.sp-badge--done {
+    background: #e8f5e9;
+    color: #1b5e20;
+}

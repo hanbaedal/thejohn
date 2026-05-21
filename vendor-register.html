@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>업체등록 — 더존</title>
+    <link rel="stylesheet" href="common.css">
+    <style>
+        .vr-form { max-width: min(100%, 56rem); margin: 0 auto 1.5rem; padding: 0.85rem 0.75rem; background: #fff; border: 1px solid #e0e6ed; border-radius: 8px; box-shadow: 0 1px 8px rgba(10, 77, 156, 0.05); }
+        .vr-slot > label,
+        .vr-field > label { display: block; font-size: 0.7rem; font-weight: 600; color: #5a6b7d; margin-bottom: 0.2rem; line-height: 1.2; }
+        .vr-slot input[type="text"],
+        .vr-slot input[type="email"],
+        .vr-slot input[type="tel"],
+        .vr-slot input[type="password"],
+        .vr-field input[type="text"],
+        .vr-field input[type="email"],
+        .vr-field input[type="tel"],
+        .vr-field input[type="password"],
+        .vr-field textarea { width: 100%; padding: 0.35rem 0.45rem; font-size: 0.8125rem; font-family: inherit; border: 1px solid #c5d0dc; border-radius: 4px; min-height: 2rem; box-sizing: border-box; }
+        .vr-field textarea { min-height: 4.5rem; resize: vertical; }
+        .vr-slot input:focus,
+        .vr-field input:focus,
+        .vr-field textarea:focus { outline: none; border-color: var(--dz-blue); box-shadow: 0 0 0 1px rgba(10, 77, 156, 0.2); }
+        .vr-slot input[type="file"],
+        .vr-field input[type="file"] { font-size: 0.68rem; max-width: 100%; padding: 0.15rem 0; }
+        .vr-hint { margin: 0.25rem 0 0; font-size: 0.68rem; color: #7a8a9c; line-height: 1.35; }
+        .vr-hint--after-login { margin-top: 0.05rem; margin-bottom: 0.55rem; }
+        .vr-hint--logo { margin: 0 0 0.55rem; }
+        .vr-row { display: grid; gap: 0.35rem 0.45rem; margin-bottom: 0.55rem; align-items: end; }
+        .vr-row--4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+        .vr-row--3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+        @media (max-width: 900px) {
+            .vr-row--4 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+        }
+        @media (max-width: 520px) {
+            .vr-row--3 { grid-template-columns: 1fr; }
+            .vr-row--4 { grid-template-columns: 1fr; }
+        }
+        .vr-field { margin-bottom: 0.55rem; }
+        .vr-preview-sm { display: block; max-width: 100%; max-height: 3.25rem; margin-top: 0.2rem; border-radius: 4px; border: 1px solid #e8edf2; object-fit: contain; background: #f8fafc; }
+        .vr-actions { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-top: 0.65rem; }
+        .vr-actions .btn { border: 2px solid var(--dz-blue); background: #fff; color: var(--dz-blue); padding: 0.38rem 0.85rem; font-size: 0.8125rem; font-weight: 600; border-radius: 5px; cursor: pointer; font-family: inherit; display: inline-flex; align-items: center; justify-content: center; }
+        .vr-actions .btn-primary { background: var(--dz-blue); color: #fff; }
+        .vr-actions .btn-secondary { border-color: #c5d0dc; color: #3d5166; background: #f4f6f9; }
+        .vr-status { margin: 0 0 0.65rem; font-size: 0.8rem; color: #3d5166; min-height: 1.15rem; }
+        .vr-list { max-width: min(100%, 56rem); margin: 0 auto; }
+        .vr-list h2 { font-size: 1.05rem; margin: 0 0 0.6rem; color: #1a2b3c; }
+        .vr-card { background: #fff; border: 1px solid #e0e6ed; border-radius: 8px; padding: 0.75rem 0.85rem; margin-bottom: 0.65rem; box-shadow: 0 1px 4px rgba(10, 77, 156, 0.04); }
+        .vr-card-head { display: flex; gap: 0.45rem; flex-wrap: wrap; align-items: flex-start; }
+        .vr-thumb { width: 4rem; height: 4rem; object-fit: contain; border-radius: 4px; border: 1px solid #e0e6ed; background: #f4f6f9; flex-shrink: 0; }
+        .vr-thumb--empty { display: flex; align-items: center; justify-content: center; font-size: 0.58rem; color: #8a9bab; text-align: center; padding: 0.2rem; line-height: 1.15; }
+        .vr-card-main { flex: 1; min-width: 10rem; }
+        .vr-card-title { margin: 0 0 0.3rem; font-size: 1rem; font-weight: 700; color: #052a4d; }
+        .vr-card-meta { margin: 0; font-size: 0.78rem; line-height: 1.45; color: #3d556d; }
+        .vr-card-addr { font-weight: 500; color: #3d5166; }
+        .vr-card-meta a { color: var(--dz-blue); word-break: break-all; }
+        .vr-card-note { margin: 0.45rem 0 0; font-size: 0.82rem; line-height: 1.5; color: #3d5166; white-space: pre-wrap; word-break: break-word; }
+        .vr-card-actions { margin-top: 0.55rem; display: flex; gap: 0.35rem; flex-wrap: wrap; }
+        .vr-card-actions button { font-size: 0.75rem; padding: 0.28rem 0.55rem; border-radius: 4px; cursor: pointer; font-family: inherit; font-weight: 600; border: 1px solid #c5d0dc; background: #fff; color: #3d5166; }
+        .vr-card-actions button.vr-btn-del { border-color: #e8a4a4; color: #a12c2c; background: #fff8f8; }
+    </style>
+    <script src="thejhon-api.js"></script>
+    <script src="auth.js"></script>
+    <script src="nav.js" defer></script>
+</head>
+<body>
+    <header class="site-header">
+        <div class="site-header-start">
+            <a href="index.html" class="dz-logo" aria-label="더존 홈">더존</a>
+            <nav class="site-header-nav" aria-label="주요 메뉴">
+                <div class="nav-dropdown" data-nav-dropdown="company">
+                    <a href="company.html" class="header-nav-link nav-dropdown-trigger" aria-haspopup="true" aria-expanded="false" aria-controls="companySubmenu">회사소개</a>
+                    <div id="companySubmenu" class="nav-dropdown-panel" role="menu" aria-label="회사소개 하위 메뉴">
+                        <a href="company-livestock.html" class="nav-dropdown-item" role="menuitem">축산 부문</a>
+                        <a href="company-seafood.html" class="nav-dropdown-item" role="menuitem">수산물 부문</a>
+                        <a href="company-meals.html" class="nav-dropdown-item" role="menuitem">식사 부문</a>
+                        <a href="company-banchan.html" class="nav-dropdown-item" role="menuitem">반찬 부문</a>
+                    </div>
+                </div>
+                <a href="products.html" class="header-nav-link">상품소개</a>
+                <a href="product-register.html" class="header-nav-link">상품등록</a>
+                <a href="vendor-register.html" class="header-nav-link is-current" aria-current="page">업체등록</a>
+                <div class="nav-dropdown" data-nav-dropdown="support">
+                    <a href="support.html" class="header-nav-link nav-dropdown-trigger" aria-haspopup="true" aria-expanded="false" aria-controls="supportSubmenu">고객센터</a>
+                    <div id="supportSubmenu" class="nav-dropdown-panel" role="menu" aria-label="고객센터 하위 메뉴">
+                        <a href="support-partners.html" class="nav-dropdown-item" role="menuitem">파트너회사 소개</a>
+                        <a href="support-library.html" class="nav-dropdown-item" role="menuitem">최근소식</a>
+                        <a href="support-qna.html" class="nav-dropdown-item" role="menuitem">자유게시판</a>
+                        <a href="support-inquiry.html" class="nav-dropdown-item" role="menuitem">문의사항</a>
+                    </div>
+                </div>
+                <span class="header-nav-link is-static" title="준비 중입니다">카페</span>
+            </nav>
+        </div>
+        <nav class="site-header-actions" aria-label="계정">
+            <time class="header-date" id="headerToday" datetime=""></time>
+            <button type="button" class="btn btn-logout" id="btnLogout" hidden>로그아웃</button>
+        </nav>
+    </header>
+    <main class="page-main page-main--hide-scrollbar">
+    
+        <p id="vr-status" class="vr-status" role="status" aria-live="polite"></p>
+        <form id="vr-form" class="vr-form" novalidate>
+            <input type="hidden" id="vr-edit-id" value="">
+            <div class="vr-row vr-row--4">
+                <div class="vr-slot">
+                    <label for="vr-login-id">아이디</label>
+                    <input type="text" id="vr-login-id" name="loginId" required maxlength="64" autocomplete="username" placeholder="아이디">
+                </div>
+                <div class="vr-slot">
+                    <label for="vr-login-pw">비밀번호</label>
+                    <input type="password" id="vr-login-pw" name="password" maxlength="128" autocomplete="new-password" placeholder="비밀번호">
+                </div>
+                <div class="vr-slot">
+                    <label for="vr-company">업체명</label>
+                    <input type="text" id="vr-company" name="company" required maxlength="200" autocomplete="organization" placeholder="업체명">
+                </div>
+                <div class="vr-slot">
+                    <label for="vr-ceo">대표</label>
+                    <input type="text" id="vr-ceo" name="ceo" maxlength="80" autocomplete="name" placeholder="대표">
+                </div>
+            </div>
+            <p class="vr-hint vr-hint--after-login">수정 시 비밀번호를 비우면 기존 비밀번호를 유지합니다.</p>
+            <div class="vr-row vr-row--4">
+                <div class="vr-slot">
+                    <label for="vr-ceo-phone">대표전화번호</label>
+                    <input type="tel" id="vr-ceo-phone" name="ceoPhone" maxlength="30" inputmode="tel" placeholder="대표전화">
+                </div>
+                <div class="vr-slot">
+                    <label for="vr-biz-no">사업자등록번호</label>
+                    <input type="text" id="vr-biz-no" name="bizNo" maxlength="40" autocomplete="off" placeholder="사업자등록번호">
+                </div>
+                <div class="vr-slot">
+                    <label for="vr-manager">담당자</label>
+                    <input type="text" id="vr-manager" name="manager" maxlength="80" placeholder="담당자">
+                </div>
+                <div class="vr-slot">
+                    <label for="vr-manager-phone">담당자연락처</label>
+                    <input type="tel" id="vr-manager-phone" name="managerPhone" maxlength="30" inputmode="tel" placeholder="담당자연락처">
+                </div>
+            </div>
+            <div class="vr-row vr-row--3">
+                <div class="vr-slot">
+                    <label for="vr-website">홈페이지</label>
+                    <input type="text" id="vr-website" name="website" maxlength="500" inputmode="url" placeholder="URL">
+                </div>
+                <div class="vr-slot">
+                    <label for="vr-email">이메일</label>
+                    <input type="email" id="vr-email" name="email" maxlength="120" autocomplete="email" placeholder="이메일">
+                </div>
+                <div class="vr-slot">
+                    <label for="vr-address">업체주소</label>
+                    <input type="text" id="vr-address" name="address" maxlength="500" placeholder="업체주소">
+                </div>
+            </div>
+            <div class="vr-field">
+                <label for="vr-logo">로고</label>
+                <input type="file" id="vr-logo" name="logo" accept="image/*">
+                <img id="vr-logo-preview" class="vr-preview-sm" alt="" width="80" height="48" hidden>
+            </div>
+            <p class="vr-hint vr-hint--logo">수정 시 새 파일을 선택하지 않으면 기존 로고를 유지합니다.</p>
+            <div class="vr-field">
+                <label for="vr-note">추가설명</label>
+                <textarea id="vr-note" name="note" rows="3" maxlength="8000" placeholder="추가 설명"></textarea>
+            </div>
+            <div class="vr-actions">
+                <button type="submit" class="btn btn-primary" id="vr-submit">저장</button>
+                <button type="button" class="btn btn-secondary" id="vr-cancel-edit" hidden>편집 취소</button>
+            </div>
+        </form>
+        <section class="vr-list" aria-labelledby="vr-list-heading">
+            <h2 id="vr-list-heading">등록된 업체</h2>
+            <div id="vr-list"></div>
+        </section>
+    </main>
+    <footer class="site-footer">
+        <div class="site-footer-inner">
+            <dl class="site-footer-grid">
+                <div class="site-footer-item">
+                    <dt>상호</dt>
+                    <dd>(주)더존</dd>
+                </div>
+                <div class="site-footer-item">
+                    <dt>대표</dt>
+                    <dd>이상범</dd>
+                </div>
+                <div class="site-footer-item">
+                    <dt>휴대폰</dt>
+                    <dd><a class="footer-tel" href="tel:+821029288196">010-2928-8196</a></dd>
+                </div>
+                <div class="site-footer-item">
+                    <dt>이메일</dt>
+                    <dd><a href="mailto:leesb0129@daum.net">leesb0129@daum.net</a></dd>
+                </div>
+                <div class="site-footer-item">
+                    <dt>전화</dt>
+                    <dd><a class="footer-tel" href="tel:+82326665255">032-666-5255</a></dd>
+                </div>
+                <div class="site-footer-item">
+                    <dt>팩스</dt>
+                    <dd>032-662-5246</dd>
+                </div>
+                <div class="site-footer-item">
+                    <dt>사업자등록번호</dt>
+                    <dd>130-45-32935</dd>
+                </div>
+                <div class="site-footer-item">
+                    <dt>통신판매업신고</dt>
+                    <dd>제0000-서울강남-0000호</dd>
+                </div>
+                <div class="site-footer-item site-footer-item--full">
+                    <dt>주소</dt>
+                    <dd>경기도 부천시 원미구 부천로 130번길 5, 삼도빌딩 1층</dd>
+                </div>
+            </dl>
+        </div>
+    </footer>
+    <script>
+        (function () {
+            var todayEl = document.getElementById("headerToday");
+            if (todayEl) {
+                var now = new Date();
+                var y = now.getFullYear();
+                var m = String(now.getMonth() + 1).padStart(2, "0");
+                var d = String(now.getDate()).padStart(2, "0");
+                todayEl.dateTime = y + "-" + m + "-" + d;
+                todayEl.textContent = now.toLocaleDateString("ko-KR", {
+                    year: "numeric",
+                    month: "long",
+                    day: "numeric",
+                    weekday: "long"
+                });
+            }
+            var logoutBtn = document.getElementById("btnLogout");
+            function syncAuthUi() {
+                var loggedIn = window.THEJHON_AUTH && THEJHON_AUTH.isLoggedIn();
+                if (logoutBtn) logoutBtn.hidden = !loggedIn;
+            }
+            if (logoutBtn) {
+                logoutBtn.addEventListener("click", function () {
+                    if (window.THEJHON_AUTH) THEJHON_AUTH.clearSession();
+                    location.reload();
+                });
+            }
+            syncAuthUi();
+        })();
+    </script>
+    <script src="vendor-register.js"></script>
+</body>
+</html>

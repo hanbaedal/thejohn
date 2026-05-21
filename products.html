@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>상품소개 — 더존</title>
+    <link rel="stylesheet" href="common.css">
+    <style>
+        .ps-lead { margin: 0 0 1.25rem; color: #3d5166; line-height: 1.55; }
+        .ps-empty { margin: 0; color: #3d5166; line-height: 1.55; }
+        .ps-empty a { color: var(--dz-blue); font-weight: 600; }
+        .ps-hide-scrollbar {
+            scrollbar-width: none;
+            -ms-overflow-style: none;
+        }
+        .ps-hide-scrollbar::-webkit-scrollbar {
+            display: none;
+            width: 0;
+            height: 0;
+        }
+        .ps-grid {
+            list-style: none;
+            margin: 0;
+            padding: 0;
+            display: grid;
+            gap: 1.1rem;
+            grid-template-columns: 1fr;
+        }
+        @media (min-width: 1024px) {
+            .ps-grid {
+                grid-template-columns: repeat(4, 1fr);
+            }
+        }
+        .ps-card-wrap { margin: 0; }
+        .ps-card-img-btn {
+            display: block;
+            width: 100%;
+            padding: 0;
+            margin: 0;
+            border: 0;
+            background: transparent;
+            cursor: pointer;
+            font: inherit;
+            color: inherit;
+            text-align: left;
+            outline-offset: 2px;
+        }
+        .ps-card-img-btn:hover .ps-card-img,
+        .ps-card-img-btn:focus-visible .ps-card-img {
+            opacity: 0.94;
+        }
+        .ps-card {
+            background: #fff;
+            border: 1px solid #e0e6ed;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 1px 6px rgba(10, 77, 156, 0.05);
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+        }
+        .ps-card-img {
+            width: 100%;
+            aspect-ratio: 1;
+            object-fit: cover;
+            background: #f4f6f9;
+            border: 0;
+            display: block;
+        }
+        .ps-card-img--empty {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.8rem;
+            color: #8a9bab;
+            text-align: center;
+            min-height: 0;
+        }
+        .ps-card-body {
+            padding: 0.85rem 0.95rem 1rem;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            min-width: 0;
+        }
+        .ps-card-title {
+            margin: 0 0 0.4rem;
+            font-size: 1rem;
+            font-weight: 700;
+            color: #052a4d;
+            line-height: 1.35;
+        }
+        .ps-card-price {
+            margin: 0 0 0.5rem;
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: var(--dz-blue);
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.35rem 0.65rem;
+            align-items: baseline;
+        }
+        .ps-card-spec { font-size: 0.82rem; font-weight: 600; color: #3d556d; }
+        .ps-price-masked {
+            font-weight: 600;
+            color: #6b7c8e;
+            font-size: 0.88rem;
+        }
+        .ps-card-content {
+            margin: 0;
+            font-size: 0.85rem;
+            line-height: 1.5;
+            color: #3d5166;
+            white-space: pre-wrap;
+            word-break: break-word;
+            max-height: 10rem;
+            overflow-y: auto;
+        }
+        .ps-lightbox {
+            position: fixed;
+            inset: 0;
+            z-index: 10000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: max(0.75rem, env(safe-area-inset-top, 0)) max(0.75rem, env(safe-area-inset-right, 0))
+                max(0.75rem, env(safe-area-inset-bottom, 0)) max(0.75rem, env(safe-area-inset-left, 0));
+            background: rgba(0, 0, 0, 0.88);
+            overflow: auto;
+            scrollbar-width: none;
+            -ms-overflow-style: none;
+            box-sizing: border-box;
+        }
+        .ps-lightbox::-webkit-scrollbar {
+            display: none;
+            width: 0;
+            height: 0;
+        }
+        .ps-lightbox[hidden] {
+            display: none !important;
+        }
+        .ps-lightbox-img {
+            max-width: 100%;
+            max-height: min(92dvh, 92vh);
+            width: auto;
+            height: auto;
+            object-fit: contain;
+            border-radius: 6px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.45);
+        }
+        .ps-lightbox-close {
+            position: fixed;
+            top: max(0.5rem, env(safe-area-inset-top, 0));
+            right: max(0.5rem, env(safe-area-inset-right, 0));
+            z-index: 10001;
+            padding: 0.4rem 0.75rem;
+            font-size: 0.9rem;
+            font-weight: 600;
+            font-family: inherit;
+            color: #fff;
+            background: rgba(30, 40, 55, 0.75);
+            border: 1px solid rgba(255, 255, 255, 0.35);
+            border-radius: 6px;
+            cursor: pointer;
+        }
+        .ps-lightbox-close:hover {
+            background: rgba(50, 60, 75, 0.9);
+        }
+    </style>
+    <script src="thejhon-api.js"></script>
+    <script src="auth.js"></script>
+    <script src="nav.js" defer></script>
+    <script src="products.js" defer></script>
+</head>
+<body>
+    <header class="site-header">
+        <div class="site-header-start">
+            <a href="index.html" class="dz-logo" aria-label="더존 홈">더존</a>
+            <nav class="site-header-nav" aria-label="주요 메뉴">
+                <div class="nav-dropdown" data-nav-dropdown="company">
+                    <a href="company.html" class="header-nav-link nav-dropdown-trigger" aria-haspopup="true" aria-expanded="false" aria-controls="companySubmenu">회사소개</a>
+                    <div id="companySubmenu" class="nav-dropdown-panel" role="menu" aria-label="회사소개 하위 메뉴">
+                        <a href="company-livestock.html" class="nav-dropdown-item" role="menuitem">축산 부문</a>
+                        <a href="company-seafood.html" class="nav-dropdown-item" role="menuitem">수산물 부문</a>
+                        <a href="company-meals.html" class="nav-dropdown-item" role="menuitem">식사 부문</a>
+                        <a href="company-banchan.html" class="nav-dropdown-item" role="menuitem">반찬 부문</a>
+                    </div>
+                </div>
+                <a href="products.html" class="header-nav-link">상품소개</a>
+                <a href="product-register.html" class="header-nav-link">상품등록</a>
+                <a href="vendor-register.html" class="header-nav-link">업체등록</a>
+                <div class="nav-dropdown" data-nav-dropdown="support">
+                    <a href="support.html" class="header-nav-link nav-dropdown-trigger" aria-haspopup="true" aria-expanded="false" aria-controls="supportSubmenu">고객센터</a>
+                    <div id="supportSubmenu" class="nav-dropdown-panel" role="menu" aria-label="고객센터 하위 메뉴">
+                        <a href="support-partners.html" class="nav-dropdown-item" role="menuitem">파트너회사 소개</a>
+                        <a href="support-library.html" class="nav-dropdown-item" role="menuitem">최근소식</a>
+                        <a href="support-qna.html" class="nav-dropdown-item" role="menuitem">자유게시판</a>
+                        <a href="support-inquiry.html" class="nav-dropdown-item" role="menuitem">문의사항</a>
+                    </div>
+                </div>
+                <span class="header-nav-link is-static" title="준비 중입니다">카페</span>
+            </nav>
+        </div>
+        <nav class="site-header-actions" aria-label="계정">
+            <time class="header-date" id="headerToday" datetime=""></time>
+            <button type="button" class="btn btn-logout" id="btnLogout" hidden>로그아웃</button>
+        </nav>
+    </header>
+    <main class="page-main page-main--hide-scrollbar" id="ps-page-main">
+        <h1>상품소개</h1>
+        <p class="ps-lead">상품등록에서 저장한 상품이 아래에 표시됩니다. 스마트폰에서는 한 줄에 하나씩, 넓은 화면에서는 한 줄에 네 개씩 보입니다. 사진을 누르면 팝업으로 사진만 크게 볼 수 있습니다.</p>
+        <div id="ps-root" aria-live="polite"></div>
+    </main>
+    <div id="ps-lightbox" class="ps-lightbox" role="dialog" aria-modal="true" aria-label="상품 사진 크게 보기" hidden>
+        <button type="button" class="ps-lightbox-close" id="ps-lightbox-close">닫기</button>
+        <img class="ps-lightbox-img" id="ps-lightbox-img" alt="">
+    </div>
+    <footer class="site-footer">
+        <div class="site-footer-inner">
+            <dl class="site-footer-grid">
+                <div class="site-footer-item">
+                    <dt>상호</dt>
+                    <dd>(주)더존</dd>
+                </div>
+                <div class="site-footer-item">
+                    <dt>대표</dt>
+                    <dd>이상범</dd>
+                </div>
+                <div class="site-footer-item">
+                    <dt>휴대폰</dt>
+                    <dd><a class="footer-tel" href="tel:+821029288196">010-2928-8196</a></dd>
+                </div>
+                <div class="site-footer-item">
+                    <dt>이메일</dt>
+                    <dd><a href="mailto:leesb0129@daum.net">leesb0129@daum.net</a></dd>
+                </div>
+                <div class="site-footer-item">
+                    <dt>전화</dt>
+                    <dd><a class="footer-tel" href="tel:+82326665255">032-666-5255</a></dd>
+                </div>
+                <div class="site-footer-item">
+                    <dt>팩스</dt>
+                    <dd>032-662-5246</dd>
+                </div>
+                <div class="site-footer-item">
+                    <dt>사업자등록번호</dt>
+                    <dd>130-45-32935</dd>
+                </div>
+                <div class="site-footer-item">
+                    <dt>통신판매업신고</dt>
+                    <dd>제0000-서울강남-0000호</dd>
+                </div>
+                <div class="site-footer-item site-footer-item--full">
+                    <dt>주소</dt>
+                    <dd>경기도 부천시 원미구 부천로 130번길 5, 삼도빌딩 1층</dd>
+                </div>
+            </dl>
+        </div>
+    </footer>
+    <script>
+        (function () {
+            var todayEl = document.getElementById("headerToday");
+            if (todayEl) {
+                var now = new Date();
+                var y = now.getFullYear();
+                var m = String(now.getMonth() + 1).padStart(2, "0");
+                var d = String(now.getDate()).padStart(2, "0");
+                todayEl.dateTime = y + "-" + m + "-" + d;
+                todayEl.textContent = now.toLocaleDateString("ko-KR", {
+                    year: "numeric",
+                    month: "long",
+                    day: "numeric",
+                    weekday: "long"
+                });
+            }
+            var logoutBtn = document.getElementById("btnLogout");
+            function syncAuthUi() {
+                var loggedIn = window.THEJHON_AUTH && THEJHON_AUTH.isLoggedIn();
+                if (logoutBtn) logoutBtn.hidden = !loggedIn;
+            }
+            if (logoutBtn) {
+                logoutBtn.addEventListener("click", function () {
+                    if (window.THEJHON_AUTH) THEJHON_AUTH.clearSession();
+                    location.reload();
+                });
+            }
+            syncAuthUi();
+        })();
+    </script>
+</body>
+</html>
