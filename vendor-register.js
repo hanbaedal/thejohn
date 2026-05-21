@@ -2,6 +2,28 @@
     var MAX_IMAGE_BYTES = 2 * 1024 * 1024;
     var api = window.THEJHON_API;
 
+    function apiErrorMessage(err, fallback) {
+        if (!err) return fallback || "요청에 실패했습니다.";
+        if (err.status === 401) {
+            return "로그인이 필요합니다. 관리자(thejohn, aksangsa)로 로그인한 뒤 다시 저장해 주세요.";
+        }
+        if (err.status === 403) {
+            return "관리자(스테프)만 업체를 등록·수정·삭제할 수 있습니다.";
+        }
+        if (err.status === 503) {
+            return err.message || "데이터베이스에 연결되지 않았습니다. 잠시 후 다시 시도해 주세요.";
+        }
+        return err.message || fallback || "요청에 실패했습니다.";
+    }
+
+    function setFormDisabled(disabled) {
+        if (!form) return;
+        var fields = form.querySelectorAll("input, textarea, button, select");
+        for (var i = 0; i < fields.length; i++) {
+            fields[i].disabled = disabled;
+        }
+    }
+
     var form = document.getElementById("vr-form");
     var statusEl = document.getElementById("vr-status");
     var editIdInput = document.getElementById("vr-edit-id");
@@ -221,7 +243,7 @@
                 setStatus("");
             })
             .catch(function (err) {
-                setStatus(err.message || "목록을 불러오지 못했습니다.", true);
+                setStatus(apiErrorMessage(err, "목록을 불러오지 못했습니다."), true);
             });
     }
 
@@ -265,7 +287,7 @@
                 setStatus("삭제했습니다.");
             })
             .catch(function (err) {
-                setStatus(err.message || "삭제에 실패했습니다.", true);
+                setStatus(apiErrorMessage(err, "삭제에 실패했습니다."), true);
             });
     }
 
@@ -358,8 +380,10 @@
                     setStatus(editingId ? "수정했습니다." : "저장했습니다.");
                 })
                 .catch(function (err) {
-                    var msg = err.message || "저장에 실패했습니다.";
-                    if (err.status === 409) msg = "이미 사용 중인 아이디입니다.";
+                    var msg = apiErrorMessage(err, "저장에 실패했습니다.");
+                    if (err.status === 409) {
+                        msg = (err.data && err.data.error) || "이미 사용 중인 아이디입니다.";
+                    }
                     setStatus(msg, true);
                 })
                 .finally(function () {
@@ -377,5 +401,22 @@
     });
 
     setGrade("1");
+
+    var access =
+        window.THEJHON_AUTH && THEJHON_AUTH.getRegisterAccess
+            ? THEJHON_AUTH.getRegisterAccess()
+            : { allowed: false, reason: "인증 스크립트를 불러오지 못했습니다." };
+
+    if (!access.allowed) {
+        setStatus(access.reason, true);
+        setFormDisabled(true);
+        if (listEl) {
+            listEl.innerHTML =
+                '<p class="vr-card-note">MongoDB <strong>vendors</strong> 컬렉션에 저장하려면 관리자 로그인이 필요합니다. <a href="login.html?next=vendor-register.html">로그인</a></p>';
+        }
+        return;
+    }
+
+    setStatus("관리자 로그인됨 · 저장 시 MongoDB vendors 컬렉션에 기록됩니다.");
     loadList();
 })();

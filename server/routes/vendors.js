@@ -21,9 +21,13 @@ function isReservedAdminLoginId(loginId) {
 }
 
 async function findDuplicateVendor(vendors, loginId, excludeId) {
-    const filter = loginLookupFilter(loginId);
-    if (excludeId) filter.id = { $ne: excludeId };
+    const idFilter = loginLookupFilter(loginId);
+    const filter = excludeId ? { $and: [idFilter, { id: { $ne: excludeId } }] } : idFilter;
     return vendors.findOne(filter);
+}
+
+async function findStaffLoginConflict(loginId) {
+    return getDb().collection("staff").findOne(loginLookupFilter(loginId));
 }
 
 router.get("/", async (req, res) => {
@@ -64,12 +68,17 @@ router.post("/", requireRole("supervisor", "admin"), async (req, res) => {
         const err = validateBuilt(built, true);
         if (err) return res.status(400).json({ ok: false, error: err });
 
+        if (await findStaffLoginConflict(loginId)) {
+            return res.status(409).json({ ok: false, error: "이미 관리자(staff)에 사용 중인 아이디입니다." });
+        }
+
         const vendors = getDb().collection("vendors");
         const dup = await findDuplicateVendor(vendors, loginId);
         if (dup) return res.status(409).json({ ok: false, error: "이미 사용 중인 아이디입니다." });
 
         const doc = toDbDoc(newId(), built, null);
         await vendors.insertOne(doc);
+        console.log("[vendors] inserted:", doc.id, doc.loginId, doc.vn_company);
         res.status(201).json({ ok: true, item: toPublic(doc) });
     } catch (e) {
         console.error("POST /api/vendors", e);
@@ -95,11 +104,16 @@ router.put("/:id", requireRole("supervisor", "admin"), async (req, res) => {
         const err = validateBuilt(built, false);
         if (err) return res.status(400).json({ ok: false, error: err });
 
+        if (await findStaffLoginConflict(loginId)) {
+            return res.status(409).json({ ok: false, error: "이미 관리자(staff)에 사용 중인 아이디입니다." });
+        }
+
         const dup = await findDuplicateVendor(vendors, loginId, id);
         if (dup) return res.status(409).json({ ok: false, error: "이미 사용 중인 아이디입니다." });
 
         const doc = toDbDoc(id, built, existing);
         await vendors.replaceOne({ id }, doc);
+        console.log("[vendors] updated:", doc.id, doc.loginId);
         res.json({ ok: true, item: toPublic(doc) });
     } catch (e) {
         console.error("PUT /api/vendors/:id", e);

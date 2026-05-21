@@ -2,6 +2,14 @@
     var MAX_IMAGE_BYTES = 2 * 1024 * 1024;
     var api = window.THEJHON_API;
 
+    function apiErrorMessage(err, fallback) {
+        if (!err) return fallback || "요청에 실패했습니다.";
+        if (err.status === 401) return "관리자로 로그인한 뒤 다시 저장해 주세요.";
+        if (err.status === 403) return "관리자(스테프)만 상품을 등록·수정·삭제할 수 있습니다.";
+        if (err.status === 503) return err.message || "데이터베이스 연결을 확인해 주세요.";
+        return err.message || fallback || "요청에 실패했습니다.";
+    }
+
     var form = document.getElementById("pr-form");
     var statusEl = document.getElementById("pr-status");
     var editIdInput = document.getElementById("pr-edit-id");
@@ -326,5 +334,21 @@
         }
     });
 
+    var access =
+        window.THEJHON_AUTH && THEJHON_AUTH.getRegisterAccess
+            ? THEJHON_AUTH.getRegisterAccess()
+            : { allowed: false, reason: "인증 스크립트를 불러오지 못했습니다." };
+    if (!access.allowed) {
+        setStatus(access.reason, true);
+        if (form) {
+            var fields = form.querySelectorAll("input, textarea, button, select");
+            for (var i = 0; i < fields.length; i++) fields[i].disabled = true;
+        }
+        if (listEl) {
+            listEl.innerHTML =
+                '<p class="vr-card-note">MongoDB <strong>products</strong> 저장은 관리자 로그인이 필요합니다. <a href="login.html?next=product-register.html">로그인</a></p>';
+        }
+        return;
+    }
     loadList();
 })();

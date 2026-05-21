@@ -124,6 +124,7 @@ app.get("/api/health", async function (req, res) {
                     return d.loginId === id;
                 });
             });
+            payload.vendorCount = await getDb().collection("vendors").countDocuments();
         }
         res.json(payload);
     } catch (e) {

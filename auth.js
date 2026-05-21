@@ -179,6 +179,27 @@
         window.location.replace("index.html?denied=register");
     }
 
+    function getRegisterAccess() {
+        normalizeLegacySession();
+        if (!global.THEJHON_API || !THEJHON_API.getToken || !THEJHON_API.getToken()) {
+            return {
+                allowed: false,
+                reason:
+                    "관리자(thejohn, aksangsa 등)로 로그인해야 저장됩니다. 상단 로그인 → 저장 시 MongoDB에 기록됩니다."
+            };
+        }
+        if (!isLoggedIn()) {
+            return { allowed: false, reason: "로그인이 필요합니다." };
+        }
+        if (!canManageRegisters()) {
+            return {
+                allowed: false,
+                reason: "관리자(스테프)만 등록·수정·삭제할 수 있습니다. 업체 계정으로는 이 메뉴를 사용할 수 없습니다."
+            };
+        }
+        return { allowed: true, role: getRole() };
+    }
+
     function applyNavRegisterVisibility() {
         try {
             normalizeLegacySession();
@@ -214,6 +235,7 @@
         getRole: getRole,
         getUserId: getUserId,
         isGuestMode: isGuestMode,
+        getRegisterAccess: getRegisterAccess,
         canManageRegisters: canManageRegisters,
         canSeePrices: canSeePrices,
         getLoggedInCompanyDisplayName: getLoggedInCompanyDisplayName,
