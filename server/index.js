@@ -13,6 +13,7 @@ const cors = require("cors");
 const { connectDb, isDbReady } = require("./db");
 
 const authRoutes = require("./routes/auth");
+const staffRoutes = require("./routes/staff");
 const productRoutes = require("./routes/products");
 const vendorRoutes = require("./routes/vendors");
 
@@ -72,7 +73,7 @@ app.get("/api/env-check", (req, res) => {
             MONGODB_URI: !!process.env.MONGODB_URI,
             MONGODB_DB: process.env.MONGODB_DB || "thejhon",
             JWT_SECRET: !!(process.env.JWT_SECRET && process.env.JWT_SECRET.length >= 16),
-            THEJHON_ADMIN_PASSWORD: !!process.env.THEJHON_ADMIN_PASSWORD,
+            THEJHON_SEED_SUPERVISOR_PASSWORD: !!process.env.THEJHON_SEED_SUPERVISOR_PASSWORD,
             THEJHON_GUEST_PASSWORD: !!process.env.THEJHON_GUEST_PASSWORD,
             ALLOWED_ORIGINS: !!process.env.ALLOWED_ORIGINS,
             PORT_set: !!process.env.PORT
@@ -82,6 +83,7 @@ app.get("/api/env-check", (req, res) => {
 });
 
 app.use("/api/auth", requireDb, authRoutes);
+app.use("/api/staff", requireDb, staffRoutes);
 app.use("/api/products", requireDb, productRoutes);
 app.use("/api/vendors", requireDb, vendorRoutes);
 
@@ -103,7 +105,6 @@ function validateEnv() {
     var missing = [];
     if (!envTrim("MONGODB_URI")) missing.push("MONGODB_URI");
     if (envTrim("JWT_SECRET").length < 16) missing.push("JWT_SECRET(16자 이상)");
-    if (!envTrim("THEJHON_ADMIN_PASSWORD")) missing.push("THEJHON_ADMIN_PASSWORD");
     if (missing.length) {
         console.error("[thejohn] 필수 환경 변수 없음:", missing.join(", "));
         console.error("[thejohn] Render → Environment 에서 설정 후 Manual Deploy 하세요.");

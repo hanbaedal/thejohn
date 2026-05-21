@@ -345,6 +345,18 @@ a.dz-logo:hover {
 .btn:hover {
     background: #e8eef6;
 }
+.btn-login {
+    background: #fff;
+    color: var(--dz-blue);
+    border: 2px solid var(--dz-blue);
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+.btn-login:hover {
+    background: #e8eef6;
+}
 .btn-logout {
     background: var(--dz-blue);
     color: #fff;

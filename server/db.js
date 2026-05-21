@@ -20,6 +20,11 @@ async function connectDb() {
     await db.collection("products").createIndex({ id: 1 }, { unique: true });
     await db.collection("vendors").createIndex({ id: 1 }, { unique: true });
     await db.collection("vendors").createIndex({ loginIdNorm: 1 }, { unique: true });
+
+    const staff = require("./lib/staff");
+    await staff.ensureStaffIndexes(db);
+    await staff.ensureSupervisorSeed(db);
+
     ready = true;
     return db;
 }

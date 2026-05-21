@@ -15,8 +15,10 @@ function normalizeId(s) {
         .toLowerCase();
 }
 
+const { isReservedStaffLoginId } = require("../lib/staff");
+
 function isReservedAdminLoginId(idn) {
-    return idn === "thejohn" || idn === "thejhon";
+    return isReservedStaffLoginId(idn);
 }
 
 function toPublic(doc) {
@@ -64,7 +66,7 @@ router.get("/:id", async (req, res) => {
     }
 });
 
-router.post("/", requireRole("admin"), async (req, res) => {
+router.post("/", requireRole("supervisor", "admin"), async (req, res) => {
     try {
         const loginId = String(req.body.loginId || "").trim();
         const password = String(req.body.password || "");
@@ -111,7 +113,7 @@ router.post("/", requireRole("admin"), async (req, res) => {
     }
 });
 
-router.put("/:id", requireRole("admin"), async (req, res) => {
+router.put("/:id", requireRole("supervisor", "admin"), async (req, res) => {
     try {
         const id = req.params.id;
         const vendors = getDb().collection("vendors");
@@ -171,7 +173,7 @@ router.put("/:id", requireRole("admin"), async (req, res) => {
     }
 });
 
-router.delete("/:id", requireRole("admin"), async (req, res) => {
+router.delete("/:id", requireRole("supervisor", "admin"), async (req, res) => {
     try {
         const result = await getDb().collection("vendors").deleteOne({ id: req.params.id });
         if (result.deletedCount === 0) {

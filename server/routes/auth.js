@@ -2,20 +2,20 @@ const express = require("express");
 const bcrypt = require("bcryptjs");
 const { getDb } = require("../db");
 const { signToken } = require("../middleware/auth");
+const {
+    findStaffByLogin,
+    verifyStaffPassword,
+    isStaffRole,
+    isReservedStaffLoginId
+} = require("../lib/staff");
 
 const router = express.Router();
-
-const ADMIN_ID = "thejohn";
 const GUEST_ID = "guest";
 
 function normalizeId(s) {
     return String(s || "")
         .trim()
         .toLowerCase();
-}
-
-function isReservedAdminLoginId(idn) {
-    return idn === normalizeId(ADMIN_ID) || idn === "thejhon";
 }
 
 router.post("/login", async (req, res) => {
@@ -28,23 +28,40 @@ router.post("/login", async (req, res) => {
             return res.status(400).json({ ok: false, error: "아이디와 비밀번호를 입력해 주세요." });
         }
 
-        if (isReservedAdminLoginId(idn)) {
-            const adminPw = String(process.env.THEJHON_ADMIN_PASSWORD || "").trim();
-            if (!adminPw || password !== adminPw) {
+        const staff = await findStaffByLogin(loginId);
+        if (staff && isStaffRole(staff.role)) {
+            const valid = await verifyStaffPassword(staff, password);
+            if (!valid) {
                 return res.status(401).json({ ok: false, error: "아이디 또는 비밀번호가 올바르지 않습니다." });
             }
-            const token = signToken({ role: "admin", userId: loginId });
+            const token = signToken({ role: staff.role, userId: staff.loginId });
             return res.json({
                 ok: true,
-                role: "admin",
-                userId: loginId,
-                companyName: "(주)더존",
+                role: staff.role,
+                userId: staff.loginId,
+                companyName: staff.role === "supervisor" ? "슈퍼바이저" : "(주)더존",
+                displayName: staff.name || staff.loginId,
                 token
             });
         }
 
+        if (isReservedStaffLoginId(loginId)) {
+            const legacyPw = String(process.env.THEJHON_ADMIN_PASSWORD || "").trim();
+            if (legacyPw && password === legacyPw) {
+                const token = signToken({ role: "admin", userId: loginId });
+                return res.json({
+                    ok: true,
+                    role: "admin",
+                    userId: loginId,
+                    companyName: "(주)더존",
+                    token
+                });
+            }
+            return res.status(401).json({ ok: false, error: "아이디 또는 비밀번호가 올바르지 않습니다." });
+        }
+
         if (idn === normalizeId(GUEST_ID)) {
-            const guestPw = process.env.THEJHON_GUEST_PASSWORD || "guest";
+            const guestPw = String(process.env.THEJHON_GUEST_PASSWORD || "guest").trim();
             if (password !== guestPw) {
                 return res.status(401).json({ ok: false, error: "아이디 또는 비밀번호가 올바르지 않습니다." });
             }

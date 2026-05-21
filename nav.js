@@ -6,6 +6,32 @@
         THEJHON_AUTH.applyNavRegisterVisibility();
     }
 
+    (function syncHeaderAuthButtons() {
+        var actions = document.querySelector(".site-header-actions");
+        if (!actions) return;
+        var loginBtn = document.getElementById("btnLogin");
+        var logoutBtn = document.getElementById("btnLogout");
+        if (!loginBtn) {
+            loginBtn = document.createElement("a");
+            loginBtn.href = "login.html?next=" + encodeURIComponent(window.location.href);
+            loginBtn.className = "btn btn-login";
+            loginBtn.id = "btnLogin";
+            loginBtn.textContent = "로그인";
+            if (logoutBtn) actions.insertBefore(loginBtn, logoutBtn);
+            else actions.appendChild(loginBtn);
+        }
+        function sync() {
+            var loggedIn = window.THEJHON_AUTH && THEJHON_AUTH.isLoggedIn();
+            if (loginBtn) loginBtn.hidden = !!loggedIn;
+            if (logoutBtn) logoutBtn.hidden = !loggedIn;
+            if (!loggedIn && loginBtn) {
+                loginBtn.href = "login.html?next=" + encodeURIComponent(window.location.href);
+            }
+        }
+        sync();
+        window.addEventListener("pageshow", sync);
+    })();
+
     (function syncHeaderCompanyName() {
         var start = document.querySelector(".site-header-start");
         if (!start) return;

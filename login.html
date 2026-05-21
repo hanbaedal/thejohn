@@ -182,14 +182,24 @@
                     alert("인증 스크립트(auth.js)를 불러오지 못했습니다.");
                     return;
                 }
-                THEJHON_AUTH.verifyFormCredentialsAsync(id, pw).then(function (ok) {
-                    if (!ok) {
-                        alert("아이디 또는 비밀번호가 올바르지 않습니다.");
-                        return;
-                    }
-                    THEJHON_AUTH.setFormSession(ok.userId, ok.role, ok.token, ok.companyName);
-                    goAfterLogin();
-                });
+                THEJHON_AUTH.verifyFormCredentialsAsync(id, pw)
+                    .then(function (ok) {
+                        if (!ok) {
+                            alert("아이디 또는 비밀번호가 올바르지 않습니다.");
+                            return;
+                        }
+                        THEJHON_AUTH.setFormSession(
+                            ok.userId,
+                            ok.role,
+                            ok.token,
+                            ok.companyName,
+                            ok.displayName
+                        );
+                        goAfterLogin();
+                    })
+                    .catch(function (err) {
+                        alert((err && err.message) || "로그인에 실패했습니다.");
+                    });
             });
 
             if (guestBtn) {
@@ -203,8 +213,17 @@
                             alert("게스트 로그인을 사용할 수 없습니다.");
                             return;
                         }
-                        THEJHON_AUTH.setFormSession(ok.userId, ok.role, ok.token, ok.companyName);
+                        THEJHON_AUTH.setFormSession(
+                            ok.userId,
+                            ok.role,
+                            ok.token,
+                            ok.companyName,
+                            ok.displayName
+                        );
                         goAfterLogin();
+                    })
+                    .catch(function (err) {
+                        alert((err && err.message) || "게스트 로그인에 실패했습니다.");
                     });
                 });
             }

@@ -46,7 +46,7 @@ router.get("/:id", async (req, res) => {
     }
 });
 
-router.post("/", requireRole("admin"), async (req, res) => {
+router.post("/", requireRole("supervisor", "admin"), async (req, res) => {
     try {
         const title = String(req.body.title || "").trim();
         const content = String(req.body.content || "").trim();
@@ -78,7 +78,7 @@ router.post("/", requireRole("admin"), async (req, res) => {
     }
 });
 
-router.put("/:id", requireRole("admin"), async (req, res) => {
+router.put("/:id", requireRole("supervisor", "admin"), async (req, res) => {
     try {
         const id = req.params.id;
         const existing = await getDb().collection("products").findOne({ id });
@@ -116,7 +116,7 @@ router.put("/:id", requireRole("admin"), async (req, res) => {
     }
 });
 
-router.delete("/:id", requireRole("admin"), async (req, res) => {
+router.delete("/:id", requireRole("supervisor", "admin"), async (req, res) => {
     try {
         const result = await getDb().collection("products").deleteOne({ id: req.params.id });
         if (result.deletedCount === 0) {
