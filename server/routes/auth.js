@@ -1,22 +1,8 @@
 const express = require("express");
-const { getDb } = require("../db");
-const { verifyStoredPassword, setPlainPassword } = require("../lib/passwordStore");
 const { signToken } = require("../middleware/auth");
-const {
-    findStaffByLogin,
-    verifyStaffPassword,
-    isStaffRole,
-    isReservedStaffLoginId
-} = require("../lib/staff");
+const { normalizeId, resolveFormLogin, resolveGuestLogin } = require("../lib/loginResolve");
 
 const router = express.Router();
-const GUEST_ID = "guest";
-
-function normalizeId(s) {
-    return String(s || "")
-        .trim()
-        .toLowerCase();
-}
 
 router.post("/login", async (req, res) => {
     try {
@@ -28,68 +14,27 @@ router.post("/login", async (req, res) => {
             return res.status(400).json({ ok: false, error: "아이디와 비밀번호를 입력해 주세요." });
         }
 
-        const staff = await findStaffByLogin(loginId);
-        if (staff && isStaffRole(staff.role)) {
-            const valid = await verifyStaffPassword(staff, password);
-            if (!valid) {
+        if (idn === normalizeId("guest")) {
+            const guest = resolveGuestLogin(password);
+            if (!guest.ok) {
                 return res.status(401).json({ ok: false, error: "아이디 또는 비밀번호가 올바르지 않습니다." });
             }
-            const token = signToken({ role: staff.role, userId: staff.loginId });
-            return res.json({
-                ok: true,
-                role: staff.role,
-                userId: staff.loginId,
-                companyName: staff.role === "supervisor" ? "슈퍼바이저" : "(주)더존",
-                displayName: staff.name || staff.loginId,
-                token
-            });
+            const token = signToken({ role: guest.role, userId: guest.userId });
+            return res.json({ ok: true, role: guest.role, userId: guest.userId, companyName: guest.companyName, token });
         }
 
-        if (isReservedStaffLoginId(loginId)) {
-            const legacyPw = String(process.env.THEJHON_ADMIN_PASSWORD || "").trim();
-            if (legacyPw && password === legacyPw) {
-                const token = signToken({ role: "admin", userId: loginId });
-                return res.json({
-                    ok: true,
-                    role: "admin",
-                    userId: loginId,
-                    companyName: "(주)더존",
-                    token
-                });
-            }
+        const result = await resolveFormLogin(loginId, password);
+        if (!result.ok) {
             return res.status(401).json({ ok: false, error: "아이디 또는 비밀번호가 올바르지 않습니다." });
         }
 
-        if (idn === normalizeId(GUEST_ID)) {
-            const guestPw = String(process.env.THEJHON_GUEST_PASSWORD || "guest").trim();
-            if (password !== guestPw) {
-                return res.status(401).json({ ok: false, error: "아이디 또는 비밀번호가 올바르지 않습니다." });
-            }
-            const token = signToken({ role: "guest", userId: GUEST_ID });
-            return res.json({ ok: true, role: "guest", userId: GUEST_ID, companyName: "", token });
-        }
-
-        const vendors = getDb().collection("vendors");
-        const vendor = await vendors.findOne({ loginIdNorm: idn });
-        if (!vendor) {
-            return res.status(401).json({ ok: false, error: "아이디 또는 비밀번호가 올바르지 않습니다." });
-        }
-
-        const vendorCheck = await verifyStoredPassword(vendor, password);
-        if (vendorCheck.valid && vendorCheck.migratePlain != null) {
-            await setPlainPassword(vendors, { id: vendor.id }, vendorCheck.migratePlain);
-        }
-
-        if (!vendorCheck.valid) {
-            return res.status(401).json({ ok: false, error: "아이디 또는 비밀번호가 올바르지 않습니다." });
-        }
-
-        const token = signToken({ role: "vendor", userId: vendor.loginId });
+        const token = signToken({ role: result.role, userId: result.userId });
         return res.json({
             ok: true,
-            role: "vendor",
-            userId: vendor.loginId,
-            companyName: String(vendor.companyName || "").trim(),
+            role: result.role,
+            userId: result.userId,
+            companyName: result.companyName || "",
+            displayName: result.displayName || result.userId,
             token
         });
     } catch (e) {

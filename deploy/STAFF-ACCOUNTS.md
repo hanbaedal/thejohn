@@ -43,7 +43,17 @@ Content-Type: application/json
 - 등록·수정 API에 넣은 비밀번호 = DB `password` 값
 - 예전 `passwordAscii` / `passwordHash` 는 기동 시 `password` 로 자동 변환
 
-## 로그인
+## 로그인 (서버)
+
+`POST /api/auth/login` 시 **`staff`와 `vendors`를 `Promise.all`로 동시 조회**한 뒤:
+
+1. `staff` 슈퍼바이저/관리자 비밀번호 일치
+2. 없으면 `vendors` 업체 비밀번호 일치
+3. 예약 아이디(`thejhon` 등)는 위가 모두 실패할 때만 레거시 env 확인
+
+(예전처럼 `thejhon`만 조회 후 바로 401 하지 않음)
+
+## 로그인 (화면)
 
 - https://thejohn.co.kr/login.html (또는 onrender URL)
 - 우측 상단 **로그인** 버튼
