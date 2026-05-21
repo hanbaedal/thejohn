@@ -24,9 +24,10 @@ NODE_ENV=production
 ALLOWED_ORIGINS=https://thejohn.onrender.com,https://thejohn.co.kr,https://www.thejohn.co.kr
 ```
 
-## Atlas
+## Atlas (health 에 db:false 일 때)
 
-Network Access → **0.0.0.0/0**
+Network Access → **0.0.0.0/0**  
+MONGODB_URI 따옴표 없이 한 줄 — [MONGODB-FIX.md](MONGODB-FIX.md)
 
 ## Logs에서 성공 메시지
 

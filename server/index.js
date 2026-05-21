@@ -10,7 +10,7 @@ const fs = require("fs");
 const path = require("path");
 const express = require("express");
 const cors = require("cors");
-const { connectDb, isDbReady } = require("./db");
+const { connectDb, isDbReady, getLastDbError } = require("./db");
 
 const authRoutes = require("./routes/auth");
 const staffRoutes = require("./routes/staff");
@@ -62,7 +62,8 @@ app.get("/api/health", (req, res) => {
     res.json({
         ok: true,
         service: "thejhon-homepage",
-        db: isDbReady()
+        db: isDbReady(),
+        dbError: isDbReady() ? "" : getLastDbError()
     });
 });
 
@@ -78,8 +79,19 @@ app.get("/api/env-check", (req, res) => {
             ALLOWED_ORIGINS: !!process.env.ALLOWED_ORIGINS,
             PORT_set: !!process.env.PORT
         },
-        db: isDbReady()
+        db: isDbReady(),
+        dbError: isDbReady() ? "" : getLastDbError()
     });
+});
+
+app.post("/api/admin/reconnect-db", function (req, res) {
+    connectDb()
+        .then(function () {
+            res.json({ ok: true, db: true });
+        })
+        .catch(function (err) {
+            res.status(503).json({ ok: false, db: false, error: err.message });
+        });
 });
 
 app.use("/api/auth", requireDb, authRoutes);
@@ -125,6 +137,8 @@ app.listen(PORT, "0.0.0.0", function () {
         })
         .catch(function (err) {
             console.error("[thejohn] MongoDB 연결 실패:", err.message);
-            console.error("[thejohn] Atlas Network Access에 0.0.0.0/0 허용 여부를 확인하세요.");
+            console.error(
+                "[thejohn] 확인: Atlas Network Access 0.0.0.0/0, MONGODB_URI 비밀번호·따옴표 없음, /api/health 의 dbError"
+            );
         });
 });
