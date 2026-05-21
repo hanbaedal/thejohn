@@ -4,8 +4,8 @@ services:
     name: thejohn
     runtime: node
     plan: starter
-    rootDir: .
-    buildCommand: npm run build
+    rootDir: server
+    buildCommand: npm ci && npm run build
     startCommand: npm start
     healthCheckPath: /api/health
     envVars:

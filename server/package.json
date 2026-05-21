@@ -5,6 +5,8 @@
   "description": "더존 홈페이지 API (상품·업체 MongoDB)",
   "main": "index.js",
   "scripts": {
+    "build": "node scripts/copy-static.js",
+    "prestart": "node scripts/copy-static.js",
     "start": "node index.js",
     "dev": "node --watch index.js"
   },

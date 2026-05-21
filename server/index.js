@@ -6,6 +6,7 @@ console.log("[thejohn] boot", {
     port: process.env.PORT || "(default 3000)"
 });
 
+const fs = require("fs");
 const path = require("path");
 const express = require("express");
 const cors = require("cors");
@@ -17,7 +18,18 @@ const vendorRoutes = require("./routes/vendors");
 
 const app = express();
 const PORT = Number(process.env.PORT) || 3000;
-const staticRoot = path.join(__dirname, "..");
+
+function resolveStaticRoot() {
+    var pub = path.join(__dirname, "public");
+    if (fs.existsSync(path.join(pub, "index.html"))) return pub;
+    var parent = path.join(__dirname, "..");
+    if (fs.existsSync(path.join(parent, "index.html"))) return parent;
+    console.warn("[thejohn] index.html not found — check build (npm run build)");
+    return pub;
+}
+
+const staticRoot = resolveStaticRoot();
+console.log("[thejohn] static root:", staticRoot);
 
 function parseOrigins() {
     const raw = process.env.ALLOWED_ORIGINS || "";
@@ -83,13 +95,15 @@ app.use((req, res, next) => {
     });
 });
 
+function envTrim(key) {
+    return String(process.env[key] || "").trim();
+}
+
 function validateEnv() {
     var missing = [];
-    if (!process.env.MONGODB_URI) missing.push("MONGODB_URI");
-    if (!process.env.JWT_SECRET || String(process.env.JWT_SECRET).length < 16) {
-        missing.push("JWT_SECRET(16자 이상)");
-    }
-    if (!process.env.THEJHON_ADMIN_PASSWORD) missing.push("THEJHON_ADMIN_PASSWORD");
+    if (!envTrim("MONGODB_URI")) missing.push("MONGODB_URI");
+    if (envTrim("JWT_SECRET").length < 16) missing.push("JWT_SECRET(16자 이상)");
+    if (!envTrim("THEJHON_ADMIN_PASSWORD")) missing.push("THEJHON_ADMIN_PASSWORD");
     if (missing.length) {
         console.error("[thejohn] 필수 환경 변수 없음:", missing.join(", "));
         console.error("[thejohn] Render → Environment 에서 설정 후 Manual Deploy 하세요.");

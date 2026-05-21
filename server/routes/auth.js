@@ -29,7 +29,7 @@ router.post("/login", async (req, res) => {
         }
 
         if (isReservedAdminLoginId(idn)) {
-            const adminPw = process.env.THEJHON_ADMIN_PASSWORD || "";
+            const adminPw = String(process.env.THEJHON_ADMIN_PASSWORD || "").trim();
             if (!adminPw || password !== adminPw) {
                 return res.status(401).json({ ok: false, error: "아이디 또는 비밀번호가 올바르지 않습니다." });
             }
