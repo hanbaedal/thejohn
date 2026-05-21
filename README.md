@@ -67,19 +67,9 @@ HTML을 파일로 직접 열면(`file://`) API가 동작하지 않습니다.
 3. `.env` 설정, `pm2 start index.js` 등으로 프로세스 유지
 4. **Nginx** 예시: `thejohn.co.kr` → `proxy_pass http://127.0.0.1:3000`
 5. **DNS**: `thejohn.co.kr` A 레코드를 서버 IP로 연결
-6. **HTTPS**: Let’s Encrypt (`certbot`)
+6. **HTTPS**: Let's Encrypt (`certbot`)
 
 동일 출처에서 HTML과 `/api`를 함께 제공하므로 `thejhon-api.js`의 `baseUrl`은 비워 두면 됩니다.
-
-## GitHub에 푸시
-
-```bash
-git init
-git remote add origin https://github.com/hanbaedal/thejohn.git
-git add .
-git commit -m "Add homepage with MongoDB API for products and vendors"
-git push -u origin main
-```
 
 ## 기존 localStorage 데이터
 
