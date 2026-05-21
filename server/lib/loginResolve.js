@@ -1,5 +1,9 @@
 const { getDb } = require("../db");
-const { verifyStoredPassword, setPlainPassword } = require("./passwordStore");
+const {
+    loginLookupFilter,
+    verifyLoginPassword,
+    setLoginPassword
+} = require("./loginAccount");
 const {
     verifyStaffPassword,
     isStaffRole,
@@ -14,29 +18,22 @@ function normalizeId(s) {
         .toLowerCase();
 }
 
-/** staff · vendors 컬렉션 동시 조회 (슈퍼바이저 로그인 오류 방지) */
+/** staff · vendors 동시 조회 (loginId 기준) */
 async function lookupStaffAndVendor(loginId) {
-    const idn = normalizeId(loginId);
     const db = getDb();
+    const staffFilter = Object.assign({ active: { $ne: false } }, loginLookupFilter(loginId));
     const [staff, vendor] = await Promise.all([
-        db.collection("staff").findOne({ loginIdNorm: idn, active: { $ne: false } }),
-        db.collection("vendors").findOne({ loginIdNorm: idn })
+        db.collection("staff").findOne(staffFilter),
+        db.collection("vendors").findOne(loginLookupFilter(loginId))
     ]);
-    return { staff, vendor, idn };
+    return { staff, vendor };
 }
 
-/**
- * guest 제외 폼 로그인
- * 1) staff·vendors 병렬 조회
- * 2) staff(슈퍼바이저/관리자) 비밀번호 확인
- * 3) vendors 업체 비밀번호 확인
- * 4) 예약 아이디 + 레거시 env (둘 다 실패 시)
- */
 async function resolveFormLogin(loginId, password) {
     const { staff, vendor } = await lookupStaffAndVendor(loginId);
 
     if (staff && isStaffRole(staff.role)) {
-        const valid = await verifyStaffPassword(staff, password);
+        const valid = await verifyStaffPassword(staff, loginId, password);
         if (valid) {
             return {
                 ok: true,
@@ -49,11 +46,15 @@ async function resolveFormLogin(loginId, password) {
     }
 
     if (vendor) {
-        const vendors = getDb().collection("vendors");
-        const vendorCheck = await verifyStoredPassword(vendor, password);
+        const vendorCheck = await verifyLoginPassword(vendor, loginId, password);
         if (vendorCheck.valid) {
-            if (vendorCheck.migratePlain != null) {
-                await setPlainPassword(vendors, { id: vendor.id }, vendorCheck.migratePlain);
+            if (vendorCheck.migratePassword != null) {
+                await setLoginPassword(
+                    getDb().collection("vendors"),
+                    { id: vendor.id },
+                    loginId,
+                    vendorCheck.migratePassword
+                );
             }
             return {
                 ok: true,

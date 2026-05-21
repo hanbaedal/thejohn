@@ -179,12 +179,13 @@ async function connectDbOnce() {
             const database = newClient.db(dbName);
             await safeCreateIndex(database.collection("products"), { id: 1 }, { unique: true });
             await safeCreateIndex(database.collection("vendors"), { id: 1 }, { unique: true });
-            await safeCreateIndex(database.collection("vendors"), { loginIdNorm: 1 }, { unique: true });
+            await safeCreateIndex(database.collection("vendors"), { loginId: 1 }, { unique: true });
 
             const staff = require("./lib/staff");
-            const { migrateAllPasswordsToPlain } = require("./lib/passwordStore");
+            const { migrateCollectionLoginFields } = require("./lib/loginAccount");
             await staff.ensureStaffIndexes(database);
-            await migrateAllPasswordsToPlain(database);
+            await migrateCollectionLoginFields(database, "staff");
+            await migrateCollectionLoginFields(database, "vendors");
             await staff.ensureSupervisorSeed(database);
 
             if (client) {

@@ -1,7 +1,8 @@
 const express = require("express");
 const { getDb } = require("../db");
-const { normalizePasswordInput, decodePasswordFromAscii } = require("../lib/passwordStore");
+const { buildLoginFields, loginLookupFilter, getStoredPassword } = require("../lib/loginAccount");
 const { requireRole } = require("../middleware/auth");
+const { isReservedStaffLoginId } = require("../lib/staff");
 
 const router = express.Router();
 
@@ -9,16 +10,8 @@ function newId() {
     return "vr_" + Date.now().toString(36) + "_" + Math.random().toString(36).slice(2, 10);
 }
 
-function normalizeId(s) {
-    return String(s || "")
-        .trim()
-        .toLowerCase();
-}
-
-const { isReservedStaffLoginId } = require("../lib/staff");
-
-function isReservedAdminLoginId(idn) {
-    return isReservedStaffLoginId(idn);
+function isReservedAdminLoginId(loginId) {
+    return isReservedStaffLoginId(loginId);
 }
 
 function toPublic(doc) {
@@ -39,6 +32,12 @@ function toPublic(doc) {
         note: doc.note || "",
         updatedAt: doc.updatedAt || 0
     };
+}
+
+async function findDuplicateVendor(vendors, loginId, excludeId) {
+    const filter = loginLookupFilter(loginId);
+    if (excludeId) filter.id = { $ne: excludeId };
+    return vendors.findOne(filter);
 }
 
 router.get("/", async (req, res) => {
@@ -71,10 +70,9 @@ router.post("/", requireRole("supervisor", "admin"), async (req, res) => {
         const loginId = String(req.body.loginId || "").trim();
         const password = String(req.body.password || "");
         const companyName = String(req.body.companyName || "").trim();
-        const idn = normalizeId(loginId);
 
         if (!loginId) return res.status(400).json({ ok: false, error: "아이디를 입력해 주세요." });
-        if (isReservedAdminLoginId(idn)) {
+        if (isReservedAdminLoginId(loginId)) {
             return res.status(400).json({ ok: false, error: "사용할 수 없는 아이디입니다." });
         }
         if (!password || password.length < 4) {
@@ -83,14 +81,14 @@ router.post("/", requireRole("supervisor", "admin"), async (req, res) => {
         if (!companyName) return res.status(400).json({ ok: false, error: "업체명을 입력해 주세요." });
 
         const vendors = getDb().collection("vendors");
-        const dup = await vendors.findOne({ loginIdNorm: idn });
+        const dup = await findDuplicateVendor(vendors, loginId);
         if (dup) return res.status(409).json({ ok: false, error: "이미 사용 중인 아이디입니다." });
 
+        const loginFields = buildLoginFields(loginId, password);
         const doc = {
             id: newId(),
-            loginId,
-            loginIdNorm: idn,
-            password: normalizePasswordInput(password),
+            loginId: loginFields.loginId,
+            loginIdNorm: loginFields.loginIdNorm,
             companyName,
             ceo: String(req.body.ceo || "").trim(),
             ceoPhone: String(req.body.ceoPhone || "").trim(),
@@ -122,21 +120,29 @@ router.put("/:id", requireRole("supervisor", "admin"), async (req, res) => {
         const loginId = String(req.body.loginId || "").trim();
         const companyName = String(req.body.companyName || "").trim();
         const password = String(req.body.password || "");
-        const idn = normalizeId(loginId);
 
         if (!loginId) return res.status(400).json({ ok: false, error: "아이디를 입력해 주세요." });
-        if (isReservedAdminLoginId(idn)) {
+        if (isReservedAdminLoginId(loginId)) {
             return res.status(400).json({ ok: false, error: "사용할 수 없는 아이디입니다." });
         }
         if (!companyName) return res.status(400).json({ ok: false, error: "업체명을 입력해 주세요." });
 
-        const dup = await vendors.findOne({ loginIdNorm: idn, id: { $ne: id } });
+        const dup = await findDuplicateVendor(vendors, loginId, id);
         if (dup) return res.status(409).json({ ok: false, error: "이미 사용 중인 아이디입니다." });
 
+        const pwPlain = password || getStoredPassword(existing);
+        if (password && password.length < 4) {
+            return res.status(400).json({ ok: false, error: "비밀번호는 4자 이상으로 입력해 주세요." });
+        }
+        if (!pwPlain || pwPlain.length < 4) {
+            return res.status(400).json({ ok: false, error: "비밀번호는 4자 이상으로 입력해 주세요." });
+        }
+
+        const loginFields = buildLoginFields(loginId, pwPlain);
         const doc = {
             id,
-            loginId,
-            loginIdNorm: idn,
+            loginId: loginFields.loginId,
+            loginIdNorm: loginFields.loginIdNorm,
             companyName,
             ceo: String(req.body.ceo || "").trim(),
             ceoPhone: String(req.body.ceoPhone || "").trim(),
@@ -151,18 +157,8 @@ router.put("/:id", requireRole("supervisor", "admin"), async (req, res) => {
                     ? String(req.body.logo)
                     : existing.logo || "",
             note: String(req.body.note || "").trim(),
-            updatedAt: Date.now(),
-            password: existing.password ? String(existing.password) : ""
+            updatedAt: Date.now()
         };
-
-        if (password) {
-            if (password.length < 4) {
-                return res.status(400).json({ ok: false, error: "비밀번호는 4자 이상으로 입력해 주세요." });
-            }
-            doc.password = normalizePasswordInput(password);
-        } else if (!doc.password && existing.passwordAscii) {
-            doc.password = decodePasswordFromAscii(existing.passwordAscii);
-        }
 
         await vendors.replaceOne({ id }, doc);
         res.json({ ok: true, item: toPublic(doc) });

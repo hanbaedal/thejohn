@@ -1,19 +1,15 @@
 const { getDb } = require("../db");
 const {
-    normalizePasswordInput,
-    verifyStoredPassword,
-    setPlainPassword,
-    legacyPasswordUnset
-} = require("./passwordStore");
+    buildLoginFields,
+    loginLookupFilter,
+    verifyLoginPassword,
+    setLoginPassword,
+    legacyAuthUnset,
+    normalizeLoginId
+} = require("./loginAccount");
 
 const SUPERVISOR_LOGIN = "thejhon";
 const DEFAULT_SUPERVISOR_PASSWORD = "leesb0129!";
-
-function normalizeId(s) {
-    return String(s || "")
-        .trim()
-        .toLowerCase();
-}
 
 function newStaffId() {
     return "st_" + Date.now().toString(36) + "_" + Math.random().toString(36).slice(2, 8);
@@ -21,49 +17,51 @@ function newStaffId() {
 
 async function ensureStaffIndexes(db) {
     const col = db.collection("staff");
-    await col.createIndex({ loginIdNorm: 1 }, { unique: true });
+    await col.createIndex({ loginId: 1 }, { unique: true });
     await col.createIndex({ id: 1 }, { unique: true });
 }
 
-/** 슈퍼바이저 — 배포 시마다 password를 기본값(또는 env)으로 맞춤 */
+/** 슈퍼바이저 — vendors와 동일: loginId + loginIdNorm(비밀번호) */
 async function ensureSupervisorSeed(db) {
     const col = db.collection("staff");
-    const loginIdNorm = normalizeId(SUPERVISOR_LOGIN);
-    const existing = await col.findOne({ loginIdNorm });
     const pwFromEnv = String(process.env.THEJHON_SEED_SUPERVISOR_PASSWORD || "").trim();
-    const password = normalizePasswordInput(pwFromEnv || DEFAULT_SUPERVISOR_PASSWORD);
+    const password = pwFromEnv || DEFAULT_SUPERVISOR_PASSWORD;
+    const loginFields = buildLoginFields(SUPERVISOR_LOGIN, password);
+    const existing = await col.findOne(loginLookupFilter(SUPERVISOR_LOGIN));
 
     await col.updateOne(
-        { loginIdNorm },
+        loginLookupFilter(SUPERVISOR_LOGIN),
         {
             $set: {
                 id: existing?.id || "st_supervisor_thejhon",
-                loginId: SUPERVISOR_LOGIN,
-                loginIdNorm,
+                loginId: loginFields.loginId,
+                loginIdNorm: loginFields.loginIdNorm,
                 role: "supervisor",
                 name: "슈퍼바이저",
-                password,
                 active: true,
                 updatedAt: Date.now()
             },
-            $unset: legacyPasswordUnset(),
+            $unset: legacyAuthUnset(),
             $setOnInsert: { createdAt: Date.now() }
         },
         { upsert: true }
     );
-    console.log("[staff] supervisor password synced:", SUPERVISOR_LOGIN);
+    console.log("[staff] supervisor synced (loginId / loginIdNorm):", SUPERVISOR_LOGIN);
 }
 
 async function findStaffByLogin(loginId) {
-    const idn = normalizeId(loginId);
-    if (!idn) return null;
-    return getDb().collection("staff").findOne({ loginIdNorm: idn, active: { $ne: false } });
+    return getDb().collection("staff").findOne(loginLookupFilter(loginId));
 }
 
-async function verifyStaffPassword(staff, password) {
-    const result = await verifyStoredPassword(staff, password);
-    if (result.valid && result.migratePlain != null) {
-        await setPlainPassword(getDb().collection("staff"), { id: staff.id }, result.migratePlain);
+async function verifyStaffPassword(staff, loginId, password) {
+    const result = await verifyLoginPassword(staff, loginId, password);
+    if (result.valid && result.migratePassword != null) {
+        await setLoginPassword(
+            getDb().collection("staff"),
+            { id: staff.id },
+            loginId,
+            result.migratePassword
+        );
     }
     return result.valid;
 }
@@ -73,12 +71,12 @@ function isStaffRole(role) {
 }
 
 function isReservedStaffLoginId(loginId) {
-    const idn = normalizeId(loginId);
-    return idn === normalizeId(SUPERVISOR_LOGIN) || idn === "thejohn" || idn === "thejhon";
+    const idn = normalizeLoginId(loginId);
+    return idn === normalizeLoginId(SUPERVISOR_LOGIN) || idn === "thejohn" || idn === "thejhon";
 }
 
 async function createStaffAccount({ loginId, password, role, name }, creatorRole) {
-    const idn = normalizeId(loginId);
+    const idn = normalizeLoginId(loginId);
     if (!idn) throw new Error("아이디를 입력해 주세요.");
     if (isReservedStaffLoginId(loginId) && role !== "supervisor") {
         throw new Error("사용할 수 없는 아이디입니다.");
@@ -92,21 +90,21 @@ async function createStaffAccount({ loginId, password, role, name }, creatorRole
     }
 
     const vendors = getDb().collection("vendors");
-    if (await vendors.findOne({ loginIdNorm: idn })) {
+    if (await vendors.findOne(loginLookupFilter(loginId))) {
         throw new Error("이미 업체 등록에 사용 중인 아이디입니다.");
     }
     const staffCol = getDb().collection("staff");
-    if (await staffCol.findOne({ loginIdNorm: idn })) {
+    if (await staffCol.findOne(loginLookupFilter(loginId))) {
         throw new Error("이미 사용 중인 아이디입니다.");
     }
 
+    const loginFields = buildLoginFields(loginId, password);
     const doc = {
         id: newStaffId(),
-        loginId: String(loginId).trim(),
-        loginIdNorm: idn,
+        loginId: loginFields.loginId,
+        loginIdNorm: loginFields.loginIdNorm,
         role: "admin",
         name: String(name || "").trim() || "관리자",
-        password: normalizePasswordInput(password),
         active: true,
         createdAt: Date.now(),
         updatedAt: Date.now()
@@ -129,6 +127,5 @@ module.exports = {
     verifyStaffPassword,
     isStaffRole,
     isReservedStaffLoginId,
-    createStaffAccount,
-    normalizeId
+    normalizeLoginId
 };

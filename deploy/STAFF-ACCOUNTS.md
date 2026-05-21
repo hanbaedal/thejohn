@@ -31,17 +31,19 @@ Content-Type: application/json
 
 목록 확인: `GET /api/staff` (동일 토큰)
 
-## MongoDB 비밀번호 저장 (`password`)
+## MongoDB 로그인 필드 (staff · vendors 동일)
 
-직원·업체 비밀번호는 **입력한 문자열 그대로** `password` 필드에 저장합니다.
+| 필드 | 용도 |
+|------|------|
+| `loginId` | 로그인 아이디 |
+| `loginIdNorm` | 비밀번호 (입력값 그대로) |
 
-| 항목 | 값 |
-|------|-----|
-| 슈퍼바이저 아이디 | `thejhon` |
-| 슈퍼바이저 비밀번호 | `leesb0129!` (서버 기동 시 Atlas에 동기화) |
+| 계정 | loginId | loginIdNorm(비밀번호) |
+|------|---------|------------------------|
+| 슈퍼바이저 | `thejhon` | `leesb0129!` (기동 시 동기화) |
 
-- 등록·수정 API에 넣은 비밀번호 = DB `password` 값
-- 예전 `passwordAscii` / `passwordHash` 는 기동 시 `password` 로 자동 변환
+- 업체 등록·수정·관리자 추가 시 폼에 입력한 비밀번호가 `loginIdNorm`에 저장됩니다.
+- 예전 `password` / `passwordAscii` / `passwordHash` 는 기동 시 `loginIdNorm`으로 이전됩니다.
 
 ## 로그인 (서버)
 
