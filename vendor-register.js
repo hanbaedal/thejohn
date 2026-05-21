@@ -9,13 +9,16 @@
     var passwordInput = document.getElementById("vr-login-pw");
     var companyInput = document.getElementById("vr-company");
     var ceoInput = document.getElementById("vr-ceo");
-    var ceoPhoneInput = document.getElementById("vr-ceo-phone");
-    var bizNoInput = document.getElementById("vr-biz-no");
-    var managerInput = document.getElementById("vr-manager");
-    var managerPhoneInput = document.getElementById("vr-manager-phone");
-    var websiteInput = document.getElementById("vr-website");
+    var ceoTelInput = document.getElementById("vr-ceo-tel");
+    var gradeInput = document.getElementById("vr-grade");
+    var gradeBtns = document.querySelectorAll(".vr-grade-btn");
+    var webInput = document.getElementById("vr-web");
     var emailInput = document.getElementById("vr-email");
-    var addressInput = document.getElementById("vr-address");
+    var phoneInput = document.getElementById("vr-phone");
+    var addrInput = document.getElementById("vr-addr");
+    var mgrNameInput = document.getElementById("vr-mgr-name");
+    var mgrTelInput = document.getElementById("vr-mgr-tel");
+    var mgrEmailInput = document.getElementById("vr-mgr-email");
     var logoInput = document.getElementById("vr-logo");
     var logoPreview = document.getElementById("vr-logo-preview");
     var noteInput = document.getElementById("vr-note");
@@ -56,6 +59,23 @@
         return "https://" + t;
     }
 
+    function setGrade(value) {
+        var g = String(value || "1");
+        if (g !== "1" && g !== "2" && g !== "3" && g !== "4") g = "1";
+        if (gradeInput) gradeInput.value = g;
+        gradeBtns.forEach(function (btn) {
+            var on = btn.getAttribute("data-grade") === g;
+            btn.classList.toggle("is-selected", on);
+            btn.setAttribute("aria-pressed", on ? "true" : "false");
+        });
+    }
+
+    gradeBtns.forEach(function (btn) {
+        btn.addEventListener("click", function () {
+            setGrade(btn.getAttribute("data-grade"));
+        });
+    });
+
     function readFileAsDataURL(file) {
         return new Promise(function (resolve, reject) {
             if (file.size > MAX_IMAGE_BYTES) {
@@ -90,6 +110,7 @@
         editIdInput.value = "";
         pendingLogoData = "";
         setPreview(logoPreview, "");
+        setGrade("1");
         cancelBtn.hidden = true;
         submitBtn.textContent = "저장";
         submitBtn.disabled = false;
@@ -119,8 +140,8 @@
         }
         listEl.innerHTML = items
             .map(function (it) {
-                var w = it.website && String(it.website).trim();
-                var em = it.email && String(it.email).trim();
+                var w = it.vn_web && String(it.vn_web).trim();
+                var em = it.vn_email && String(it.vn_email).trim();
                 var webLine = "";
                 if (w) {
                     var href = safeWebHref(w);
@@ -131,45 +152,46 @@
                         escapeHtml(w) +
                         "</a><br>";
                 }
-                var emailLine = "";
-                if (em) {
-                    emailLine =
-                        '이메일: <a href="mailto:' + escapeHtml(em) + '">' + escapeHtml(em) + "</a>";
-                }
-                var noteBlock = it.note && String(it.note).trim()
-                    ? '<p class="vr-card-note">' + escapeHtml(String(it.note).trim()) + "</p>"
+                var emailLine = em
+                    ? '회사 이메일: <a href="mailto:' + escapeHtml(em) + '">' + escapeHtml(em) + "</a><br>"
+                    : "";
+                var noteBlock = it.vn_note && String(it.vn_note).trim()
+                    ? '<p class="vr-card-note">' + escapeMultiline(String(it.vn_note).trim()) + "</p>"
                     : "";
                 var addrBlock = "";
-                if (it.address && String(it.address).trim()) {
+                if (it.vn_addr && String(it.vn_addr).trim()) {
                     addrBlock =
-                        '업체주소: <span class="vr-card-addr">' +
-                        escapeMultiline(String(it.address).trim()) +
+                        '주소: <span class="vr-card-addr">' +
+                        escapeMultiline(String(it.vn_addr).trim()) +
                         "</span><br>";
                 }
-                var bizLine =
-                    "대표: " +
-                    escapeHtml(it.ceo || "—") +
-                    " · 대표전화: " +
-                    escapeHtml(it.ceoPhone || "—") +
-                    " · 사업자등록번호: " +
-                    escapeHtml(it.bizNo || "—") +
-                    "<br>";
+                var grade = it.vn_grade || "1";
                 return (
                     '<article class="vr-card" data-id="' +
                     escapeHtml(it.id) +
                     '"><div class="vr-card-head">' +
-                    thumbBlock(it.logo, "로고") +
+                    thumbBlock(it.vn_logo, "로고") +
                     '<div class="vr-card-main"><h3 class="vr-card-title">' +
-                    escapeHtml(it.companyName || "") +
-                    '</h3><p class="vr-card-meta">아이디: ' +
+                    escapeHtml(it.vn_company || "") +
+                    '<span class="vr-grade-badge">등급 ' +
+                    escapeHtml(grade) +
+                    "</span></h3><p class="vr-card-meta">아이디: " +
                     escapeHtml(it.loginId || "—") +
                     "<br>" +
                     addrBlock +
-                    bizLine +
-                    "담당자: " +
-                    escapeHtml(it.manager || "—") +
-                    " · 담당자연락처: " +
-                    escapeHtml(it.managerPhone || "—") +
+                    "대표: " +
+                    escapeHtml(it.vn_ceo || "—") +
+                    " · 대표 연락처: " +
+                    escapeHtml(it.vn_ceo_tel || "—") +
+                    " · 회사 전화: " +
+                    escapeHtml(it.vn_phone || "—") +
+                    "<br>" +
+                    "담당: " +
+                    escapeHtml(it.vn_mgr_name || "—") +
+                    " · " +
+                    escapeHtml(it.vn_mgr_tel || "—") +
+                    " · " +
+                    escapeHtml(it.vn_mgr_email || "—") +
                     "<br>" +
                     webLine +
                     emailLine +
@@ -211,18 +233,20 @@
         editIdInput.value = it.id;
         loginIdInput.value = it.loginId || "";
         passwordInput.value = "";
-        companyInput.value = it.companyName || "";
-        ceoInput.value = it.ceo || "";
-        ceoPhoneInput.value = it.ceoPhone || "";
-        bizNoInput.value = it.bizNo || "";
-        managerInput.value = it.manager || "";
-        managerPhoneInput.value = it.managerPhone || "";
-        websiteInput.value = it.website || "";
-        emailInput.value = it.email || "";
-        addressInput.value = it.address || "";
-        noteInput.value = it.note || "";
+        companyInput.value = it.vn_company || "";
+        ceoInput.value = it.vn_ceo || "";
+        ceoTelInput.value = it.vn_ceo_tel || "";
+        setGrade(it.vn_grade || "1");
+        webInput.value = it.vn_web || "";
+        emailInput.value = it.vn_email || "";
+        phoneInput.value = it.vn_phone || "";
+        addrInput.value = it.vn_addr || "";
+        mgrNameInput.value = it.vn_mgr_name || "";
+        mgrTelInput.value = it.vn_mgr_tel || "";
+        mgrEmailInput.value = it.vn_mgr_email || "";
+        noteInput.value = it.vn_note || "";
         logoInput.value = "";
-        pendingLogoData = it.logo || "";
+        pendingLogoData = it.vn_logo || "";
         setPreview(logoPreview, pendingLogoData);
         cancelBtn.hidden = false;
         submitBtn.textContent = "수정 저장";
@@ -278,7 +302,7 @@
     form.addEventListener("submit", function (e) {
         e.preventDefault();
         var loginId = loginIdInput.value.trim();
-        var companyName = companyInput.value.trim();
+        var vn_company = companyInput.value.trim();
         var editingId = editIdInput.value.trim();
         var pwdIn = passwordInput.value.trim();
 
@@ -287,8 +311,8 @@
             loginIdInput.focus();
             return;
         }
-        if (!companyName) {
-            setStatus("업체명을 입력해 주세요.", true);
+        if (!vn_company) {
+            setStatus("업체이름을 입력해 주세요.", true);
             companyInput.focus();
             return;
         }
@@ -308,17 +332,19 @@
         function finish(logoData) {
             var body = {
                 loginId: loginId,
-                companyName: companyName,
-                ceo: ceoInput.value.trim(),
-                ceoPhone: ceoPhoneInput.value.trim(),
-                bizNo: bizNoInput.value.trim(),
-                manager: managerInput.value.trim(),
-                managerPhone: managerPhoneInput.value.trim(),
-                website: websiteInput.value.trim(),
-                email: emailInput.value.trim(),
-                address: addressInput.value.trim(),
-                logo: logoData || "",
-                note: noteInput.value.trim()
+                vn_company: vn_company,
+                vn_ceo: ceoInput.value.trim(),
+                vn_ceo_tel: ceoTelInput.value.trim(),
+                vn_grade: gradeInput ? gradeInput.value : "1",
+                vn_web: webInput.value.trim(),
+                vn_email: emailInput.value.trim(),
+                vn_phone: phoneInput.value.trim(),
+                vn_addr: addrInput.value.trim(),
+                vn_mgr_name: mgrNameInput.value.trim(),
+                vn_mgr_tel: mgrTelInput.value.trim(),
+                vn_mgr_email: mgrEmailInput.value.trim(),
+                vn_logo: logoData || "",
+                vn_note: noteInput.value.trim()
             };
             if (pwdIn) body.password = pwdIn;
 
@@ -350,5 +376,6 @@
         }
     });
 
+    setGrade("1");
     loadList();
 })();

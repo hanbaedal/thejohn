@@ -40,8 +40,8 @@
             '<ul class="sp-partners-grid">' +
             list
                 .map(function (it) {
-                    var name = String(it.companyName || "").trim() || "이름 미등록";
-                    var w = String(it.website || "").trim();
+                    var name = String(it.vn_company || "").trim() || "이름 미등록";
+                    var w = String(it.vn_web || "").trim();
                     var webBlock;
                     if (w) {
                         var href = safeWebHref(w);
@@ -55,7 +55,7 @@
                         webBlock =
                             '<p class="sp-partner-web sp-partner-web--muted"><span class="sp-partner-label">홈페이지</span> 미등록</p>';
                     }
-                    var logo = it.logo && String(it.logo).trim();
+                    var logo = it.vn_logo && String(it.vn_logo).trim();
                     var logoBlock = logo
                         ? '<div class="sp-partner-logo-wrap"><img class="sp-partner-logo" src=' +
                           JSON.stringify(logo) +
@@ -63,9 +63,12 @@
                           escapeHtml(name + " 로고") +
                           '" loading="lazy" width="200" height="120"></div>'
                         : '<div class="sp-partner-logo-wrap sp-partner-logo-wrap--empty" role="img" aria-label="로고 없음">로고 없음</div>';
-                    var noteRaw = String(it.note || "").trim();
+                    var noteRaw = String(it.vn_note || "").trim();
+                    var grade = it.vn_grade || "1";
                     var noteBlock = noteRaw
-                        ? '<div class="sp-partner-note"><span class="sp-partner-label">추가설명</span><p class="sp-partner-note-body">' +
+                        ? '<div class="sp-partner-note"><span class="sp-partner-label">회사 상황 · 등급 ' +
+                          escapeHtml(grade) +
+                          '</span><p class="sp-partner-note-body">' +
                           escapeMultiline(noteRaw) +
                           "</p></div>"
                         : '<div class="sp-partner-note sp-partner-note--empty"><span class="sp-partner-label">추가설명</span> 없음</div>';

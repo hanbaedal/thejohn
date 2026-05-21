@@ -187,7 +187,8 @@ async function connectDbOnce() {
             const { migrateCollectionLoginFields } = require("./lib/loginAccount");
             await staff.ensureStaffIndexes(database);
             await migrateCollectionLoginFields(database, "staff");
-            await migrateCollectionLoginFields(database, "vendors");
+            const { migrateVendorsCollection } = require("./lib/vendorFields");
+            await migrateVendorsCollection(database);
             await staff.ensureSupervisorSeed(database);
 
             if (client) {

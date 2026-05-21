@@ -1,8 +1,14 @@
 const express = require("express");
 const { getDb } = require("../db");
-const { buildLoginFields, loginLookupFilter, getStoredPassword } = require("../lib/loginAccount");
+const { loginLookupFilter } = require("../lib/loginAccount");
 const { requireRole } = require("../middleware/auth");
 const { isReservedStaffLoginId } = require("../lib/staff");
+const {
+    toPublic,
+    buildFromBody,
+    toDbDoc,
+    validateBuilt
+} = require("../lib/vendorFields");
 
 const router = express.Router();
 
@@ -12,26 +18,6 @@ function newId() {
 
 function isReservedAdminLoginId(loginId) {
     return isReservedStaffLoginId(loginId);
-}
-
-function toPublic(doc) {
-    if (!doc) return null;
-    return {
-        id: doc.id,
-        loginId: doc.loginId || "",
-        companyName: doc.companyName || "",
-        ceo: doc.ceo || "",
-        ceoPhone: doc.ceoPhone || "",
-        bizNo: doc.bizNo || "",
-        manager: doc.manager || "",
-        managerPhone: doc.managerPhone || "",
-        website: doc.website || "",
-        email: doc.email || "",
-        address: doc.address || "",
-        logo: doc.logo || "",
-        note: doc.note || "",
-        updatedAt: doc.updatedAt || 0
-    };
 }
 
 async function findDuplicateVendor(vendors, loginId, excludeId) {
@@ -69,39 +55,20 @@ router.post("/", requireRole("supervisor", "admin"), async (req, res) => {
     try {
         const loginId = String(req.body.loginId || "").trim();
         const password = String(req.body.password || "");
-        const companyName = String(req.body.companyName || "").trim();
 
-        if (!loginId) return res.status(400).json({ ok: false, error: "아이디를 입력해 주세요." });
         if (isReservedAdminLoginId(loginId)) {
             return res.status(400).json({ ok: false, error: "사용할 수 없는 아이디입니다." });
         }
-        if (!password || password.length < 4) {
-            return res.status(400).json({ ok: false, error: "비밀번호는 4자 이상으로 입력해 주세요." });
-        }
-        if (!companyName) return res.status(400).json({ ok: false, error: "업체명을 입력해 주세요." });
+
+        const built = buildFromBody(req.body, null, loginId, password);
+        const err = validateBuilt(built, true);
+        if (err) return res.status(400).json({ ok: false, error: err });
 
         const vendors = getDb().collection("vendors");
         const dup = await findDuplicateVendor(vendors, loginId);
         if (dup) return res.status(409).json({ ok: false, error: "이미 사용 중인 아이디입니다." });
 
-        const loginFields = buildLoginFields(loginId, password);
-        const doc = {
-            id: newId(),
-            loginId: loginFields.loginId,
-            loginIdNorm: loginFields.loginIdNorm,
-            companyName,
-            ceo: String(req.body.ceo || "").trim(),
-            ceoPhone: String(req.body.ceoPhone || "").trim(),
-            bizNo: String(req.body.bizNo || "").trim(),
-            manager: String(req.body.manager || "").trim(),
-            managerPhone: String(req.body.managerPhone || "").trim(),
-            website: String(req.body.website || "").trim(),
-            email: String(req.body.email || "").trim(),
-            address: String(req.body.address || "").trim(),
-            logo: String(req.body.logo || ""),
-            note: String(req.body.note || "").trim(),
-            updatedAt: Date.now()
-        };
+        const doc = toDbDoc(newId(), built, null);
         await vendors.insertOne(doc);
         res.status(201).json({ ok: true, item: toPublic(doc) });
     } catch (e) {
@@ -118,48 +85,20 @@ router.put("/:id", requireRole("supervisor", "admin"), async (req, res) => {
         if (!existing) return res.status(404).json({ ok: false, error: "업체를 찾을 수 없습니다." });
 
         const loginId = String(req.body.loginId || "").trim();
-        const companyName = String(req.body.companyName || "").trim();
         const password = String(req.body.password || "");
 
-        if (!loginId) return res.status(400).json({ ok: false, error: "아이디를 입력해 주세요." });
         if (isReservedAdminLoginId(loginId)) {
             return res.status(400).json({ ok: false, error: "사용할 수 없는 아이디입니다." });
         }
-        if (!companyName) return res.status(400).json({ ok: false, error: "업체명을 입력해 주세요." });
+
+        const built = buildFromBody(req.body, existing, loginId, password);
+        const err = validateBuilt(built, false);
+        if (err) return res.status(400).json({ ok: false, error: err });
 
         const dup = await findDuplicateVendor(vendors, loginId, id);
         if (dup) return res.status(409).json({ ok: false, error: "이미 사용 중인 아이디입니다." });
 
-        const pwPlain = password || getStoredPassword(existing);
-        if (password && password.length < 4) {
-            return res.status(400).json({ ok: false, error: "비밀번호는 4자 이상으로 입력해 주세요." });
-        }
-        if (!pwPlain || pwPlain.length < 4) {
-            return res.status(400).json({ ok: false, error: "비밀번호는 4자 이상으로 입력해 주세요." });
-        }
-
-        const loginFields = buildLoginFields(loginId, pwPlain);
-        const doc = {
-            id,
-            loginId: loginFields.loginId,
-            loginIdNorm: loginFields.loginIdNorm,
-            companyName,
-            ceo: String(req.body.ceo || "").trim(),
-            ceoPhone: String(req.body.ceoPhone || "").trim(),
-            bizNo: String(req.body.bizNo || "").trim(),
-            manager: String(req.body.manager || "").trim(),
-            managerPhone: String(req.body.managerPhone || "").trim(),
-            website: String(req.body.website || "").trim(),
-            email: String(req.body.email || "").trim(),
-            address: String(req.body.address || "").trim(),
-            logo:
-                req.body.logo !== undefined && req.body.logo !== null
-                    ? String(req.body.logo)
-                    : existing.logo || "",
-            note: String(req.body.note || "").trim(),
-            updatedAt: Date.now()
-        };
-
+        const doc = toDbDoc(id, built, existing);
         await vendors.replaceOne({ id }, doc);
         res.json({ ok: true, item: toPublic(doc) });
     } catch (e) {

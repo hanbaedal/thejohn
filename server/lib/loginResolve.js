@@ -9,6 +9,7 @@ const {
     isStaffRole,
     isReservedStaffLoginId
 } = require("./staff");
+const { getCompanyName } = require("./vendorFields");
 
 const GUEST_ID = "guest";
 
@@ -60,8 +61,8 @@ async function resolveFormLogin(loginId, password) {
                 ok: true,
                 role: "vendor",
                 userId: vendor.loginId,
-                companyName: String(vendor.companyName || "").trim(),
-                displayName: String(vendor.companyName || vendor.loginId || "").trim()
+                companyName: getCompanyName(vendor),
+                displayName: getCompanyName(vendor) || vendor.loginId || ""
             };
         }
     }
