@@ -1,6 +1,6 @@
 const express = require("express");
 const { getDb } = require("../db");
-const { encodePasswordToAscii } = require("../lib/passwordAscii");
+const { normalizePasswordInput, decodePasswordFromAscii } = require("../lib/passwordStore");
 const { requireRole } = require("../middleware/auth");
 
 const router = express.Router();
@@ -90,7 +90,7 @@ router.post("/", requireRole("supervisor", "admin"), async (req, res) => {
             id: newId(),
             loginId,
             loginIdNorm: idn,
-            passwordAscii: encodePasswordToAscii(password),
+            password: normalizePasswordInput(password),
             companyName,
             ceo: String(req.body.ceo || "").trim(),
             ceoPhone: String(req.body.ceoPhone || "").trim(),
@@ -152,16 +152,16 @@ router.put("/:id", requireRole("supervisor", "admin"), async (req, res) => {
                     : existing.logo || "",
             note: String(req.body.note || "").trim(),
             updatedAt: Date.now(),
-            passwordAscii: existing.passwordAscii || ""
+            password: existing.password ? String(existing.password) : ""
         };
 
         if (password) {
             if (password.length < 4) {
                 return res.status(400).json({ ok: false, error: "비밀번호는 4자 이상으로 입력해 주세요." });
             }
-            doc.passwordAscii = encodePasswordToAscii(password);
-        } else if (!doc.passwordAscii && existing.password) {
-            doc.passwordAscii = encodePasswordToAscii(String(existing.password));
+            doc.password = normalizePasswordInput(password);
+        } else if (!doc.password && existing.passwordAscii) {
+            doc.password = decodePasswordFromAscii(existing.passwordAscii);
         }
 
         await vendors.replaceOne({ id }, doc);

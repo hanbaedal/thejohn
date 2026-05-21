@@ -31,17 +31,17 @@ Content-Type: application/json
 
 목록 확인: `GET /api/staff` (동일 토큰)
 
-## MongoDB 비밀번호 저장 (`passwordAscii`)
+## MongoDB 비밀번호 저장 (`password`)
 
-직원·업체 비밀번호는 **bcrypt 해시 대신** `passwordAscii` 필드에 저장합니다.
+직원·업체 비밀번호는 **입력한 문자열 그대로** `password` 필드에 저장합니다.
 
-| 예시 비밀번호 | Atlas에 보이는 값 (일부) |
-|---------------|-------------------------|
-| `leesb0129!` | `108,101,101,115,98,48,49,50,57,33` |
+| 항목 | 값 |
+|------|-----|
+| 슈퍼바이저 아이디 | `thejhon` |
+| 슈퍼바이저 비밀번호 | `leesb0129!` (서버 기동 시 Atlas에 동기화) |
 
-- 각 문자의 **ASCII(유니코드) 코드**를 쉼표로 연결
-- Atlas에서 숫자만 보면 원문 복원 가능 (관리·확인용)
-- 예전 `passwordHash` 문서는 **로그인 1회** 시 자동으로 `passwordAscii`로 변환
+- 등록·수정 API에 넣은 비밀번호 = DB `password` 값
+- 예전 `passwordAscii` / `passwordHash` 는 기동 시 `password` 로 자동 변환
 
 ## 로그인
 

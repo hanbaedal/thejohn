@@ -1,7 +1,13 @@
 const { getDb } = require("../db");
-const { encodePasswordToAscii, verifyStoredPassword, legacyUnset } = require("./passwordAscii");
+const {
+    normalizePasswordInput,
+    verifyStoredPassword,
+    setPlainPassword,
+    legacyPasswordUnset
+} = require("./passwordStore");
 
 const SUPERVISOR_LOGIN = "thejhon";
+const DEFAULT_SUPERVISOR_PASSWORD = "leesb0129!";
 
 function normalizeId(s) {
     return String(s || "")
@@ -19,16 +25,13 @@ async function ensureStaffIndexes(db) {
     await col.createIndex({ id: 1 }, { unique: true });
 }
 
-/** 슈퍼바이저 thejhon — 최초 1회 생성 또는 SEED 환경 변수로 비밀번호 갱신 */
+/** 슈퍼바이저 — 배포 시마다 password를 기본값(또는 env)으로 맞춤 */
 async function ensureSupervisorSeed(db) {
     const col = db.collection("staff");
     const loginIdNorm = normalizeId(SUPERVISOR_LOGIN);
     const existing = await col.findOne({ loginIdNorm });
     const pwFromEnv = String(process.env.THEJHON_SEED_SUPERVISOR_PASSWORD || "").trim();
-    const initialPw = pwFromEnv || "leesb0129!";
-    const shouldSetPassword = pwFromEnv || !existing;
-
-    if (!shouldSetPassword) return;
+    const password = normalizePasswordInput(pwFromEnv || DEFAULT_SUPERVISOR_PASSWORD);
 
     await col.updateOne(
         { loginIdNorm },
@@ -39,16 +42,16 @@ async function ensureSupervisorSeed(db) {
                 loginIdNorm,
                 role: "supervisor",
                 name: "슈퍼바이저",
-                passwordAscii: encodePasswordToAscii(initialPw),
+                password,
                 active: true,
                 updatedAt: Date.now()
             },
-            $unset: legacyUnset(),
+            $unset: legacyPasswordUnset(),
             $setOnInsert: { createdAt: Date.now() }
         },
         { upsert: true }
     );
-    console.log("[staff] supervisor", SUPERVISOR_LOGIN, pwFromEnv ? "(password from env)" : "(initial seed)");
+    console.log("[staff] supervisor password synced:", SUPERVISOR_LOGIN);
 }
 
 async function findStaffByLogin(loginId) {
@@ -59,16 +62,8 @@ async function findStaffByLogin(loginId) {
 
 async function verifyStaffPassword(staff, password) {
     const result = await verifyStoredPassword(staff, password);
-    if (result.valid && result.migrateAscii) {
-        await getDb()
-            .collection("staff")
-            .updateOne(
-                { id: staff.id },
-                {
-                    $set: { passwordAscii: result.migrateAscii, updatedAt: Date.now() },
-                    $unset: legacyUnset()
-                }
-            );
+    if (result.valid && result.migratePlain != null) {
+        await setPlainPassword(getDb().collection("staff"), { id: staff.id }, result.migratePlain);
     }
     return result.valid;
 }
@@ -111,7 +106,7 @@ async function createStaffAccount({ loginId, password, role, name }, creatorRole
         loginIdNorm: idn,
         role: "admin",
         name: String(name || "").trim() || "관리자",
-        passwordAscii: encodePasswordToAscii(String(password)),
+        password: normalizePasswordInput(password),
         active: true,
         createdAt: Date.now(),
         updatedAt: Date.now()
@@ -127,6 +122,7 @@ async function createStaffAccount({ loginId, password, role, name }, creatorRole
 
 module.exports = {
     SUPERVISOR_LOGIN,
+    DEFAULT_SUPERVISOR_PASSWORD,
     ensureStaffIndexes,
     ensureSupervisorSeed,
     findStaffByLogin,

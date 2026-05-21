@@ -182,7 +182,9 @@ async function connectDbOnce() {
             await safeCreateIndex(database.collection("vendors"), { loginIdNorm: 1 }, { unique: true });
 
             const staff = require("./lib/staff");
+            const { migrateAllPasswordsToPlain } = require("./lib/passwordStore");
             await staff.ensureStaffIndexes(database);
+            await migrateAllPasswordsToPlain(database);
             await staff.ensureSupervisorSeed(database);
 
             if (client) {

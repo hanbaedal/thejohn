@@ -1,6 +1,6 @@
 const express = require("express");
 const { getDb } = require("../db");
-const { verifyStoredPassword, migrateDocPasswordToAscii } = require("../lib/passwordAscii");
+const { verifyStoredPassword, setPlainPassword } = require("../lib/passwordStore");
 const { signToken } = require("../middleware/auth");
 const {
     findStaffByLogin,
@@ -76,8 +76,8 @@ router.post("/login", async (req, res) => {
         }
 
         const vendorCheck = await verifyStoredPassword(vendor, password);
-        if (vendorCheck.valid && vendorCheck.migrateAscii) {
-            await migrateDocPasswordToAscii(vendors, { id: vendor.id }, password);
+        if (vendorCheck.valid && vendorCheck.migratePlain != null) {
+            await setPlainPassword(vendors, { id: vendor.id }, vendorCheck.migratePlain);
         }
 
         if (!vendorCheck.valid) {

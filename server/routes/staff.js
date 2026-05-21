@@ -2,6 +2,7 @@ const express = require("express");
 const { requireRole } = require("../middleware/auth");
 const { createStaffAccount } = require("../lib/staff");
 const { getDb } = require("../db");
+const { sensitivePasswordProjection } = require("../lib/passwordStore");
 
 const router = express.Router();
 
@@ -30,7 +31,7 @@ router.get("/", requireRole("supervisor", "admin"), async (req, res) => {
         const items = await getDb()
             .collection("staff")
             .find({ active: { $ne: false } })
-            .project({ passwordAscii: 0, passwordHash: 0, password: 0 })
+            .project(sensitivePasswordProjection)
             .sort({ role: 1, loginId: 1 })
             .toArray();
         res.json({ ok: true, items });
