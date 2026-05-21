@@ -20,7 +20,25 @@
         if (window.THEJHON_AUTH && THEJHON_AUTH.canSeePrices && !THEJHON_AUTH.canSeePrices()) {
             return '<p class="pd-price pd-price-masked">가격: 비공개 (업체 로그인 시 표시)</p>';
         }
-        return '<p class="pd-price">' + escapeHtml(formatWon(it.pd_price)) + "</p>";
+        var rows = [];
+        var labels = ["가격 1", "가격 2", "가격 3", "가격 4"];
+        var keys = ["pd_price1", "pd_price2", "pd_price3", "pd_price4"];
+        for (var i = 0; i < 4; i++) {
+            var v = Number(it[keys[i]]);
+            if (isFinite(v) && v > 0) {
+                rows.push(
+                    "<p class=\"pd-price\"><span class=\"pd-price-label\">" +
+                        escapeHtml(labels[i]) +
+                        "</span> " +
+                        escapeHtml(formatWon(v)) +
+                        "</p>"
+                );
+            }
+        }
+        if (!rows.length) {
+            return '<p class="pd-price">' + escapeHtml(formatWon(0)) + "</p>";
+        }
+        return rows.join("");
     }
 
     function contactBlock(it) {

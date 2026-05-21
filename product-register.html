@@ -13,7 +13,17 @@
         .pr-field input[type="number"],
         .pr-field textarea { width: 100%; padding: 0.6rem 0.7rem; font-size: 1rem; font-family: inherit; border: 1px solid #c5d0dc; border-radius: 6px; }
         .pr-field-row { display: flex; flex-wrap: wrap; gap: 0.75rem 1rem; align-items: flex-end; margin-bottom: 1rem; }
+        .pr-field-row.pr-row--4 { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 0.5rem 0.65rem; }
+        @media (max-width: 720px) {
+            .pr-field-row.pr-row--4 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+        }
+        @media (max-width: 420px) {
+            .pr-field-row.pr-row--4 { grid-template-columns: 1fr; }
+        }
         .pr-field-row .pr-field-half { flex: 1 1 10rem; min-width: 0; margin-bottom: 0; }
+        .pr-price-group { margin-bottom: 1rem; }
+        .pr-price-group > .pr-price-caption { display: block; font-size: 0.8rem; font-weight: 600; color: #3d5166; margin-bottom: 0.4rem; }
+        .pr-price-list { display: flex; flex-wrap: wrap; gap: 0.35rem 0.5rem; font-size: 0.88rem; color: var(--dz-blue); font-weight: 600; }
         .pr-field-row .pr-field-half label { display: block; font-size: 0.8rem; font-weight: 600; color: #3d5166; margin-bottom: 0.35rem; }
         .pr-field-row .pr-field-half input { width: 100%; padding: 0.6rem 0.7rem; font-size: 1rem; font-family: inherit; border: 1px solid #c5d0dc; border-radius: 6px; }
         .pr-field-row .pr-field-half input:focus { outline: none; border-color: var(--dz-blue); box-shadow: 0 0 0 2px rgba(10, 77, 156, 0.2); }
@@ -90,15 +100,30 @@
                 <label for="pr-pd-name">상품 명칭</label>
                 <input type="text" id="pr-pd-name" name="pd_name" required maxlength="200" autocomplete="off" placeholder="상품 명칭">
             </div>
-            <div class="pr-field pr-field-row">
-                <div class="pr-field-half">
-                    <label for="pr-pd-price">상품 가격 (원)</label>
-                    <input type="number" id="pr-pd-price" name="pd_price" min="0" step="1" required inputmode="numeric" placeholder="0">
+            <div class="pr-price-group">
+                <span class="pr-price-caption">상품가격 (원)</span>
+                <div class="pr-field-row pr-row--4">
+                    <div class="pr-field-half">
+                        <label for="pr-pd-price1">가격 1</label>
+                        <input type="number" id="pr-pd-price1" name="pd_price1" min="0" step="1" required inputmode="numeric" placeholder="0">
+                    </div>
+                    <div class="pr-field-half">
+                        <label for="pr-pd-price2">가격 2</label>
+                        <input type="number" id="pr-pd-price2" name="pd_price2" min="0" step="1" inputmode="numeric" placeholder="0">
+                    </div>
+                    <div class="pr-field-half">
+                        <label for="pr-pd-price3">가격 3</label>
+                        <input type="number" id="pr-pd-price3" name="pd_price3" min="0" step="1" inputmode="numeric" placeholder="0">
+                    </div>
+                    <div class="pr-field-half">
+                        <label for="pr-pd-price4">가격 4</label>
+                        <input type="number" id="pr-pd-price4" name="pd_price4" min="0" step="1" inputmode="numeric" placeholder="0">
+                    </div>
                 </div>
-                <div class="pr-field-half">
-                    <label for="pr-pd-size">상품 규격</label>
-                    <input type="text" id="pr-pd-size" name="pd_size" maxlength="120" autocomplete="off" placeholder="예: 500g, 1박스 20입">
-                </div>
+            </div>
+            <div class="pr-field">
+                <label for="pr-pd-size">상품 규격</label>
+                <input type="text" id="pr-pd-size" name="pd_size" maxlength="120" autocomplete="off" placeholder="예: 500g, 1박스 20입">
             </div>
             <div class="pr-field">
                 <label for="pr-pd-image">상품 사진</label>

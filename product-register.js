@@ -9,7 +9,10 @@
     var photoInput = document.getElementById("pr-pd-image");
     var photoPreview = document.getElementById("pr-photo-preview");
     var explainInput = document.getElementById("pr-pd-explain");
-    var priceInput = document.getElementById("pr-pd-price");
+    var price1Input = document.getElementById("pr-pd-price1");
+    var price2Input = document.getElementById("pr-pd-price2");
+    var price3Input = document.getElementById("pr-pd-price3");
+    var price4Input = document.getElementById("pr-pd-price4");
     var sizeInput = document.getElementById("pr-pd-size");
     var perNameInput = document.getElementById("pr-per-name");
     var perNumberInput = document.getElementById("pr-per-number");
@@ -39,6 +42,26 @@
         var num = Number(n);
         if (!isFinite(num)) return "0";
         return num.toLocaleString("ko-KR") + "원";
+    }
+
+    function parsePriceInput(el) {
+        if (!el) return 0;
+        var n = parseInt(String(el.value || "").trim(), 10);
+        return isFinite(n) && n >= 0 ? n : NaN;
+    }
+
+    function pricesHtml(it) {
+        var parts = [];
+        var labels = ["가격1", "가격2", "가격3", "가격4"];
+        var keys = ["pd_price1", "pd_price2", "pd_price3", "pd_price4"];
+        for (var i = 0; i < 4; i++) {
+            var v = Number(it[keys[i]]);
+            if (isFinite(v) && v > 0) {
+                parts.push(labels[i] + " " + escapeHtml(formatWon(v)));
+            }
+        }
+        if (!parts.length) parts.push(escapeHtml(formatWon(0)));
+        return parts.join(" · ");
     }
 
     function readFileAsDataURL(file) {
@@ -115,9 +138,8 @@
                     imgBlock +
                     '<div class="pr-card-body"><h3 class="pr-card-title">' +
                     escapeHtml(it.pd_name) +
-                    '</h3><p class="pr-card-price"><span>' +
-                    escapeHtml(formatWon(it.pd_price)) +
-                    "</span>" +
+                    '</h3><p class="pr-card-price">' +
+                    pricesHtml(it) +
                     specHtml +
                     '</p><p class="pr-card-content">' +
                     escapeHtml(it.pd_explain) +
@@ -159,7 +181,10 @@
         editIdInput.value = it.id;
         nameInput.value = it.pd_name || "";
         explainInput.value = it.pd_explain || "";
-        priceInput.value = String(it.pd_price != null ? it.pd_price : 0);
+        if (price1Input) price1Input.value = String(it.pd_price1 != null ? it.pd_price1 : 0);
+        if (price2Input) price2Input.value = String(it.pd_price2 != null ? it.pd_price2 : 0);
+        if (price3Input) price3Input.value = String(it.pd_price3 != null ? it.pd_price3 : 0);
+        if (price4Input) price4Input.value = String(it.pd_price4 != null ? it.pd_price4 : 0);
         if (sizeInput) sizeInput.value = it.pd_size != null ? String(it.pd_size) : "";
         if (perNameInput) perNameInput.value = it.per_name || "";
         if (perNumberInput) perNumberInput.value = it["per-number"] || "";
@@ -223,7 +248,10 @@
         var pd_name = nameInput.value.trim();
         var pd_explain = explainInput.value.trim();
         var pd_size = sizeInput ? sizeInput.value.trim() : "";
-        var pd_price = parseInt(priceInput.value.trim(), 10);
+        var pd_price1 = parsePriceInput(price1Input);
+        var pd_price2 = parsePriceInput(price2Input);
+        var pd_price3 = parsePriceInput(price3Input);
+        var pd_price4 = parsePriceInput(price4Input);
         var file = photoInput.files && photoInput.files[0];
         var editingId = editIdInput.value.trim();
 
@@ -237,9 +265,19 @@
             explainInput.focus();
             return;
         }
-        if (!isFinite(pd_price) || pd_price < 0) {
-            setStatus("상품 가격을 올바르게 입력해 주세요.", true);
-            priceInput.focus();
+        if (
+            !isFinite(pd_price1) ||
+            !isFinite(pd_price2) ||
+            !isFinite(pd_price3) ||
+            !isFinite(pd_price4)
+        ) {
+            setStatus("가격 1~4를 올바르게 입력해 주세요.", true);
+            if (price1Input) price1Input.focus();
+            return;
+        }
+        if (!(pd_price1 > 0 || pd_price2 > 0 || pd_price3 > 0 || pd_price4 > 0)) {
+            setStatus("가격 1~4 중 하나 이상 0원보다 크게 입력해 주세요.", true);
+            if (price1Input) price1Input.focus();
             return;
         }
 
@@ -253,7 +291,10 @@
                 pd_name: pd_name,
                 pd_explain: pd_explain,
                 pd_size: pd_size,
-                pd_price: pd_price,
+                pd_price1: pd_price1,
+                pd_price2: pd_price2,
+                pd_price3: pd_price3,
+                pd_price4: pd_price4,
                 pd_image: imageData || "",
                 per_name: perNameInput ? perNameInput.value.trim() : "",
                 "per-number": perNumberInput ? perNumberInput.value.trim() : "",
