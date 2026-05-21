@@ -37,6 +37,7 @@
         .pr-card-price { margin: 0 0 0.5rem; font-size: 0.95rem; font-weight: 600; color: var(--dz-blue); display: flex; flex-wrap: wrap; align-items: baseline; gap: 0.35rem 0.75rem; }
         .pr-card-spec { font-weight: 600; color: #3d556d; font-size: 0.88rem; }
         .pr-card-content { margin: 0; font-size: 0.9rem; line-height: 1.55; color: #3d5166; white-space: pre-wrap; word-break: break-word; }
+        .pr-card-contact { margin: 0.35rem 0 0; font-size: 0.82rem; color: #5a6d80; }
         .pr-card-actions { margin-top: 0.75rem; display: flex; gap: 0.45rem; flex-wrap: wrap; }
         .pr-card-actions button { font-size: 0.8125rem; padding: 0.35rem 0.65rem; border-radius: 6px; cursor: pointer; font-family: inherit; font-weight: 600; border: 1px solid #c5d0dc; background: #fff; color: #3d5166; }
         .pr-card-actions button.pr-btn-del { border-color: #e8a4a4; color: #a12c2c; background: #fff8f8; }
@@ -86,28 +87,42 @@
         <form id="pr-form" class="pr-form" novalidate>
             <input type="hidden" id="pr-edit-id" value="">
             <div class="pr-field">
-                <label for="pr-title">제목</label>
-                <input type="text" id="pr-title" name="title" required maxlength="200" autocomplete="off" placeholder="상품 제목">
+                <label for="pr-pd-name">상품 명칭</label>
+                <input type="text" id="pr-pd-name" name="pd_name" required maxlength="200" autocomplete="off" placeholder="상품 명칭">
             </div>
             <div class="pr-field pr-field-row">
                 <div class="pr-field-half">
-                    <label for="pr-price">가격 (원)</label>
-                    <input type="number" id="pr-price" name="price" min="0" step="1" required inputmode="numeric" placeholder="0">
+                    <label for="pr-pd-price">상품 가격 (원)</label>
+                    <input type="number" id="pr-pd-price" name="pd_price" min="0" step="1" required inputmode="numeric" placeholder="0">
                 </div>
                 <div class="pr-field-half">
-                    <label for="pr-spec">규격</label>
-                    <input type="text" id="pr-spec" name="spec" maxlength="120" autocomplete="off" placeholder="예: 500g, 1박스 20입">
+                    <label for="pr-pd-size">상품 규격</label>
+                    <input type="text" id="pr-pd-size" name="pd_size" maxlength="120" autocomplete="off" placeholder="예: 500g, 1박스 20입">
                 </div>
             </div>
             <div class="pr-field">
-                <label for="pr-photo">사진</label>
-                <input type="file" id="pr-photo" name="photo" accept="image/*">
+                <label for="pr-pd-image">상품 사진</label>
+                <input type="file" id="pr-pd-image" name="pd_image" accept="image/*">
                 <p id="pr-photo-hint" class="pr-hint">수정 시 새 파일을 선택하지 않으면 기존 사진을 유지합니다.</p>
                 <img id="pr-photo-preview" class="pr-photo-preview" alt="선택한 이미지 미리보기" width="120" height="120" hidden>
             </div>
             <div class="pr-field">
-                <label for="pr-content">내용</label>
-                <textarea id="pr-content" name="content" rows="5" required maxlength="8000" placeholder="상품 설명"></textarea>
+                <label for="pr-pd-explain">상품 설명</label>
+                <textarea id="pr-pd-explain" name="pd_explain" rows="5" required maxlength="8000" placeholder="상품 설명"></textarea>
+            </div>
+            <div class="pr-field">
+                <label for="pr-per-name">담당자 이름</label>
+                <input type="text" id="pr-per-name" name="per_name" maxlength="80" autocomplete="name" placeholder="담당자 이름">
+            </div>
+            <div class="pr-field pr-field-row">
+                <div class="pr-field-half">
+                    <label for="pr-per-number">담당자 전화</label>
+                    <input type="tel" id="pr-per-number" name="per-number" maxlength="40" autocomplete="tel" placeholder="010-0000-0000">
+                </div>
+                <div class="pr-field-half">
+                    <label for="pr-per-email">담당자 이메일</label>
+                    <input type="email" id="pr-per-email" name="per-email" maxlength="120" autocomplete="email" placeholder="email@example.com">
+                </div>
             </div>
             <div class="pr-actions">
                 <button type="submit" class="btn btn-primary" id="pr-submit">저장</button>

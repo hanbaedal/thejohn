@@ -26,7 +26,7 @@
         if (window.THEJHON_AUTH && THEJHON_AUTH.canSeePrices && !THEJHON_AUTH.canSeePrices()) {
             return '<span class="ps-price-masked">가격: 비공개 (업체 로그인 시 표시)</span>';
         }
-        return "<span>" + escapeHtml(formatWon(it.price)) + "</span>";
+        return "<span>" + escapeHtml(formatWon(it.pd_price)) + "</span>";
     }
 
     function getItemById(id) {
@@ -76,34 +76,34 @@
             items
                 .map(function (it) {
                     var imgBlock;
-                    if (it.image) {
+                    if (it.pd_image) {
                         imgBlock =
                             '<button type="button" class="ps-card-img-btn" data-ps-zoom=' +
                             JSON.stringify(it.id) +
                             " aria-label=" +
-                            JSON.stringify("사진 크게: " + (it.title || "상품")) +
+                            JSON.stringify("사진 크게: " + (it.pd_name || "상품")) +
                             "><img class=\"ps-card-img\" src=" +
-                            JSON.stringify(it.image) +
+                            JSON.stringify(it.pd_image) +
                             ' alt=""></button>';
                     } else {
                         imgBlock =
                             '<div class="ps-card-img ps-card-img--empty" role="img" aria-label="사진 없음">사진<br>없음</div>';
                     }
                     var specHtml = "";
-                    if (it.spec && String(it.spec).trim()) {
+                    if (it.pd_size && String(it.pd_size).trim()) {
                         specHtml =
-                            '<span class="ps-card-spec">규격: ' + escapeHtml(String(it.spec).trim()) + "</span>";
+                            '<span class="ps-card-spec">규격: ' + escapeHtml(String(it.pd_size).trim()) + "</span>";
                     }
                     return (
                         '<li class="ps-card-wrap"><article class="ps-card">' +
                         imgBlock +
                         '<div class="ps-card-body"><h2 class="ps-card-title">' +
-                        escapeHtml(it.title || "") +
+                        escapeHtml(it.pd_name || "") +
                         '</h2><p class="ps-card-price">' +
                         priceHtml(it) +
                         specHtml +
                         '</p><p class="ps-card-content ps-hide-scrollbar">' +
-                        escapeHtml(it.content || "") +
+                        escapeHtml(it.pd_explain || "") +
                         "</p></div></article></li>"
                     );
                 })
@@ -134,9 +134,9 @@
             var id = btn.getAttribute("data-ps-zoom");
             if (!id) return;
             var it = getItemById(id);
-            if (!it || !it.image) return;
+            if (!it || !it.pd_image) return;
             e.preventDefault();
-            openLightbox(it.image, String(it.title || ""));
+            openLightbox(it.pd_image, String(it.pd_name || ""));
         });
     }
 

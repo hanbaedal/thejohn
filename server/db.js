@@ -178,6 +178,8 @@ async function connectDbOnce() {
 
             const database = newClient.db(dbName);
             await safeCreateIndex(database.collection("products"), { id: 1 }, { unique: true });
+            const { migrateProductsCollection } = require("./lib/productFields");
+            await migrateProductsCollection(database);
             await safeCreateIndex(database.collection("vendors"), { id: 1 }, { unique: true });
             await safeCreateIndex(database.collection("vendors"), { loginId: 1 }, { unique: true });
 

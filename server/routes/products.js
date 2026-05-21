@@ -1,24 +1,17 @@
 const express = require("express");
 const { getDb } = require("../db");
 const { requireRole } = require("../middleware/auth");
+const {
+    toPublic,
+    buildFromBody,
+    toDbDoc,
+    validateBuilt
+} = require("../lib/productFields");
 
 const router = express.Router();
 
 function newId() {
     return "pr_" + Date.now().toString(36) + "_" + Math.random().toString(36).slice(2, 10);
-}
-
-function toPublic(doc) {
-    if (!doc) return null;
-    return {
-        id: doc.id,
-        title: doc.title || "",
-        image: doc.image || "",
-        content: doc.content || "",
-        spec: doc.spec || "",
-        price: Number(doc.price) || 0,
-        updatedAt: doc.updatedAt || 0
-    };
 }
 
 router.get("/", async (req, res) => {
@@ -48,28 +41,11 @@ router.get("/:id", async (req, res) => {
 
 router.post("/", requireRole("supervisor", "admin"), async (req, res) => {
     try {
-        const title = String(req.body.title || "").trim();
-        const content = String(req.body.content || "").trim();
-        const spec = String(req.body.spec || "").trim();
-        const price = parseInt(req.body.price, 10);
-        const image = String(req.body.image || "");
+        const built = buildFromBody(req.body, null);
+        const err = validateBuilt(built, true);
+        if (err) return res.status(400).json({ ok: false, error: err });
 
-        if (!title) return res.status(400).json({ ok: false, error: "제목을 입력해 주세요." });
-        if (!content) return res.status(400).json({ ok: false, error: "내용을 입력해 주세요." });
-        if (!isFinite(price) || price < 0) {
-            return res.status(400).json({ ok: false, error: "가격을 올바르게 입력해 주세요." });
-        }
-        if (!image) return res.status(400).json({ ok: false, error: "신규 등록 시 사진이 필요합니다." });
-
-        const doc = {
-            id: newId(),
-            title,
-            content,
-            spec,
-            price,
-            image,
-            updatedAt: Date.now()
-        };
+        const doc = toDbDoc(newId(), built, null);
         await getDb().collection("products").insertOne(doc);
         res.status(201).json({ ok: true, item: toPublic(doc) });
     } catch (e) {
@@ -84,30 +60,11 @@ router.put("/:id", requireRole("supervisor", "admin"), async (req, res) => {
         const existing = await getDb().collection("products").findOne({ id });
         if (!existing) return res.status(404).json({ ok: false, error: "상품을 찾을 수 없습니다." });
 
-        const title = String(req.body.title || "").trim();
-        const content = String(req.body.content || "").trim();
-        const spec = String(req.body.spec || "").trim();
-        const price = parseInt(req.body.price, 10);
-        const image =
-            req.body.image !== undefined && req.body.image !== null
-                ? String(req.body.image)
-                : existing.image || "";
+        const built = buildFromBody(req.body, existing);
+        const err = validateBuilt(built, false);
+        if (err) return res.status(400).json({ ok: false, error: err });
 
-        if (!title) return res.status(400).json({ ok: false, error: "제목을 입력해 주세요." });
-        if (!content) return res.status(400).json({ ok: false, error: "내용을 입력해 주세요." });
-        if (!isFinite(price) || price < 0) {
-            return res.status(400).json({ ok: false, error: "가격을 올바르게 입력해 주세요." });
-        }
-
-        const doc = {
-            id,
-            title,
-            content,
-            spec,
-            price,
-            image,
-            updatedAt: Date.now()
-        };
+        const doc = toDbDoc(id, built, existing);
         await getDb().collection("products").replaceOne({ id }, doc);
         res.json({ ok: true, item: toPublic(doc) });
     } catch (e) {
