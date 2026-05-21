@@ -1,5 +1,7 @@
 (function () {
-    var MAX_IMAGE_BYTES = 2 * 1024 * 1024;
+    var MAX_IMAGE_BYTES = 900 * 1024;
+    var MAX_LOGO_DATA_URL_LEN = 1200000;
+    var RESERVED_LOGIN_IDS = ["thejohn", "thejhon", "aksangsa"];
     var api = window.THEJHON_API;
 
     function apiErrorMessage(err, fallback) {
@@ -22,6 +24,77 @@
         for (var i = 0; i < fields.length; i++) {
             fields[i].disabled = disabled;
         }
+    }
+
+    function normalizeLoginIdLocal(s) {
+        return String(s || "")
+            .trim()
+            .toLowerCase();
+    }
+
+    function isReservedVendorLoginId(loginId) {
+        return RESERVED_LOGIN_IDS.indexOf(normalizeLoginIdLocal(loginId)) >= 0;
+    }
+
+    function apiHealthUrl() {
+        var base =
+            api && api.config && api.config.baseUrl
+                ? String(api.config.baseUrl).replace(/\/$/, "")
+                : "";
+        if (base) return base + "/api/health";
+        if (typeof location !== "undefined" && location.origin && /^https?:/.test(location.protocol)) {
+            return location.origin + "/api/health";
+        }
+        return "/api/health";
+    }
+
+    function checkApiServer() {
+        return fetch(apiHealthUrl())
+            .then(function (res) {
+                return res.json().catch(function () {
+                    return {};
+                });
+            })
+            .then(function (h) {
+                if (!h || !h.db) {
+                    throw new Error(
+                        "API 서버(MongoDB)에 연결되지 않습니다. https://thejohn.onrender.com 에서 로그인·저장해 주세요."
+                    );
+                }
+                return h;
+            });
+    }
+
+    function prepareLogoForSave(logoData) {
+        if (!logoData) return "";
+        if (logoData.length > MAX_LOGO_DATA_URL_LEN) {
+            throw new Error(
+                "로고 이미지가 너무 큽니다. 900KB 이하 파일을 사용하거나 로고 없이 저장해 보세요."
+            );
+        }
+        return logoData;
+    }
+
+    function saveVendorToServer(editingId, body) {
+        if (!api || !api.getToken || !api.getToken()) {
+            return Promise.reject(
+                new Error(
+                    "로그인 토큰이 없습니다. 로그아웃 후 thejohn / aksangsa 로 다시 로그인해 주세요."
+                )
+            );
+        }
+        return api.checkSession().then(function (sess) {
+            if (!sess || !sess.loggedIn) {
+                throw new Error(
+                    (sess && sess.error) ||
+                        "로그인 세션이 만료되었습니다. 다시 로그인해 주세요."
+                );
+            }
+            if (sess.role !== "admin" && sess.role !== "supervisor") {
+                throw new Error("관리자만 vendors 컬렉션에 저장할 수 있습니다.");
+            }
+            return editingId ? api.updateVendor(editingId, body) : api.createVendor(body);
+        });
     }
 
     var form = document.getElementById("vr-form");
@@ -333,6 +406,16 @@
             loginIdInput.focus();
             return;
         }
+        if (isReservedVendorLoginId(loginId)) {
+            var reservedMsg =
+                "아이디 " +
+                loginId +
+                " 은 관리자 전용입니다. 업체 전용 아이디(예: company01)를 입력해 주세요.";
+            setStatus(reservedMsg, true);
+            alert(reservedMsg);
+            loginIdInput.focus();
+            return;
+        }
         if (!vn_company) {
             setStatus("업체이름을 입력해 주세요.", true);
             companyInput.focus();
@@ -352,12 +435,13 @@
         var fileLogo = logoInput.files && logoInput.files[0];
 
         function finish(logoData) {
+            var wasEditing = !!editingId;
             var body = {
                 loginId: loginId,
                 vn_company: vn_company,
                 vn_ceo: ceoInput.value.trim(),
                 vn_ceo_tel: ceoTelInput.value.trim(),
-                vn_grade: gradeInput ? gradeInput.value : "1",
+                vn_grade: gradeInput && gradeInput.value ? gradeInput.value : "1",
                 vn_web: webInput.value.trim(),
                 vn_email: emailInput.value.trim(),
                 vn_phone: phoneInput.value.trim(),
@@ -365,22 +449,38 @@
                 vn_mgr_name: mgrNameInput.value.trim(),
                 vn_mgr_tel: mgrTelInput.value.trim(),
                 vn_mgr_email: mgrEmailInput.value.trim(),
-                vn_logo: logoData || "",
+                vn_logo: "",
                 vn_note: noteInput.value.trim()
             };
             if (pwdIn) body.password = pwdIn;
 
             submitBtn.disabled = true;
-            var p = editingId ? api.updateVendor(editingId, body) : api.createVendor(body);
-            p.then(function (saved) {
-                resetForm();
-                return loadList().then(function () {
-                    return saved;
-                });
-            })
+            setStatus("MongoDB vendors 컬렉션에 저장 중…");
+
+            var logoPromise;
+            try {
+                body.vn_logo = prepareLogoForSave(logoData);
+                logoPromise = Promise.resolve();
+            } catch (logoErr) {
+                logoPromise = Promise.reject(logoErr);
+            }
+
+            logoPromise
+                .then(function () {
+                    return saveVendorToServer(editingId, body);
+                })
                 .then(function (saved) {
+                    resetForm();
+                    return loadList().then(function () {
+                        return { saved: saved, wasEditing: wasEditing };
+                    });
+                })
+                .then(function (result) {
+                    var saved = result.saved;
                     var idMsg = saved && saved.id ? " (ID: " + saved.id + ")" : "";
-                    setStatus((editingId ? "수정했습니다." : "MongoDB vendors에 저장했습니다.") + idMsg);
+                    setStatus(
+                        (result.wasEditing ? "수정했습니다." : "MongoDB vendors에 저장했습니다.") + idMsg
+                    );
                 })
                 .catch(function (err) {
                     var msg = apiErrorMessage(err, "저장에 실패했습니다.");
@@ -427,7 +527,10 @@
     setFormDisabled(true);
     setStatus("서버 로그인 세션 확인 중…");
 
-    api.checkSession()
+    checkApiServer()
+        .then(function () {
+            return api.checkSession();
+        })
         .then(function (sess) {
             if (!sess || !sess.loggedIn) {
                 throw new Error(
