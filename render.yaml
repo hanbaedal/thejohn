@@ -1,12 +1,12 @@
-# https://render.com — GitHub hanbaedal/thejohn 연결 후 Blueprint 배포
+# Render Blueprint — 저장소 루트 기준 (수동 Web Service도 동일하게 맞출 것)
 services:
   - type: web
     name: thejohn
     runtime: node
-    plan: free
-    rootDir: server
-    buildCommand: npm ci
-    startCommand: node index.js
+    plan: starter
+    rootDir: .
+    buildCommand: npm run build
+    startCommand: npm start
     healthCheckPath: /api/health
     envVars:
       - key: NODE_ENV
@@ -16,10 +16,10 @@ services:
       - key: MONGODB_URI
         sync: false
       - key: JWT_SECRET
-        generateValue: true
+        sync: false
       - key: THEJHON_ADMIN_PASSWORD
         sync: false
       - key: THEJHON_GUEST_PASSWORD
         value: guest
       - key: ALLOWED_ORIGINS
-        value: https://thejohn.co.kr,https://www.thejohn.co.kr
+        value: https://thejohn.onrender.com,https://thejohn.co.kr,https://www.thejohn.co.kr,http://localhost:3000

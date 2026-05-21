@@ -1,5 +1,11 @@
 require("dotenv").config({ path: require("path").join(__dirname, "..", ".env") });
 
+console.log("[thejohn] boot", {
+    node: process.version,
+    cwd: process.cwd(),
+    port: process.env.PORT || "(default 3000)"
+});
+
 const path = require("path");
 const express = require("express");
 const cors = require("cors");
@@ -43,6 +49,22 @@ app.get("/api/health", (req, res) => {
     res.json({
         ok: true,
         service: "thejhon-homepage",
+        db: isDbReady()
+    });
+});
+
+app.get("/api/env-check", (req, res) => {
+    res.json({
+        ok: true,
+        env: {
+            MONGODB_URI: !!process.env.MONGODB_URI,
+            MONGODB_DB: process.env.MONGODB_DB || "thejhon",
+            JWT_SECRET: !!(process.env.JWT_SECRET && process.env.JWT_SECRET.length >= 16),
+            THEJHON_ADMIN_PASSWORD: !!process.env.THEJHON_ADMIN_PASSWORD,
+            THEJHON_GUEST_PASSWORD: !!process.env.THEJHON_GUEST_PASSWORD,
+            ALLOWED_ORIGINS: !!process.env.ALLOWED_ORIGINS,
+            PORT_set: !!process.env.PORT
+        },
         db: isDbReady()
     });
 });
