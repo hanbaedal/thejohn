@@ -10,7 +10,7 @@ const fs = require("fs");
 const path = require("path");
 const express = require("express");
 const cors = require("cors");
-const { connectDb, isDbReady, getLastDbError } = require("./db");
+const { connectDb, isDbReady, getLastDbError, hasMongoConfig, buildUriFromParts } = require("./db");
 
 const authRoutes = require("./routes/auth");
 const staffRoutes = require("./routes/staff");
@@ -72,6 +72,10 @@ app.get("/api/env-check", (req, res) => {
         ok: true,
         env: {
             MONGODB_URI: !!process.env.MONGODB_URI,
+            MONGODB_USER: !!envTrim("MONGODB_USER"),
+            MONGODB_PASSWORD: !!envTrim("MONGODB_PASSWORD"),
+            MONGODB_HOST: !!envTrim("MONGODB_HOST"),
+            mongoFromParts: !!buildUriFromParts(),
             MONGODB_DB: process.env.MONGODB_DB || "thejhon",
             JWT_SECRET: !!(process.env.JWT_SECRET && process.env.JWT_SECRET.length >= 16),
             THEJHON_SEED_SUPERVISOR_PASSWORD: !!process.env.THEJHON_SEED_SUPERVISOR_PASSWORD,
@@ -115,7 +119,7 @@ function envTrim(key) {
 
 function validateEnv() {
     var missing = [];
-    if (!envTrim("MONGODB_URI")) missing.push("MONGODB_URI");
+    if (!hasMongoConfig()) missing.push("MONGODB_USER+PASSWORD+HOST 또는 MONGODB_URI");
     if (envTrim("JWT_SECRET").length < 16) missing.push("JWT_SECRET(16자 이상)");
     if (missing.length) {
         console.error("[thejohn] 필수 환경 변수 없음:", missing.join(", "));

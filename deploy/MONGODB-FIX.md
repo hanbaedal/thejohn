@@ -1,63 +1,47 @@
-# MongoDB 연결 안 될 때 (Render · Atlas)
+# MongoDB 연결 — Render SSL 오류 해결
 
 ## 증상
 
-- https://thejohn.onrender.com/api/health → `"db": false`
-- 로그인·상품 저장 시 「데이터베이스 연결 중」
+- `데이터베이스 연결 중입니다`
+- `/api/health` → `"db": false`, `SSL alert number 80`
 
-## 1. MongoDB Atlas
+## ✅ Render에 이렇게 설정 (권장)
 
-1. [cloud.mongodb.com](https://cloud.mongodb.com) 로그인  
-2. **Network Access** → **ADD IP ADDRESS** → **Allow Access from Anywhere** (`0.0.0.0/0`) → Confirm  
-3. **Database Access** → 사용자 `thejohn_db_user` 비밀번호 확인 (잊었으면 **Edit** → 새 비밀번호)  
-4. **Database** → Connect → **Drivers** → 연결 문자열 복사  
+**MONGODB_URI 한 줄 대신** 아래 4개를 넣으세요. 비밀번호에 `!` 가 있어도 그대로 입력합니다.
 
-## 2. Render Environment
-
-**thejohn → Environment → MONGODB_URI**
-
-- 값 **앞뒤에 따옴표 `"` 넣지 않기**  
-- 한 줄로 붙여넣기 (줄바꿈 없음)  
-- 예시 형식:
-
-```
-mongodb+srv://USER:PASSWORD@cluster0.xxxxx.mongodb.net/?retryWrites=true&w=majority
-```
-
-비밀번호에 `! @ # % &` 등이 있으면 URI에서 **URL 인코딩** 필요 (`!` → `%21`).  
-예: `leesb129!` → `leesb129%21`  
-(서버 코드가 자동 인코딩하지만, Render에 잘못된 URI가 있으면 Atlas에서 비밀번호를 재발급 후 다시 붙여넣기.)
-
-### TLS / SSL `alert internal error` (dbError)
-
-Render Linux에서 흔함. 순서대로:
-
-1. Atlas **Network Access** → `0.0.0.0/0`  
-2. `MONGODB_URI` 따옴표 제거, 비밀번호 특수문자 인코딩  
-3. 최신 코드 배포 후 `/api/health` → `"db": true` 확인  
-
-| 변수 | 값 |
-|------|-----|
-| `MONGODB_URI` | Atlas에서 복사한 전체 문자열 |
+| Key | Value (예시) |
+|-----|----------------|
+| `MONGODB_USER` | `thejohn_db_user` |
+| `MONGODB_PASSWORD` | Atlas Database Access 비밀번호 (**그대로**, 따옴표 없음) |
+| `MONGODB_HOST` | `cluster0.7v76oy0.mongodb.net` |
 | `MONGODB_DB` | `thejhon` |
 
-**Save Changes** → **Manual Deploy**
+`MONGODB_URI` 는 **비우거나 삭제**해도 됩니다 (분리 방식이 우선).
 
-## 3. 확인
+**Save** → **Manual Deploy**
 
-- `/api/health` → `"db": true`  
-- `/api/env-check` → `"MONGODB_URI": true`  
-- `dbError` 가 비어 있어야 함 (오류 메시지 표시됨)
+## Atlas (필수)
 
-## 4. 로컬 (.env)
+1. **Network Access** → **Allow Access from Anywhere** (`0.0.0.0/0`)
+2. **Database Access** → 사용자 비밀번호 확인 (모르면 Edit → 새 비밀번호 → Render `MONGODB_PASSWORD`에 동일하게)
 
-`homepage/.env` 의 `MONGODB_URI` 를 Atlas와 **동일한 최신 비밀번호**로 맞추기.
+## 확인
 
-테스트:
+https://thejohn.onrender.com/api/health
 
-```powershell
-cd c:\TheJhon\homepage\server
-node scripts/test-mongo.js
+```json
+{"ok":true,"db":true,"dbError":""}
 ```
 
-`OK ping` 이 나오면 URI는 맞습니다.
+https://thejohn.onrender.com/api/env-check → `"mongoFromParts": true`
+
+## 로컬 `.env` (선택)
+
+```
+MONGODB_USER=thejohn_db_user
+MONGODB_PASSWORD=비밀번호
+MONGODB_HOST=cluster0.7v76oy0.mongodb.net
+MONGODB_DB=thejhon
+```
+
+또는 기존 `MONGODB_URI=...` 도 계속 사용 가능.

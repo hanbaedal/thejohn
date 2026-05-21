@@ -1,10 +1,14 @@
-const { MongoClient } = require("mongodb");
+const { MongoClient, ServerApiVersion } = require("mongodb");
 
 let client;
 let db;
 let ready = false;
 let connecting = false;
 let lastDbError = "";
+
+function envTrim(key) {
+    return String(process.env[key] || "").trim();
+}
 
 function normalizeMongoUri(uri) {
     let u = String(uri || "").trim();
@@ -17,7 +21,6 @@ function normalizeMongoUri(uri) {
     return u;
 }
 
-/** 비밀번호의 ! @ # 등을 URL 인코딩 (Render/Linux TLS 오류 방지) */
 function encodeCredentialPart(part) {
     const raw = String(part || "");
     try {
@@ -34,6 +37,7 @@ function encodeCredentialPart(part) {
 
 function fixMongoUri(raw) {
     let uri = normalizeMongoUri(raw);
+    if (!uri) return "";
     const match = uri.match(/^(mongodb(?:\+srv)?:\/\/)([^@]+)@(.+)$/);
     if (match) {
         const prefix = match[1];
@@ -56,7 +60,7 @@ function fixMongoUri(raw) {
     if (!params.has("w")) params.set("w", "majority");
     if (!params.has("authSource")) params.set("authSource", "admin");
 
-    const dbName = String(process.env.MONGODB_DB || "thejhon").trim() || "thejhon";
+    const dbName = envTrim("MONGODB_DB") || "thejhon";
     let pathBase = base;
     const hostStart = pathBase.indexOf("@");
     if (hostStart >= 0) {
@@ -73,13 +77,62 @@ function fixMongoUri(raw) {
     return query ? pathBase + "?" + query : pathBase;
 }
 
+/** Render 권장: USER/PASSWORD/HOST 분리 (비밀번호에 ! 있어도 안전) */
+function buildUriFromParts() {
+    const user = envTrim("MONGODB_USER");
+    const pass = envTrim("MONGODB_PASSWORD");
+    const host = envTrim("MONGODB_HOST");
+    if (!user || !pass || !host) return "";
+    const dbName = envTrim("MONGODB_DB") || "thejhon";
+    return (
+        "mongodb+srv://" +
+        encodeURIComponent(user) +
+        ":" +
+        encodeURIComponent(pass) +
+        "@" +
+        host +
+        "/" +
+        dbName +
+        "?retryWrites=true&w=majority&authSource=admin"
+    );
+}
+
+function getMongoUriCandidates() {
+    const list = [];
+    const fromParts = buildUriFromParts();
+    if (fromParts) list.push({ label: "USER/PASSWORD/HOST", uri: fromParts });
+
+    const standard = fixMongoUri(envTrim("MONGODB_URI_STANDARD"));
+    if (standard) list.push({ label: "URI_STANDARD", uri: standard });
+
+    const main = fixMongoUri(process.env.MONGODB_URI);
+    if (main) list.push({ label: "MONGODB_URI", uri: main });
+
+    const seen = new Set();
+    return list.filter(function (item) {
+        if (seen.has(item.uri)) return false;
+        seen.add(item.uri);
+        return true;
+    });
+}
+
+function hasMongoConfig() {
+    return getMongoUriCandidates().length > 0;
+}
+
 function mongoClientOptions() {
     return {
+        serverApi: {
+            version: ServerApiVersion.v1,
+            strict: false,
+            deprecationErrors: false
+        },
         serverSelectionTimeoutMS: 30000,
         connectTimeoutMS: 30000,
         socketTimeoutMS: 45000,
         maxPoolSize: 10,
-        autoSelectFamily: false
+        autoSelectFamily: false,
+        family: 4
     };
 }
 
@@ -104,39 +157,58 @@ async function safeCreateIndex(collection, spec, options) {
 }
 
 async function connectDbOnce() {
-    const uri = fixMongoUri(process.env.MONGODB_URI);
-    if (!uri) {
-        throw new Error("MONGODB_URI 환경 변수가 설정되지 않았습니다.");
+    const candidates = getMongoUriCandidates();
+    if (!candidates.length) {
+        throw new Error(
+            "MongoDB 설정 없음: MONGODB_USER+PASSWORD+HOST 또는 MONGODB_URI 를 Environment에 설정하세요."
+        );
     }
-    if (!uri.startsWith("mongodb://") && !uri.startsWith("mongodb+srv://")) {
-        throw new Error("MONGODB_URI 형식이 올바르지 않습니다. mongodb+srv:// 로 시작해야 합니다.");
-    }
 
-    const dbName = String(process.env.MONGODB_DB || "thejhon").trim() || "thejhon";
-    const newClient = new MongoClient(uri, mongoClientOptions());
+    const dbName = envTrim("MONGODB_DB") || "thejhon";
+    let lastErr;
 
-    await newClient.connect();
-    await newClient.db(dbName).command({ ping: 1 });
-
-    const database = newClient.db(dbName);
-    await safeCreateIndex(database.collection("products"), { id: 1 }, { unique: true });
-    await safeCreateIndex(database.collection("vendors"), { id: 1 }, { unique: true });
-    await safeCreateIndex(database.collection("vendors"), { loginIdNorm: 1 }, { unique: true });
-
-    const staff = require("./lib/staff");
-    await staff.ensureStaffIndexes(database);
-    await staff.ensureSupervisorSeed(database);
-
-    if (client) {
+    for (var i = 0; i < candidates.length; i++) {
+        const c = candidates[i];
+        let newClient;
         try {
-            await client.close();
-        } catch (e) {}
+            console.log("[thejohn] MongoDB connect via", c.label);
+            newClient = new MongoClient(c.uri, mongoClientOptions());
+            await newClient.connect();
+            await newClient.db(dbName).command({ ping: 1 });
+
+            const database = newClient.db(dbName);
+            await safeCreateIndex(database.collection("products"), { id: 1 }, { unique: true });
+            await safeCreateIndex(database.collection("vendors"), { id: 1 }, { unique: true });
+            await safeCreateIndex(database.collection("vendors"), { loginIdNorm: 1 }, { unique: true });
+
+            const staff = require("./lib/staff");
+            await staff.ensureStaffIndexes(database);
+            await staff.ensureSupervisorSeed(database);
+
+            if (client) {
+                try {
+                    await client.close();
+                } catch (e) {}
+            }
+            client = newClient;
+            db = database;
+            ready = true;
+            lastDbError = "";
+            console.log("[thejohn] MongoDB OK (" + c.label + ")");
+            return db;
+        } catch (e) {
+            lastErr = e;
+            if (newClient) {
+                try {
+                    await newClient.close();
+                } catch (e2) {}
+            }
+            console.error("[thejohn] MongoDB", c.label, "failed:", e.message);
+        }
     }
-    client = newClient;
-    db = database;
-    ready = true;
-    lastDbError = "";
-    return db;
+
+    ready = false;
+    throw lastErr;
 }
 
 async function connectDb() {
@@ -157,16 +229,15 @@ async function connectDb() {
         try {
             const result = await connectDbOnce();
             connecting = false;
-            console.log("[thejohn] MongoDB connected (attempt " + attempt + ")");
             return result;
         } catch (e) {
             lastErr = e;
             setDbError(e);
             var msg = e.message || "";
-            console.error("[thejohn] MongoDB attempt " + attempt + " failed:", msg);
+            console.error("[thejohn] MongoDB round " + attempt + " failed:", msg);
             if (/SSL|TLS|tlsv1|alert internal/i.test(msg)) {
                 console.error(
-                    "[thejohn] TLS 힌트: Atlas Network Access 0.0.0.0/0, MONGODB_URI 비밀번호 URL 인코딩(! → %21)"
+                    "[thejohn] → Atlas Network Access 0.0.0.0/0 확인, Render에 MONGODB_USER/PASSWORD/HOST 사용"
                 );
             }
             if (attempt < maxAttempts) {
@@ -185,7 +256,7 @@ async function connectDb() {
 function scheduleReconnect() {
     setInterval(function () {
         if (ready || connecting) return;
-        if (!normalizeMongoUri(process.env.MONGODB_URI)) return;
+        if (!hasMongoConfig()) return;
         connectDb().catch(function () {});
     }, 30000);
 }
@@ -210,4 +281,13 @@ async function closeDb() {
     }
 }
 
-module.exports = { connectDb, getDb, closeDb, isDbReady, getLastDbError, fixMongoUri };
+module.exports = {
+    connectDb,
+    getDb,
+    closeDb,
+    isDbReady,
+    getLastDbError,
+    fixMongoUri,
+    hasMongoConfig,
+    buildUriFromParts
+};
