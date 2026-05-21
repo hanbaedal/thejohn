@@ -62,7 +62,9 @@
         return fetch(apiUrl(path), opts).then(function (res) {
             return parseJson(res).then(function (data) {
                 if (!res.ok) {
-                    var err = new Error((data && data.error) || "요청에 실패했습니다.");
+                    var msg = (data && data.error) || "요청에 실패했습니다.";
+                    if (data && data.hint) msg += "\n\n" + data.hint;
+                    var err = new Error(msg);
                     err.status = res.status;
                     err.data = data;
                     throw err;

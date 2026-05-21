@@ -189,9 +189,17 @@ async function connectDbOnce() {
             await migrateStaffCollection(database);
             const { migrateVendorsCollection } = require("./lib/vendorFields");
             await migrateVendorsCollection(database);
-            await ensureDefaultStaffSeeds(database);
-            const { ensureLoginFieldsMigrated } = require("./lib/loginResolve");
-            await ensureLoginFieldsMigrated(database);
+            try {
+                await ensureDefaultStaffSeeds(database);
+            } catch (seedErr) {
+                console.error("[thejohn] staff seed warning:", seedErr.message);
+            }
+            try {
+                const { ensureLoginFieldsMigrated } = require("./lib/loginResolve");
+                await ensureLoginFieldsMigrated(database);
+            } catch (migErr) {
+                console.error("[thejohn] login migrate warning:", migErr.message);
+            }
 
             if (client) {
                 try {

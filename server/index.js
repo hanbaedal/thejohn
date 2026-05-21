@@ -42,12 +42,48 @@ function parseOrigins() {
     return true;
 }
 
+function dbErrorHint(msg) {
+    var m = String(msg || "");
+    if (/설정 없음|NO_CONFIG/i.test(m)) {
+        return "Render Environment에 MONGODB_USER, MONGODB_PASSWORD, MONGODB_HOST(또는 MONGODB_URI)를 설정한 뒤 Manual Deploy 하세요.";
+    }
+    if (/bad auth|Authentication failed/i.test(m)) {
+        return "Atlas 비밀번호와 Render MONGODB_PASSWORD가 일치하는지 확인하세요.";
+    }
+    if (/SSL|TLS|tlsv1|alert internal/i.test(m)) {
+        return "Atlas Network Access에 0.0.0.0/0을 추가하고, MONGODB_USER/PASSWORD/HOST 분리 설정을 권장합니다.";
+    }
+    if (/ENOTFOUND|getaddrinfo/i.test(m)) {
+        return "MONGODB_HOST(클러스터 주소)가 올바른지 확인하세요.";
+    }
+    return "잠시 후 다시 시도하거나 /api/health 의 dbError를 확인하세요.";
+}
+
 function requireDb(req, res, next) {
     if (isDbReady()) return next();
-    return res.status(503).json({
-        ok: false,
-        error: "데이터베이스 연결 중입니다. 잠시 후 다시 시도해 주세요."
-    });
+
+    if (!hasMongoConfig()) {
+        return res.status(503).json({
+            ok: false,
+            code: "NO_MONGO_CONFIG",
+            error: "MongoDB 환경 변수가 없습니다. Render Environment를 확인해 주세요.",
+            hint: dbErrorHint("설정 없음")
+        });
+    }
+
+    connectDb()
+        .then(function () {
+            next();
+        })
+        .catch(function () {
+            var errMsg = getLastDbError();
+            return res.status(503).json({
+                ok: false,
+                code: "DB_UNAVAILABLE",
+                error: "데이터베이스에 연결할 수 없습니다. " + dbErrorHint(errMsg),
+                dbError: errMsg
+            });
+        });
 }
 
 app.use(
@@ -117,23 +153,13 @@ function envTrim(key) {
     return String(process.env[key] || "").trim();
 }
 
-function validateEnv() {
-    var missing = [];
-    if (!hasMongoConfig()) missing.push("MONGODB_USER+PASSWORD+HOST 또는 MONGODB_URI");
-    if (envTrim("JWT_SECRET").length < 16) missing.push("JWT_SECRET(16자 이상)");
-    if (missing.length) {
-        console.error("[thejohn] 필수 환경 변수 없음:", missing.join(", "));
-        console.error("[thejohn] Render → Environment 에서 설정 후 Manual Deploy 하세요.");
-        return false;
-    }
-    return true;
-}
-
-app.listen(PORT, "0.0.0.0", function () {
-    console.log("[thejohn] listening on port " + PORT);
-    if (!validateEnv()) {
-        console.error("[thejohn] 환경 변수 미설정 — API는 503, 정적 페이지만 제공");
+function startMongoConnect() {
+    if (!hasMongoConfig()) {
+        console.error("[thejohn] MongoDB 환경 변수 없음 — MONGODB_USER/PASSWORD/HOST 또는 MONGODB_URI 필요");
         return;
+    }
+    if (envTrim("JWT_SECRET").length < 16) {
+        console.error("[thejohn] JWT_SECRET(16자 이상) 없음 — 로그인 토큰 발급 불가");
     }
     connectDb()
         .then(function () {
@@ -142,7 +168,12 @@ app.listen(PORT, "0.0.0.0", function () {
         .catch(function (err) {
             console.error("[thejohn] MongoDB 연결 실패:", err.message);
             console.error(
-                "[thejohn] 확인: Atlas Network Access 0.0.0.0/0, MONGODB_URI 비밀번호·따옴표 없음, /api/health 의 dbError"
+                "[thejohn] → /api/health · /api/env-check 확인, Atlas 0.0.0.0/0, 비밀번호 일치"
             );
         });
+}
+
+app.listen(PORT, "0.0.0.0", function () {
+    console.log("[thejohn] listening on port " + PORT);
+    startMongoConnect();
 });
