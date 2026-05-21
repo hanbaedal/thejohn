@@ -17,6 +17,72 @@ function normalizeMongoUri(uri) {
     return u;
 }
 
+/** 비밀번호의 ! @ # 등을 URL 인코딩 (Render/Linux TLS 오류 방지) */
+function encodeCredentialPart(part) {
+    const raw = String(part || "");
+    try {
+        const decoded = decodeURIComponent(raw);
+        if (encodeURIComponent(decoded) === raw && /[^A-Za-z0-9._~-]/.test(decoded)) {
+            return encodeURIComponent(decoded);
+        }
+        if (decoded !== raw) return raw;
+        return encodeURIComponent(decoded);
+    } catch (e) {
+        return encodeURIComponent(raw);
+    }
+}
+
+function fixMongoUri(raw) {
+    let uri = normalizeMongoUri(raw);
+    const match = uri.match(/^(mongodb(?:\+srv)?:\/\/)([^@]+)@(.+)$/);
+    if (match) {
+        const prefix = match[1];
+        const userPass = match[2];
+        const rest = match[3];
+        const colon = userPass.indexOf(":");
+        if (colon > 0) {
+            const user = encodeCredentialPart(userPass.slice(0, colon));
+            const pass = encodeCredentialPart(userPass.slice(colon + 1));
+            uri = prefix + user + ":" + pass + "@" + rest;
+        }
+    }
+
+    const qIndex = uri.indexOf("?");
+    const base = qIndex >= 0 ? uri.slice(0, qIndex) : uri;
+    let qs = qIndex >= 0 ? uri.slice(qIndex + 1) : "";
+    const params = new URLSearchParams(qs);
+
+    if (!params.has("retryWrites")) params.set("retryWrites", "true");
+    if (!params.has("w")) params.set("w", "majority");
+    if (!params.has("authSource")) params.set("authSource", "admin");
+
+    const dbName = String(process.env.MONGODB_DB || "thejhon").trim() || "thejhon";
+    let pathBase = base;
+    const hostStart = pathBase.indexOf("@");
+    if (hostStart >= 0) {
+        const afterHost = pathBase.slice(hostStart + 1);
+        const slash = afterHost.indexOf("/");
+        if (slash < 0) {
+            pathBase = pathBase + "/" + dbName;
+        } else if (slash === afterHost.length - 1) {
+            pathBase = pathBase + dbName;
+        }
+    }
+
+    const query = params.toString();
+    return query ? pathBase + "?" + query : pathBase;
+}
+
+function mongoClientOptions() {
+    return {
+        serverSelectionTimeoutMS: 30000,
+        connectTimeoutMS: 30000,
+        socketTimeoutMS: 45000,
+        maxPoolSize: 10,
+        autoSelectFamily: false
+    };
+}
+
 function setDbError(err) {
     lastDbError = err ? String(err.message || err) : "";
 }
@@ -38,7 +104,7 @@ async function safeCreateIndex(collection, spec, options) {
 }
 
 async function connectDbOnce() {
-    const uri = normalizeMongoUri(process.env.MONGODB_URI);
+    const uri = fixMongoUri(process.env.MONGODB_URI);
     if (!uri) {
         throw new Error("MONGODB_URI 환경 변수가 설정되지 않았습니다.");
     }
@@ -47,11 +113,7 @@ async function connectDbOnce() {
     }
 
     const dbName = String(process.env.MONGODB_DB || "thejhon").trim() || "thejhon";
-    const newClient = new MongoClient(uri, {
-        serverSelectionTimeoutMS: 20000,
-        connectTimeoutMS: 20000,
-        maxPoolSize: 10
-    });
+    const newClient = new MongoClient(uri, mongoClientOptions());
 
     await newClient.connect();
     await newClient.db(dbName).command({ ping: 1 });
@@ -100,7 +162,13 @@ async function connectDb() {
         } catch (e) {
             lastErr = e;
             setDbError(e);
-            console.error("[thejohn] MongoDB attempt " + attempt + " failed:", e.message);
+            var msg = e.message || "";
+            console.error("[thejohn] MongoDB attempt " + attempt + " failed:", msg);
+            if (/SSL|TLS|tlsv1|alert internal/i.test(msg)) {
+                console.error(
+                    "[thejohn] TLS 힌트: Atlas Network Access 0.0.0.0/0, MONGODB_URI 비밀번호 URL 인코딩(! → %21)"
+                );
+            }
             if (attempt < maxAttempts) {
                 await new Promise(function (r) {
                     setTimeout(r, 2000 * attempt);
@@ -142,4 +210,4 @@ async function closeDb() {
     }
 }
 
-module.exports = { connectDb, getDb, closeDb, isDbReady, getLastDbError };
+module.exports = { connectDb, getDb, closeDb, isDbReady, getLastDbError, fixMongoUri };

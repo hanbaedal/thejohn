@@ -24,7 +24,17 @@
 mongodb+srv://USER:PASSWORD@cluster0.xxxxx.mongodb.net/?retryWrites=true&w=majority
 ```
 
-비밀번호에 `@ # % &` 등이 있으면 [URL 인코딩](https://www.urlencoder.org/) 후 URI에 넣기.
+비밀번호에 `! @ # % &` 등이 있으면 URI에서 **URL 인코딩** 필요 (`!` → `%21`).  
+예: `leesb129!` → `leesb129%21`  
+(서버 코드가 자동 인코딩하지만, Render에 잘못된 URI가 있으면 Atlas에서 비밀번호를 재발급 후 다시 붙여넣기.)
+
+### TLS / SSL `alert internal error` (dbError)
+
+Render Linux에서 흔함. 순서대로:
+
+1. Atlas **Network Access** → `0.0.0.0/0`  
+2. `MONGODB_URI` 따옴표 제거, 비밀번호 특수문자 인코딩  
+3. 최신 코드 배포 후 `/api/health` → `"db": true` 확인  
 
 | 변수 | 값 |
 |------|-----|
