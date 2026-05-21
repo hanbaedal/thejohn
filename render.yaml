@@ -1,0 +1,27 @@
+# https://render.com — GitHub hanbaedal/thejohn 연결 후 Blueprint 배포
+services:
+  - type: web
+    name: thejohn
+    runtime: node
+    plan: free
+    rootDir: server
+    buildCommand: npm ci
+    startCommand: node index.js
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: MONGODB_DB
+        value: thejhon
+      - key: PORT
+        value: "10000"
+      - key: MONGODB_URI
+        sync: false
+      - key: JWT_SECRET
+        generateValue: true
+      - key: THEJHON_ADMIN_PASSWORD
+        sync: false
+      - key: THEJHON_GUEST_PASSWORD
+        value: guest
+      - key: ALLOWED_ORIGINS
+        value: https://thejohn.co.kr,https://www.thejohn.co.kr

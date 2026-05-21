@@ -5,9 +5,12 @@
     var TOKEN_KEY = "thejhon_api_token";
 
     var config = {
-        /** 비우면 현재 사이트 기준 상대 경로 (/api/...) */
         baseUrl: ""
     };
+
+    if (typeof global.THEJHON_API_BASE_URL === "string" && global.THEJHON_API_BASE_URL) {
+        config.baseUrl = global.THEJHON_API_BASE_URL;
+    }
 
     function apiBase() {
         return String(config.baseUrl || "").replace(/\/$/, "");

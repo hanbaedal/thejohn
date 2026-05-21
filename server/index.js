@@ -51,8 +51,8 @@ app.use((req, res, next) => {
 
 async function start() {
     await connectDb();
-    app.listen(PORT, () => {
-        console.log("thejhon server http://localhost:" + PORT);
+    app.listen(PORT, "0.0.0.0", () => {
+        console.log("thejhon server listening on port " + PORT);
     });
 }
 

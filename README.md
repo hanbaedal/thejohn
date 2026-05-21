@@ -60,16 +60,17 @@ HTML을 파일로 직접 열면(`file://`) API가 동작하지 않습니다.
 | POST/PUT/DELETE | `/api/vendors` | 관리자 JWT |
 | POST | `/api/auth/login` | 공개 |
 
-## thejohn.co.kr 배포 (개요)
+## thejohn.co.kr 배포
 
-1. **VPS 또는 PaaS**에 Node 18+ 설치
-2. 이 저장소 클론 후 `server`에서 `npm install --production`
-3. `.env` 설정, `pm2 start index.js` 등으로 프로세스 유지
-4. **Nginx** 예시: `thejohn.co.kr` → `proxy_pass http://127.0.0.1:3000`
-5. **DNS**: `thejohn.co.kr` A 레코드를 서버 IP로 연결
-6. **HTTPS**: Let's Encrypt (`certbot`)
+**가비아 DNS만 설정된 상태**에서는 Apache 기본 페이지만 보일 수 있습니다.  
+Node + MongoDB 사이트는 **Render 배포(권장)** 또는 **서버호스팅 SSH** 가 필요합니다.
 
-동일 출처에서 HTML과 `/api`를 함께 제공하므로 `thejhon-api.js`의 `baseUrl`은 비워 두면 됩니다.
+자세한 단계: **[deploy/DEPLOY-GABIA.md](deploy/DEPLOY-GABIA.md)**
+
+1. [Render](https://render.com) → Blueprint → GitHub `hanbaedal/thejohn` → `render.yaml`
+2. 환경 변수: `MONGODB_URI`, `THEJHON_ADMIN_PASSWORD` 등
+3. Custom Domain `thejohn.co.kr` / `www` → Render DNS 안내값으로 **가비아 DNS** 수정
+4. `api-config.js` 의 `THEJHON_API_BASE_URL` 은 `""` 유지 (통합 배포)
 
 ## 기존 localStorage 데이터
 
