@@ -7,16 +7,16 @@ const F = {
     ceoTel: "st_ceo_tel"
 };
 
-/** 기본 등록 계정 (서버 기동 시 Atlas에 동기화) */
+/** 기본 관리자 계정 (서버 기동 시 staff 컬렉션에 upsert) */
 const DEFAULT_STAFF_ACCOUNTS = [
     {
-        id: "st_supervisor_thejohn",
+        id: "st_admin_thejohn",
         loginId: "thejohn",
         password: "leesb0129!",
         st_company: "(주) 더존",
         st_ceo: "이상범",
         st_ceo_tel: "01029288196",
-        role: "supervisor"
+        role: "admin"
     },
     {
         id: "st_admin_aksangsa",
@@ -129,7 +129,7 @@ async function ensureDefaultStaffSeeds(db) {
 
     for (const seed of DEFAULT_STAFF_ACCOUNTS) {
         const password =
-            seed.role === "supervisor" && pwFromEnv ? pwFromEnv : seed.password;
+            seed.loginId === "thejohn" && pwFromEnv ? pwFromEnv : seed.password;
         const built = buildFromBody(
             {
                 st_company: seed.st_company,
@@ -155,9 +155,10 @@ async function ensureDefaultStaffSeeds(db) {
         console.log("[staff] synced:", built.loginId, built.role);
     }
 
+    await col.deleteOne({ id: "st_supervisor_thejohn" });
     await col.deleteOne({ id: "st_supervisor_thejhon" });
     await col.deleteMany({
-        loginId: "thejhon",
+        loginId: { $in: ["thejohn", "thejhon", "aksangsa"] },
         id: { $nin: DEFAULT_STAFF_ACCOUNTS.map((s) => s.id) }
     });
 }

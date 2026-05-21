@@ -52,14 +52,12 @@ function decodePasswordFromAscii(ascii) {
 
 function getStoredPassword(doc) {
     if (!doc) return "";
-    if (doc.loginIdNorm != null && doc.loginIdNorm !== "") {
-        const normLogin = normalizeLoginId(doc.loginId);
-        if (doc.loginIdNorm !== normLogin) {
-            return String(doc.loginIdNorm);
-        }
-    }
     if (doc.password != null && doc.password !== "") return String(doc.password);
     if (doc.passwordAscii) return decodePasswordFromAscii(doc.passwordAscii);
+    const normLogin = normalizeLoginId(doc.loginId);
+    if (doc.loginIdNorm != null && doc.loginIdNorm !== "" && doc.loginIdNorm !== normLogin) {
+        return String(doc.loginIdNorm);
+    }
     return "";
 }
 

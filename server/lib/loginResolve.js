@@ -2,13 +2,10 @@ const { getDb } = require("../db");
 const {
     loginLookupFilter,
     verifyLoginPassword,
-    setLoginPassword
+    setLoginPassword,
+    migrateCollectionLoginFields
 } = require("./loginAccount");
-const {
-    verifyStaffPassword,
-    isStaffRole,
-    isReservedStaffLoginId
-} = require("./staff");
+const { verifyStaffPassword, isStaffRole } = require("./staff");
 const { getCompanyName: getVendorCompanyName } = require("./vendorFields");
 const { getCompanyName: getStaffCompanyName, getCeoName: getStaffCeoName } = require("./staffFields");
 
@@ -20,70 +17,81 @@ function normalizeId(s) {
         .toLowerCase();
 }
 
-/** staff · vendors 동시 조회 (loginId 기준) */
+/** staff 컬렉션 — loginId로 1건 조회 */
+async function findStaffByLoginId(loginId) {
+    const filter = Object.assign({ active: { $ne: false } }, loginLookupFilter(loginId));
+    return getDb().collection("staff").findOne(filter);
+}
+
+/** vendors 컬렉션 — loginId로 1건 조회 */
+async function findVendorByLoginId(loginId) {
+    return getDb().collection("vendors").findOne(loginLookupFilter(loginId));
+}
+
+/** staff · vendors 동시 조회 */
 async function lookupStaffAndVendor(loginId) {
-    const db = getDb();
-    const staffFilter = Object.assign({ active: { $ne: false } }, loginLookupFilter(loginId));
     const [staff, vendor] = await Promise.all([
-        db.collection("staff").findOne(staffFilter),
-        db.collection("vendors").findOne(loginLookupFilter(loginId))
+        findStaffByLoginId(loginId),
+        findVendorByLoginId(loginId)
     ]);
     return { staff, vendor };
 }
 
+async function tryStaffLogin(staff, loginId, password) {
+    if (!staff || !isStaffRole(staff.role)) return null;
+
+    const valid = await verifyStaffPassword(staff, loginId, password);
+    if (!valid) return null;
+
+    const company = getStaffCompanyName(staff);
+    const ceo = getStaffCeoName(staff);
+    return {
+        ok: true,
+        role: staff.role,
+        userId: staff.loginId,
+        companyName: company || (staff.role === "supervisor" ? "(주)더존" : ""),
+        displayName: ceo || staff.loginId
+    };
+}
+
+async function tryVendorLogin(vendor, loginId, password) {
+    if (!vendor) return null;
+
+    const vendorCheck = await verifyLoginPassword(vendor, loginId, password);
+    if (!vendorCheck.valid) return null;
+
+    if (vendorCheck.migratePassword != null) {
+        await setLoginPassword(
+            getDb().collection("vendors"),
+            { id: vendor.id },
+            loginId,
+            vendorCheck.migratePassword
+        );
+    }
+
+    return {
+        ok: true,
+        role: "vendor",
+        userId: vendor.loginId,
+        companyName: getVendorCompanyName(vendor),
+        displayName: getVendorCompanyName(vendor) || vendor.loginId || ""
+    };
+}
+
+/**
+ * staff · vendors 컬렉션에서 아이디를 찾고 비밀번호를 검증합니다.
+ * (게스트·환경 변수 관리자 비밀번호는 사용하지 않음)
+ */
 async function resolveFormLogin(loginId, password) {
     const { staff, vendor } = await lookupStaffAndVendor(loginId);
     const hasStaffAccount = !!(staff && isStaffRole(staff.role));
     const hasVendorAccount = !!vendor;
 
-    if (hasStaffAccount) {
-        const valid = await verifyStaffPassword(staff, loginId, password);
-        if (valid) {
-            const company = getStaffCompanyName(staff);
-            const ceo = getStaffCeoName(staff);
-            return {
-                ok: true,
-                role: staff.role,
-                userId: staff.loginId,
-                companyName: company || (staff.role === "supervisor" ? "(주)더존" : ""),
-                displayName: ceo || staff.loginId
-            };
-        }
-    }
+    const staffResult = await tryStaffLogin(staff, loginId, password);
+    if (staffResult) return staffResult;
 
-    if (hasVendorAccount) {
-        const vendorCheck = await verifyLoginPassword(vendor, loginId, password);
-        if (vendorCheck.valid) {
-            if (vendorCheck.migratePassword != null) {
-                await setLoginPassword(
-                    getDb().collection("vendors"),
-                    { id: vendor.id },
-                    loginId,
-                    vendorCheck.migratePassword
-                );
-            }
-            return {
-                ok: true,
-                role: "vendor",
-                userId: vendor.loginId,
-                companyName: getVendorCompanyName(vendor),
-                displayName: getVendorCompanyName(vendor) || vendor.loginId || ""
-            };
-        }
-    }
-
-    if (isReservedStaffLoginId(loginId)) {
-        const legacyPw = String(process.env.THEJHON_ADMIN_PASSWORD || "").trim();
-        if (legacyPw && password === legacyPw) {
-            return {
-                ok: true,
-                role: "admin",
-                userId: loginId,
-                companyName: "(주)더존",
-                displayName: loginId
-            };
-        }
-    }
+    const vendorResult = await tryVendorLogin(vendor, loginId, password);
+    if (vendorResult) return vendorResult;
 
     if (!hasStaffAccount && !hasVendorAccount) {
         return { ok: false, reason: "NOT_REGISTERED" };
@@ -104,10 +112,18 @@ function resolveGuestLogin(password) {
     };
 }
 
+async function ensureLoginFieldsMigrated(db) {
+    await migrateCollectionLoginFields(db, "staff");
+    await migrateCollectionLoginFields(db, "vendors");
+}
+
 module.exports = {
     GUEST_ID,
     normalizeId,
+    findStaffByLoginId,
+    findVendorByLoginId,
     lookupStaffAndVendor,
     resolveFormLogin,
-    resolveGuestLogin
+    resolveGuestLogin,
+    ensureLoginFieldsMigrated
 };

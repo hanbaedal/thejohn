@@ -190,6 +190,8 @@ async function connectDbOnce() {
             const { migrateVendorsCollection } = require("./lib/vendorFields");
             await migrateVendorsCollection(database);
             await ensureDefaultStaffSeeds(database);
+            const { ensureLoginFieldsMigrated } = require("./lib/loginResolve");
+            await ensureLoginFieldsMigrated(database);
 
             if (client) {
                 try {

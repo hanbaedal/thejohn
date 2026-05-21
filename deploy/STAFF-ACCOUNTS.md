@@ -9,16 +9,16 @@
 | `st_company` | 업체이름 |
 | `st_ceo` | 대표자 이름 |
 | `st_ceo_tel` | 대표자 연락처 |
-| `role` | `supervisor` 또는 `admin` |
+| `role` | `admin` (관리자) · 필요 시 `supervisor` |
 
-## 기본 등록 계정 (서버 기동 시 동기화)
+## staff 컬렉션 기본 등록 (서버 기동 시 자동 동기화)
 
 | 구분 | 아이디 | 비밀번호 | 업체이름 | 대표자 | 연락처 |
 |------|--------|----------|----------|--------|--------|
-| 슈퍼바이저 | `thejohn` | `leesb0129!` | (주) 더존 | 이상범 | 01029288196 |
+| 관리자 | `thejohn` | `leesb0129!` | (주) 더존 | 이상범 | 01029288196 |
 | 관리자 | `aksangsa` | `kimjc2333!` | (주)에이케이상사 | 김종철 | 01047212333 |
 
-Render에서 슈퍼바이저 비밀번호만 바꿀 때:
+Render에서 `thejohn` 비밀번호만 환경 변수로 덮어쓸 때:
 
 ```
 THEJHON_SEED_SUPERVISOR_PASSWORD=leesb0129!
@@ -27,8 +27,8 @@ THEJHON_SEED_SUPERVISOR_PASSWORD=leesb0129!
 ## 로그인
 
 - https://thejohn.onrender.com/login.html
-- 슈퍼바이저: `thejohn` / `leesb0129!`
-- 관리자: `aksangsa` / `kimjc2333!`
+- 관리자 `thejohn` / `leesb0129!`
+- 관리자 `aksangsa` / `kimjc2333!`
 
 ## 관리자 추가 API
 

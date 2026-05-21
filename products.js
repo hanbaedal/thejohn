@@ -24,7 +24,7 @@
 
     function priceHtml(it) {
         if (window.THEJHON_AUTH && THEJHON_AUTH.canSeePrices && !THEJHON_AUTH.canSeePrices()) {
-            return '<span class="ps-price-masked">가격: 비공개 (업체 로그인 시 표시)</span>';
+            return '<span class="ps-price-masked">가격: 비공개 (업체·스테프 로그인 시 표시)</span>';
         }
         var parts = [];
         var labels = ["가격1", "가격2", "가격3", "가격4"];

@@ -1,5 +1,5 @@
 const { getDb } = require("../db");
-const { loginLookupFilter, verifyLoginPassword, setLoginPassword } = require("./loginAccount");
+const { loginLookupFilter, verifyLoginPassword, setLoginPassword, normalizeLoginId } = require("./loginAccount");
 const {
     SUPERVISOR_LOGIN,
     toPublic,
@@ -11,12 +11,6 @@ const {
 
 function str(v) {
     return String(v ?? "").trim();
-}
-
-function normalizeLoginId(loginId) {
-    return String(loginId || "")
-        .trim()
-        .toLowerCase();
 }
 
 function newStaffId() {

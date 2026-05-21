@@ -190,6 +190,9 @@
                         ok.companyName,
                         ok.displayName
                     );
+                    if (THEJHON_AUTH.applyNavRegisterVisibility) {
+                        THEJHON_AUTH.applyNavRegisterVisibility();
+                    }
                     goAfterLogin();
                 }
 

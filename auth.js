@@ -1,5 +1,5 @@
 /**
- * 세션 + /api/auth/login
+ * 세션 + /api/auth/login (MongoDB staff · vendors 컬렉션 조회)
  * 역할: supervisor | admin | guest | vendor | oauth
  */
 (function (global) {
@@ -110,13 +110,21 @@
         return sessionStorage.getItem(USER_ID_KEY) || "";
     }
 
+    /** 미로그인·게스트 로그인 — 상품 가격 비공개, 등록 메뉴 비표시 */
+    function isGuestMode() {
+        if (!isLoggedIn()) return true;
+        return getRole() === "guest";
+    }
+
+    /** 슈퍼바이저·관리자만 상품등록·업체등록 */
     function canManageRegisters() {
         return isStaffRole(getRole()) && !!(global.THEJHON_API && THEJHON_API.getToken && THEJHON_API.getToken());
     }
 
+    /** 업체·스테프만 상품 가격 표시 */
     function canSeePrices() {
         var r = getRole();
-        return isStaffRole(r) || r === "vendor" || r === "oauth";
+        return isStaffRole(r) || r === "vendor";
     }
 
     function getLoggedInCompanyDisplayName() {
@@ -160,16 +168,6 @@
         }
     }
 
-    function enforceNotebookLogin() {
-        normalizeLegacySession();
-        if (!isNotebookViewport()) return;
-        var page = currentPageFile();
-        if (page === "login.html") return;
-        if (isLoggedIn()) return;
-        var next = window.location.href;
-        window.location.replace("login.html?next=" + encodeURIComponent(next));
-    }
-
     function enforceRegisterPages() {
         var page = currentPageFile();
         if (page !== "product-register.html" && page !== "vendor-register.html") return;
@@ -183,17 +181,18 @@
 
     function applyNavRegisterVisibility() {
         try {
+            normalizeLegacySession();
             var sel =
                 '.site-header-nav a[href="product-register.html"], .site-header-nav a[href="vendor-register.html"]';
             var nodes = document.querySelectorAll(sel);
-            var hide = isLoggedIn() && !canManageRegisters();
+            var show = canManageRegisters();
             for (var i = 0; i < nodes.length; i++) {
-                if (hide) {
-                    nodes[i].classList.add("header-nav-link--register-hidden");
-                    nodes[i].setAttribute("aria-hidden", "true");
-                } else {
+                if (show) {
                     nodes[i].classList.remove("header-nav-link--register-hidden");
                     nodes[i].removeAttribute("aria-hidden");
+                } else {
+                    nodes[i].classList.add("header-nav-link--register-hidden");
+                    nodes[i].setAttribute("aria-hidden", "true");
                 }
             }
         } catch (e) {}
@@ -214,11 +213,11 @@
         isLoggedIn: isLoggedIn,
         getRole: getRole,
         getUserId: getUserId,
+        isGuestMode: isGuestMode,
         canManageRegisters: canManageRegisters,
         canSeePrices: canSeePrices,
         getLoggedInCompanyDisplayName: getLoggedInCompanyDisplayName,
         isNotebookViewport: isNotebookViewport,
-        enforceNotebookLogin: enforceNotebookLogin,
         enforceRegisterPages: enforceRegisterPages,
         applyNavRegisterVisibility: applyNavRegisterVisibility,
         safeNextPath: safeNextPath

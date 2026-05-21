@@ -1,7 +1,6 @@
 (function () {
     if (window.THEJHON_AUTH) {
         THEJHON_AUTH.normalizeLegacySession();
-        THEJHON_AUTH.enforceNotebookLogin();
         THEJHON_AUTH.enforceRegisterPages();
         THEJHON_AUTH.applyNavRegisterVisibility();
     }
@@ -29,7 +28,13 @@
             }
         }
         sync();
-        window.addEventListener("pageshow", sync);
+        function syncAll() {
+            sync();
+            if (window.THEJHON_AUTH && THEJHON_AUTH.applyNavRegisterVisibility) {
+                THEJHON_AUTH.applyNavRegisterVisibility();
+            }
+        }
+        window.addEventListener("pageshow", syncAll);
     })();
 
     (function syncHeaderCompanyName() {
