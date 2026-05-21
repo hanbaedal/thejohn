@@ -1,0 +1,11 @@
+{
+  "name": "thejohn",
+  "private": true,
+  "scripts": {
+    "start": "node server/index.js",
+    "build": "cd server && npm ci"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

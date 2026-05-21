@@ -3,7 +3,7 @@ require("dotenv").config({ path: require("path").join(__dirname, "..", ".env") }
 const path = require("path");
 const express = require("express");
 const cors = require("cors");
-const { connectDb } = require("./db");
+const { connectDb, isDbReady } = require("./db");
 
 const authRoutes = require("./routes/auth");
 const productRoutes = require("./routes/products");
@@ -23,6 +23,14 @@ function parseOrigins() {
     return true;
 }
 
+function requireDb(req, res, next) {
+    if (isDbReady()) return next();
+    return res.status(503).json({
+        ok: false,
+        error: "데이터베이스 연결 중입니다. 잠시 후 다시 시도해 주세요."
+    });
+}
+
 app.use(
     cors({
         origin: parseOrigins(),
@@ -32,12 +40,16 @@ app.use(
 app.use(express.json({ limit: "15mb" }));
 
 app.get("/api/health", (req, res) => {
-    res.json({ ok: true, service: "thejhon-homepage" });
+    res.json({
+        ok: true,
+        service: "thejhon-homepage",
+        db: isDbReady()
+    });
 });
 
-app.use("/api/auth", authRoutes);
-app.use("/api/products", productRoutes);
-app.use("/api/vendors", vendorRoutes);
+app.use("/api/auth", requireDb, authRoutes);
+app.use("/api/products", requireDb, productRoutes);
+app.use("/api/vendors", requireDb, vendorRoutes);
 
 app.use(express.static(staticRoot, { index: "index.html", extensions: ["html"] }));
 
@@ -49,14 +61,33 @@ app.use((req, res, next) => {
     });
 });
 
-async function start() {
-    await connectDb();
-    app.listen(PORT, "0.0.0.0", () => {
-        console.log("thejhon server listening on port " + PORT);
-    });
+function validateEnv() {
+    var missing = [];
+    if (!process.env.MONGODB_URI) missing.push("MONGODB_URI");
+    if (!process.env.JWT_SECRET || String(process.env.JWT_SECRET).length < 16) {
+        missing.push("JWT_SECRET(16자 이상)");
+    }
+    if (!process.env.THEJHON_ADMIN_PASSWORD) missing.push("THEJHON_ADMIN_PASSWORD");
+    if (missing.length) {
+        console.error("[thejohn] 필수 환경 변수 없음:", missing.join(", "));
+        console.error("[thejohn] Render → Environment 에서 설정 후 Manual Deploy 하세요.");
+        return false;
+    }
+    return true;
 }
 
-start().catch((err) => {
-    console.error(err);
-    process.exit(1);
+app.listen(PORT, "0.0.0.0", function () {
+    console.log("[thejohn] listening on port " + PORT);
+    if (!validateEnv()) {
+        console.error("[thejohn] 환경 변수 미설정 — API는 503, 정적 페이지만 제공");
+        return;
+    }
+    connectDb()
+        .then(function () {
+            console.log("[thejohn] MongoDB connected");
+        })
+        .catch(function (err) {
+            console.error("[thejohn] MongoDB 연결 실패:", err.message);
+            console.error("[thejohn] Atlas Network Access에 0.0.0.0/0 허용 여부를 확인하세요.");
+        });
 });
