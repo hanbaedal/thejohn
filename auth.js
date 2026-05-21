@@ -9,7 +9,7 @@
     var COMPANY_KEY = "thejhon_company_name";
     var DISPLAY_KEY = "thejhon_display_name";
 
-    var SUPERVISOR_ID = "thejhon";
+    var SUPERVISOR_ID = "thejohn";
     var GUEST_ID = "guest";
 
     function normalizeId(s) {

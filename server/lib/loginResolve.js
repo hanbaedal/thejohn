@@ -9,7 +9,8 @@ const {
     isStaffRole,
     isReservedStaffLoginId
 } = require("./staff");
-const { getCompanyName } = require("./vendorFields");
+const { getCompanyName: getVendorCompanyName } = require("./vendorFields");
+const { getCompanyName: getStaffCompanyName, getCeoName: getStaffCeoName } = require("./staffFields");
 
 const GUEST_ID = "guest";
 
@@ -36,12 +37,14 @@ async function resolveFormLogin(loginId, password) {
     if (staff && isStaffRole(staff.role)) {
         const valid = await verifyStaffPassword(staff, loginId, password);
         if (valid) {
+            const company = getStaffCompanyName(staff);
+            const ceo = getStaffCeoName(staff);
             return {
                 ok: true,
                 role: staff.role,
                 userId: staff.loginId,
-                companyName: staff.role === "supervisor" ? "슈퍼바이저" : "(주)더존",
-                displayName: staff.name || staff.loginId
+                companyName: company || (staff.role === "supervisor" ? "(주)더존" : ""),
+                displayName: ceo || staff.loginId
             };
         }
     }
@@ -61,8 +64,8 @@ async function resolveFormLogin(loginId, password) {
                 ok: true,
                 role: "vendor",
                 userId: vendor.loginId,
-                companyName: getCompanyName(vendor),
-                displayName: getCompanyName(vendor) || vendor.loginId || ""
+                companyName: getVendorCompanyName(vendor),
+                displayName: getVendorCompanyName(vendor) || vendor.loginId || ""
             };
         }
     }

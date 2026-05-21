@@ -1,61 +1,49 @@
-# 직원 계정 (슈퍼바이저 · 관리자)
+# 직원 계정 (staff 컬렉션)
 
-## 슈퍼바이저 (기본)
+## MongoDB 필드 (vendors와 동일 개념)
 
-| 항목 | 값 |
-|------|-----|
-| 아이디 | `thejhon` |
-| 비밀번호 | `leesb0129!` (최초 DB 생성 시) |
+| 필드 | 용도 |
+|------|------|
+| `loginId` | 아이디 |
+| `loginIdNorm` | 비밀번호 (입력값 그대로) |
+| `st_company` | 업체이름 |
+| `st_ceo` | 대표자 이름 |
+| `st_ceo_tel` | 대표자 연락처 |
+| `role` | `supervisor` 또는 `admin` |
 
-Render **Environment**에 아래를 넣으면 배포할 때마다 비밀번호를 맞출 수 있습니다.
+## 기본 등록 계정 (서버 기동 시 동기화)
+
+| 구분 | 아이디 | 비밀번호 | 업체이름 | 대표자 | 연락처 |
+|------|--------|----------|----------|--------|--------|
+| 슈퍼바이저 | `thejohn` | `leesb0129!` | (주) 더존 | 이상범 | 01029288196 |
+| 관리자 | `aksangsa` | `kimjc2333!` | (주)에이케이상사 | 김종철 | 01047212333 |
+
+Render에서 슈퍼바이저 비밀번호만 바꿀 때:
 
 ```
 THEJHON_SEED_SUPERVISOR_PASSWORD=leesb0129!
 ```
 
-## 관리자 추가 (나중에 3명)
+## 로그인
 
-슈퍼바이저 또는 관리자로 로그인한 뒤 API 호출:
+- https://thejohn.onrender.com/login.html
+- 슈퍼바이저: `thejohn` / `leesb0129!`
+- 관리자: `aksangsa` / `kimjc2333!`
+
+## 관리자 추가 API
 
 ```http
 POST /api/staff
-Authorization: Bearer <로그인 후 토큰>
+Authorization: Bearer <토큰>
 Content-Type: application/json
 
 {
   "loginId": "admin01",
   "password": "비밀번호4자이상",
-  "name": "홍길동"
+  "st_company": "업체이름",
+  "st_ceo": "대표자",
+  "st_ceo_tel": "01000000000"
 }
 ```
 
-목록 확인: `GET /api/staff` (동일 토큰)
-
-## MongoDB 로그인 필드 (staff · vendors 동일)
-
-| 필드 | 용도 |
-|------|------|
-| `loginId` | 로그인 아이디 |
-| `loginIdNorm` | 비밀번호 (입력값 그대로) |
-
-| 계정 | loginId | loginIdNorm(비밀번호) |
-|------|---------|------------------------|
-| 슈퍼바이저 | `thejhon` | `leesb0129!` (기동 시 동기화) |
-
-- 업체 등록·수정·관리자 추가 시 폼에 입력한 비밀번호가 `loginIdNorm`에 저장됩니다.
-- 예전 `password` / `passwordAscii` / `passwordHash` 는 기동 시 `loginIdNorm`으로 이전됩니다.
-
-## 로그인 (서버)
-
-`POST /api/auth/login` 시 **`staff`와 `vendors`를 `Promise.all`로 동시 조회**한 뒤:
-
-1. `staff` 슈퍼바이저/관리자 비밀번호 일치
-2. 없으면 `vendors` 업체 비밀번호 일치
-3. 예약 아이디(`thejhon` 등)는 위가 모두 실패할 때만 레거시 env 확인
-
-(예전처럼 `thejhon`만 조회 후 바로 401 하지 않음)
-
-## 로그인 (화면)
-
-- https://thejohn.co.kr/login.html (또는 onrender URL)
-- 우측 상단 **로그인** 버튼
+목록: `GET /api/staff`
