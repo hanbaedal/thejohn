@@ -17,15 +17,34 @@ function normalizeId(s) {
         .toLowerCase();
 }
 
+/** 옛 아이디 thejhon → thejohn (staff 시드는 thejohn) */
+function resolveLoginIdForLookup(loginId) {
+    const trimmed = String(loginId || "").trim();
+    if (normalizeId(trimmed) === "thejhon") return "thejohn";
+    return trimmed;
+}
+
 /** staff 컬렉션 — loginId로 1건 조회 */
 async function findStaffByLoginId(loginId) {
-    const filter = Object.assign({ active: { $ne: false } }, loginLookupFilter(loginId));
-    return getDb().collection("staff").findOne(filter);
+    const resolved = resolveLoginIdForLookup(loginId);
+    const idn = normalizeId(resolved);
+    const clauses = [];
+    const lf = loginLookupFilter(resolved);
+    if (lf.$or) clauses.push.apply(clauses, lf.$or);
+    else clauses.push(lf);
+    if (idn === "thejohn") clauses.push({ id: "st_admin_thejohn" });
+    if (idn === "aksangsa") clauses.push({ id: "st_admin_aksangsa" });
+
+    return getDb()
+        .collection("staff")
+        .findOne({ active: { $ne: false }, $or: clauses });
 }
 
 /** vendors 컬렉션 — loginId로 1건 조회 */
 async function findVendorByLoginId(loginId) {
-    return getDb().collection("vendors").findOne(loginLookupFilter(loginId));
+    return getDb()
+        .collection("vendors")
+        .findOne(loginLookupFilter(resolveLoginIdForLookup(loginId)));
 }
 
 /** staff · vendors 동시 조회 */

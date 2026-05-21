@@ -26,10 +26,15 @@ router.post("/login", async (req, res) => {
         const result = await resolveFormLogin(loginId, password);
         if (!result.ok) {
             if (result.reason === "NOT_REGISTERED") {
+                const hint =
+                    normalizeId(loginId) === "thejhon"
+                        ? "아이디는 thejohn 입니다. (thejhon 은 옛 아이디입니다.)"
+                        : "관리자 아이디 thejohn 또는 aksangsa 를 확인해 주세요.";
                 return res.status(404).json({
                     ok: false,
                     code: "NOT_REGISTERED",
-                    error: "더존 관리자에게 회원 등록을 요청해야 합니다."
+                    error: "더존 관리자에게 회원 등록을 요청해야 합니다.",
+                    hint: hint
                 });
             }
             return res.status(401).json({
