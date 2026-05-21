@@ -387,7 +387,11 @@
                     if (err.status === 409) {
                         msg = (err.data && err.data.error) || "이미 사용 중인 아이디입니다.";
                     }
+                    if (err.status === 400) {
+                        msg = (err.data && err.data.error) || msg;
+                    }
                     setStatus(msg, true);
+                    alert("vendors 컬렉션에 저장되지 않았습니다.\n\n" + msg);
                 })
                 .finally(function () {
                     submitBtn.disabled = false;
@@ -420,33 +424,39 @@
         return;
     }
 
+    setFormDisabled(true);
+    setStatus("서버 로그인 세션 확인 중…");
+
     api.checkSession()
         .then(function (sess) {
             if (!sess || !sess.loggedIn) {
                 throw new Error(
                     (sess && sess.error) ||
-                        "브라우저에만 로그인된 상태입니다. 로그아웃 후 thejohn/aksangsa로 다시 로그인해 주세요."
+                        "브라우저에만 로그인된 것처럼 보입니다. 로그아웃 후 thejohn 으로 다시 로그인해 주세요."
                 );
             }
             if (sess.role !== "admin" && sess.role !== "supervisor") {
-                throw new Error("관리자(스테프) 세션이 아닙니다. 업체 계정으로는 저장할 수 없습니다.");
+                throw new Error("관리자(스테프)만 저장할 수 있습니다. 업체 계정으로는 업체등록 메뉴를 쓸 수 없습니다.");
             }
+            setFormDisabled(false);
             setStatus(
-                "관리자 로그인 확인됨 (" +
+                "관리자 확인됨 (" +
                     sess.userId +
-                    ") · 저장 시 MongoDB vendors 컬렉션에 기록됩니다."
+                    ") · 저장 시 Atlas DB thejhon → 컬렉션 vendors 에 기록됩니다."
             );
             return loadList();
         })
         .catch(function (err) {
-            setStatus(apiErrorMessage(err, err.message), true);
+            var msg = apiErrorMessage(err, err.message);
+            setStatus(msg, true);
+            alert(msg);
             setFormDisabled(true);
             if (window.THEJHON_AUTH && THEJHON_AUTH.clearSession) {
                 THEJHON_AUTH.clearSession();
             }
             if (listEl) {
                 listEl.innerHTML =
-                    '<p class="vr-card-note"><a href="login.html?next=vendor-register.html">다시 로그인</a>한 뒤 저장해 주세요. (오래된 세션은 DB 저장이 되지 않습니다)</p>';
+                    '<p class="vr-card-note">컬렉션 이름은 <strong>vendors</strong> 입니다 (venders 아님).<br><a href="login.html?next=vendor-register.html">thejohn / aksangsa 로 다시 로그인</a> 후 저장하세요.</p>';
             }
         });
 })();
