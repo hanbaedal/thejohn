@@ -1,5 +1,5 @@
 (function () {
-    var MAX_IMAGE_BYTES = 2 * 1024 * 1024;
+    var MAX_IMAGE_BYTES = 1 * 1024 * 1024;
     var api = window.THEJHON_API;
 
     function apiErrorMessage(err, fallback) {
@@ -75,7 +75,7 @@
     function readFileAsDataURL(file) {
         return new Promise(function (resolve, reject) {
             if (file.size > MAX_IMAGE_BYTES) {
-                reject(new Error("이미지는 2MB 이하로 선택해 주세요."));
+                reject(new Error("이미지는 1MB 이하로 선택해 주세요."));
                 return;
             }
             var r = new FileReader();

@@ -1,6 +1,5 @@
 (function () {
-    var MAX_IMAGE_BYTES = 900 * 1024;
-    var MAX_LOGO_DATA_URL_LEN = 1200000;
+    var MAX_IMAGE_BYTES = 1 * 1024 * 1024;
     var RESERVED_LOGIN_IDS = ["thejohn", "thejhon", "aksangsa"];
     var api = window.THEJHON_API;
 
@@ -66,13 +65,7 @@
     }
 
     function prepareLogoForSave(logoData) {
-        if (!logoData) return "";
-        if (logoData.length > MAX_LOGO_DATA_URL_LEN) {
-            throw new Error(
-                "로고 이미지가 너무 큽니다. 900KB 이하 파일을 사용하거나 로고 없이 저장해 보세요."
-            );
-        }
-        return logoData;
+        return logoData || "";
     }
 
     function saveVendorToServer(editingId, body) {
@@ -174,7 +167,7 @@
     function readFileAsDataURL(file) {
         return new Promise(function (resolve, reject) {
             if (file.size > MAX_IMAGE_BYTES) {
-                reject(new Error("이미지는 파일당 2MB 이하로 선택해 주세요."));
+                reject(new Error("이미지는 1MB 이하로 선택해 주세요."));
                 return;
             }
             var r = new FileReader();
