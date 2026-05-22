@@ -16,9 +16,11 @@ const SKIP = new Set([
     "public"
 ]);
 const EXT = new Set([".html", ".js", ".css"]);
+const ASSET_EXT = new Set([".png", ".jpg", ".jpeg", ".gif", ".webp", ".svg", ".ico"]);
 
 function shouldCopy(name) {
-    return EXT.has(path.extname(name).toLowerCase());
+    const ext = path.extname(name).toLowerCase();
+    return EXT.has(ext) || ASSET_EXT.has(ext);
 }
 
 function copyFrom(src, dst) {
