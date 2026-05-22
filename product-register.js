@@ -32,13 +32,17 @@
     }
 
     function updatePhotoPreview(src) {
+        if (PF && PF.showImagePreview) {
+            PF.showImagePreview(photoPreview, src);
+            return;
+        }
         if (!photoPreview) return;
         if (src) {
             photoPreview.src = src;
-            photoPreview.hidden = false;
+            photoPreview.removeAttribute("hidden");
         } else {
             photoPreview.removeAttribute("src");
-            photoPreview.hidden = true;
+            photoPreview.setAttribute("hidden", "");
         }
     }
 

@@ -198,13 +198,17 @@
     }
 
     function setPreview(imgEl, src) {
+        if (PF && PF.showImagePreview) {
+            PF.showImagePreview(imgEl, src);
+            return;
+        }
         if (!imgEl) return;
         if (src) {
             imgEl.src = src;
-            imgEl.hidden = false;
+            imgEl.removeAttribute("hidden");
         } else {
             imgEl.removeAttribute("src");
-            imgEl.hidden = true;
+            imgEl.setAttribute("hidden", "");
         }
     }
 

@@ -40,15 +40,13 @@
         return /\.(jpe?g|png|gif|webp|bmp|heic|heif|avif)$/i.test(name);
     }
 
-    function loadImageElement(src, revokeUrl) {
+    function loadImageElement(src) {
         return new Promise(function (resolve, reject) {
             var img = new Image();
             img.onload = function () {
-                if (revokeUrl) URL.revokeObjectURL(revokeUrl);
                 resolve(img);
             };
             img.onerror = function () {
-                if (revokeUrl) URL.revokeObjectURL(revokeUrl);
                 reject(new Error("이미지를 디코딩할 수 없습니다."));
             };
             img.src = src;
@@ -62,14 +60,23 @@
                 return;
             }
             var url = URL.createObjectURL(file);
-            loadImageElement(url, url)
-                .then(resolve)
+            loadImageElement(url)
+                .then(function (img) {
+                    resolve({ img: img, revokeUrl: url });
+                })
                 .catch(function () {
+                    URL.revokeObjectURL(url);
                     var r = new FileReader();
                     r.onload = function () {
-                        loadImageElement(r.result, null).then(resolve).catch(function () {
-                            reject(new Error("이미지를 읽을 수 없습니다. JPG·PNG 사진을 선택해 주세요."));
-                        });
+                        loadImageElement(r.result)
+                            .then(function (img) {
+                                resolve({ img: img, revokeUrl: null });
+                            })
+                            .catch(function () {
+                                reject(
+                                    new Error("이미지를 읽을 수 없습니다. JPG·PNG 사진을 선택해 주세요.")
+                                );
+                            });
                     };
                     r.onerror = function () {
                         reject(new Error("이미지를 읽을 수 없습니다."));
@@ -77,6 +84,15 @@
                     r.readAsDataURL(file);
                 });
         });
+    }
+
+    function ensureImageDecoded(img) {
+        if (img && typeof img.decode === "function") {
+            return img.decode().then(function () {
+                return img;
+            });
+        }
+        return Promise.resolve(img);
     }
 
     function drawSquareJpeg(img, size, quality) {
@@ -108,34 +124,81 @@
         else if (fileSize > maxBytes * 4) maxDim = Math.min(maxDim, 800);
         else if (fileSize > maxBytes) maxDim = Math.min(maxDim, 1024);
 
-        return loadImageFromFile(file).then(function (img) {
-            var dim = maxDim;
-            var quality = 0.9;
-            var dataUrl = "";
-            var lastBytes = Infinity;
+        return loadImageFromFile(file).then(function (payload) {
+            var img = payload.img;
+            var revokeUrl = payload.revokeUrl;
 
-            for (var attempt = 0; attempt < 36; attempt++) {
-                dataUrl = drawSquareJpeg(img, dim, quality);
-                var bytes = dataUrlByteSize(dataUrl);
-                if (bytes <= maxBytes) return dataUrl;
-
-                if (quality > 0.55) {
-                    quality = Math.max(0.55, quality - 0.07);
-                } else if (dim > 280) {
-                    dim = Math.max(280, Math.round(dim * 0.82));
-                    quality = 0.88;
-                } else {
-                    if (bytes >= lastBytes) break;
-                    quality = Math.max(0.45, quality - 0.05);
-                }
-                lastBytes = bytes;
+            function finish(dataUrl) {
+                if (revokeUrl) URL.revokeObjectURL(revokeUrl);
+                return dataUrl;
             }
 
-            if (dataUrlByteSize(dataUrl) <= maxBytes) return dataUrl;
-            throw new Error(
-                "이미지를 1MB 이하·1:1 비율로 줄이지 못했습니다. 다른 사진을 선택해 주세요."
-            );
+            function fail(err) {
+                if (revokeUrl) URL.revokeObjectURL(revokeUrl);
+                throw err;
+            }
+
+            return ensureImageDecoded(img)
+                .then(function (decoded) {
+                    var dim = maxDim;
+                    var quality = 0.9;
+                    var dataUrl = "";
+                    var lastBytes = Infinity;
+
+                    for (var attempt = 0; attempt < 36; attempt++) {
+                        dataUrl = drawSquareJpeg(decoded, dim, quality);
+                        var bytes = dataUrlByteSize(dataUrl);
+                        if (bytes <= maxBytes) return finish(dataUrl);
+
+                        if (quality > 0.55) {
+                            quality = Math.max(0.55, quality - 0.07);
+                        } else if (dim > 280) {
+                            dim = Math.max(280, Math.round(dim * 0.82));
+                            quality = 0.88;
+                        } else {
+                            if (bytes >= lastBytes) break;
+                            quality = Math.max(0.45, quality - 0.05);
+                        }
+                        lastBytes = bytes;
+                    }
+
+                    if (dataUrlByteSize(dataUrl) <= maxBytes) return finish(dataUrl);
+                    return fail(
+                        new Error(
+                            "이미지를 1MB 이하·1:1 비율로 줄이지 못했습니다. 다른 사진을 선택해 주세요."
+                        )
+                    );
+                })
+                .catch(function (err) {
+                    return fail(err);
+                });
         });
+    }
+
+    /** 미리보기 img — hidden 속성·로드 타이밍 모두 처리 */
+    function showImagePreview(imgEl, src) {
+        if (!imgEl) return;
+        if (!src) {
+            imgEl.removeAttribute("src");
+            imgEl.setAttribute("hidden", "");
+            imgEl.classList.remove("tj-image-preview--visible");
+            return;
+        }
+        function reveal() {
+            imgEl.removeAttribute("hidden");
+            imgEl.classList.add("tj-image-preview--visible");
+        }
+        imgEl.onload = function () {
+            reveal();
+        };
+        imgEl.onerror = function () {
+            imgEl.setAttribute("hidden", "");
+            imgEl.classList.remove("tj-image-preview--visible");
+        };
+        imgEl.src = src;
+        if (imgEl.complete && imgEl.naturalWidth > 0) {
+            reveal();
+        }
     }
 
     function readFileAsDataURL(file) {
@@ -165,6 +228,9 @@
                 var task = processImageFileToSquareDataURL(f, processOpts);
                 task
                     .then(function (dataUrl) {
+                        if (!dataUrl || dataUrlByteSize(dataUrl) < 200) {
+                            throw new Error("이미지 처리 결과가 비어 있습니다. JPG·PNG 사진을 다시 선택해 주세요.");
+                        }
                         if (!onSelect) return;
                         var ret = onSelect(dataUrl, f);
                         if (ret && typeof ret.catch === "function") {
@@ -406,6 +472,7 @@
         parsePriceInput: parsePriceInput,
         isImageFile: isImageFile,
         processImageFileToSquareDataURL: processImageFileToSquareDataURL,
+        showImagePreview: showImagePreview,
         readFileAsDataURL: readFileAsDataURL,
         initProductPhotoPicker: initProductPhotoPicker,
         deptLabel: deptLabel,
