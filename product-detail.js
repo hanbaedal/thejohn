@@ -78,7 +78,7 @@
     function showMissing() {
         document.title = "상품 상세 — 더존";
         root.innerHTML =
-            '<p class="pd-missing">상품을 찾을 수 없습니다. <a href="products.html">상품소개</a>로 돌아가 주세요.</p>';
+            '<p class="pd-missing">상품을 찾을 수 없습니다. <a href="products.html">사업부문</a>로 돌아가 주세요.</p>';
     }
 
     function productsListHref(it) {
@@ -142,7 +142,7 @@
                 if (!it) {
                     document.title = "상품 상세 — 더존";
                     root.innerHTML =
-                        '<p class="pd-missing">해당 상품이 없거나 삭제되었습니다. <a href="products.html">상품소개</a>로 돌아가 주세요.</p>';
+                        '<p class="pd-missing">해당 상품이 없거나 삭제되었습니다. <a href="products.html">사업부문</a>로 돌아가 주세요.</p>';
                     return;
                 }
                 renderItem(it);
@@ -150,7 +150,7 @@
             .catch(function () {
                 document.title = "상품 상세 — 더존";
                 root.innerHTML =
-                    '<p class="pd-missing">해당 상품이 없거나 삭제되었습니다. <a href="products.html">상품소개</a>로 돌아가 주세요.</p>';
+                    '<p class="pd-missing">해당 상품이 없거나 삭제되었습니다. <a href="products.html">사업부문</a>로 돌아가 주세요.</p>';
             });
     }
 
