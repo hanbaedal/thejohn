@@ -66,12 +66,10 @@
         });
     }
 
-    function handlePhotoFile(f) {
-        return PF.readFileAsDataURL(f).then(function (dataUrl) {
-            pendingImageData = dataUrl;
-            updatePhotoPreview(dataUrl);
-            setStatus("");
-        });
+    function handlePhotoFile(dataUrl) {
+        pendingImageData = dataUrl;
+        updatePhotoPreview(dataUrl);
+        setStatus("사진을 1:1·1MB 이하로 맞춰 적용했습니다.");
     }
 
     if (PF && PF.initProductPhotoPicker) {

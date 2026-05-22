@@ -399,15 +399,10 @@
         });
     }
 
-    function handleLogoFile(f) {
-        if (!PF || !PF.readFileAsDataURL) {
-            return Promise.reject(new Error("이미지 처리 스크립트를 불러오지 못했습니다."));
-        }
-        return PF.readFileAsDataURL(f).then(function (url) {
-            pendingLogoData = url;
-            setPreview(logoPreview, url);
-            setStatus("로고를 1:1·1MB 이하로 맞춰 적용했습니다.");
-        });
+    function handleLogoFile(dataUrl) {
+        pendingLogoData = dataUrl;
+        setPreview(logoPreview, dataUrl);
+        setStatus("로고를 1:1·1MB 이하로 맞춰 적용했습니다.");
     }
 
     if (PF && PF.initProductPhotoPicker) {

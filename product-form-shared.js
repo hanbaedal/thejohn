@@ -31,23 +31,51 @@
         return Math.ceil((base64.length * 3) / 4);
     }
 
+    /** 앨범·카메라 공통 — type 없는 HEIC 등도 확장자로 허용 */
+    function isImageFile(file) {
+        if (!file) return false;
+        var type = String(file.type || "").toLowerCase();
+        if (type.indexOf("image/") === 0) return true;
+        var name = String(file.name || "").toLowerCase();
+        return /\.(jpe?g|png|gif|webp|bmp|heic|heif|avif)$/i.test(name);
+    }
+
+    function loadImageElement(src, revokeUrl) {
+        return new Promise(function (resolve, reject) {
+            var img = new Image();
+            img.onload = function () {
+                if (revokeUrl) URL.revokeObjectURL(revokeUrl);
+                resolve(img);
+            };
+            img.onerror = function () {
+                if (revokeUrl) URL.revokeObjectURL(revokeUrl);
+                reject(new Error("이미지를 디코딩할 수 없습니다."));
+            };
+            img.src = src;
+        });
+    }
+
     function loadImageFromFile(file) {
         return new Promise(function (resolve, reject) {
-            if (!file || !String(file.type || "").match(/^image\//i)) {
+            if (!isImageFile(file)) {
                 reject(new Error("이미지 파일만 선택할 수 있습니다."));
                 return;
             }
             var url = URL.createObjectURL(file);
-            var img = new Image();
-            img.onload = function () {
-                URL.revokeObjectURL(url);
-                resolve(img);
-            };
-            img.onerror = function () {
-                URL.revokeObjectURL(url);
-                reject(new Error("이미지를 읽을 수 없습니다."));
-            };
-            img.src = url;
+            loadImageElement(url, url)
+                .then(resolve)
+                .catch(function () {
+                    var r = new FileReader();
+                    r.onload = function () {
+                        loadImageElement(r.result, null).then(resolve).catch(function () {
+                            reject(new Error("이미지를 읽을 수 없습니다. JPG·PNG 사진을 선택해 주세요."));
+                        });
+                    };
+                    r.onerror = function () {
+                        reject(new Error("이미지를 읽을 수 없습니다."));
+                    };
+                    r.readAsDataURL(file);
+                });
         });
     }
 
@@ -74,6 +102,11 @@
         options = options || {};
         var maxBytes = options.maxBytes || MAX_IMAGE_BYTES;
         var maxDim = options.maxDimension || 1024;
+        var fileSize = file && file.size ? file.size : 0;
+
+        if (fileSize > maxBytes * 8) maxDim = Math.min(maxDim, 640);
+        else if (fileSize > maxBytes * 4) maxDim = Math.min(maxDim, 800);
+        else if (fileSize > maxBytes) maxDim = Math.min(maxDim, 1024);
 
         return loadImageFromFile(file).then(function (img) {
             var dim = maxDim;
@@ -111,7 +144,8 @@
 
     /**
      * 모바일: 앨범·파일 선택 / 카메라 촬영 (hidden file input 2개)
-     * options: { galleryInput, cameraInput, btnGallery, btnCamera, onSelect(file), onError(err) }
+     * 앨범·카메라 모두 동일하게 1:1·1MB 이하로 변환 후 onSelect(dataUrl, file) 호출
+     * options: { galleryInput, cameraInput, btnGallery, btnCamera, onSelect(dataUrl, file), onError(err) }
      */
     function initProductPhotoPicker(options) {
         var galleryInput = options.galleryInput;
@@ -120,23 +154,28 @@
         var btnCamera = options.btnCamera;
         var onSelect = options.onSelect;
         var onError = options.onError || function () {};
+        var processOpts = options.processOptions || {};
 
         function bindInput(input) {
             if (!input) return;
             input.addEventListener("change", function () {
                 var f = input.files && input.files[0];
                 input.value = "";
-                if (!f || !onSelect) return;
-                try {
-                    var ret = onSelect(f);
-                    if (ret && typeof ret.catch === "function") {
-                        ret.catch(function (err) {
-                            onError(err);
-                        });
-                    }
-                } catch (err) {
-                    onError(err);
-                }
+                if (!f) return;
+                var task = processImageFileToSquareDataURL(f, processOpts);
+                task
+                    .then(function (dataUrl) {
+                        if (!onSelect) return;
+                        var ret = onSelect(dataUrl, f);
+                        if (ret && typeof ret.catch === "function") {
+                            ret.catch(function (err) {
+                                onError(err);
+                            });
+                        }
+                    })
+                    .catch(function (err) {
+                        onError(err);
+                    });
             });
         }
 
@@ -365,6 +404,7 @@
         escapeHtml: escapeHtml,
         formatWon: formatWon,
         parsePriceInput: parsePriceInput,
+        isImageFile: isImageFile,
         processImageFileToSquareDataURL: processImageFileToSquareDataURL,
         readFileAsDataURL: readFileAsDataURL,
         initProductPhotoPicker: initProductPhotoPicker,
