@@ -80,6 +80,9 @@
             }
         }
         markCurrent(nav);
+        if (window.THEJHON_AUTH && THEJHON_AUTH.applyNavRegisterVisibility) {
+            THEJHON_AUTH.applyNavRegisterVisibility();
+        }
     }
 
     if (document.readyState === "loading") {

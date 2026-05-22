@@ -6,7 +6,13 @@ const {
     migrateCollectionLoginFields
 } = require("./loginAccount");
 const { verifyStaffPassword, isStaffRole } = require("./staff");
-const { getCompanyName: getVendorCompanyName } = require("./vendorFields");
+const { getCompanyName: getVendorCompanyName, parseGrade, F } = require("./vendorFields");
+
+function vendorGradeFromDoc(vendor) {
+    if (!vendor) return "1";
+    const raw = vendor[F.grade] != null ? vendor[F.grade] : vendor.vn_grade;
+    return parseGrade(raw) || "1";
+}
 const { getCompanyName: getStaffCompanyName } = require("./staffFields");
 
 const GUEST_ID = "guest";
@@ -93,7 +99,8 @@ async function tryVendorLogin(vendor, loginId, password) {
         role: "vendor",
         userId: vendor.loginId,
         companyName: getVendorCompanyName(vendor),
-        displayName: getVendorCompanyName(vendor) || vendor.loginId || ""
+        displayName: getVendorCompanyName(vendor) || vendor.loginId || "",
+        vendorGrade: vendorGradeFromDoc(vendor)
     };
 }
 

@@ -8,6 +8,7 @@
     var ROLE_KEY = "thejhon_role";
     var COMPANY_KEY = "thejhon_company_name";
     var DISPLAY_KEY = "thejhon_display_name";
+    var VENDOR_GRADE_KEY = "thejhon_vendor_grade";
 
     var SUPERVISOR_ID = "thejohn";
     var GUEST_ID = "guest";
@@ -30,6 +31,7 @@
         sessionStorage.removeItem(DISPLAY_KEY);
         sessionStorage.removeItem("thejhon_auth_provider");
         sessionStorage.removeItem("thejhon_google_credential");
+        sessionStorage.removeItem(VENDOR_GRADE_KEY);
         if (global.THEJHON_API && THEJHON_API.setToken) THEJHON_API.setToken("");
     }
 
@@ -53,8 +55,15 @@
             userId: data.userId,
             token: data.token,
             companyName: data.companyName || "",
-            displayName: data.companyName || data.displayName || data.userId || ""
+            displayName: data.companyName || data.displayName || data.userId || "",
+            vendorGrade: data.vendorGrade || ""
         };
+    }
+
+    function parseVendorGrade(g) {
+        var n = parseInt(g, 10);
+        if (n >= 1 && n <= 3) return String(n);
+        return "1";
     }
 
     function verifyFormCredentialsAsync(id, pw) {
@@ -80,11 +89,16 @@
         return verifyFormCredentialsAsync(GUEST_ID, "guest");
     }
 
-    function setFormSession(userId, role, token, companyName, displayName) {
+    function setFormSession(userId, role, token, companyName, displayName, vendorGrade) {
         sessionStorage.setItem(AUTH_KEY, "1");
         sessionStorage.setItem(USER_ID_KEY, userId || "");
         sessionStorage.setItem(ROLE_KEY, role || "");
         sessionStorage.setItem("thejhon_auth_provider", "form");
+        if (role === "vendor") {
+            sessionStorage.setItem(VENDOR_GRADE_KEY, parseVendorGrade(vendorGrade));
+        } else {
+            sessionStorage.removeItem(VENDOR_GRADE_KEY);
+        }
         var label = companyName || "";
         if (isStaffRole(role) || role === "vendor") {
             if (label) {
@@ -110,6 +124,7 @@
         sessionStorage.setItem("thejhon_auth_provider", String(provider || "oauth"));
         sessionStorage.removeItem(COMPANY_KEY);
         sessionStorage.removeItem(DISPLAY_KEY);
+        sessionStorage.removeItem(VENDOR_GRADE_KEY);
     }
 
     function isLoggedIn() {
@@ -150,10 +165,129 @@
         return isStaffRole(getRole()) && !!(global.THEJHON_API && THEJHON_API.getToken && THEJHON_API.getToken());
     }
 
-    /** 업체·스테프만 상품 가격 표시 */
+    /** 업체·관리자만 상품 가격 표시 (게스트·미로그인·SNS 제외) */
     function canSeePrices() {
+        return canSeeProductPrices();
+    }
+
+    function canSeeProductPrices() {
+        if (!isLoggedIn() || isGuestMode()) return false;
         var r = getRole();
+        if (r === "oauth") return false;
         return isStaffRole(r) || r === "vendor";
+    }
+
+    /** 관리자·슈퍼바이저: 가격1~4 전체 표시 */
+    function canSeeAllProductPrices() {
+        return isStaffRole(getRole());
+    }
+
+    function getVendorPriceGrade() {
+        if (getRole() !== "vendor") return "";
+        return parseVendorGrade(sessionStorage.getItem(VENDOR_GRADE_KEY));
+    }
+
+    function getPriceKeyForGrade(grade) {
+        var g = parseVendorGrade(grade);
+        if (g === "2") return "pd_price2";
+        if (g === "3") return "pd_price3";
+        return "pd_price1";
+    }
+
+    function syncVendorGradeFromSessionApi(sess) {
+        if (sess && sess.loggedIn && sess.role === "vendor" && sess.vendorGrade) {
+            sessionStorage.setItem(VENDOR_GRADE_KEY, parseVendorGrade(sess.vendorGrade));
+        }
+    }
+
+    /**
+     * 상품 가격 HTML (products 목록·상세 공통)
+     * options: { mode: "inline"|"detail", formatWon, escapeHtml }
+     */
+    function buildProductPriceHtml(it, options) {
+        options = options || {};
+        var mode = options.mode || "inline";
+        var formatWon =
+            options.formatWon ||
+            function (n) {
+                var num = Number(n);
+                if (!isFinite(num)) return "0";
+                return num.toLocaleString("ko-KR") + "원";
+            };
+        var escapeHtml =
+            options.escapeHtml ||
+            function (s) {
+                return String(s);
+            };
+
+        if (!canSeeProductPrices()) {
+            if (mode === "detail") {
+                return (
+                    '<p class="pd-price pd-price-masked">가격: 비공개 (업체·관리자 로그인 시 표시)</p>'
+                );
+            }
+            return (
+                '<span class="ps-price-masked">가격: 비공개 (업체·관리자 로그인 시 표시)</span>'
+            );
+        }
+
+        var keys = ["pd_price1", "pd_price2", "pd_price3", "pd_price4"];
+        var labels = ["가격1", "가격2", "가격3", "가격4"];
+
+        if (canSeeAllProductPrices()) {
+            var parts = [];
+            for (var i = 0; i < 4; i++) {
+                var v = Number(it[keys[i]]);
+                if (isFinite(v) && v > 0) {
+                    if (mode === "detail") {
+                        parts.push(
+                            '<p class="pd-price"><span class="pd-price-label">' +
+                                escapeHtml(labels[i]) +
+                                "</span> " +
+                                escapeHtml(formatWon(v)) +
+                                "</p>"
+                        );
+                    } else {
+                        parts.push(
+                            '<span class="ps-price-item">' +
+                                escapeHtml(labels[i]) +
+                                " " +
+                                escapeHtml(formatWon(v)) +
+                                "</span>"
+                        );
+                    }
+                }
+            }
+            if (!parts.length) {
+                if (mode === "detail") {
+                    return '<p class="pd-price">' + escapeHtml(formatWon(0)) + "</p>";
+                }
+                return "<span>" + escapeHtml(formatWon(0)) + "</span>";
+            }
+            return parts.join(mode === "detail" ? "" : "");
+        }
+
+        var grade = getVendorPriceGrade();
+        var key = getPriceKeyForGrade(grade);
+        var priceVal = Number(it[key]);
+        if (!isFinite(priceVal)) priceVal = 0;
+        var label = "가격" + grade;
+        if (mode === "detail") {
+            return (
+                '<p class="pd-price"><span class="pd-price-label">' +
+                escapeHtml(label) +
+                "</span> " +
+                escapeHtml(formatWon(priceVal)) +
+                "</p>"
+            );
+        }
+        return (
+            '<span class="ps-price-item">' +
+            escapeHtml(label) +
+            " " +
+            escapeHtml(formatWon(priceVal)) +
+            "</span>"
+        );
     }
 
     function getLoggedInCompanyDisplayName() {
@@ -228,12 +362,15 @@
     function applyNavRegisterVisibility() {
         try {
             normalizeLegacySession();
+            var showAdmin = canManageRegisters();
             var sel =
-                '.site-header-nav [data-nav-dropdown="product-manage"], .site-header-nav [data-nav-dropdown="vendor-manage"]';
+                '.site-header-nav [data-nav-dropdown="product-manage"],' +
+                '.site-header-nav [data-nav-dropdown="vendor-manage"],' +
+                '.site-header-nav a.header-nav-link[href="product-register.html"],' +
+                '.site-header-nav a.header-nav-link[href="vendor-register.html"]';
             var nodes = document.querySelectorAll(sel);
-            var show = canManageRegisters();
             for (var i = 0; i < nodes.length; i++) {
-                if (show) {
+                if (showAdmin) {
                     nodes[i].classList.remove("header-nav-link--register-hidden");
                     nodes[i].removeAttribute("aria-hidden");
                 } else {
@@ -263,6 +400,13 @@
         getRegisterAccess: getRegisterAccess,
         canManageRegisters: canManageRegisters,
         canSeePrices: canSeePrices,
+        canSeeProductPrices: canSeeProductPrices,
+        canSeeAllProductPrices: canSeeAllProductPrices,
+        getVendorPriceGrade: getVendorPriceGrade,
+        getPriceKeyForGrade: getPriceKeyForGrade,
+        buildProductPriceHtml: buildProductPriceHtml,
+        syncVendorGradeFromSessionApi: syncVendorGradeFromSessionApi,
+        VENDOR_GRADE_KEY: VENDOR_GRADE_KEY,
         getLoggedInCompanyDisplayName: getLoggedInCompanyDisplayName,
         isNotebookViewport: isNotebookViewport,
         enforceRegisterPages: enforceRegisterPages,

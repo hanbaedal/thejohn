@@ -24,28 +24,14 @@
     }
 
     function priceHtml(it) {
-        if (window.THEJHON_AUTH && THEJHON_AUTH.canSeePrices && !THEJHON_AUTH.canSeePrices()) {
-            return '<span class="ps-price-masked">가격: 비공개 (업체·스테프 로그인 시 표시)</span>';
+        if (window.THEJHON_AUTH && THEJHON_AUTH.buildProductPriceHtml) {
+            return THEJHON_AUTH.buildProductPriceHtml(it, {
+                mode: "inline",
+                formatWon: formatWon,
+                escapeHtml: escapeHtml
+            });
         }
-        var parts = [];
-        var labels = ["가격1", "가격2", "가격3", "가격4"];
-        var keys = ["pd_price1", "pd_price2", "pd_price3", "pd_price4"];
-        for (var i = 0; i < 4; i++) {
-            var v = Number(it[keys[i]]);
-            if (isFinite(v) && v > 0) {
-                parts.push(
-                    '<span class="ps-price-item">' +
-                        escapeHtml(labels[i]) +
-                        " " +
-                        escapeHtml(formatWon(v)) +
-                        "</span>"
-                );
-            }
-        }
-        if (!parts.length) {
-            return "<span>" + escapeHtml(formatWon(0)) + "</span>";
-        }
-        return parts.join("");
+        return '<span class="ps-price-masked">가격: 비공개</span>';
     }
 
     function itemDept(it) {

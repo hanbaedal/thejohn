@@ -44,13 +44,16 @@ router.post("/login", async (req, res) => {
             });
         }
 
-        const token = signToken({ role: result.role, userId: result.userId });
+        const tokenPayload = { role: result.role, userId: result.userId };
+        if (result.vendorGrade) tokenPayload.vendorGrade = result.vendorGrade;
+        const token = signToken(tokenPayload);
         return res.json({
             ok: true,
             role: result.role,
             userId: result.userId,
             companyName: result.companyName || "",
             displayName: result.companyName || result.displayName || result.userId,
+            vendorGrade: result.vendorGrade || "",
             token
         });
     } catch (e) {
@@ -70,7 +73,8 @@ router.get("/session", function (req, res) {
             ok: true,
             loggedIn: true,
             role: payload.role,
-            userId: payload.userId
+            userId: payload.userId,
+            vendorGrade: payload.vendorGrade || ""
         });
     } catch (e) {
         return res.json({ ok: true, loggedIn: false, error: "세션이 만료되었습니다." });

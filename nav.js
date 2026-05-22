@@ -69,6 +69,18 @@
             if (window.THEJHON_AUTH && THEJHON_AUTH.applyNavRegisterVisibility) {
                 THEJHON_AUTH.applyNavRegisterVisibility();
             }
+            if (
+                window.THEJHON_API &&
+                THEJHON_API.checkSession &&
+                window.THEJHON_AUTH &&
+                THEJHON_AUTH.syncVendorGradeFromSessionApi
+            ) {
+                THEJHON_API.checkSession()
+                    .then(function (sess) {
+                        THEJHON_AUTH.syncVendorGradeFromSessionApi(sess);
+                    })
+                    .catch(function () {});
+            }
         }
         window.addEventListener("pageshow", syncAll);
     })();

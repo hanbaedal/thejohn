@@ -187,7 +187,8 @@
                         ok.role,
                         ok.token,
                         ok.companyName,
-                        ok.displayName
+                        ok.displayName,
+                        ok.vendorGrade
                     );
                     if (THEJHON_AUTH.applyNavRegisterVisibility) {
                         THEJHON_AUTH.applyNavRegisterVisibility();
@@ -250,8 +251,12 @@
                             ok.role,
                             ok.token,
                             ok.companyName,
-                            ok.displayName
+                            ok.displayName,
+                            ok.vendorGrade
                         );
+                        if (THEJHON_AUTH.applyNavRegisterVisibility) {
+                            THEJHON_AUTH.applyNavRegisterVisibility();
+                        }
                         goAfterLogin();
                     })
                     .catch(function (err) {
