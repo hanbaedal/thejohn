@@ -433,8 +433,14 @@
         var loginId = loginIdInput.value.trim();
         var vn_company = companyInput.value.trim();
         var editingId = editIdInput.value.trim();
-        var pwdIn = passwordInput.value;
+        var pwdIn = passwordInput ? String(passwordInput.value || "").trim() : "";
         var vn_depts = getSelectedDepts();
+
+        if (!editingId && !pwdIn) {
+            setStatus("비밀번호(8~16자)를 입력해 주세요.", true);
+            if (passwordInput) passwordInput.focus();
+            return;
+        }
 
         if (VF) {
             var idFmt = VF.validateLoginIdFormat(loginId);
@@ -491,6 +497,10 @@
                 vn_note: noteInput.value.trim()
             };
             if (pwdIn) body.password = pwdIn;
+            else if (!editingId) {
+                setStatus("비밀번호(8~16자)를 입력해 주세요.", true);
+                return;
+            }
 
             submitBtn.disabled = true;
             setStatus("MongoDB vendors 컬렉션에 저장 중…");
@@ -625,10 +635,11 @@
         .catch(function (err) {
             var msg = apiErrorMessage(err, err.message);
             setStatus(msg, true);
-            alert(msg);
-            setFormDisabled(true);
-            if (window.THEJHON_AUTH && THEJHON_AUTH.clearSession) {
-                THEJHON_AUTH.clearSession();
+            if (/로그인|토큰|세션|401|403/i.test(msg)) {
+                alert(msg);
+                if (window.THEJHON_AUTH && THEJHON_AUTH.clearSession) {
+                    THEJHON_AUTH.clearSession();
+                }
             }
             if (listEl) {
                 listEl.innerHTML =

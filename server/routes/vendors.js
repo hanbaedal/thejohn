@@ -21,6 +21,18 @@ function isReservedAdminLoginId(loginId) {
     return isReservedStaffLoginId(loginId);
 }
 
+function vendorWriteErrorMessage(e) {
+    if (e && e.code === 11000) {
+        const key = e.keyPattern || {};
+        if (key.loginId) return "이미 사용 중인 아이디입니다.";
+        if (key.loginIdNorm) {
+            return "DB 인덱스 충돌(loginIdNorm)입니다. 서버를 재배포한 뒤 다시 시도해 주세요.";
+        }
+        return "중복된 값이 있어 저장할 수 없습니다.";
+    }
+    return "";
+}
+
 async function findDuplicateVendor(vendors, loginId, excludeId) {
     const idFilter = loginLookupFilter(loginId);
     const filter = excludeId ? { $and: [idFilter, { id: { $ne: excludeId } }] } : idFilter;
@@ -121,6 +133,8 @@ router.post("/", requireRole("supervisor", "admin"), async (req, res) => {
         res.status(201).json({ ok: true, item: toPublic(doc) });
     } catch (e) {
         console.error("POST /api/vendors", e);
+        const dup = vendorWriteErrorMessage(e);
+        if (dup) return res.status(409).json({ ok: false, error: dup });
         res.status(500).json({ ok: false, error: "업체 저장에 실패했습니다." });
     }
 });
@@ -156,6 +170,8 @@ router.put("/:id", requireRole("supervisor", "admin"), async (req, res) => {
         res.json({ ok: true, item: toPublic(doc) });
     } catch (e) {
         console.error("PUT /api/vendors/:id", e);
+        const dup = vendorWriteErrorMessage(e);
+        if (dup) return res.status(409).json({ ok: false, error: dup });
         res.status(500).json({ ok: false, error: "업체 수정에 실패했습니다." });
     }
 });

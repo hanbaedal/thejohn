@@ -1,4 +1,9 @@
-const { buildLoginFields, getStoredPassword } = require("./loginAccount");
+const {
+    buildLoginFields,
+    getStoredPassword,
+    normalizeLoginId,
+    normalizePasswordInput
+} = require("./loginAccount");
 
 /** vendors 컬렉션 필드 */
 const VALID_DEPT_IDS = ["livestock", "seafood", "meals", "banchan", "drink"];
@@ -108,16 +113,22 @@ function toPublic(doc) {
     };
 }
 
+function resolvePasswordPlain(existing, loginId, password) {
+    const incoming = normalizePasswordInput(password);
+    if (incoming) return incoming;
+    if (existing) return getStoredPassword(existing);
+    return "";
+}
+
 function buildFromBody(body, existing, loginId, password) {
     const prev = fromLegacyDoc(existing) || {};
-    const loginFields = buildLoginFields(
-        loginId,
-        password || (existing ? getStoredPassword(existing) : "")
-    );
+    const loginFields = buildLoginFields(loginId, "");
+    const passwordPlain = resolvePasswordPlain(existing, loginId, password);
 
     const built = {
         loginId: loginFields.loginId,
-        loginIdNorm: loginFields.loginIdNorm,
+        loginIdNorm: normalizeLoginId(loginFields.loginId),
+        passwordPlain: passwordPlain,
         vn_company: str(body.vn_company != null ? body.vn_company : body.companyName),
         vn_depts: parseDeptsList(body, prev),
         vn_ceo: str(body.vn_ceo != null ? body.vn_ceo : body.ceo),
@@ -147,6 +158,7 @@ function toDbDoc(id, built, existing) {
         id,
         loginId: built.loginId,
         loginIdNorm: built.loginIdNorm,
+        password: built.passwordPlain || "",
         [F.company]: built.vn_company,
         [F.depts]: built.vn_depts,
         [F.ceo]: built.vn_ceo,
@@ -188,7 +200,7 @@ function validatePasswordLength(password, requirePassword) {
 function validateBuilt(built, requirePassword) {
     const idErr = validateLoginIdLength(built.loginId);
     if (idErr) return idErr;
-    const pwErr = validatePasswordLength(built.loginIdNorm, requirePassword);
+    const pwErr = validatePasswordLength(built.passwordPlain, requirePassword);
     if (pwErr) return pwErr;
     if (!built.vn_company) return "업체이름을 입력해 주세요.";
     if (!built.vn_depts || !built.vn_depts.length) return "사업부문을 하나 이상 선택해 주세요.";
@@ -235,7 +247,8 @@ async function migrateVendorsCollection(db) {
                 vn_mgr_tel: doc[F.mgrTel] || doc.managerPhone,
                 vn_mgr_email: doc[F.mgrEmail] || doc.mgrEmail,
                 vn_logo: doc[F.logo] || doc.logo,
-                vn_note: doc[F.note] || doc.note
+                vn_note: doc[F.note] || doc.note,
+                password: pw
             },
             doc,
             doc.loginId || "",

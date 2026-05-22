@@ -156,6 +156,21 @@ async function safeCreateIndex(collection, spec, options) {
     }
 }
 
+/** 예전 배포: loginIdNorm(비밀번호) 유니크 인덱스 → 업체 여러 건 등록 시 E11000 */
+async function dropObsoleteVendorIndexes(database) {
+    const col = database.collection("vendors");
+    try {
+        await col.dropIndex("loginIdNorm_1");
+        console.log("[thejohn] dropped obsolete vendors.loginIdNorm_1 unique index");
+    } catch (e) {
+        const code = e && (e.code || e.codeName);
+        if (code === 27 || code === "IndexNotFound" || /index not found/i.test(String(e.message || ""))) {
+            return;
+        }
+        console.warn("[thejohn] drop vendors.loginIdNorm_1:", e.message);
+    }
+}
+
 async function connectDbOnce() {
     const candidates = getMongoUriCandidates();
     if (!candidates.length) {
@@ -181,6 +196,7 @@ async function connectDbOnce() {
             const { migrateProductsCollection } = require("./lib/productFields");
             await migrateProductsCollection(database);
             await safeCreateIndex(database.collection("vendors"), { id: 1 }, { unique: true });
+            await dropObsoleteVendorIndexes(database);
             await safeCreateIndex(database.collection("vendors"), { loginId: 1 }, { unique: true });
 
             const staff = require("./lib/staff");
