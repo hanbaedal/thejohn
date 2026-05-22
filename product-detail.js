@@ -81,10 +81,24 @@
             '<p class="pd-missing">상품을 찾을 수 없습니다. <a href="products.html">상품소개</a>로 돌아가 주세요.</p>';
     }
 
+    function productsListHref(it) {
+        var href = "products.html";
+        var dept = it.pd_dept && String(it.pd_dept).trim();
+        var group = it.pd_group && String(it.pd_group).trim();
+        if (dept) {
+            href += "?dept=" + encodeURIComponent(dept);
+            if (group) href += "&group=" + encodeURIComponent(group);
+        }
+        return href;
+    }
+
     function renderItem(it) {
         var titlePlain = String(it.pd_name || "상품");
         document.title =
             titlePlain.length > 60 ? titlePlain.slice(0, 57) + "… — 더존" : titlePlain + " — 더존";
+
+        var backEl = document.querySelector(".pd-back a");
+        if (backEl) backEl.setAttribute("href", productsListHref(it));
 
         var imgBlock = it.pd_image
             ? "<img class=\"pd-hero-img\" src=" + JSON.stringify(it.pd_image) + ' alt="">'

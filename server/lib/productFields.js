@@ -8,6 +8,8 @@ const F = {
     size: "pd_size",
     image: "pd_image",
     explain: "pd_explain",
+    dept: "pd_dept",
+    group: "pd_group",
     personName: "per_name",
     personPhone: "per-number",
     personEmail: "per-email"
@@ -74,6 +76,8 @@ function toPublic(doc) {
         pd_size: str(d[F.size]),
         pd_image: String(d[F.image] || ""),
         pd_explain: str(d[F.explain]),
+        pd_dept: str(d[F.dept]),
+        pd_group: str(d[F.group]),
         per_name: str(d[F.personName]),
         "per-number": str(d[F.personPhone]),
         "per-email": str(d[F.personEmail]),
@@ -117,11 +121,19 @@ function buildFromBody(body, existing) {
         body["per-number"] != null ? body["per-number"] : prev[F.personPhone]
     );
     const perEmail = str(body["per-email"] != null ? body["per-email"] : prev[F.personEmail]);
+    const pd_dept = str(
+        body.pd_dept != null ? body.pd_dept : prev[F.dept] != null ? prev[F.dept] : ""
+    ).toLowerCase();
+    const pd_group = str(
+        body.pd_group != null ? body.pd_group : prev[F.group] != null ? prev[F.group] : ""
+    ).toLowerCase();
 
     return {
         pd_name,
         pd_explain,
         pd_size,
+        pd_dept,
+        pd_group,
         pd_image,
         per_name,
         perNumber,
@@ -141,6 +153,8 @@ function toDbDoc(id, built, existing) {
         [F.size]: built.pd_size,
         [F.image]: built.pd_image,
         [F.explain]: built.pd_explain,
+        [F.dept]: built.pd_dept,
+        [F.group]: built.pd_group,
         [F.personName]: built.per_name,
         [F.personPhone]: built.perNumber,
         [F.personEmail]: built.perEmail,

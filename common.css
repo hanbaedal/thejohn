@@ -2,9 +2,9 @@
     --dz-blue: #0a4d9c;
     --header-pad-x: 1.25rem;
     --header-pad-y: 1rem;
-    --header-footer-sky-top: #dff4fc;
-    --header-footer-sky-bottom: #c5e8f6;
-    --header-footer-border: #8ecae6;
+    --header-footer-sky-top: #ffffff;
+    --header-footer-sky-bottom: #ffffff;
+    --header-footer-border: #e0e4e8;
     --header-footer-text: #2a4a5e;
     --header-footer-muted: #3d5f75;
 }

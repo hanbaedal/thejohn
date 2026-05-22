@@ -6,9 +6,157 @@
     <title>상품소개 — 더존</title>
     <link rel="stylesheet" href="common.css">
     <style>
-        .ps-lead { margin: 0 0 1.25rem; color: #3d5166; line-height: 1.55; }
+        .ps-lead { margin: 0 0 1rem; color: #3d5166; line-height: 1.55; font-size: 0.92rem; }
         .ps-empty { margin: 0; color: #3d5166; line-height: 1.55; }
         .ps-empty a { color: var(--dz-blue); font-weight: 600; }
+        .ps-nav-block { margin: 0 0 1rem; }
+        .ps-dept-nav {
+            display: flex;
+            flex-wrap: nowrap;
+            gap: 0.35rem;
+            margin: 0;
+            padding: 0;
+            list-style: none;
+            overflow: hidden;
+        }
+        .ps-dept-btn {
+            flex: 1 1 0;
+            min-width: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.25rem;
+            padding: 0.45rem 0.15rem 0.5rem;
+            border: 0;
+            background: transparent;
+            cursor: pointer;
+            font-family: inherit;
+            color: #3d5166;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .ps-dept-icon {
+            width: 2.75rem;
+            height: 2.75rem;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.35rem;
+            background: #f0f3f7;
+            border: 2px solid transparent;
+            transition: border-color 0.15s, background 0.15s;
+        }
+        .ps-dept-label {
+            font-size: clamp(0.68rem, 2.8vw, 0.82rem);
+            font-weight: 600;
+            line-height: 1.2;
+            white-space: nowrap;
+        }
+        .ps-dept-btn.is-active .ps-dept-icon {
+            border-color: var(--dz-blue);
+            background: #eef4fc;
+        }
+        .ps-dept-btn.is-active .ps-dept-label {
+            color: var(--dz-blue);
+            font-weight: 700;
+        }
+        .ps-group-scroll {
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+            margin: 0 -0.25rem;
+            padding: 0.15rem 0.25rem 0.35rem;
+        }
+        .ps-group-nav {
+            display: flex;
+            flex-wrap: nowrap;
+            gap: 0.45rem;
+            margin: 0;
+            padding: 0;
+            list-style: none;
+            width: max-content;
+            min-width: 100%;
+        }
+        .ps-group-chip {
+            flex: 0 0 auto;
+            padding: 0.45rem 0.85rem;
+            border: 1px solid #d8e0e8;
+            border-radius: 999px;
+            background: #fff;
+            font-family: inherit;
+            font-size: 0.84rem;
+            font-weight: 600;
+            color: #3d5166;
+            cursor: pointer;
+            white-space: nowrap;
+        }
+        .ps-group-chip.is-active {
+            border-color: var(--dz-blue);
+            background: #eef4fc;
+            color: var(--dz-blue);
+        }
+        .ps-group-grid {
+            list-style: none;
+            margin: 0 0 1.25rem;
+            padding: 0;
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 0.75rem;
+        }
+        @media (min-width: 640px) {
+            .ps-group-grid { gap: 1rem; }
+        }
+        .ps-group-card {
+            display: block;
+            width: 100%;
+            padding: 0;
+            border: 0;
+            background: #fff;
+            border-radius: 14px;
+            overflow: hidden;
+            box-shadow: 0 2px 12px rgba(10, 77, 156, 0.08);
+            cursor: pointer;
+            text-align: center;
+            font-family: inherit;
+            color: inherit;
+        }
+        .ps-group-card-visual {
+            aspect-ratio: 1.15;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(145deg, #f8fafc 0%, #eef2f7 100%);
+            overflow: hidden;
+        }
+        .ps-group-card-visual img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        .ps-group-card-emoji {
+            font-size: 2.5rem;
+            line-height: 1;
+        }
+        .ps-group-card-text {
+            padding: 0.65rem 0.5rem 0.75rem;
+        }
+        .ps-group-card-title {
+            margin: 0 0 0.2rem;
+            font-size: 0.95rem;
+            font-weight: 700;
+            color: #052a4d;
+        }
+        .ps-group-card-desc {
+            margin: 0;
+            font-size: 0.78rem;
+            color: #5a6d7e;
+            line-height: 1.35;
+        }
+        .ps-section-title {
+            margin: 0 0 0.75rem;
+            font-size: 1rem;
+            font-weight: 700;
+            color: #052a4d;
+        }
         .ps-hide-scrollbar {
             scrollbar-width: none;
             -ms-overflow-style: none;
@@ -32,21 +180,14 @@
             }
         }
         .ps-card-wrap { margin: 0; }
-        .ps-card-img-btn {
+        .ps-card-link {
             display: block;
             width: 100%;
-            padding: 0;
-            margin: 0;
-            border: 0;
-            background: transparent;
-            cursor: pointer;
-            font: inherit;
+            text-decoration: none;
             color: inherit;
-            text-align: left;
-            outline-offset: 2px;
         }
-        .ps-card-img-btn:hover .ps-card-img,
-        .ps-card-img-btn:focus-visible .ps-card-img {
+        .ps-card-link:hover .ps-card-img,
+        .ps-card-link:focus-visible .ps-card-img {
             opacity: 0.94;
         }
         .ps-card {
@@ -171,6 +312,7 @@
     <script src="api-config.js"></script>
     <script src="thejhon-api.js"></script>
     <script src="auth.js"></script>
+    <script src="product-catalog.js"></script>
     <script src="nav.js" defer></script>
     <script src="products.js" defer></script>
 </head>
@@ -209,13 +351,15 @@
     </header>
     <main class="page-main page-main--hide-scrollbar" id="ps-page-main">
         <h1>상품소개</h1>
-        <p class="ps-lead">상품등록에서 저장한 상품이 아래에 표시됩니다. 스마트폰에서는 한 줄에 하나씩, 넓은 화면에서는 한 줄에 네 개씩 보입니다. 사진을 누르면 팝업으로 사진만 크게 볼 수 있습니다.</p>
+        <p class="ps-lead">분야와 메뉴 그룹을 선택하면 상품을 볼 수 있습니다. 그룹 카드를 누르거나 아래 가로 메뉴에서 그룹을 선택하세요.</p>
+        <div class="ps-nav-block">
+            <ul class="ps-dept-nav" id="ps-dept-nav" role="tablist" aria-label="상품 분야"></ul>
+            <div class="ps-group-scroll ps-hide-scrollbar">
+                <ul class="ps-group-nav" id="ps-group-nav" role="tablist" aria-label="메뉴 그룹"></ul>
+            </div>
+        </div>
         <div id="ps-root" aria-live="polite"></div>
     </main>
-    <div id="ps-lightbox" class="ps-lightbox" role="dialog" aria-modal="true" aria-label="상품 사진 크게 보기" hidden>
-        <button type="button" class="ps-lightbox-close" id="ps-lightbox-close">닫기</button>
-        <img class="ps-lightbox-img" id="ps-lightbox-img" alt="">
-    </div>
     <footer class="site-footer">
         <div class="site-footer-inner">
             <dl class="site-footer-grid">

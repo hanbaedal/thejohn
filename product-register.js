@@ -13,6 +13,9 @@
     var form = document.getElementById("pr-form");
     var statusEl = document.getElementById("pr-status");
     var editIdInput = document.getElementById("pr-edit-id");
+    var catalog = window.THEJHON_PRODUCT_CATALOG;
+    var deptSelect = document.getElementById("pr-pd-dept");
+    var groupSelect = document.getElementById("pr-pd-group");
     var nameInput = document.getElementById("pr-pd-name");
     var photoInput = document.getElementById("pr-pd-image");
     var photoPreview = document.getElementById("pr-photo-preview");
@@ -31,6 +34,49 @@
 
     var pendingImageData = "";
     var cachedItems = [];
+
+    function fillDeptOptions() {
+        if (!deptSelect || !catalog) return;
+        var html = '<option value="">분야 선택</option>';
+        catalog.DEPARTMENTS.forEach(function (d) {
+            html +=
+                '<option value="' +
+                escapeHtml(d.id) +
+                '">' +
+                escapeHtml(d.label) +
+                "</option>";
+        });
+        deptSelect.innerHTML = html;
+    }
+
+    function fillGroupOptions(deptId, selectedGroup) {
+        if (!groupSelect || !catalog) return;
+        var groups = catalog.getGroups(deptId);
+        if (!groups.length) {
+            groupSelect.innerHTML = '<option value="">먼저 분야를 선택하세요</option>';
+            groupSelect.disabled = true;
+            return;
+        }
+        var html = '<option value="">메뉴 그룹 선택</option>';
+        groups.forEach(function (g) {
+            html +=
+                '<option value="' +
+                escapeHtml(g.id) +
+                '">' +
+                escapeHtml(g.label) +
+                "</option>";
+        });
+        groupSelect.innerHTML = html;
+        groupSelect.disabled = false;
+        if (selectedGroup) groupSelect.value = catalog.normalizeGroup(deptId, selectedGroup) || "";
+    }
+
+    if (deptSelect) {
+        deptSelect.addEventListener("change", function () {
+            fillGroupOptions(deptSelect.value, "");
+        });
+    }
+    fillDeptOptions();
 
     function setStatus(msg, isError) {
         if (!statusEl) return;
@@ -106,6 +152,10 @@
         editIdInput.value = "";
         pendingImageData = "";
         updatePhotoPreview("");
+        if (groupSelect) {
+            groupSelect.innerHTML = '<option value="">먼저 분야를 선택하세요</option>';
+            groupSelect.disabled = true;
+        }
         cancelBtn.hidden = true;
         submitBtn.textContent = "저장";
         submitBtn.disabled = false;
@@ -194,6 +244,11 @@
         if (price3Input) price3Input.value = String(it.pd_price3 != null ? it.pd_price3 : 0);
         if (price4Input) price4Input.value = String(it.pd_price4 != null ? it.pd_price4 : 0);
         if (sizeInput) sizeInput.value = it.pd_size != null ? String(it.pd_size) : "";
+        if (deptSelect && catalog) {
+            var dept = catalog.normalizeDept(it.pd_dept);
+            deptSelect.value = dept;
+            fillGroupOptions(dept, it.pd_group);
+        }
         if (perNameInput) perNameInput.value = it.per_name || "";
         if (perNumberInput) perNumberInput.value = it["per-number"] || "";
         if (perEmailInput) perEmailInput.value = it["per-email"] || "";
@@ -288,6 +343,22 @@
             if (price1Input) price1Input.focus();
             return;
         }
+        if (!catalog) {
+            setStatus("메뉴 정보를 불러오지 못했습니다. 페이지를 새로고침해 주세요.", true);
+            return;
+        }
+        var pd_dept = deptSelect ? catalog.normalizeDept(deptSelect.value) : "";
+        var pd_group = groupSelect && pd_dept ? catalog.normalizeGroup(pd_dept, groupSelect.value) : "";
+        if (!pd_dept) {
+            setStatus("분야(축산·수산물 등)를 선택해 주세요.", true);
+            if (deptSelect) deptSelect.focus();
+            return;
+        }
+        if (!pd_group) {
+            setStatus("메뉴 그룹을 선택해 주세요.", true);
+            if (groupSelect) groupSelect.focus();
+            return;
+        }
 
         function saveWithImage(imageData) {
             if (!editingId && !imageData) {
@@ -299,6 +370,8 @@
                 pd_name: pd_name,
                 pd_explain: pd_explain,
                 pd_size: pd_size,
+                pd_dept: pd_dept,
+                pd_group: pd_group,
                 pd_price1: pd_price1,
                 pd_price2: pd_price2,
                 pd_price3: pd_price3,
