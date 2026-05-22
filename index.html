@@ -160,16 +160,14 @@
                 </div>
             </div>
             <div class="home-bgm-wrap">
-                <p class="home-bgm-hint" id="homeBgmHint">조용한 배경음악 (선택)</p>
-                <button type="button" class="home-bgm-toggle" id="homeBgmToggle" aria-label="배경음악 켜기" title="배경음악" hidden>
+                <p class="home-bgm-hint" id="homeBgmHint" hidden>인트로 영역을 누르거나 아이콘으로 배경음악</p>
+                <button type="button" class="home-bgm-toggle" id="homeBgmToggle" aria-label="배경음악 켜기" title="배경음악">
                     <svg class="home-bgm-icon-on" width="22" height="22" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path fill="currentColor" d="M3 10v4h4l5 5V5L7 10H3zm13.5 2c0-1.77-1.02-3.29-2.5-4.03v8.06c1.48-.74 2.5-2.26 2.5-4.03zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/></svg>
                     <svg class="home-bgm-icon-off" width="22" height="22" viewBox="0 0 24 24" aria-hidden="true" focusable="false" hidden><path fill="currentColor" d="M3.27 3L2 4.27l6.01 6.01L7 10v4h4l5 5v-6.73l4.25 4.25 1.41-1.41L3.27 3zM14 3.23v2.06c2.89.86 5 3.54 5 6.71 0 1.02-.31 1.96-.84 2.75L19.73 16c1.48-.74 2.5-2.26 2.5-4.03 0-4.01-2.99-7.86-7-8.77z"/></svg>
                 </button>
             </div>
         </section>
-        <audio id="homeBgm" loop preload="metadata">
-            <source src="img/intro-music.mp3" type="audio/mpeg">
-        </audio>
+        <audio id="homeBgm" src="img/intro-music.mp3" loop preload="auto" aria-label="인트로 배경음악"></audio>
     </main>
     <footer class="site-footer">
         <div class="site-footer-inner">
@@ -259,6 +257,7 @@
                 var bgm = document.getElementById("homeBgm");
                 var bgmBtn = document.getElementById("homeBgmToggle");
                 var bgmHint = document.getElementById("homeBgmHint");
+                var homeIntro = document.querySelector(".home-intro");
                 if (!bgm || !bgmBtn) return;
 
                 var bgmReady = false;
@@ -271,54 +270,69 @@
                     bgmBtn.title = bgmOn ? "배경음악 끄기" : "배경음악 켜기";
                     if (iconOn) iconOn.hidden = !bgmOn;
                     if (iconOff) iconOff.hidden = bgmOn;
+                    if (bgmHint) bgmHint.hidden = bgmOn || !bgmReady;
                 }
 
-                function showBgmControl(ok) {
-                    bgmReady = !!ok;
-                    bgmBtn.hidden = !ok;
-                    if (bgmHint) {
-                        if (ok) {
-                            bgmHint.textContent = "아이콘을 눌러 배경음악";
-                            bgmHint.hidden = false;
-                        } else {
-                            bgmHint.textContent =
-                                "img/intro-music.mp3 를 넣으면 재생됩니다 (Pixabay 등 무료 음원 권장)";
-                            bgmHint.hidden = false;
-                        }
+                function markBgmReady() {
+                    bgmReady = true;
+                    bgmBtn.hidden = false;
+                    setBgmUi();
+                }
+
+                function playBgm() {
+                    if (!bgmReady) return;
+                    var p = bgm.play();
+                    if (p && p.then) {
+                        p.then(function () {
+                            bgmOn = true;
+                            setBgmUi();
+                        }).catch(function () {});
+                    } else {
+                        bgmOn = true;
+                        setBgmUi();
                     }
+                }
+
+                function pauseBgm() {
+                    bgm.pause();
+                    bgmOn = false;
+                    setBgmUi();
                 }
 
                 bgm.volume = 0.28;
 
-                bgm.addEventListener("canplaythrough", function () {
-                    showBgmControl(true);
-                });
+                bgm.addEventListener("loadeddata", markBgmReady);
+                bgm.addEventListener("canplaythrough", markBgmReady);
                 bgm.addEventListener("error", function () {
-                    showBgmControl(false);
+                    bgmReady = false;
+                    bgmBtn.hidden = true;
+                    if (bgmHint) {
+                        bgmHint.textContent = "배경음악을 불러오지 못했습니다.";
+                        bgmHint.hidden = false;
+                    }
                 });
 
-                if (bgm.readyState >= 3) showBgmControl(true);
+                if (bgm.readyState >= 2) markBgmReady();
 
                 function toggleBgm() {
                     if (!bgmReady) return;
-                    if (bgmOn) {
-                        bgm.pause();
-                        bgmOn = false;
-                    } else {
-                        var p = bgm.play();
-                        if (p && p.then) {
-                            p.then(function () {
-                                bgmOn = true;
-                                setBgmUi();
-                            }).catch(function () {});
-                        } else {
-                            bgmOn = true;
-                        }
-                    }
-                    setBgmUi();
+                    if (bgmOn) pauseBgm();
+                    else playBgm();
                 }
 
-                bgmBtn.addEventListener("click", toggleBgm);
+                bgmBtn.addEventListener("click", function (e) {
+                    e.stopPropagation();
+                    toggleBgm();
+                });
+
+                if (homeIntro) {
+                    homeIntro.addEventListener("click", function (e) {
+                        if (e.target.closest(".home-bgm-wrap")) return;
+                        if (!bgmReady || bgmOn) return;
+                        playBgm();
+                    });
+                }
+
                 setBgmUi();
             })();
 
