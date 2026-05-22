@@ -3,7 +3,6 @@
     var RESERVED_LOGIN_IDS = ["thejohn", "thejhon", "aksangsa"];
     var api = window.THEJHON_API;
     var VF = window.THEJHON_VENDOR_FORM;
-    var catalog = window.THEJHON_PRODUCT_CATALOG;
 
     function apiErrorMessage(err, fallback) {
         if (!err) return fallback || "요청에 실패했습니다.";
@@ -98,13 +97,11 @@
     var loginIdInput = document.getElementById("vr-login-id");
     var passwordInput = document.getElementById("vr-login-pw");
     var password2Input = document.getElementById("vr-login-pw2");
-    var deptsHidden = document.getElementById("vr-vn-depts");
-    var deptPickerRoot = document.getElementById("vr-dept-picker");
+    var deptCheckboxesRoot = document.getElementById("vr-dept-checkboxes");
     var companyInput = document.getElementById("vr-company");
     var ceoInput = document.getElementById("vr-ceo");
     var ceoTelInput = document.getElementById("vr-ceo-tel");
-    var gradeInput = document.getElementById("vr-grade");
-    var gradeBtns = document.querySelectorAll(".vr-grade-btn");
+    var gradeSelect = document.getElementById("vr-grade");
     var webInput = document.getElementById("vr-web");
     var emailInput = document.getElementById("vr-email");
     var phoneInput = document.getElementById("vr-phone");
@@ -124,7 +121,6 @@
     var cachedItems = [];
     var idDupCheck = null;
     var pwConfirmCheck = null;
-    var deptPicker = null;
 
     function setStatus(msg, isError) {
         if (!statusEl) return;
@@ -157,21 +153,25 @@
     }
 
     function setGrade(value) {
+        if (!gradeSelect) return;
         var g = String(value || "1");
-        if (g !== "1" && g !== "2" && g !== "3" && g !== "4") g = "1";
-        if (gradeInput) gradeInput.value = g;
-        gradeBtns.forEach(function (btn) {
-            var on = btn.getAttribute("data-grade") === g;
-            btn.classList.toggle("is-selected", on);
-            btn.setAttribute("aria-pressed", on ? "true" : "false");
-        });
+        if (g !== "1" && g !== "2" && g !== "3") g = "1";
+        gradeSelect.value = g;
     }
 
-    gradeBtns.forEach(function (btn) {
-        btn.addEventListener("click", function () {
-            setGrade(btn.getAttribute("data-grade"));
-        });
-    });
+    function getSelectedDepts() {
+        return VF && VF.readDeptCheckboxValues
+            ? VF.readDeptCheckboxValues(deptCheckboxesRoot)
+            : [];
+    }
+
+    function setSelectedDepts(ids) {
+        if (VF && VF.writeDeptCheckboxValues) VF.writeDeptCheckboxValues(deptCheckboxesRoot, ids);
+    }
+
+    function clearSelectedDepts() {
+        if (VF && VF.clearDeptCheckboxValues) VF.clearDeptCheckboxValues(deptCheckboxesRoot);
+    }
 
     if (VF) {
         VF.initPasswordToggle(passwordInput, document.getElementById("vr-pw-toggle"));
@@ -180,14 +180,6 @@
             passwordInput: passwordInput,
             confirmInput: password2Input,
             hintEl: document.getElementById("vr-pw-match-hint")
-        });
-    }
-
-    if (VF && VF.initVendorDeptMultiPicker && deptPickerRoot && deptsHidden) {
-        deptPicker = VF.initVendorDeptMultiPicker({
-            catalog: catalog,
-            root: deptPickerRoot,
-            hiddenInput: deptsHidden
         });
     }
 
@@ -248,7 +240,7 @@
         pendingLogoData = "";
         setPreview(logoPreview, "");
         setGrade("1");
-        if (deptPicker) deptPicker.clear();
+        clearSelectedDepts();
         if (idDupCheck) idDupCheck.reset();
         if (password2Input) password2Input.value = "";
         cancelBtn.hidden = true;
@@ -380,7 +372,7 @@
         ceoInput.value = it.vn_ceo || "";
         ceoTelInput.value = it.vn_ceo_tel || "";
         setGrade(it.vn_grade || "1");
-        if (deptPicker) deptPicker.setValues(it.vn_depts || []);
+        setSelectedDepts(it.vn_depts || []);
         webInput.value = it.vn_web || "";
         emailInput.value = it.vn_email || "";
         phoneInput.value = it.vn_phone || "";
@@ -465,7 +457,7 @@
         var vn_company = companyInput.value.trim();
         var editingId = editIdInput.value.trim();
         var pwdIn = passwordInput.value;
-        var vn_depts = deptPicker ? deptPicker.getValues() : deptsHidden && deptsHidden.value ? deptsHidden.value.split(",").filter(Boolean) : [];
+        var vn_depts = getSelectedDepts();
 
         if (!editingId) {
             setStatus("목록에서 수정할 업체를 선택해 주세요.", true);
@@ -514,7 +506,7 @@
                 vn_depts: vn_depts,
                 vn_ceo: ceoInput.value.trim(),
                 vn_ceo_tel: ceoTelInput.value.trim(),
-                vn_grade: gradeInput && gradeInput.value ? gradeInput.value : "1",
+                vn_grade: gradeSelect && gradeSelect.value ? gradeSelect.value : "1",
                 vn_web: webInput.value.trim(),
                 vn_email: emailInput.value.trim(),
                 vn_phone: phoneInput.value.trim(),

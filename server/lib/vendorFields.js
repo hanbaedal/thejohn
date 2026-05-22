@@ -26,7 +26,7 @@ function str(v) {
 
 function parseGrade(v) {
     const n = parseInt(v, 10);
-    if (n >= 1 && n <= 4) return String(n);
+    if (n >= 1 && n <= 3) return String(n);
     return "";
 }
 
@@ -192,7 +192,7 @@ function validateBuilt(built, requirePassword) {
     if (pwErr) return pwErr;
     if (!built.vn_company) return "업체이름을 입력해 주세요.";
     if (!built.vn_depts || !built.vn_depts.length) return "사업부문을 하나 이상 선택해 주세요.";
-    if (!built.vn_grade) return "업체등급(1~4)을 선택해 주세요.";
+    if (!built.vn_grade) return "업체등급(1~3)을 선택해 주세요.";
     return "";
 }
 

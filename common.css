@@ -820,37 +820,43 @@ a.company-org-node:focus-visible {
 @media (max-width: 720px) {
     /* 헤더·본문은 노트북과 동일 타이포·표시(:root 패딩·기본 스타일). 푸터만 기존 스마트폰용 레이아웃·여백 유지. */
     .site-header {
+        position: -webkit-sticky;
+        position: sticky;
+        top: 0;
+        flex-shrink: 0;
         flex-direction: row;
         align-items: center;
         flex-wrap: nowrap;
-        gap: 0.4rem;
+        justify-content: flex-start;
+        gap: 0.45rem;
         min-width: 0;
+        overflow-x: auto;
+        overflow-y: visible;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: none;
+        -ms-overflow-style: none;
+    }
+    .site-header::-webkit-scrollbar {
+        display: none;
     }
     .site-header-start {
         flex-direction: row;
         align-items: center;
         flex-wrap: nowrap;
         gap: 0.45rem;
-        flex: 1 1 0;
-        min-width: 0;
+        flex: 0 0 auto;
+        min-width: min-content;
         width: auto;
     }
     .site-header-nav {
-        flex: 1 1 0;
-        min-width: 0;
+        flex: 0 0 auto;
+        min-width: min-content;
         width: auto;
         flex-wrap: nowrap;
-        overflow-x: auto;
-        overflow-y: hidden;
-        -webkit-overflow-scrolling: touch;
-        scrollbar-width: none;
-        -ms-overflow-style: none;
+        overflow: visible;
         justify-content: flex-start;
         gap: 0.2rem;
         padding: 0.2rem 0 0.35rem;
-    }
-    .site-header-nav::-webkit-scrollbar {
-        display: none;
     }
     .header-nav-link {
         flex-shrink: 0;
@@ -860,8 +866,12 @@ a.company-org-node:focus-visible {
     .site-header-nav .header-nav-link[href="vendor-register.html"] {
         display: none !important;
     }
+    .header-session-company {
+        display: none !important;
+    }
     .site-header-actions {
         margin-left: 0;
+        flex: 0 0 auto;
         flex-shrink: 0;
         width: auto;
         justify-content: flex-end;
@@ -869,6 +879,7 @@ a.company-org-node:focus-visible {
         flex-wrap: nowrap;
         gap: 0.35rem;
         padding-top: 0;
+        padding-right: max(0.25rem, env(safe-area-inset-right, 0));
         border-top: none;
     }
     .header-date {

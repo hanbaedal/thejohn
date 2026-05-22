@@ -222,6 +222,62 @@
         };
     }
 
+    function readMultiSelectValues(selectEl) {
+        if (!selectEl) return [];
+        var out = [];
+        for (var i = 0; i < selectEl.options.length; i++) {
+            if (selectEl.options[i].selected) out.push(selectEl.options[i].value);
+        }
+        return out;
+    }
+
+    function writeMultiSelectValues(selectEl, ids) {
+        if (!selectEl) return;
+        var set = {};
+        (ids || []).forEach(function (id) {
+            set[String(id)] = true;
+        });
+        for (var i = 0; i < selectEl.options.length; i++) {
+            selectEl.options[i].selected = !!set[selectEl.options[i].value];
+        }
+    }
+
+    function clearMultiSelect(selectEl) {
+        if (!selectEl) return;
+        for (var i = 0; i < selectEl.options.length; i++) {
+            selectEl.options[i].selected = false;
+        }
+    }
+
+    function readDeptCheckboxValues(root) {
+        if (!root) return [];
+        var out = [];
+        var boxes = root.querySelectorAll('input[type="checkbox"][data-dept]');
+        for (var i = 0; i < boxes.length; i++) {
+            if (boxes[i].checked) out.push(boxes[i].getAttribute("data-dept") || boxes[i].value);
+        }
+        return out;
+    }
+
+    function writeDeptCheckboxValues(root, ids) {
+        if (!root) return;
+        var set = {};
+        (ids || []).forEach(function (id) {
+            set[String(id)] = true;
+        });
+        var boxes = root.querySelectorAll('input[type="checkbox"][data-dept]');
+        for (var i = 0; i < boxes.length; i++) {
+            var key = boxes[i].getAttribute("data-dept") || boxes[i].value;
+            boxes[i].checked = !!set[key];
+        }
+    }
+
+    function clearDeptCheckboxValues(root) {
+        if (!root) return;
+        var boxes = root.querySelectorAll('input[type="checkbox"][data-dept]');
+        for (var i = 0; i < boxes.length; i++) boxes[i].checked = false;
+    }
+
     function initVendorDeptMultiPicker(options) {
         var catalog = options.catalog || global.THEJHON_PRODUCT_CATALOG;
         var root = options.root;
@@ -308,6 +364,12 @@
         initPasswordToggle: initPasswordToggle,
         initPasswordConfirm: initPasswordConfirm,
         initLoginIdDuplicateCheck: initLoginIdDuplicateCheck,
-        initVendorDeptMultiPicker: initVendorDeptMultiPicker
+        initVendorDeptMultiPicker: initVendorDeptMultiPicker,
+        readMultiSelectValues: readMultiSelectValues,
+        writeMultiSelectValues: writeMultiSelectValues,
+        clearMultiSelect: clearMultiSelect,
+        readDeptCheckboxValues: readDeptCheckboxValues,
+        writeDeptCheckboxValues: writeDeptCheckboxValues,
+        clearDeptCheckboxValues: clearDeptCheckboxValues
     };
 })(typeof window !== "undefined" ? window : global);
