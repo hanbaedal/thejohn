@@ -156,18 +156,22 @@ async function safeCreateIndex(collection, spec, options) {
     }
 }
 
-/** 예전 배포: loginIdNorm(비밀번호) 유니크 인덱스 → 업체 여러 건 등록 시 E11000 */
+/** 예전 배포: loginIdNorm·password 유니크 인덱스 → 업체 여러 건 등록 시 E11000 */
 async function dropObsoleteVendorIndexes(database) {
     const col = database.collection("vendors");
-    try {
-        await col.dropIndex("loginIdNorm_1");
-        console.log("[thejohn] dropped obsolete vendors.loginIdNorm_1 unique index");
-    } catch (e) {
-        const code = e && (e.code || e.codeName);
-        if (code === 27 || code === "IndexNotFound" || /index not found/i.test(String(e.message || ""))) {
-            return;
+    const obsolete = ["loginIdNorm_1", "password_1"];
+    for (var i = 0; i < obsolete.length; i++) {
+        const name = obsolete[i];
+        try {
+            await col.dropIndex(name);
+            console.log("[thejohn] dropped obsolete vendors." + name + " index");
+        } catch (e) {
+            const code = e && (e.code || e.codeName);
+            if (code === 27 || code === "IndexNotFound" || /index not found/i.test(String(e.message || ""))) {
+                continue;
+            }
+            console.warn("[thejohn] drop vendors." + name + ":", e.message);
         }
-        console.warn("[thejohn] drop vendors.loginIdNorm_1:", e.message);
     }
 }
 

@@ -2,8 +2,9 @@ const bcrypt = require("bcryptjs");
 
 /**
  * vendors · staff 공통 로그인 필드
- * - loginId     : 로그인 아이디
- * - loginIdNorm : 비밀번호 (사용자 입력값 그대로)
+ * - loginId : 로그인 아이디
+ * - vendors : loginIdNorm = 소문자 아이디, password = 비밀번호
+ * - staff(레거시) : loginIdNorm = 비밀번호
  */
 
 function normalizeLoginId(loginId) {
@@ -91,6 +92,23 @@ function usesLoginIdNormAsPassword(doc) {
 }
 
 async function setLoginPassword(collection, filter, loginId, plainPassword) {
+    const trimmed = String(loginId || "").trim();
+    const pw = normalizePasswordInput(plainPassword);
+    const isVendors = collection.collectionName === "vendors";
+
+    if (isVendors) {
+        await collection.updateOne(filter, {
+            $set: {
+                loginId: trimmed,
+                loginIdNorm: normalizeLoginId(trimmed),
+                password: pw,
+                updatedAt: Date.now()
+            },
+            $unset: { passwordAscii: "", passwordHash: "" }
+        });
+        return;
+    }
+
     const fields = buildLoginFields(loginId, plainPassword);
     await collection.updateOne(filter, {
         $set: {
@@ -113,6 +131,15 @@ async function migrateCollectionLoginFields(db, collectionName) {
         let plain = "";
 
         if (usesLoginIdNormAsPassword(doc)) {
+            continue;
+        }
+
+        if (
+            collectionName === "vendors" &&
+            doc.password != null &&
+            doc.password !== "" &&
+            doc.loginIdNorm === normLogin
+        ) {
             continue;
         }
 

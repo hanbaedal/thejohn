@@ -1,5 +1,4 @@
 (function () {
-    var RESERVED_LOGIN_IDS = ["thejohn", "thejhon", "aksangsa"];
     var api = window.THEJHON_API;
     var VF = window.THEJHON_VENDOR_FORM;
     var PF = window.THEJHON_PRODUCT_FORM;
@@ -26,69 +25,8 @@
         }
     }
 
-    function normalizeLoginIdLocal(s) {
-        return String(s || "")
-            .trim()
-            .toLowerCase();
-    }
-
-    function isReservedVendorLoginId(loginId) {
-        return RESERVED_LOGIN_IDS.indexOf(normalizeLoginIdLocal(loginId)) >= 0;
-    }
-
-    function apiHealthUrl() {
-        var base =
-            api && api.config && api.config.baseUrl
-                ? String(api.config.baseUrl).replace(/\/$/, "")
-                : "";
-        if (base) return base + "/api/health";
-        if (typeof location !== "undefined" && location.origin && /^https?:/.test(location.protocol)) {
-            return location.origin + "/api/health";
-        }
-        return "/api/health";
-    }
-
-    function checkApiServer() {
-        return fetch(apiHealthUrl())
-            .then(function (res) {
-                return res.json().catch(function () {
-                    return {};
-                });
-            })
-            .then(function (h) {
-                if (!h || !h.db) {
-                    throw new Error(
-                        "API 서버(MongoDB)에 연결되지 않습니다. https://thejohn.onrender.com 에서 로그인·저장해 주세요."
-                    );
-                }
-                return h;
-            });
-    }
-
     function prepareLogoForSave(logoData) {
         return logoData || "";
-    }
-
-    function saveVendorToServer(editingId, body) {
-        if (!api || !api.getToken || !api.getToken()) {
-            return Promise.reject(
-                new Error(
-                    "로그인 토큰이 없습니다. 로그아웃 후 thejohn / aksangsa 로 다시 로그인해 주세요."
-                )
-            );
-        }
-        return api.checkSession().then(function (sess) {
-            if (!sess || !sess.loggedIn) {
-                throw new Error(
-                    (sess && sess.error) ||
-                        "로그인 세션이 만료되었습니다. 다시 로그인해 주세요."
-                );
-            }
-            if (sess.role !== "admin" && sess.role !== "supervisor") {
-                throw new Error("관리자만 vendors 컬렉션에 저장할 수 있습니다.");
-            }
-            return editingId ? api.updateVendor(editingId, body) : api.createVendor(body);
-        });
     }
 
     var form = document.getElementById("vr-form");
@@ -187,7 +125,7 @@
         idDupCheck = VF.initLoginIdDuplicateCheck({
             loginIdInput: loginIdInput,
             hintEl: document.getElementById("vr-id-dup-hint"),
-            isReserved: isReservedVendorLoginId,
+            isReserved: VF.isReservedVendorLoginId,
             getExcludeId: function () {
                 return editIdInput ? editIdInput.value.trim() : "";
             },
@@ -454,30 +392,6 @@
             setStatus("목록에서 수정할 업체를 선택해 주세요.", true);
             return;
         }
-        if (VF) {
-            var idFmt = VF.validateLoginIdFormat(loginId);
-            if (idFmt) {
-                setStatus(idFmt, true);
-                loginIdInput.focus();
-                return;
-            }
-        }
-        if (isReservedVendorLoginId(loginId)) {
-            var reservedMsg =
-                "아이디 " + loginId + " 은 관리자 전용입니다. 업체 전용 아이디를 입력해 주세요.";
-            setStatus(reservedMsg, true);
-            loginIdInput.focus();
-            return;
-        }
-        if (!vn_company) {
-            setStatus("업체이름을 입력해 주세요.", true);
-            companyInput.focus();
-            return;
-        }
-        if (!vn_depts.length) {
-            setStatus("사업부문을 하나 이상 선택해 주세요.", true);
-            return;
-        }
         if (VF && pwConfirmCheck) {
             var pwErr = pwConfirmCheck.validate(false);
             if (pwErr) {
@@ -487,66 +401,46 @@
             }
         }
 
+        var body = {
+            loginId: loginId,
+            vn_company: vn_company,
+            vn_depts: vn_depts,
+            vn_ceo: ceoInput.value.trim(),
+            vn_ceo_tel: ceoTelInput.value.trim(),
+            vn_grade: gradeSelect && gradeSelect.value ? gradeSelect.value : "1",
+            vn_web: webInput.value.trim(),
+            vn_email: emailInput.value.trim(),
+            vn_phone: phoneInput.value.trim(),
+            vn_addr: addrInput.value.trim(),
+            vn_mgr_name: mgrNameInput.value.trim(),
+            vn_mgr_tel: mgrTelInput.value.trim(),
+            vn_mgr_email: mgrEmailInput.value.trim(),
+            vn_logo: "",
+            vn_note: noteInput.value.trim()
+        };
+        if (pwdIn) body.password = pwdIn;
+
+        var fieldErr = VF ? VF.validateVendorFields(body, { requirePassword: false }) : "";
+        if (fieldErr) {
+            setStatus(fieldErr, true);
+            return;
+        }
+
         function doSave(logoData) {
-            var wasEditing = !!editingId;
-            var body = {
-                loginId: loginId,
-                vn_company: vn_company,
-                vn_depts: vn_depts,
-                vn_ceo: ceoInput.value.trim(),
-                vn_ceo_tel: ceoTelInput.value.trim(),
-                vn_grade: gradeSelect && gradeSelect.value ? gradeSelect.value : "1",
-                vn_web: webInput.value.trim(),
-                vn_email: emailInput.value.trim(),
-                vn_phone: phoneInput.value.trim(),
-                vn_addr: addrInput.value.trim(),
-                vn_mgr_name: mgrNameInput.value.trim(),
-                vn_mgr_tel: mgrTelInput.value.trim(),
-                vn_mgr_email: mgrEmailInput.value.trim(),
-                vn_logo: "",
-                vn_note: noteInput.value.trim()
-            };
-            if (pwdIn) body.password = pwdIn;
-
+            body.vn_logo = prepareLogoForSave(logoData);
             submitBtn.disabled = true;
-            setStatus("MongoDB vendors 컬렉션에 저장 중…");
-
-            var logoPromise;
-            try {
-                body.vn_logo = prepareLogoForSave(logoData);
-                logoPromise = Promise.resolve();
-            } catch (logoErr) {
-                logoPromise = Promise.reject(logoErr);
-            }
-
-            logoPromise
+            api.updateVendor(editingId, body)
                 .then(function () {
-                    return saveVendorToServer(editingId, body);
+                    return api.listVendors();
                 })
-                .then(function (saved) {
+                .then(function (items) {
+                    cachedItems = items;
+                    renderList();
                     resetForm();
-                    return loadList().then(function () {
-                        return { saved: saved, wasEditing: wasEditing };
-                    });
-                })
-                .then(function (result) {
-                    if (!result) return;
-                    var saved = result.saved;
-                    var idMsg = saved && saved.id ? " (ID: " + saved.id + ")" : "";
-                    setStatus(
-                        (result.wasEditing ? "수정했습니다." : "MongoDB vendors에 저장했습니다.") + idMsg
-                    );
+                    setStatus("수정했습니다.");
                 })
                 .catch(function (err) {
-                    var msg = apiErrorMessage(err, "저장에 실패했습니다.");
-                    if (err.status === 409) {
-                        msg = (err.data && err.data.error) || "이미 사용 중인 아이디입니다.";
-                    }
-                    if (err.status === 400) {
-                        msg = (err.data && err.data.error) || msg;
-                    }
-                    setStatus(msg, true);
-                    alert("vendors 컬렉션에 저장되지 않았습니다.\n\n" + msg);
+                    setStatus(err.message || "저장에 실패했습니다.", true);
                 })
                 .finally(function () {
                     submitBtn.disabled = false;
@@ -587,48 +481,14 @@
         setFormDisabled(true);
         if (listEl) {
             listEl.innerHTML =
-                '<p class="vr-card-note">MongoDB <strong>vendors</strong> 컬렉션에 저장하려면 관리자 로그인이 필요합니다. <a href="login.html?next=vendor-register.html">로그인</a></p>';
+                '<p class="vr-card-note">업체를 수정하려면 관리자로 <a href="login.html?next=vendor-edit.html">로그인</a>해 주세요.</p>';
         }
         return;
     }
 
-    setFormDisabled(true);
-    setStatus("서버 로그인 세션 확인 중…");
-
-    checkApiServer()
-        .then(function () {
-            return api.checkSession();
-        })
-        .then(function (sess) {
-            if (!sess || !sess.loggedIn) {
-                throw new Error(
-                    (sess && sess.error) ||
-                        "브라우저에만 로그인된 것처럼 보입니다. 로그아웃 후 thejohn 으로 다시 로그인해 주세요."
-                );
-            }
-            if (sess.role !== "admin" && sess.role !== "supervisor") {
-                throw new Error("관리자(스테프)만 저장할 수 있습니다. 업체 계정으로는 업체등록 메뉴를 쓸 수 없습니다.");
-            }
-            setFormDisabled(false);
-            setStatus(
-                "관리자 확인됨 (" +
-                    sess.userId +
-                    ") · 저장 시 Atlas DB thejhon → 컬렉션 vendors 에 기록됩니다."
-            );
-            return loadList();
-        })
-        .catch(function (err) {
-            var msg = apiErrorMessage(err, err.message);
-            setStatus(msg, true);
-            if (/로그인|토큰|세션|401|403/i.test(msg)) {
-                alert(msg);
-                if (window.THEJHON_AUTH && THEJHON_AUTH.clearSession) {
-                    THEJHON_AUTH.clearSession();
-                }
-            }
-            if (listEl) {
-                listEl.innerHTML =
-                    '<p class="vr-card-note">컬렉션 이름은 <strong>vendors</strong> 입니다 (venders 아님).<br><a href="login.html?next=vendor-register.html">thejohn / aksangsa 로 다시 로그인</a> 후 저장하세요.</p>';
-            }
+    if (api && api.listVendors) {
+        loadList().catch(function (err) {
+            setStatus(err.message || "업체 목록을 불러오지 못했습니다.", true);
         });
+    }
 })();

@@ -6,6 +6,32 @@
     var LOGIN_ID_MAX = 12;
     var PASSWORD_MIN = 8;
     var PASSWORD_MAX = 16;
+    var RESERVED_VENDOR_LOGIN_IDS = ["thejohn", "thejhon", "aksangsa"];
+
+    function isReservedVendorLoginId(loginId) {
+        var id = String(loginId || "")
+            .trim()
+            .toLowerCase();
+        return RESERVED_VENDOR_LOGIN_IDS.indexOf(id) >= 0;
+    }
+
+    /** 상품 validateProductFields 와 동일 패턴 */
+    function validateVendorFields(data, options) {
+        options = options || {};
+        var requirePassword = options.requirePassword !== false;
+        var idErr = validateLoginIdFormat(data.loginId);
+        if (idErr) return idErr;
+        if (isReservedVendorLoginId(data.loginId)) {
+            return "사용할 수 없는 아이디입니다. (관리자 전용)";
+        }
+        var pwErr = validatePasswordFormat(data.password, requirePassword);
+        if (pwErr) return pwErr;
+        if (!data.vn_company) return "업체이름을 입력해 주세요.";
+        if (!data.vn_depts || !data.vn_depts.length) {
+            return "사업부문을 하나 이상 선택해 주세요.";
+        }
+        return "";
+    }
 
     function validateLoginIdFormat(loginId) {
         var id = String(loginId || "").trim();
@@ -359,6 +385,9 @@
         LOGIN_ID_MAX: LOGIN_ID_MAX,
         PASSWORD_MIN: PASSWORD_MIN,
         PASSWORD_MAX: PASSWORD_MAX,
+        RESERVED_VENDOR_LOGIN_IDS: RESERVED_VENDOR_LOGIN_IDS,
+        isReservedVendorLoginId: isReservedVendorLoginId,
+        validateVendorFields: validateVendorFields,
         validateLoginIdFormat: validateLoginIdFormat,
         validatePasswordFormat: validatePasswordFormat,
         initPasswordToggle: initPasswordToggle,

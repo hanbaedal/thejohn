@@ -133,7 +133,7 @@ function resolveGuestLogin(password) {
 
 async function ensureLoginFieldsMigrated(db) {
     await migrateCollectionLoginFields(db, "staff");
-    await migrateCollectionLoginFields(db, "vendors");
+    /** vendors는 vendorFields.migrateVendorsCollection 이 password·loginIdNorm 스키마를 유지합니다 */
 }
 
 module.exports = {

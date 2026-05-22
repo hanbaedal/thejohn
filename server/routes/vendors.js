@@ -28,6 +28,9 @@ function vendorWriteErrorMessage(e) {
         if (key.loginIdNorm) {
             return "DB 인덱스 충돌(loginIdNorm)입니다. 서버를 재배포한 뒤 다시 시도해 주세요.";
         }
+        if (key.password) {
+            return "같은 비밀번호를 쓰는 업체가 이미 있거나 DB 인덱스 충돌입니다. 서버 재배포 후 비밀번호를 다르게 설정해 보세요.";
+        }
         return "중복된 값이 있어 저장할 수 없습니다.";
     }
     return "";
