@@ -2,6 +2,8 @@
     var MAX_IMAGE_BYTES = 1 * 1024 * 1024;
     var RESERVED_LOGIN_IDS = ["thejohn", "thejhon", "aksangsa"];
     var api = window.THEJHON_API;
+    var VF = window.THEJHON_VENDOR_FORM;
+    var catalog = window.THEJHON_PRODUCT_CATALOG;
 
     function apiErrorMessage(err, fallback) {
         if (!err) return fallback || "요청에 실패했습니다.";
@@ -95,6 +97,9 @@
     var editIdInput = document.getElementById("vr-edit-id");
     var loginIdInput = document.getElementById("vr-login-id");
     var passwordInput = document.getElementById("vr-login-pw");
+    var password2Input = document.getElementById("vr-login-pw2");
+    var deptsHidden = document.getElementById("vr-vn-depts");
+    var deptPickerRoot = document.getElementById("vr-dept-picker");
     var companyInput = document.getElementById("vr-company");
     var ceoInput = document.getElementById("vr-ceo");
     var ceoTelInput = document.getElementById("vr-ceo-tel");
@@ -117,6 +122,9 @@
 
     var pendingLogoData = "";
     var cachedItems = [];
+    var idDupCheck = null;
+    var pwConfirmCheck = null;
+    var deptPicker = null;
 
     function setStatus(msg, isError) {
         if (!statusEl) return;
@@ -165,6 +173,38 @@
         });
     });
 
+    if (VF) {
+        VF.initPasswordToggle(passwordInput, document.getElementById("vr-pw-toggle"));
+        VF.initPasswordToggle(password2Input, document.getElementById("vr-pw2-toggle"));
+        pwConfirmCheck = VF.initPasswordConfirm({
+            passwordInput: passwordInput,
+            confirmInput: password2Input,
+            hintEl: document.getElementById("vr-pw-match-hint")
+        });
+    }
+
+    if (VF && VF.initVendorDeptMultiPicker && deptPickerRoot && deptsHidden) {
+        deptPicker = VF.initVendorDeptMultiPicker({
+            catalog: catalog,
+            root: deptPickerRoot,
+            hiddenInput: deptsHidden
+        });
+    }
+
+    if (VF && VF.initLoginIdDuplicateCheck && api && api.checkVendorLoginId) {
+        idDupCheck = VF.initLoginIdDuplicateCheck({
+            loginIdInput: loginIdInput,
+            hintEl: document.getElementById("vr-id-dup-hint"),
+            isReserved: isReservedVendorLoginId,
+            getExcludeId: function () {
+                return editIdInput ? editIdInput.value.trim() : "";
+            },
+            checkDuplicate: function (loginId, excludeId) {
+                return api.checkVendorLoginId(loginId, excludeId);
+            }
+        });
+    }
+
     function readFileAsDataURL(file) {
         return new Promise(function (resolve, reject) {
             if (file.size > MAX_IMAGE_BYTES) {
@@ -200,6 +240,9 @@
         pendingLogoData = "";
         setPreview(logoPreview, "");
         setGrade("1");
+        if (deptPicker) deptPicker.clear();
+        if (idDupCheck) idDupCheck.reset();
+        if (password2Input) password2Input.value = "";
         cancelBtn.hidden = true;
         submitBtn.textContent = "저장";
         submitBtn.disabled = false;
@@ -322,10 +365,15 @@
         editIdInput.value = it.id;
         loginIdInput.value = it.loginId || "";
         passwordInput.value = "";
+        if (password2Input) password2Input.value = "";
+        if (idDupCheck) idDupCheck.reset();
         companyInput.value = it.vn_company || "";
         ceoInput.value = it.vn_ceo || "";
         ceoTelInput.value = it.vn_ceo_tel || "";
         setGrade(it.vn_grade || "1");
+        if (deptPicker) {
+            deptPicker.setValues(it.vn_depts || []);
+        }
         webInput.value = it.vn_web || "";
         emailInput.value = it.vn_email || "";
         phoneInput.value = it.vn_phone || "";
@@ -395,20 +443,21 @@
         var loginId = loginIdInput.value.trim();
         var vn_company = companyInput.value.trim();
         var editingId = editIdInput.value.trim();
-        var pwdIn = passwordInput.value.trim();
+        var pwdIn = passwordInput.value;
+        var vn_depts = deptPicker ? deptPicker.getValues() : deptsHidden && deptsHidden.value ? deptsHidden.value.split(",").filter(Boolean) : [];
 
-        if (!loginId) {
-            setStatus("아이디를 입력해 주세요.", true);
-            loginIdInput.focus();
-            return;
+        if (VF) {
+            var idFmt = VF.validateLoginIdFormat(loginId);
+            if (idFmt) {
+                setStatus(idFmt, true);
+                loginIdInput.focus();
+                return;
+            }
         }
         if (isReservedVendorLoginId(loginId)) {
             var reservedMsg =
-                "아이디 " +
-                loginId +
-                " 은 관리자 전용입니다. 업체 전용 아이디(예: company01)를 입력해 주세요.";
+                "아이디 " + loginId + " 은 관리자 전용입니다. 업체 전용 아이디를 입력해 주세요.";
             setStatus(reservedMsg, true);
-            alert(reservedMsg);
             loginIdInput.focus();
             return;
         }
@@ -417,24 +466,27 @@
             companyInput.focus();
             return;
         }
-        if (!editingId && (!pwdIn || pwdIn.length < 4)) {
-            setStatus("비밀번호는 4자 이상으로 입력해 주세요.", true);
-            passwordInput.focus();
+        if (!vn_depts.length) {
+            setStatus("사업부문을 하나 이상 선택해 주세요.", true);
             return;
         }
-        if (pwdIn && pwdIn.length < 4) {
-            setStatus("비밀번호는 4자 이상으로 입력해 주세요.", true);
-            passwordInput.focus();
-            return;
+        if (VF && pwConfirmCheck) {
+            var pwErr = pwConfirmCheck.validate(!editingId);
+            if (pwErr) {
+                setStatus(pwErr, true);
+                passwordInput.focus();
+                return;
+            }
         }
 
         var fileLogo = logoInput.files && logoInput.files[0];
 
-        function finish(logoData) {
+        function doSave(logoData) {
             var wasEditing = !!editingId;
             var body = {
                 loginId: loginId,
                 vn_company: vn_company,
+                vn_depts: vn_depts,
                 vn_ceo: ceoInput.value.trim(),
                 vn_ceo_tel: ceoTelInput.value.trim(),
                 vn_grade: gradeInput && gradeInput.value ? gradeInput.value : "1",
@@ -500,13 +552,34 @@
                 });
         }
 
-        if (fileLogo) {
-            readFileAsDataURL(fileLogo).then(finish).catch(function (err) {
-                setStatus(err.message || "로고 오류", true);
-            });
-        } else {
-            finish(editingId ? pendingLogoData : "");
+        function startSave() {
+            if (fileLogo) {
+                readFileAsDataURL(fileLogo)
+                    .then(doSave)
+                    .catch(function (err) {
+                        setStatus(err.message || "로고 오류", true);
+                    });
+            } else {
+                doSave(editingId ? pendingLogoData : "");
+            }
         }
+
+        if (!idDupCheck) {
+            startSave();
+            return;
+        }
+        idDupCheck.checkNow().then(function (res) {
+            if (res && res.duplicate) {
+                setStatus((res && res.error) || "이미 사용 중인 아이디입니다.", true);
+                loginIdInput.focus();
+                return;
+            }
+            if (idDupCheck.isChecking()) {
+                setStatus("아이디 중복 확인 중입니다. 잠시 후 다시 시도해 주세요.", true);
+                return;
+            }
+            startSave();
+        });
     });
 
     setGrade("1");

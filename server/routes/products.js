@@ -5,7 +5,8 @@ const {
     toPublic,
     buildFromBody,
     toDbDoc,
-    validateBuilt
+    validateBuilt,
+    findDuplicateProductByName
 } = require("../lib/productFields");
 
 const router = express.Router();
@@ -28,6 +29,26 @@ router.get("/", async (req, res) => {
     }
 });
 
+router.get("/check-name", requireRole("supervisor", "admin"), async (req, res) => {
+    try {
+        const name = String(req.query.name || "");
+        const excludeId = req.query.excludeId ? String(req.query.excludeId) : "";
+        const dept = String(req.query.dept || "");
+        if (!name.trim() || !dept.trim()) {
+            return res.json({ ok: true, duplicate: false });
+        }
+        const dup = await findDuplicateProductByName(getDb(), name, excludeId, dept);
+        res.json({
+            ok: true,
+            duplicate: !!dup,
+            item: dup ? toPublic(dup) : null
+        });
+    } catch (e) {
+        console.error("GET /api/products/check-name", e);
+        res.status(500).json({ ok: false, error: "상품명 중복 확인에 실패했습니다." });
+    }
+});
+
 router.get("/:id", async (req, res) => {
     try {
         const doc = await getDb().collection("products").findOne({ id: req.params.id });
@@ -44,6 +65,15 @@ router.post("/", requireRole("supervisor", "admin"), async (req, res) => {
         const built = buildFromBody(req.body, null);
         const err = validateBuilt(built, true);
         if (err) return res.status(400).json({ ok: false, error: err });
+
+        const dup = await findDuplicateProductByName(getDb(), built.pd_name, null, built.pd_dept);
+        if (dup) {
+            return res.status(409).json({
+                ok: false,
+                code: "DUPLICATE_NAME",
+                error: "같은 사업부문에 이미 등록된 상품 명칭입니다."
+            });
+        }
 
         const doc = toDbDoc(newId(), built, null);
         await getDb().collection("products").insertOne(doc);
@@ -63,6 +93,15 @@ router.put("/:id", requireRole("supervisor", "admin"), async (req, res) => {
         const built = buildFromBody(req.body, existing);
         const err = validateBuilt(built, false);
         if (err) return res.status(400).json({ ok: false, error: err });
+
+        const dup = await findDuplicateProductByName(getDb(), built.pd_name, id, built.pd_dept);
+        if (dup) {
+            return res.status(409).json({
+                ok: false,
+                code: "DUPLICATE_NAME",
+                error: "같은 사업부문에 이미 등록된 상품 명칭입니다."
+            });
+        }
 
         const doc = toDbDoc(id, built, existing);
         await getDb().collection("products").replaceOne({ id }, doc);

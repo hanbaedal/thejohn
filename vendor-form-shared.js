@@ -1,0 +1,313 @@
+/**
+ * 업체 등록·수정 폼 공통
+ */
+(function (global) {
+    var LOGIN_ID_MIN = 6;
+    var LOGIN_ID_MAX = 12;
+    var PASSWORD_MIN = 8;
+    var PASSWORD_MAX = 16;
+
+    function validateLoginIdFormat(loginId) {
+        var id = String(loginId || "").trim();
+        if (!id) return "아이디를 입력해 주세요.";
+        if (id.length < LOGIN_ID_MIN || id.length > LOGIN_ID_MAX) {
+            return "아이디는 " + LOGIN_ID_MIN + "~" + LOGIN_ID_MAX + "자리로 입력해 주세요.";
+        }
+        if (!/^[a-zA-Z0-9_-]+$/.test(id)) {
+            return "아이디는 영문, 숫자, _(밑줄), -(하이픈)만 사용할 수 있습니다.";
+        }
+        return "";
+    }
+
+    function validatePasswordFormat(password, required) {
+        var pw = String(password || "");
+        if (!pw) {
+            return required ? "비밀번호를 입력해 주세요." : "";
+        }
+        if (pw.length < PASSWORD_MIN || pw.length > PASSWORD_MAX) {
+            return "비밀번호는 " + PASSWORD_MIN + "~" + PASSWORD_MAX + "자리로 입력해 주세요.";
+        }
+        return "";
+    }
+
+    function initPasswordToggle(input, btn) {
+        if (!input || !btn) return;
+        btn.addEventListener("click", function () {
+            var show = input.type === "password";
+            input.type = show ? "text" : "password";
+            btn.setAttribute("aria-label", show ? "비밀번호 숨기기" : "비밀번호 보기");
+            btn.textContent = show ? "숨기기" : "보기";
+        });
+    }
+
+    function initPasswordConfirm(options) {
+        var pwInput = options.passwordInput;
+        var pw2Input = options.confirmInput;
+        var hintEl = options.hintEl;
+        if (!pwInput || !pw2Input) {
+            return {
+                isMatch: function () {
+                    return true;
+                },
+                validate: function () {
+                    return "";
+                }
+            };
+        }
+
+        function setHint(mode, text) {
+            if (!hintEl) return;
+            hintEl.textContent = text || "";
+            hintEl.hidden = !text;
+            hintEl.className = "vr-pw-match-hint vr-pw-match-hint--" + (mode || "idle");
+            if (mode === "bad") {
+                pw2Input.setAttribute("aria-invalid", "true");
+                pw2Input.classList.add("vr-input--bad");
+            } else {
+                pw2Input.removeAttribute("aria-invalid");
+                pw2Input.classList.remove("vr-input--bad");
+            }
+        }
+
+        function check() {
+            var pw = String(pwInput.value || "");
+            var pw2 = String(pw2Input.value || "");
+            if (!pw2) {
+                setHint("idle", pw ? "비밀번호 확인을 입력해 주세요." : "");
+                return false;
+            }
+            if (pw === pw2) {
+                setHint("ok", "비밀번호가 일치합니다.");
+                return true;
+            }
+            setHint("bad", "비밀번호가 일치하지 않습니다.");
+            return false;
+        }
+
+        pwInput.addEventListener("input", check);
+        pw2Input.addEventListener("input", check);
+        pw2Input.addEventListener("blur", check);
+
+        return {
+            isMatch: check,
+            validate: function (requirePassword) {
+                var err = validatePasswordFormat(pwInput.value, requirePassword);
+                if (err) return err;
+                if (requirePassword || String(pw2Input.value || "").length) {
+                    if (!check()) return "비밀번호 확인이 일치하지 않습니다.";
+                }
+                return "";
+            }
+        };
+    }
+
+    function initLoginIdDuplicateCheck(options) {
+        var input = options.loginIdInput;
+        var hintEl = options.hintEl;
+        var checkDuplicate = options.checkDuplicate;
+        var isReserved = options.isReserved || function () {
+            return false;
+        };
+        var getExcludeId = options.getExcludeId || function () {
+            return "";
+        };
+        var debounceMs = options.debounceMs || 450;
+        var state = { duplicate: false, checking: false, lastChecked: "" };
+        var timer = null;
+        var seq = 0;
+
+        if (!input || !checkDuplicate) {
+            return {
+                checkNow: function () {
+                    return Promise.resolve({ duplicate: false });
+                },
+                isDuplicate: function () {
+                    return false;
+                },
+                isChecking: function () {
+                    return false;
+                },
+                reset: function () {}
+            };
+        }
+
+        function setHint(mode, text) {
+            if (!hintEl) return;
+            hintEl.textContent = text || "";
+            hintEl.hidden = !text;
+            hintEl.className = "vr-id-dup-hint vr-id-dup-hint--" + (mode || "idle");
+            if (mode === "dup" || mode === "bad") {
+                input.setAttribute("aria-invalid", "true");
+                input.classList.add("vr-input--bad");
+            } else {
+                input.removeAttribute("aria-invalid");
+                input.classList.remove("vr-input--bad");
+            }
+        }
+
+        function runCheck() {
+            var id = String(input.value || "").trim();
+            var fmt = validateLoginIdFormat(id);
+            if (!id) {
+                state.duplicate = false;
+                state.checking = false;
+                state.lastChecked = "";
+                setHint("idle", "");
+                return Promise.resolve({ duplicate: false });
+            }
+            if (fmt) {
+                state.duplicate = false;
+                state.checking = false;
+                setHint("bad", fmt);
+                return Promise.resolve({ duplicate: false, invalid: true });
+            }
+            if (isReserved(id)) {
+                state.duplicate = true;
+                state.checking = false;
+                state.lastChecked = id;
+                setHint("dup", "관리자 전용 아이디입니다. 다른 아이디를 사용해 주세요.");
+                return Promise.resolve({ duplicate: true, reserved: true });
+            }
+            var mySeq = ++seq;
+            state.checking = true;
+            setHint("checking", "아이디 중복 확인 중…");
+            return checkDuplicate(id, getExcludeId())
+                .then(function (res) {
+                    if (mySeq !== seq) return res;
+                    state.checking = false;
+                    state.lastChecked = id;
+                    state.duplicate = !!(res && res.duplicate);
+                    if (state.duplicate) {
+                        setHint("dup", (res && res.error) || "이미 사용 중인 아이디입니다.");
+                    } else {
+                        setHint("ok", "사용 가능한 아이디입니다.");
+                    }
+                    return res;
+                })
+                .catch(function () {
+                    if (mySeq !== seq) return { duplicate: false };
+                    state.checking = false;
+                    setHint("err", "아이디 확인에 실패했습니다. 다시 시도해 주세요.");
+                    return { duplicate: false, error: true };
+                });
+        }
+
+        input.addEventListener("input", function () {
+            var id = String(input.value || "").trim();
+            if (id !== state.lastChecked) state.duplicate = false;
+            if (timer) clearTimeout(timer);
+            timer = setTimeout(runCheck, debounceMs);
+        });
+        input.addEventListener("blur", function () {
+            if (timer) clearTimeout(timer);
+            runCheck();
+        });
+
+        return {
+            checkNow: runCheck,
+            isDuplicate: function () {
+                return state.duplicate;
+            },
+            isChecking: function () {
+                return state.checking;
+            },
+            reset: function () {
+                if (timer) clearTimeout(timer);
+                seq++;
+                state.duplicate = false;
+                state.checking = false;
+                state.lastChecked = "";
+                setHint("idle", "");
+            }
+        };
+    }
+
+    function initVendorDeptMultiPicker(options) {
+        var catalog = options.catalog || global.THEJHON_PRODUCT_CATALOG;
+        var root = options.root;
+        var hiddenInput = options.hiddenInput;
+        if (!root || !catalog || !hiddenInput) return null;
+
+        root.innerHTML = "";
+        root.setAttribute("role", "group");
+        root.setAttribute("aria-label", "사업부문 선택 (복수 선택 가능)");
+
+        var selected = {};
+
+        function syncHidden() {
+            var ids = Object.keys(selected).filter(function (k) {
+                return selected[k];
+            });
+            ids.sort();
+            hiddenInput.value = ids.join(",");
+        }
+
+        function toggleDept(deptId, on) {
+            var norm = catalog.normalizeDept(deptId);
+            if (!norm) return;
+            if (on === undefined) {
+                selected[norm] = !selected[norm];
+            } else {
+                selected[norm] = !!on;
+            }
+            if (!selected[norm]) delete selected[norm];
+            var btn = root.querySelector('.am-dept-btn[data-dept="' + norm + '"]');
+            if (btn) {
+                var isOn = !!selected[norm];
+                btn.classList.toggle("is-selected", isOn);
+                btn.setAttribute("aria-pressed", isOn ? "true" : "false");
+            }
+            syncHidden();
+        }
+
+        catalog.DEPARTMENTS.forEach(function (d) {
+            var btn = document.createElement("button");
+            btn.type = "button";
+            btn.className = "am-dept-btn";
+            btn.setAttribute("data-dept", d.id);
+            btn.textContent = d.label;
+            btn.setAttribute("aria-pressed", "false");
+            btn.addEventListener("click", function () {
+                toggleDept(d.id);
+            });
+            root.appendChild(btn);
+        });
+
+        return {
+            getValues: function () {
+                return hiddenInput.value
+                    ? hiddenInput.value.split(",").filter(Boolean)
+                    : [];
+            },
+            setValues: function (ids) {
+                selected = {};
+                (ids || []).forEach(function (id) {
+                    toggleDept(id, true);
+                });
+                syncHidden();
+            },
+            clear: function () {
+                selected = {};
+                var btns = root.querySelectorAll(".am-dept-btn");
+                for (var i = 0; i < btns.length; i++) {
+                    btns[i].classList.remove("is-selected");
+                    btns[i].setAttribute("aria-pressed", "false");
+                }
+                syncHidden();
+            }
+        };
+    }
+
+    global.THEJHON_VENDOR_FORM = {
+        LOGIN_ID_MIN: LOGIN_ID_MIN,
+        LOGIN_ID_MAX: LOGIN_ID_MAX,
+        PASSWORD_MIN: PASSWORD_MIN,
+        PASSWORD_MAX: PASSWORD_MAX,
+        validateLoginIdFormat: validateLoginIdFormat,
+        validatePasswordFormat: validatePasswordFormat,
+        initPasswordToggle: initPasswordToggle,
+        initPasswordConfirm: initPasswordConfirm,
+        initLoginIdDuplicateCheck: initLoginIdDuplicateCheck,
+        initVendorDeptMultiPicker: initVendorDeptMultiPicker
+    };
+})(typeof window !== "undefined" ? window : global);

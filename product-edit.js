@@ -12,8 +12,8 @@
     var deptHidden = document.getElementById("pe-pd-dept");
     var deptPickerRoot = document.getElementById("pe-dept-picker");
     var nameInput = document.getElementById("pe-pd-name");
-    var photoInput = document.getElementById("pe-pd-image");
     var photoPreview = document.getElementById("pe-photo-preview");
+    var photoPicker = null;
     var explainInput = document.getElementById("pe-pd-explain");
     var price1Input = document.getElementById("pe-pd-price1");
     var price2Input = document.getElementById("pe-pd-price2");
@@ -30,6 +30,7 @@
     var filterDept = "";
     var pendingImageData = "";
     var deptPicker = null;
+    var nameDupCheck = null;
 
     function setStatus(msg, isError) {
         if (!statusEl) return;
@@ -107,6 +108,8 @@
         if (!form) return;
         form.reset();
         editIdInput.value = "";
+        if (photoPicker) photoPicker.clear();
+        if (nameDupCheck) nameDupCheck.reset();
         pendingImageData = "";
         updatePhotoPreview("");
         if (deptPicker) deptPicker.clear();
@@ -129,10 +132,11 @@
         perNameInput.value = it.per_name || "";
         perNumberInput.value = it["per-number"] || "";
         perEmailInput.value = it["per-email"] || "";
-        photoInput.value = "";
+        if (photoPicker) photoPicker.clear();
         pendingImageData = it.pd_image || "";
         updatePhotoPreview(pendingImageData || "");
         if (deptPicker) deptPicker.setValue(itemDept(it));
+        if (nameDupCheck) nameDupCheck.reset();
         if (formWrap) {
             formWrap.hidden = false;
             formWrap.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -174,7 +178,26 @@
         deptPicker = PF.initDeptPicker({
             catalog: catalog,
             root: deptPickerRoot,
-            hiddenInput: deptHidden
+            hiddenInput: deptHidden,
+            onSelect: function () {
+                if (nameDupCheck) nameDupCheck.checkNow();
+            }
+        });
+    }
+
+    if (PF && PF.initProductNameDuplicateCheck && api && api.checkProductName) {
+        nameDupCheck = PF.initProductNameDuplicateCheck({
+            nameInput: nameInput,
+            hintEl: document.getElementById("pe-name-dup-hint"),
+            getExcludeId: function () {
+                return editIdInput ? editIdInput.value.trim() : "";
+            },
+            getDeptId: function () {
+                return deptPicker ? deptPicker.getValue() : "";
+            },
+            checkDuplicate: function (name, excludeId, dept) {
+                return api.checkProductName(name, excludeId, dept);
+            }
         });
     }
 
@@ -187,23 +210,28 @@
 
     cancelBtn.addEventListener("click", resetForm);
 
-    photoInput.addEventListener("change", function () {
-        var f = photoInput.files && photoInput.files[0];
-        if (!f) {
-            updatePhotoPreview(editIdInput.value ? pendingImageData : "");
-            return;
-        }
-        PF.readFileAsDataURL(f)
-            .then(function (dataUrl) {
-                pendingImageData = dataUrl;
-                updatePhotoPreview(dataUrl);
-            })
-            .catch(function (err) {
-                setStatus(err.message, true);
-                photoInput.value = "";
+    function handlePhotoFile(f) {
+        return PF.readFileAsDataURL(f).then(function (dataUrl) {
+            pendingImageData = dataUrl;
+            updatePhotoPreview(dataUrl);
+            setStatus("");
+        });
+    }
+
+    if (PF && PF.initProductPhotoPicker) {
+        photoPicker = PF.initProductPhotoPicker({
+            galleryInput: document.getElementById("pe-pd-image-gallery"),
+            cameraInput: document.getElementById("pe-pd-image-camera"),
+            btnGallery: document.getElementById("pe-photo-gallery-btn"),
+            btnCamera: document.getElementById("pe-photo-camera-btn"),
+            onSelect: handlePhotoFile,
+            onError: function (err) {
+                setStatus((err && err.message) || "이미지 오류", true);
+                if (photoPicker) photoPicker.clear();
                 updatePhotoPreview(editIdInput.value ? pendingImageData : "");
-            });
-    });
+            }
+        });
+    }
 
     form.addEventListener("submit", function (e) {
         e.preventDefault();
@@ -232,23 +260,43 @@
             setStatus(err, true);
             return;
         }
-        submitBtn.disabled = true;
-        api.updateProduct(id, body)
-            .then(function () {
-                return api.listProducts();
-            })
-            .then(function (items) {
-                cachedItems = items;
-                renderList();
-                resetForm();
-                setStatus("수정했습니다.");
-            })
-            .catch(function (err2) {
-                setStatus(err2.message || "저장에 실패했습니다.", true);
-            })
-            .finally(function () {
-                submitBtn.disabled = false;
-            });
+
+        function saveProduct() {
+            submitBtn.disabled = true;
+            api.updateProduct(id, body)
+                .then(function () {
+                    return api.listProducts();
+                })
+                .then(function (items) {
+                    cachedItems = items;
+                    renderList();
+                    resetForm();
+                    setStatus("수정했습니다.");
+                })
+                .catch(function (err2) {
+                    setStatus(err2.message || "저장에 실패했습니다.", true);
+                })
+                .finally(function () {
+                    submitBtn.disabled = false;
+                });
+        }
+
+        if (!nameDupCheck) {
+            saveProduct();
+            return;
+        }
+        nameDupCheck.checkNow().then(function (res) {
+            if (res && res.duplicate) {
+                setStatus("같은 사업부문에 이미 등록된 상품 명칭입니다. 다른 명칭을 입력해 주세요.", true);
+                nameInput.focus();
+                return;
+            }
+            if (nameDupCheck.isChecking()) {
+                setStatus("명칭 중복 확인 중입니다. 잠시 후 다시 시도해 주세요.", true);
+                return;
+            }
+            saveProduct();
+        });
     });
 
     var access = THEJHON_AUTH.getRegisterAccess();

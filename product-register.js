@@ -8,8 +8,8 @@
     var deptHidden = document.getElementById("pr-pd-dept");
     var deptPickerRoot = document.getElementById("pr-dept-picker");
     var nameInput = document.getElementById("pr-pd-name");
-    var photoInput = document.getElementById("pr-pd-image");
     var photoPreview = document.getElementById("pr-photo-preview");
+    var photoPicker = null;
     var explainInput = document.getElementById("pr-pd-explain");
     var price1Input = document.getElementById("pr-pd-price1");
     var price2Input = document.getElementById("pr-pd-price2");
@@ -23,6 +23,7 @@
 
     var pendingImageData = "";
     var deptPicker = null;
+    var nameDupCheck = null;
 
     function setStatus(msg, isError) {
         if (!statusEl) return;
@@ -45,27 +46,47 @@
         deptPicker = PF.initDeptPicker({
             catalog: catalog,
             root: deptPickerRoot,
-            hiddenInput: deptHidden
+            hiddenInput: deptHidden,
+            onSelect: function () {
+                if (nameDupCheck) nameDupCheck.checkNow();
+            }
         });
     }
 
-    photoInput.addEventListener("change", function () {
-        var f = photoInput.files && photoInput.files[0];
-        if (!f) {
-            updatePhotoPreview("");
-            return;
-        }
-        PF.readFileAsDataURL(f)
-            .then(function (dataUrl) {
-                pendingImageData = dataUrl;
-                updatePhotoPreview(dataUrl);
-            })
-            .catch(function (err) {
-                setStatus(err.message || "이미지 오류", true);
-                photoInput.value = "";
+    if (PF && PF.initProductNameDuplicateCheck && api && api.checkProductName) {
+        nameDupCheck = PF.initProductNameDuplicateCheck({
+            nameInput: nameInput,
+            hintEl: document.getElementById("pr-name-dup-hint"),
+            getDeptId: function () {
+                return deptPicker ? deptPicker.getValue() : "";
+            },
+            checkDuplicate: function (name, excludeId, dept) {
+                return api.checkProductName(name, excludeId, dept);
+            }
+        });
+    }
+
+    function handlePhotoFile(f) {
+        return PF.readFileAsDataURL(f).then(function (dataUrl) {
+            pendingImageData = dataUrl;
+            updatePhotoPreview(dataUrl);
+            setStatus("");
+        });
+    }
+
+    if (PF && PF.initProductPhotoPicker) {
+        photoPicker = PF.initProductPhotoPicker({
+            galleryInput: document.getElementById("pr-pd-image-gallery"),
+            cameraInput: document.getElementById("pr-pd-image-camera"),
+            btnGallery: document.getElementById("pr-photo-gallery-btn"),
+            btnCamera: document.getElementById("pr-photo-camera-btn"),
+            onSelect: handlePhotoFile,
+            onError: function (err) {
+                setStatus((err && err.message) || "이미지 오류", true);
                 updatePhotoPreview("");
-            });
-    });
+            }
+        });
+    }
 
     form.addEventListener("submit", function (e) {
         e.preventDefault();
@@ -89,21 +110,43 @@
             setStatus(err, true);
             return;
         }
-        submitBtn.disabled = true;
-        api.createProduct(body)
-            .then(function () {
-                form.reset();
-                pendingImageData = "";
-                updatePhotoPreview("");
-                if (deptPicker) deptPicker.clear();
-                setStatus("저장했습니다. 계속 등록하거나 상품 리스트에서 확인하세요.");
-            })
-            .catch(function (err2) {
-                setStatus(err2.message || "저장에 실패했습니다.", true);
-            })
-            .finally(function () {
-                submitBtn.disabled = false;
-            });
+
+        function saveProduct() {
+            submitBtn.disabled = true;
+            api.createProduct(body)
+                .then(function () {
+                    form.reset();
+                    pendingImageData = "";
+                    if (photoPicker) photoPicker.clear();
+                    if (nameDupCheck) nameDupCheck.reset();
+                    updatePhotoPreview("");
+                    if (deptPicker) deptPicker.clear();
+                    setStatus("저장했습니다. 계속 등록하거나 상품 리스트에서 확인하세요.");
+                })
+                .catch(function (err2) {
+                    setStatus(err2.message || "저장에 실패했습니다.", true);
+                })
+                .finally(function () {
+                    submitBtn.disabled = false;
+                });
+        }
+
+        if (!nameDupCheck) {
+            saveProduct();
+            return;
+        }
+        nameDupCheck.checkNow().then(function (res) {
+            if (res && res.duplicate) {
+                setStatus("같은 사업부문에 이미 등록된 상품 명칭입니다. 다른 명칭을 입력해 주세요.", true);
+                nameInput.focus();
+                return;
+            }
+            if (nameDupCheck.isChecking()) {
+                setStatus("명칭 중복 확인 중입니다. 잠시 후 다시 시도해 주세요.", true);
+                return;
+            }
+            saveProduct();
+        });
     });
 
     var access =

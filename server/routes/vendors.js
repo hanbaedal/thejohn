@@ -7,7 +7,8 @@ const {
     toPublic,
     buildFromBody,
     toDbDoc,
-    validateBuilt
+    validateBuilt,
+    validateLoginIdLength
 } = require("../lib/vendorFields");
 
 const router = express.Router();
@@ -41,6 +42,44 @@ router.get("/", async (req, res) => {
     } catch (e) {
         console.error("GET /api/vendors", e);
         res.status(500).json({ ok: false, error: "업체 목록을 불러오지 못했습니다." });
+    }
+});
+
+router.get("/check-login-id", requireRole("supervisor", "admin"), async (req, res) => {
+    try {
+        const loginId = String(req.query.loginId || "").trim();
+        const excludeId = req.query.excludeId ? String(req.query.excludeId) : "";
+        if (!loginId) {
+            return res.json({ ok: true, duplicate: false });
+        }
+        const fmt = validateLoginIdLength(loginId);
+        if (fmt) {
+            return res.json({ ok: true, duplicate: false, invalid: true, error: fmt });
+        }
+        if (isReservedAdminLoginId(loginId)) {
+            return res.json({
+                ok: true,
+                duplicate: true,
+                reserved: true,
+                error: "사용할 수 없는 아이디입니다."
+            });
+        }
+        if (await findStaffLoginConflict(loginId)) {
+            return res.json({
+                ok: true,
+                duplicate: true,
+                error: "이미 관리자(staff)에 사용 중인 아이디입니다."
+            });
+        }
+        const dup = await findDuplicateVendor(getDb().collection("vendors"), loginId, excludeId);
+        res.json({
+            ok: true,
+            duplicate: !!dup,
+            error: dup ? "이미 사용 중인 아이디입니다." : ""
+        });
+    } catch (e) {
+        console.error("GET /api/vendors/check-login-id", e);
+        res.status(500).json({ ok: false, error: "아이디 중복 확인에 실패했습니다." });
     }
 });
 

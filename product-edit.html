@@ -106,21 +106,22 @@
         <h2 style="margin:0 0 1rem;font-size:1.05rem;color:#052a4d">상품 수정</h2>
         <form id="pe-form" novalidate>
             <input type="hidden" id="pe-edit-id" value="">
-            <div class="pr-field">
-                <label for="pe-pd-name">상품 명칭</label>
-                <input type="text" id="pe-pd-name" name="pd_name" required maxlength="200" autocomplete="off" placeholder="상품 명칭">
-            </div>
             <div class="am-dept-picker">
                 <span class="am-dept-caption" id="pe-dept-label">사업부문</span>
                 <input type="hidden" id="pe-pd-dept" name="pd_dept" value="">
                 <div id="pe-dept-picker" class="am-dept-picker-btns" role="group" aria-labelledby="pe-dept-label"></div>
+            </div>
+            <div class="pr-field">
+                <label for="pe-pd-name">상품 명칭</label>
+                <input type="text" id="pe-pd-name" name="pd_name" required maxlength="200" autocomplete="off" placeholder="상품 명칭" aria-describedby="pe-name-dup-hint">
+                <p id="pe-name-dup-hint" class="pr-name-dup-hint pr-name-dup-hint--idle" hidden></p>
             </div>
             <div class="pr-price-group">
                 <span class="pr-price-caption">상품가격 (원)</span>
                 <div class="pr-field-row pr-row--4">
                     <div class="pr-field-half">
                         <label for="pe-pd-price1">가격 1</label>
-                        <input type="number" id="pe-pd-price1" name="pd_price1" min="0" step="1" required inputmode="numeric" placeholder="0">
+                        <input type="number" id="pe-pd-price1" name="pd_price1" min="0" step="1" inputmode="numeric" placeholder="0">
                     </div>
                     <div class="pr-field-half">
                         <label for="pe-pd-price2">가격 2</label>
@@ -140,10 +141,15 @@
                 <label for="pe-pd-size">상품 규격</label>
                 <input type="text" id="pe-pd-size" name="pd_size" maxlength="120" autocomplete="off" placeholder="예: 500g, 1박스 20입">
             </div>
-            <div class="pr-field">
-                <label for="pe-pd-image">상품 사진</label>
-                <input type="file" id="pe-pd-image" name="pd_image" accept="image/*">
-                <p id="pe-photo-hint" class="pr-hint">이미지는 1MB 이하입니다.</p>
+            <div class="pr-field pr-photo-field">
+                <span class="pr-photo-label" id="pe-photo-label">상품 사진</span>
+                <input type="file" id="pe-pd-image-gallery" class="pr-photo-file-input" name="pd_image_gallery" accept="image/*">
+                <input type="file" id="pe-pd-image-camera" class="pr-photo-file-input" name="pd_image_camera" accept="image/*" capture="environment">
+                <div class="pr-photo-actions" role="group" aria-labelledby="pe-photo-label">
+                    <button type="button" class="pr-photo-btn" id="pe-photo-gallery-btn">앨범·파일에서 선택</button>
+                    <button type="button" class="pr-photo-btn pr-photo-btn--camera" id="pe-photo-camera-btn">카메라로 촬영</button>
+                </div>
+                <p id="pe-photo-hint" class="pr-hint">스마트폰에서 사진 앨범을 고르거나 현장에서 바로 촬영할 수 있습니다. (1MB 이하)</p>
                 <img id="pe-photo-preview" class="pr-photo-preview" alt="선택한 이미지 미리보기" width="120" height="120" hidden>
             </div>
             <div class="pr-field">

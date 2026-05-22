@@ -20,8 +20,10 @@
 
     function parsePriceInput(el) {
         if (!el) return 0;
-        var n = parseInt(String(el.value || "").trim(), 10);
-        return isFinite(n) && n >= 0 ? n : NaN;
+        var raw = String(el.value || "").trim();
+        if (raw === "") return 0;
+        var n = parseInt(raw, 10);
+        return isFinite(n) && n >= 0 ? n : 0;
     }
 
     function readFileAsDataURL(file) {
@@ -39,6 +41,58 @@
             };
             r.readAsDataURL(file);
         });
+    }
+
+    /**
+     * 모바일: 앨범·파일 선택 / 카메라 촬영 (hidden file input 2개)
+     * options: { galleryInput, cameraInput, btnGallery, btnCamera, onSelect(file), onError(err) }
+     */
+    function initProductPhotoPicker(options) {
+        var galleryInput = options.galleryInput;
+        var cameraInput = options.cameraInput;
+        var btnGallery = options.btnGallery;
+        var btnCamera = options.btnCamera;
+        var onSelect = options.onSelect;
+        var onError = options.onError || function () {};
+
+        function bindInput(input) {
+            if (!input) return;
+            input.addEventListener("change", function () {
+                var f = input.files && input.files[0];
+                input.value = "";
+                if (!f || !onSelect) return;
+                try {
+                    var ret = onSelect(f);
+                    if (ret && typeof ret.catch === "function") {
+                        ret.catch(function (err) {
+                            onError(err);
+                        });
+                    }
+                } catch (err) {
+                    onError(err);
+                }
+            });
+        }
+
+        if (btnGallery && galleryInput) {
+            btnGallery.addEventListener("click", function () {
+                galleryInput.click();
+            });
+        }
+        if (btnCamera && cameraInput) {
+            btnCamera.addEventListener("click", function () {
+                cameraInput.click();
+            });
+        }
+        bindInput(galleryInput);
+        bindInput(cameraInput);
+
+        return {
+            clear: function () {
+                if (galleryInput) galleryInput.value = "";
+                if (cameraInput) cameraInput.value = "";
+            }
+        };
     }
 
     function deptLabel(catalog, deptId) {
@@ -111,22 +165,133 @@
         options = options || {};
         if (!data.pd_name) return "상품 명칭을 입력해 주세요.";
         if (!data.pd_explain) return "상품 설명을 입력해 주세요.";
-        var prices = [data.pd_price1, data.pd_price2, data.pd_price3, data.pd_price4];
-        if (prices.some(function (p) {
-            return !isFinite(p);
-        })) {
-            return "가격 1~4를 올바르게 입력해 주세요.";
-        }
-        if (!prices.some(function (p) {
-            return p > 0;
-        })) {
-            return "가격 1~4 중 하나 이상 0원보다 크게 입력해 주세요.";
-        }
         if (!data.pd_dept) return "사업부문을 선택해 주세요.";
         if (options.requireImage && !data.pd_image) {
             return "신규 등록 시 상품 사진을 선택해 주세요.";
         }
         return "";
+    }
+
+    /**
+     * 상품 명칭 중복 확인 (입력·포커스 아웃 시 API 호출)
+     * options: { nameInput, hintEl, checkDuplicate(name, excludeId, deptId)=>Promise, getExcludeId?, getDeptId? }
+     */
+    function initProductNameDuplicateCheck(options) {
+        var nameInput = options.nameInput;
+        var hintEl = options.hintEl;
+        var checkDuplicate = options.checkDuplicate;
+        var getExcludeId = options.getExcludeId || function () {
+            return "";
+        };
+        var getDeptId = options.getDeptId || function () {
+            return "";
+        };
+        var debounceMs = options.debounceMs || 450;
+        var state = { duplicate: false, checking: false, lastChecked: "" };
+        var timer = null;
+        var seq = 0;
+
+        if (!nameInput || !checkDuplicate) {
+            return {
+                checkNow: function () {
+                    return Promise.resolve({ duplicate: false });
+                },
+                isDuplicate: function () {
+                    return false;
+                },
+                isChecking: function () {
+                    return false;
+                },
+                reset: function () {}
+            };
+        }
+
+        function setHint(mode, text) {
+            if (!hintEl) return;
+            hintEl.textContent = text || "";
+            hintEl.hidden = !text;
+            hintEl.className = "pr-name-dup-hint pr-name-dup-hint--" + (mode || "idle");
+            if (mode === "dup") {
+                nameInput.setAttribute("aria-invalid", "true");
+                nameInput.classList.add("pr-name-input--dup");
+            } else {
+                nameInput.removeAttribute("aria-invalid");
+                nameInput.classList.remove("pr-name-input--dup");
+            }
+        }
+
+        function runCheck() {
+            var name = String(nameInput.value || "").trim();
+            var dept = getDeptId ? String(getDeptId() || "").trim() : "";
+            if (!name) {
+                state.duplicate = false;
+                state.checking = false;
+                state.lastChecked = "";
+                setHint("idle", "");
+                return Promise.resolve({ duplicate: false });
+            }
+            if (!dept) {
+                state.duplicate = false;
+                state.checking = false;
+                state.lastChecked = "";
+                setHint("idle", "같은 사업부문 내에서만 명칭 중복을 확인합니다. 사업부문을 선택해 주세요.");
+                return Promise.resolve({ duplicate: false });
+            }
+            var mySeq = ++seq;
+            state.checking = true;
+            setHint("checking", "같은 사업부문에서 명칭 중복 확인 중…");
+            return checkDuplicate(name, getExcludeId(), dept)
+                .then(function (res) {
+                    if (mySeq !== seq) return res;
+                    state.checking = false;
+                    state.lastChecked = name;
+                    state.duplicate = !!(res && res.duplicate);
+                    if (state.duplicate) {
+                        setHint("dup", "같은 사업부문에 이미 등록된 상품 명칭입니다.");
+                    } else {
+                        setHint("ok", "사용 가능한 상품 명칭입니다.");
+                    }
+                    return res;
+                })
+                .catch(function () {
+                    if (mySeq !== seq) return { duplicate: false };
+                    state.checking = false;
+                    setHint("err", "중복 확인에 실패했습니다. 다시 시도해 주세요.");
+                    return { duplicate: false, error: true };
+                });
+        }
+
+        nameInput.addEventListener("input", function () {
+            var name = String(nameInput.value || "").trim();
+            if (name !== state.lastChecked) {
+                state.duplicate = false;
+                if (!name) setHint("idle", "");
+            }
+            if (timer) clearTimeout(timer);
+            timer = setTimeout(runCheck, debounceMs);
+        });
+        nameInput.addEventListener("blur", function () {
+            if (timer) clearTimeout(timer);
+            runCheck();
+        });
+
+        return {
+            checkNow: runCheck,
+            isDuplicate: function () {
+                return state.duplicate;
+            },
+            isChecking: function () {
+                return state.checking;
+            },
+            reset: function () {
+                if (timer) clearTimeout(timer);
+                seq++;
+                state.duplicate = false;
+                state.checking = false;
+                state.lastChecked = "";
+                setHint("idle", "");
+            }
+        };
     }
 
     global.THEJHON_PRODUCT_FORM = {
@@ -135,8 +300,10 @@
         formatWon: formatWon,
         parsePriceInput: parsePriceInput,
         readFileAsDataURL: readFileAsDataURL,
+        initProductPhotoPicker: initProductPhotoPicker,
         deptLabel: deptLabel,
         initDeptPicker: initDeptPicker,
+        initProductNameDuplicateCheck: initProductNameDuplicateCheck,
         validateProductFields: validateProductFields
     };
 })(typeof window !== "undefined" ? window : global);

@@ -165,12 +165,27 @@ function toDbDoc(id, built, existing) {
     return doc;
 }
 
+/** 같은 사업부문 내 동일 명칭(앞뒤 공백 제거 후 대소문자 무시) 상품 조회 */
+async function findDuplicateProductByName(db, name, excludeId, dept) {
+    const n = str(name);
+    const deptNorm = str(dept);
+    if (!n || !deptNorm) return null;
+    const esc = n.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    const nameRe = new RegExp("^" + esc + "$", "i");
+    const filter = {
+        [F.dept]: deptNorm,
+        $or: [{ [F.name]: nameRe }, { title: nameRe }]
+    };
+    if (excludeId) filter.id = { $ne: String(excludeId) };
+    return db.collection("products").findOne(filter);
+}
+
 function validateBuilt(built, requireImage) {
     if (!built.pd_name) return "상품 명칭을 입력해 주세요.";
     if (!built.pd_explain) return "상품 설명을 입력해 주세요.";
     const prices = [built.pd_price1, built.pd_price2, built.pd_price3, built.pd_price4];
     if (prices.some((p) => !isFinite(p))) return "가격 1~4를 올바르게 입력해 주세요.";
-    if (!prices.some((p) => p > 0)) return "가격 1~4 중 하나 이상 0원보다 크게 입력해 주세요.";
+    if (!built.pd_dept) return "사업부문을 선택해 주세요.";
     if (requireImage && !built.pd_image) return "신규 등록 시 상품 사진이 필요합니다.";
     return "";
 }
@@ -212,6 +227,7 @@ module.exports = {
     buildFromBody,
     toDbDoc,
     validateBuilt,
+    findDuplicateProductByName,
     migrateProductsCollection,
     fromLegacyDoc,
     readPricesFromDoc

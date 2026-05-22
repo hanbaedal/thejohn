@@ -101,6 +101,12 @@
                 return d.item;
             });
         },
+        checkProductName: function (name, excludeId, dept) {
+            var q = "?name=" + encodeURIComponent(String(name || ""));
+            if (excludeId) q += "&excludeId=" + encodeURIComponent(String(excludeId));
+            if (dept) q += "&dept=" + encodeURIComponent(String(dept));
+            return request("GET", "/api/products/check-name" + q);
+        },
         createProduct: function (body) {
             return request("POST", "/api/products", body).then(function (d) {
                 return d.item;
@@ -118,6 +124,11 @@
             return request("GET", "/api/vendors").then(function (d) {
                 return d.items || [];
             });
+        },
+        checkVendorLoginId: function (loginId, excludeId) {
+            var q = "?loginId=" + encodeURIComponent(String(loginId || ""));
+            if (excludeId) q += "&excludeId=" + encodeURIComponent(String(excludeId));
+            return request("GET", "/api/vendors/check-login-id" + q);
         },
         createVendor: function (body) {
             return request("POST", "/api/vendors", body).then(function (d) {

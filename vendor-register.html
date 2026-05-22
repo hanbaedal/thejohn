@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>업체 등록 — 더존</title>
     <link rel="stylesheet" href="common.css">
+    <link rel="stylesheet" href="admin-manage.css">
     <style>
         .vr-form { max-width: min(100%, 56rem); margin: 0 auto 1.5rem; padding: 0.85rem 0.75rem; background: #fff; border: 1px solid #e0e6ed; border-radius: 8px; box-shadow: 0 1px 8px rgba(10, 77, 156, 0.05); }
         .vr-slot > label,
@@ -89,11 +90,40 @@
             background: #e8f4fc;
             color: var(--dz-blue);
         }
+        .vr-pw-wrap { display: flex; gap: 0.25rem; align-items: stretch; }
+        .vr-pw-wrap input { flex: 1; min-width: 0; }
+        .vr-pw-toggle {
+            flex-shrink: 0;
+            padding: 0 0.45rem;
+            font-size: 0.68rem;
+            font-weight: 600;
+            font-family: inherit;
+            border: 1px solid #c5d0dc;
+            border-radius: 4px;
+            background: #f4f6f9;
+            color: #3d5166;
+            cursor: pointer;
+        }
+        .vr-id-dup-hint, .vr-pw-match-hint {
+            margin: 0.2rem 0 0;
+            font-size: 0.68rem;
+            line-height: 1.35;
+        }
+        .vr-id-dup-hint[hidden], .vr-pw-match-hint[hidden] { display: none !important; }
+        .vr-id-dup-hint--ok, .vr-pw-match-hint--ok { color: #2d6a4f; font-weight: 600; }
+        .vr-id-dup-hint--dup, .vr-id-dup-hint--bad, .vr-pw-match-hint--bad { color: #a12c2c; font-weight: 600; }
+        .vr-id-dup-hint--checking, .vr-id-dup-hint--err, .vr-pw-match-hint--idle { color: #7a8a9c; }
+        .vr-slot input.vr-input--bad, .vr-field input.vr-input--bad { border-color: #c44; }
+        .vr-dept-wrap { margin-bottom: 0.55rem; }
+        .vr-dept-wrap > .vr-dept-caption { display: block; font-size: 0.7rem; font-weight: 600; color: #5a6b7d; margin-bottom: 0.35rem; }
+        .vr-dept-wrap .am-dept-picker-btns .am-dept-btn.is-selected { border-color: var(--dz-blue); background: var(--dz-blue); color: #fff; }
     </style>
     <script src="api-config.js"></script>
     <script src="thejhon-api.js"></script>
     <script src="auth.js"></script>
     <script src="admin-header.js"></script>
+    <script src="product-catalog.js"></script>
+    <script src="vendor-form-shared.js"></script>
     <script src="nav.js" defer></script>
 </head>
 <body>
@@ -130,30 +160,48 @@
             <div class="vr-row vr-row--4">
                 <div class="vr-slot">
                     <label for="vr-login-id">1. 아이디 (업체 로그인용)</label>
-                    <input type="text" id="vr-login-id" name="loginId" required maxlength="64" autocomplete="username" placeholder="업체 전용 아이디">
-                    <p class="vr-hint vr-hint--after-login">thejohn·aksangsa·thejhon 은 관리자 전용이라 업체 아이디로 쓸 수 없습니다.</p>
+                    <input type="text" id="vr-login-id" name="loginId" required maxlength="12" autocomplete="username" placeholder="6~12자 (영문·숫자)" aria-describedby="vr-id-dup-hint">
+                    <p id="vr-id-dup-hint" class="vr-id-dup-hint vr-id-dup-hint--idle" hidden></p>
                 </div>
                 <div class="vr-slot">
-                    <label for="vr-login-pw">2. 비밀번호</label>
-                    <input type="password" id="vr-login-pw" name="password" maxlength="128" autocomplete="new-password" placeholder="비밀번호">
-                </div>
-                <div class="vr-slot">
-                    <label for="vr-company">3. 업체이름</label>
+                    <label for="vr-company">2. 업체이름</label>
                     <input type="text" id="vr-company" name="vn_company" required maxlength="200" autocomplete="organization" placeholder="업체이름">
                 </div>
                 <div class="vr-slot">
-                    <label for="vr-ceo">4. 대표자 이름</label>
+                    <label for="vr-ceo">3. 대표자 이름</label>
                     <input type="text" id="vr-ceo" name="vn_ceo" maxlength="80" autocomplete="name" placeholder="대표자 이름">
                 </div>
-            </div>
-            <p class="vr-hint vr-hint--after-login">비밀번호는 업체 로그인에 사용됩니다.</p>
-            <div class="vr-row vr-row--4">
                 <div class="vr-slot">
-                    <label for="vr-ceo-tel">5. 대표자 연락처</label>
+                    <label for="vr-ceo-tel">4. 대표자 연락처</label>
                     <input type="tel" id="vr-ceo-tel" name="vn_ceo_tel" maxlength="30" inputmode="tel" placeholder="대표자 연락처">
                 </div>
+            </div>
+            <p class="vr-hint vr-hint--after-login">thejohn·aksangsa·thejhon 은 관리자 전용입니다.</p>
+            <div class="vr-row vr-row--4">
+                <div class="vr-slot">
+                    <label for="vr-login-pw">5. 비밀번호</label>
+                    <div class="vr-pw-wrap">
+                        <input type="password" id="vr-login-pw" name="password" maxlength="16" autocomplete="new-password" placeholder="8~16자">
+                        <button type="button" class="vr-pw-toggle" id="vr-pw-toggle" aria-label="비밀번호 보기">보기</button>
+                    </div>
+                </div>
+                <div class="vr-slot">
+                    <label for="vr-login-pw2">6. 비밀번호 확인</label>
+                    <div class="vr-pw-wrap">
+                        <input type="password" id="vr-login-pw2" name="password_confirm" maxlength="16" autocomplete="new-password" placeholder="비밀번호 다시 입력" aria-describedby="vr-pw-match-hint">
+                        <button type="button" class="vr-pw-toggle" id="vr-pw2-toggle" aria-label="비밀번호 확인 보기">보기</button>
+                    </div>
+                    <p id="vr-pw-match-hint" class="vr-pw-match-hint vr-pw-match-hint--idle" hidden></p>
+                </div>
+            </div>
+            <div class="vr-dept-wrap am-dept-picker">
+                <span class="vr-dept-caption" id="vr-dept-label">7. 사업부문 (복수 선택 가능)</span>
+                <input type="hidden" id="vr-vn-depts" name="vn_depts" value="">
+                <div id="vr-dept-picker" class="am-dept-picker-btns" role="group" aria-labelledby="vr-dept-label"></div>
+            </div>
+            <div class="vr-row vr-row--4">
                 <div class="vr-slot vr-grade-wrap">
-                    <span class="vr-grade-caption" id="vr-grade-label">6. 업체등급</span>
+                    <span class="vr-grade-caption" id="vr-grade-label">8. 업체등급</span>
                     <input type="hidden" id="vr-grade" name="vn_grade" value="1">
                     <div class="vr-grade-btns" role="group" aria-labelledby="vr-grade-label">
                         <button type="button" class="vr-grade-btn is-selected" data-grade="1">1</button>
@@ -163,46 +211,46 @@
                     </div>
                 </div>
                 <div class="vr-slot">
-                    <label for="vr-web">7. 홈페이지</label>
+                    <label for="vr-web">9. 홈페이지</label>
                     <input type="text" id="vr-web" name="vn_web" maxlength="500" inputmode="url" placeholder="https://">
                 </div>
                 <div class="vr-slot">
-                    <label for="vr-email">8. 회사 이메일</label>
+                    <label for="vr-email">10. 회사 이메일</label>
                     <input type="email" id="vr-email" name="vn_email" maxlength="120" autocomplete="email" placeholder="회사 이메일">
                 </div>
             </div>
             <div class="vr-row vr-row--3">
                 <div class="vr-slot">
-                    <label for="vr-phone">9. 회사 전화</label>
+                    <label for="vr-phone">11. 회사 전화</label>
                     <input type="tel" id="vr-phone" name="vn_phone" maxlength="30" inputmode="tel" placeholder="회사 전화">
                 </div>
                 <div class="vr-slot" style="grid-column: span 2;">
-                    <label for="vr-addr">A. 회사 주소</label>
+                    <label for="vr-addr">12. 회사 주소</label>
                     <input type="text" id="vr-addr" name="vn_addr" maxlength="500" placeholder="회사 주소">
                 </div>
             </div>
             <div class="vr-row vr-row--3">
                 <div class="vr-slot">
-                    <label for="vr-mgr-name">B. 담당자 이름</label>
+                    <label for="vr-mgr-name">13. 담당자 이름</label>
                     <input type="text" id="vr-mgr-name" name="vn_mgr_name" maxlength="80" placeholder="담당자 이름">
                 </div>
                 <div class="vr-slot">
-                    <label for="vr-mgr-tel">C. 담당자 연락처</label>
+                    <label for="vr-mgr-tel">14. 담당자 연락처</label>
                     <input type="tel" id="vr-mgr-tel" name="vn_mgr_tel" maxlength="30" inputmode="tel" placeholder="담당자 연락처">
                 </div>
                 <div class="vr-slot">
-                    <label for="vr-mgr-email">D. 담당자 이메일</label>
+                    <label for="vr-mgr-email">15. 담당자 이메일</label>
                     <input type="email" id="vr-mgr-email" name="vn_mgr_email" maxlength="120" autocomplete="email" placeholder="담당자 이메일">
                 </div>
             </div>
             <div class="vr-field">
-                <label for="vr-logo">E. 회사 로고</label>
+                <label for="vr-logo">16. 회사 로고</label>
                 <input type="file" id="vr-logo" name="vn_logo" accept="image/*">
                 <img id="vr-logo-preview" class="vr-preview-sm" alt="" width="80" height="48" hidden>
             </div>
             <p class="vr-hint vr-hint--logo">로고 이미지는 1MB 이하입니다.</p>
             <div class="vr-field">
-                <label for="vr-note">F. 회사 상황</label>
+                <label for="vr-note">17. 회사 상황</label>
                 <textarea id="vr-note" name="vn_note" rows="4" maxlength="8000" placeholder="회사 상황·추가 설명"></textarea>
             </div>
             <div class="vr-actions">
