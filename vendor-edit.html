@@ -128,36 +128,60 @@
             color: #1a2b3c;
         }
         .vr-select:focus { outline: none; border-color: var(--dz-blue); box-shadow: 0 0 0 1px rgba(10, 77, 156, 0.2); }
-        .vr-dept-wrap { margin-bottom: 0.55rem; }
+        .vr-dept-row { margin-bottom: 0.65rem; }
         .vr-dept-wrap > .vr-dept-caption {
             display: block;
             font-size: 0.7rem;
             font-weight: 600;
             color: #5a6b7d;
-            margin-bottom: 0.25rem;
+            margin-bottom: 0.3rem;
         }
         .vr-dept-checkboxes {
             display: flex;
-            flex-wrap: wrap;
-            gap: 0.4rem 0.85rem;
-            margin-top: 0.15rem;
+            flex-wrap: nowrap;
+            align-items: center;
+            justify-content: space-between;
+            gap: 0.25rem 0.35rem;
+            margin-top: 0.1rem;
+            width: 100%;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+            scrollbar-width: thin;
+        }
+        .vr-dept-checkboxes::-webkit-scrollbar {
+            height: 4px;
         }
         .vr-dept-check {
             display: inline-flex;
             align-items: center;
-            gap: 0.3rem;
-            font-size: 0.8125rem;
-            font-weight: 500;
+            justify-content: center;
+            gap: 0.22rem;
+            flex: 1 1 0;
+            min-width: 0;
+            font-size: 0.72rem;
+            font-weight: 600;
             color: #3d5166;
             cursor: pointer;
             user-select: none;
+            white-space: nowrap;
         }
         .vr-dept-check input {
-            width: 1rem;
-            height: 1rem;
+            width: 0.9rem;
+            height: 0.9rem;
             margin: 0;
+            flex-shrink: 0;
             accent-color: var(--dz-blue);
             cursor: pointer;
+        }
+        @media (min-width: 640px) {
+            .vr-dept-check {
+                font-size: 0.8125rem;
+                gap: 0.28rem;
+            }
+            .vr-dept-check input {
+                width: 1rem;
+                height: 1rem;
+            }
         }
     </style>
     <script src="api-config.js"></script>
@@ -206,6 +230,17 @@
                 </div>
         <form id="vr-form" class="vr-form" novalidate>
             <input type="hidden" id="vr-edit-id" value="">
+            <div class="vr-field vr-dept-row vr-dept-wrap">
+                <span class="vr-dept-caption" id="vr-dept-label">사업부문</span>
+                <div id="vr-dept-checkboxes" class="vr-dept-checkboxes" role="group" aria-labelledby="vr-dept-label">
+                    <label class="vr-dept-check"><input type="checkbox" data-dept="livestock" value="livestock"> 축산</label>
+                    <label class="vr-dept-check"><input type="checkbox" data-dept="seafood" value="seafood"> 수산물</label>
+                    <label class="vr-dept-check"><input type="checkbox" data-dept="meals" value="meals"> 식사</label>
+                    <label class="vr-dept-check"><input type="checkbox" data-dept="banchan" value="banchan"> 반찬</label>
+                    <label class="vr-dept-check"><input type="checkbox" data-dept="drink" value="drink"> 음료</label>
+                </div>
+                <p class="vr-hint">한 개 이상 선택해 주세요.</p>
+            </div>
             <div class="vr-row vr-row--3">
                 <div class="vr-slot">
                     <label for="vr-login-id">아이디 (업체 로그인용)</label>
@@ -231,6 +266,16 @@
             <p class="vr-hint vr-hint--after-login">thejohn·aksangsa·thejhon 은 관리자 전용입니다. 수정 시 비밀번호를 비우면 기존 비밀번호를 유지합니다.</p>
             <div class="vr-row vr-row--3">
                 <div class="vr-slot">
+                    <label for="vr-grade">업체등급</label>
+                    <select id="vr-grade" name="vn_grade" class="vr-select" required>
+                        <option value="1" selected>1</option>
+                        <option value="2">2</option>
+                        <option value="3">3</option>
+                    </select>
+                </div>
+            </div>
+            <div class="vr-row vr-row--3">
+                <div class="vr-slot">
                     <label for="vr-company">업체이름</label>
                     <input type="text" id="vr-company" name="vn_company" required maxlength="200" autocomplete="organization" placeholder="업체이름">
                 </div>
@@ -243,26 +288,7 @@
                     <input type="tel" id="vr-ceo-tel" name="vn_ceo_tel" maxlength="30" inputmode="tel" placeholder="대표자 연락처">
                 </div>
             </div>
-            <div class="vr-row vr-row--4">
-                <div class="vr-slot vr-dept-wrap">
-                    <span class="vr-dept-caption" id="vr-dept-label">사업부문</span>
-                    <div id="vr-dept-checkboxes" class="vr-dept-checkboxes" role="group" aria-labelledby="vr-dept-label">
-                        <label class="vr-dept-check"><input type="checkbox" data-dept="livestock" value="livestock"> 축산</label>
-                        <label class="vr-dept-check"><input type="checkbox" data-dept="seafood" value="seafood"> 수산물</label>
-                        <label class="vr-dept-check"><input type="checkbox" data-dept="meals" value="meals"> 식사</label>
-                        <label class="vr-dept-check"><input type="checkbox" data-dept="banchan" value="banchan"> 반찬</label>
-                        <label class="vr-dept-check"><input type="checkbox" data-dept="drink" value="drink"> 음료</label>
-                    </div>
-                    <p class="vr-hint">한 개 이상 선택해 주세요.</p>
-                </div>
-                <div class="vr-slot">
-                    <label for="vr-grade">업체등급</label>
-                    <select id="vr-grade" name="vn_grade" class="vr-select" required>
-                        <option value="1" selected>1</option>
-                        <option value="2">2</option>
-                        <option value="3">3</option>
-                    </select>
-                </div>
+            <div class="vr-row vr-row--3">
                 <div class="vr-slot">
                     <label for="vr-web">홈페이지</label>
                     <input type="text" id="vr-web" name="vn_web" maxlength="500" inputmode="url" placeholder="https://">
@@ -271,16 +297,14 @@
                     <label for="vr-email">회사 이메일</label>
                     <input type="email" id="vr-email" name="vn_email" maxlength="120" autocomplete="email" placeholder="회사 이메일">
                 </div>
-            </div>
-            <div class="vr-row vr-row--3">
                 <div class="vr-slot">
                     <label for="vr-phone">회사 전화</label>
                     <input type="tel" id="vr-phone" name="vn_phone" maxlength="30" inputmode="tel" placeholder="회사 전화">
                 </div>
-                <div class="vr-slot" style="grid-column: span 2;">
-                    <label for="vr-addr">회사 주소</label>
-                    <input type="text" id="vr-addr" name="vn_addr" maxlength="500" placeholder="회사 주소">
-                </div>
+            </div>
+            <div class="vr-field">
+                <label for="vr-addr">회사 주소</label>
+                <input type="text" id="vr-addr" name="vn_addr" maxlength="500" placeholder="회사 주소">
             </div>
             <div class="vr-row vr-row--3">
                 <div class="vr-slot">
