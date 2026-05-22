@@ -1,8 +1,8 @@
 (function () {
-    var MAX_IMAGE_BYTES = 1 * 1024 * 1024;
     var RESERVED_LOGIN_IDS = ["thejohn", "thejhon", "aksangsa"];
     var api = window.THEJHON_API;
     var VF = window.THEJHON_VENDOR_FORM;
+    var PF = window.THEJHON_PRODUCT_FORM;
 
     function apiErrorMessage(err, fallback) {
         if (!err) return fallback || "요청에 실패했습니다.";
@@ -109,8 +109,8 @@
     var mgrNameInput = document.getElementById("vr-mgr-name");
     var mgrTelInput = document.getElementById("vr-mgr-tel");
     var mgrEmailInput = document.getElementById("vr-mgr-email");
-    var logoInput = document.getElementById("vr-logo");
     var logoPreview = document.getElementById("vr-logo-preview");
+    var logoPicker = null;
     var noteInput = document.getElementById("vr-note");
     var cancelBtn = document.getElementById("vr-cancel-edit");
     var listEl = document.getElementById("vr-list");
@@ -197,23 +197,6 @@
         });
     }
 
-    function readFileAsDataURL(file) {
-        return new Promise(function (resolve, reject) {
-            if (file.size > MAX_IMAGE_BYTES) {
-                reject(new Error("이미지는 1MB 이하로 선택해 주세요."));
-                return;
-            }
-            var r = new FileReader();
-            r.onload = function () {
-                resolve(r.result);
-            };
-            r.onerror = function () {
-                reject(new Error("이미지를 읽을 수 없습니다."));
-            };
-            r.readAsDataURL(file);
-        });
-    }
-
     function setPreview(imgEl, src) {
         if (!imgEl) return;
         if (src) {
@@ -231,6 +214,7 @@
         editIdInput.value = "";
         pendingLogoData = "";
         setPreview(logoPreview, "");
+        if (logoPicker) logoPicker.clear();
         setGrade("1");
         clearSelectedDepts();
         if (idDupCheck) idDupCheck.reset();
@@ -372,7 +356,7 @@
         mgrTelInput.value = it.vn_mgr_tel || "";
         mgrEmailInput.value = it.vn_mgr_email || "";
         noteInput.value = it.vn_note || "";
-        logoInput.value = "";
+        if (logoPicker) logoPicker.clear();
         pendingLogoData = it.vn_logo || "";
         setPreview(logoPreview, pendingLogoData);
         cancelBtn.hidden = false;
@@ -405,23 +389,31 @@
         });
     }
 
-    logoInput.addEventListener("change", function () {
-        var f = logoInput.files && logoInput.files[0];
-        if (!f) {
-            setPreview(logoPreview, editIdInput.value ? pendingLogoData : "");
-            return;
+    function handleLogoFile(f) {
+        if (!PF || !PF.readFileAsDataURL) {
+            return Promise.reject(new Error("이미지 처리 스크립트를 불러오지 못했습니다."));
         }
-        readFileAsDataURL(f)
-            .then(function (url) {
-                pendingLogoData = url;
-                setPreview(logoPreview, url);
-            })
-            .catch(function (err) {
-                setStatus(err.message || "로고 오류", true);
-                logoInput.value = "";
+        return PF.readFileAsDataURL(f).then(function (url) {
+            pendingLogoData = url;
+            setPreview(logoPreview, url);
+            setStatus("로고를 1:1·1MB 이하로 맞춰 적용했습니다.");
+        });
+    }
+
+    if (PF && PF.initProductPhotoPicker) {
+        logoPicker = PF.initProductPhotoPicker({
+            galleryInput: document.getElementById("vr-logo-gallery"),
+            cameraInput: document.getElementById("vr-logo-camera"),
+            btnGallery: document.getElementById("vr-logo-gallery-btn"),
+            btnCamera: document.getElementById("vr-logo-camera-btn"),
+            onSelect: handleLogoFile,
+            onError: function (err) {
+                setStatus((err && err.message) || "로고 오류", true);
+                if (logoPicker) logoPicker.clear();
                 setPreview(logoPreview, editIdInput.value ? pendingLogoData : "");
-            });
-    });
+            }
+        });
+    }
 
     cancelBtn.addEventListener("click", function () {
         resetForm();
@@ -474,8 +466,6 @@
                 return;
             }
         }
-
-        var fileLogo = logoInput.files && logoInput.files[0];
 
         function doSave(logoData) {
             var wasEditing = !!editingId;
@@ -553,15 +543,7 @@
         }
 
         function startSave() {
-            if (fileLogo) {
-                readFileAsDataURL(fileLogo)
-                    .then(doSave)
-                    .catch(function (err) {
-                        setStatus(err.message || "로고 오류", true);
-                    });
-            } else {
-                doSave(editingId ? pendingLogoData : "");
-            }
+            doSave(pendingLogoData);
         }
 
         if (!idDupCheck) {
