@@ -110,11 +110,6 @@
         return (path.split("/").pop() || "").split("?")[0].toLowerCase();
     }
 
-    function isCompanySectionPage() {
-        var seg = pageSegment();
-        return seg === "company.html" || seg.indexOf("company-") === 0;
-    }
-
     function isSupportSectionPage() {
         var seg = pageSegment();
         return seg === "support.html" || seg.indexOf("support-") === 0;
@@ -172,10 +167,7 @@
 
         trigger.addEventListener("click", function (e) {
             if (!narrow()) return;
-            if (kind === "company" && isCompanySectionPage()) {
-                e.preventDefault();
-                setOpen(root, !root.classList.contains("is-open"));
-            } else if (kind === "support" && isSupportSectionPage()) {
+            if (kind === "support" && isSupportSectionPage()) {
                 e.preventDefault();
                 setOpen(root, !root.classList.contains("is-open"));
             }
