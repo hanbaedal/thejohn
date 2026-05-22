@@ -24,6 +24,7 @@
             '<div id="vendorManageSubmenu" class="nav-dropdown-panel" role="menu" aria-label="업체관리 하위 메뉴">' +
             '<a href="vendor-register.html" class="nav-dropdown-item" role="menuitem">업체 등록</a>' +
             '<a href="vendor-edit.html" class="nav-dropdown-item" role="menuitem">업체 수정</a>' +
+            '<a href="vendor-list-admin.html" class="nav-dropdown-item" role="menuitem">업체 리스트</a>' +
             "</div></div>"
         );
     }
@@ -39,7 +40,9 @@
         var vendorPages = {
             "vendor-manage.html": true,
             "vendor-register.html": true,
-            "vendor-edit.html": true
+            "vendor-edit.html": true,
+            "vendor-list-admin.html": true,
+            "vendor-detail.html": true
         };
         var productDrop = nav.querySelector('[data-nav-dropdown="product-manage"]');
         var vendorDrop = nav.querySelector('[data-nav-dropdown="vendor-manage"]');

@@ -136,7 +136,13 @@
         "product-edit.html",
         "product-list-admin.html"
     ];
-    var VENDOR_ADMIN_PAGES = ["vendor-manage.html", "vendor-register.html", "vendor-edit.html"];
+    var VENDOR_ADMIN_PAGES = [
+        "vendor-manage.html",
+        "vendor-register.html",
+        "vendor-edit.html",
+        "vendor-list-admin.html",
+        "vendor-detail.html"
+    ];
     var ADMIN_REGISTER_PAGES = PRODUCT_ADMIN_PAGES.concat(VENDOR_ADMIN_PAGES);
 
     /** 슈퍼바이저·관리자만 상품·업체 관리 */

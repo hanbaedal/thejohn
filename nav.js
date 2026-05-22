@@ -150,7 +150,9 @@
         return (
             seg === "vendor-manage.html" ||
             seg === "vendor-register.html" ||
-            seg === "vendor-edit.html"
+            seg === "vendor-edit.html" ||
+            seg === "vendor-list-admin.html" ||
+            seg === "vendor-detail.html"
         );
     }
 

@@ -125,6 +125,11 @@
                 return d.items || [];
             });
         },
+        getVendor: function (id) {
+            return request("GET", "/api/vendors/" + encodeURIComponent(id)).then(function (d) {
+                return d.item;
+            });
+        },
         checkVendorLoginId: function (loginId, excludeId) {
             var q = "?loginId=" + encodeURIComponent(String(loginId || ""));
             if (excludeId) q += "&excludeId=" + encodeURIComponent(String(excludeId));
