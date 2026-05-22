@@ -5,6 +5,24 @@
         THEJHON_AUTH.applyNavRegisterVisibility();
     }
 
+    (function injectCompactHomeLogo() {
+        if (document.body && document.body.classList.contains("page-home")) return;
+        var start = document.querySelector(".site-header-start");
+        if (!start || start.querySelector(".dz-logo")) return;
+        var link = document.createElement("a");
+        link.href = "index.html";
+        link.className = "dz-logo dz-logo--compact";
+        link.setAttribute("aria-label", "더존 홈");
+        var img = document.createElement("img");
+        img.src = "img/logo.png";
+        img.alt = "";
+        img.width = 32;
+        img.height = 32;
+        img.className = "dz-logo-img";
+        link.appendChild(img);
+        start.insertBefore(link, start.firstChild);
+    })();
+
     (function syncHeaderAuthButtons() {
         var actions = document.querySelector(".site-header-actions");
         if (!actions) return;
