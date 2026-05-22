@@ -38,7 +38,10 @@
             clearSession();
         }
         var role = sessionStorage.getItem(ROLE_KEY);
-        if (role === "admin" && !sessionStorage.getItem(DISPLAY_KEY)) {
+        if (isStaffRole(role) || role === "vendor") {
+            var company = sessionStorage.getItem(COMPANY_KEY);
+            if (company) sessionStorage.setItem(DISPLAY_KEY, company);
+        } else if (role === "admin" && !sessionStorage.getItem(DISPLAY_KEY)) {
             sessionStorage.setItem(DISPLAY_KEY, sessionStorage.getItem(USER_ID_KEY) || "");
         }
     }
@@ -50,7 +53,7 @@
             userId: data.userId,
             token: data.token,
             companyName: data.companyName || "",
-            displayName: data.displayName || data.companyName || data.userId || ""
+            displayName: data.companyName || data.displayName || data.userId || ""
         };
     }
 
@@ -82,10 +85,21 @@
         sessionStorage.setItem(USER_ID_KEY, userId || "");
         sessionStorage.setItem(ROLE_KEY, role || "");
         sessionStorage.setItem("thejhon_auth_provider", "form");
-        if (companyName) sessionStorage.setItem(COMPANY_KEY, companyName);
-        else sessionStorage.removeItem(COMPANY_KEY);
-        if (displayName) sessionStorage.setItem(DISPLAY_KEY, displayName);
-        else sessionStorage.removeItem(DISPLAY_KEY);
+        var label = companyName || "";
+        if (isStaffRole(role) || role === "vendor") {
+            if (label) {
+                sessionStorage.setItem(COMPANY_KEY, label);
+                sessionStorage.setItem(DISPLAY_KEY, label);
+            } else {
+                sessionStorage.removeItem(COMPANY_KEY);
+                sessionStorage.removeItem(DISPLAY_KEY);
+            }
+        } else {
+            if (companyName) sessionStorage.setItem(COMPANY_KEY, companyName);
+            else sessionStorage.removeItem(COMPANY_KEY);
+            if (displayName) sessionStorage.setItem(DISPLAY_KEY, displayName);
+            else sessionStorage.removeItem(DISPLAY_KEY);
+        }
         if (global.THEJHON_API && THEJHON_API.setToken) THEJHON_API.setToken(token || "");
     }
 
@@ -140,15 +154,11 @@
         if (!isLoggedIn()) return "";
         var role = getRole();
         if (role === "guest") return "";
-        var display = sessionStorage.getItem(DISPLAY_KEY);
-        if (display) return display;
-        if (role === "supervisor") return "슈퍼바이저";
-        if (role === "admin") return "(주)더존";
-        if (role === "vendor") {
-            var stored = sessionStorage.getItem(COMPANY_KEY);
-            return stored || getUserId();
-        }
-        return "";
+        var company = sessionStorage.getItem(COMPANY_KEY);
+        if (company) return company;
+        if (role === "supervisor" || role === "admin") return "(주)더존";
+        if (role === "vendor") return getUserId();
+        return sessionStorage.getItem(DISPLAY_KEY) || "";
     }
 
     function isNotebookViewport() {

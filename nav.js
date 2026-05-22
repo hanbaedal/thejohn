@@ -74,15 +74,17 @@
     })();
 
     (function syncHeaderCompanyName() {
-        var start = document.querySelector(".site-header-start");
-        if (!start) return;
+        var actions = document.querySelector(".site-header-actions");
+        if (!actions) return;
         var el = document.getElementById("headerCompanyName");
         if (!el) {
             el = document.createElement("p");
             el.id = "headerCompanyName";
             el.className = "header-session-company";
             el.setAttribute("aria-live", "polite");
-            start.appendChild(el);
+            var todayEl = document.getElementById("headerToday");
+            if (todayEl) actions.insertBefore(el, todayEl);
+            else actions.insertBefore(el, actions.firstChild);
         }
         function ping() {
             var text = "";

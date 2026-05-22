@@ -319,13 +319,12 @@ a.dz-logo--compact:focus-visible {
     flex-shrink: 0;
     margin-left: auto;
 }
-/* 노트북: 로그인 회사명 — 네비(카페) 오른쪽, 날짜 왼쪽 (site-header-start 안 margin-left:auto) */
+/* 노트북: 로그인 회사명 — 날짜 왼쪽 (site-header-actions) */
 .header-session-company {
     display: none;
     box-sizing: border-box;
     margin: 0;
-    margin-left: auto;
-    padding: 0 0.35rem 0 0.75rem;
+    padding: 0 0.15rem 0 0;
     max-width: min(16rem, 30vw);
     overflow: hidden;
     text-overflow: ellipsis;

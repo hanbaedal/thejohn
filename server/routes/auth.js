@@ -50,7 +50,7 @@ router.post("/login", async (req, res) => {
             role: result.role,
             userId: result.userId,
             companyName: result.companyName || "",
-            displayName: result.displayName || result.userId,
+            displayName: result.companyName || result.displayName || result.userId,
             token
         });
     } catch (e) {

@@ -51,8 +51,8 @@ function fromLegacyDoc(doc) {
     const d = Object.assign({}, doc);
     if (!d[F.company]) {
         if (doc.st_company) d[F.company] = str(doc.st_company);
+        else if (doc.companyName) d[F.company] = str(doc.companyName);
         else if (doc.role === "supervisor") d[F.company] = "(주)더존";
-        else if (doc.name && doc.role === "admin") d[F.company] = str(doc.name);
     }
     if (!d[F.ceo]) {
         if (doc.st_ceo) d[F.ceo] = str(doc.st_ceo);

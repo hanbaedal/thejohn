@@ -7,7 +7,7 @@ const {
 } = require("./loginAccount");
 const { verifyStaffPassword, isStaffRole } = require("./staff");
 const { getCompanyName: getVendorCompanyName } = require("./vendorFields");
-const { getCompanyName: getStaffCompanyName, getCeoName: getStaffCeoName } = require("./staffFields");
+const { getCompanyName: getStaffCompanyName } = require("./staffFields");
 
 const GUEST_ID = "guest";
 
@@ -63,13 +63,13 @@ async function tryStaffLogin(staff, loginId, password) {
     if (!valid) return null;
 
     const company = getStaffCompanyName(staff);
-    const ceo = getStaffCeoName(staff);
+    const companyLabel = company || (staff.role === "supervisor" ? "(주)더존" : "");
     return {
         ok: true,
         role: staff.role,
         userId: staff.loginId,
-        companyName: company || (staff.role === "supervisor" ? "(주)더존" : ""),
-        displayName: ceo || staff.loginId
+        companyName: companyLabel,
+        displayName: companyLabel || staff.loginId
     };
 }
 
