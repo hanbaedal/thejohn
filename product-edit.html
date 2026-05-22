@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>상품 내용 등록 — 더존</title>
+    <title>상품 등록 수정 — 더존</title>
     <link rel="stylesheet" href="common.css">
     <link rel="stylesheet" href="admin-manage.css">
     <style>
@@ -37,7 +37,7 @@
         .pr-field input:focus, .pr-field textarea:focus { outline: none; border-color: var(--dz-blue); box-shadow: 0 0 0 2px rgba(10, 77, 156, 0.2); }
         .pr-field input[type="file"] { font-size: 0.875rem; }
         .pr-hint { margin: 0.35rem 0 0; font-size: 0.75rem; color: #6b7c8e; }
-        .pr-photo-preview { display: block; max-width: 100%; max-height: 12rem; margin-top: 0.5rem; border-radius: 6px; border: 1px solid #e0e6ed; object-fit: contain; background: #f8fafc; }
+        .pe-photo-preview { display: block; max-width: 100%; max-height: 12rem; margin-top: 0.5rem; border-radius: 6px; border: 1px solid #e0e6ed; object-fit: contain; background: #f8fafc; }
         .pr-actions { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 1.1rem; }
         .pr-actions .btn { border: 2px solid var(--dz-blue); background: #fff; color: var(--dz-blue); padding: 0.45rem 1rem; font-size: 0.875rem; font-weight: 600; border-radius: 6px; cursor: pointer; font-family: inherit; text-decoration: none; display: inline-flex; align-items: center; justify-content: center; }
         .pr-actions .btn-primary { background: var(--dz-blue); color: #fff; }
@@ -94,71 +94,82 @@
     </header>
     <main class="page-main page-main--hide-scrollbar">
         <p class="am-subnav"><a href="product-manage.html">← 상품관리</a></p>
-        <h1>상품 내용 등록</h1>
-        <p id="pr-status" class="pr-status" role="status" aria-live="polite"></p>
-        <form id="pr-form" class="pr-form" novalidate>
+        <h1>상품 등록 수정</h1>
+        <p id="pe-status" class="pr-status" role="status" aria-live="polite"></p>
+        <div class="am-filter-bar am-dept-picker">
+            <span class="am-dept-caption">사업부문 조회</span>
+            <input type="hidden" id="pe-filter-dept" value="">
+            <div id="pe-dept-filter" class="am-dept-picker-btns"></div>
+        </div>
+        <div id="pe-list" class="pr-list"></div>
+        <section id="pe-form-wrap" class="pr-form" hidden>
+        <h2 style="margin:0 0 1rem;font-size:1.05rem;color:#052a4d">상품 수정</h2>
+        <form id="pe-form" novalidate>
+            <input type="hidden" id="pe-edit-id" value="">
             <div class="pr-field">
-                <label for="pr-pd-name">상품 명칭</label>
-                <input type="text" id="pr-pd-name" name="pd_name" required maxlength="200" autocomplete="off" placeholder="상품 명칭">
+                <label for="pe-pd-name">상품 명칭</label>
+                <input type="text" id="pe-pd-name" name="pd_name" required maxlength="200" autocomplete="off" placeholder="상품 명칭">
             </div>
             <div class="am-dept-picker">
-                <span class="am-dept-caption" id="pr-dept-label">사업부문</span>
-                <input type="hidden" id="pr-pd-dept" name="pd_dept" value="">
-                <div id="pr-dept-picker" class="am-dept-picker-btns" role="group" aria-labelledby="pr-dept-label"></div>
+                <span class="am-dept-caption" id="pe-dept-label">사업부문</span>
+                <input type="hidden" id="pe-pd-dept" name="pd_dept" value="">
+                <div id="pe-dept-picker" class="am-dept-picker-btns" role="group" aria-labelledby="pe-dept-label"></div>
             </div>
             <div class="pr-price-group">
                 <span class="pr-price-caption">상품가격 (원)</span>
                 <div class="pr-field-row pr-row--4">
                     <div class="pr-field-half">
-                        <label for="pr-pd-price1">가격 1</label>
-                        <input type="number" id="pr-pd-price1" name="pd_price1" min="0" step="1" required inputmode="numeric" placeholder="0">
+                        <label for="pe-pd-price1">가격 1</label>
+                        <input type="number" id="pe-pd-price1" name="pd_price1" min="0" step="1" required inputmode="numeric" placeholder="0">
                     </div>
                     <div class="pr-field-half">
-                        <label for="pr-pd-price2">가격 2</label>
-                        <input type="number" id="pr-pd-price2" name="pd_price2" min="0" step="1" inputmode="numeric" placeholder="0">
+                        <label for="pe-pd-price2">가격 2</label>
+                        <input type="number" id="pe-pd-price2" name="pd_price2" min="0" step="1" inputmode="numeric" placeholder="0">
                     </div>
                     <div class="pr-field-half">
-                        <label for="pr-pd-price3">가격 3</label>
-                        <input type="number" id="pr-pd-price3" name="pd_price3" min="0" step="1" inputmode="numeric" placeholder="0">
+                        <label for="pe-pd-price3">가격 3</label>
+                        <input type="number" id="pe-pd-price3" name="pd_price3" min="0" step="1" inputmode="numeric" placeholder="0">
                     </div>
                     <div class="pr-field-half">
-                        <label for="pr-pd-price4">가격 4</label>
-                        <input type="number" id="pr-pd-price4" name="pd_price4" min="0" step="1" inputmode="numeric" placeholder="0">
+                        <label for="pe-pd-price4">가격 4</label>
+                        <input type="number" id="pe-pd-price4" name="pd_price4" min="0" step="1" inputmode="numeric" placeholder="0">
                     </div>
                 </div>
             </div>
             <div class="pr-field">
-                <label for="pr-pd-size">상품 규격</label>
-                <input type="text" id="pr-pd-size" name="pd_size" maxlength="120" autocomplete="off" placeholder="예: 500g, 1박스 20입">
+                <label for="pe-pd-size">상품 규격</label>
+                <input type="text" id="pe-pd-size" name="pd_size" maxlength="120" autocomplete="off" placeholder="예: 500g, 1박스 20입">
             </div>
             <div class="pr-field">
-                <label for="pr-pd-image">상품 사진</label>
-                <input type="file" id="pr-pd-image" name="pd_image" accept="image/*">
-                <p id="pr-photo-hint" class="pr-hint">이미지는 1MB 이하입니다.</p>
-                <img id="pr-photo-preview" class="pr-photo-preview" alt="선택한 이미지 미리보기" width="120" height="120" hidden>
+                <label for="pe-pd-image">상품 사진</label>
+                <input type="file" id="pe-pd-image" name="pd_image" accept="image/*">
+                <p id="pe-photo-hint" class="pr-hint">이미지는 1MB 이하입니다.</p>
+                <img id="pe-photo-preview" class="pr-photo-preview" alt="선택한 이미지 미리보기" width="120" height="120" hidden>
             </div>
             <div class="pr-field">
-                <label for="pr-pd-explain">상품 설명</label>
-                <textarea id="pr-pd-explain" name="pd_explain" rows="5" required maxlength="8000" placeholder="상품 설명"></textarea>
+                <label for="pe-pd-explain">상품 설명</label>
+                <textarea id="pe-pd-explain" name="pd_explain" rows="5" required maxlength="8000" placeholder="상품 설명"></textarea>
             </div>
             <div class="pr-field">
-                <label for="pr-per-name">담당자 이름</label>
-                <input type="text" id="pr-per-name" name="per_name" maxlength="80" autocomplete="name" placeholder="담당자 이름">
+                <label for="pe-per-name">담당자 이름</label>
+                <input type="text" id="pe-per-name" name="per_name" maxlength="80" autocomplete="name" placeholder="담당자 이름">
             </div>
             <div class="pr-field pr-field-row">
                 <div class="pr-field-half">
-                    <label for="pr-per-number">담당자 전화</label>
-                    <input type="tel" id="pr-per-number" name="per-number" maxlength="40" autocomplete="tel" placeholder="010-0000-0000">
+                    <label for="pe-per-number">담당자 전화</label>
+                    <input type="tel" id="pe-per-number" name="per-number" maxlength="40" autocomplete="tel" placeholder="010-0000-0000">
                 </div>
                 <div class="pr-field-half">
-                    <label for="pr-per-email">담당자 이메일</label>
-                    <input type="email" id="pr-per-email" name="per-email" maxlength="120" autocomplete="email" placeholder="email@example.com">
+                    <label for="pe-per-email">담당자 이메일</label>
+                    <input type="email" id="pe-per-email" name="per-email" maxlength="120" autocomplete="email" placeholder="email@example.com">
                 </div>
             </div>
             <div class="pr-actions">
-                <button type="submit" class="btn btn-primary" id="pr-submit">저장</button>
+                <button type="submit" class="btn btn-primary" id="pe-submit">수정 저장</button>
+                <button type="button" class="btn btn-secondary" id="pe-cancel-edit">취소</button>
             </div>
         </form>
+        </section>
     </main>
     <footer class="site-footer">
         <div class="site-footer-inner">
@@ -232,6 +243,6 @@
             syncAuthUi();
         })();
     </script>
-    <script src="product-register.js"></script>
+    <script src="product-edit.js"></script>
 </body>
 </html>

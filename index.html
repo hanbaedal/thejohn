@@ -1,13 +1,116 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>더존</title>
     <link rel="stylesheet" href="common.css">
+    <style>
+        .company-main--home {
+            justify-content: center;
+            padding: 0;
+            max-width: none;
+            width: 100%;
+            flex: 1;
+            min-height: 0;
+        }
+        .home-intro {
+            position: relative;
+            width: 100%;
+            flex: 1;
+            min-height: min(72vh, calc(100dvh - 11rem));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            background: #0a1a2e;
+        }
+        .home-intro-media {
+            position: absolute;
+            inset: 0;
+            z-index: 0;
+        }
+        .home-intro-video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+        }
+        .home-intro-overlay {
+            position: absolute;
+            inset: 0;
+            z-index: 1;
+            background: linear-gradient(
+                180deg,
+                rgba(255, 255, 255, 0.72) 0%,
+                rgba(255, 255, 255, 0.55) 45%,
+                rgba(255, 255, 255, 0.65) 100%
+            );
+            pointer-events: none;
+        }
+        .home-intro-copy {
+            position: relative;
+            z-index: 2;
+            width: 100%;
+            max-width: 36rem;
+            padding: 1.5rem 1rem 2rem;
+        }
+        .home-intro-copy .company-hero {
+            text-shadow: 0 1px 12px rgba(255, 255, 255, 0.9);
+        }
+        .home-intro-copy .company-taglines p {
+            text-shadow: 0 1px 8px rgba(255, 255, 255, 0.85);
+        }
+        .home-bgm-wrap {
+            position: absolute;
+            right: max(0.75rem, env(safe-area-inset-right, 0));
+            bottom: max(0.75rem, env(safe-area-inset-bottom, 0));
+            z-index: 3;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            gap: 0.35rem;
+        }
+        .home-bgm-toggle {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 2.5rem;
+            height: 2.5rem;
+            padding: 0;
+            border: 2px solid rgba(10, 77, 156, 0.35);
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.92);
+            color: var(--dz-blue);
+            cursor: pointer;
+            font-family: inherit;
+            box-shadow: 0 2px 10px rgba(10, 40, 80, 0.12);
+        }
+        .home-bgm-toggle:hover {
+            background: #fff;
+        }
+        .home-bgm-toggle svg {
+            display: block;
+        }
+        .home-bgm-hint {
+            margin: 0;
+            font-size: 0.68rem;
+            color: #3d5166;
+            background: rgba(255, 255, 255, 0.88);
+            padding: 0.2rem 0.45rem;
+            border-radius: 4px;
+            max-width: 10rem;
+            text-align: right;
+            line-height: 1.35;
+        }
+        .home-bgm-hint[hidden] {
+            display: none !important;
+        }
+    </style>
     <script src="api-config.js"></script>
     <script src="thejhon-api.js"></script>
     <script src="auth.js"></script>
+    <script src="admin-header.js"></script>
     <script src="nav.js" defer></script>
 </head>
 <body class="page-home">
@@ -33,20 +136,40 @@
         </div>
         <nav class="site-header-actions" aria-label="계정">
             <time class="header-date" id="headerToday" datetime=""></time>
-            <button type="button" class="btn btn-logout" id="btnLogout" hidden>로그아웃</button>
+            <button type="button" class="btn btn-auth-icon btn-logout" id="btnLogout" hidden aria-label="로그아웃" title="로그아웃"></button>
         </nav>
     </header>
-    <main class="company-main">
-        <div class="company-hero-stack">
-            <div class="company-hero-wrap">
-                <p class="company-hero">믿음을 주는 더존</p>
+    <main class="company-main company-main--home">
+        <section class="home-intro" aria-label="더존 소개">
+            <div class="home-intro-media" aria-hidden="true">
+                <video class="home-intro-video" autoplay muted loop playsinline preload="metadata" poster="img/logo.png">
+                    <source src="img/intro.mp4" type="video/mp4">
+                </video>
             </div>
-            <div class="company-taglines">
-                <p>신선함의 품격, 신뢰의 약속</p>
-                <p>당신의 주방에 품격을 더하다</p>
-                <p>오늘의 최상, 내일의 가치</p>
+            <div class="home-intro-overlay" aria-hidden="true"></div>
+            <div class="home-intro-copy">
+                <div class="company-hero-stack">
+                    <div class="company-hero-wrap">
+                        <p class="company-hero">믿음을 주는 더존</p>
+                    </div>
+                    <div class="company-taglines">
+                        <p>신선함의 품격, 신뢰의 약속</p>
+                        <p>당신의 주방에 품격을 더하다</p>
+                        <p>오늘의 최상, 내일의 가치</p>
+                    </div>
+                </div>
             </div>
-        </div>
+            <div class="home-bgm-wrap">
+                <p class="home-bgm-hint" id="homeBgmHint">조용한 배경음악 (선택)</p>
+                <button type="button" class="home-bgm-toggle" id="homeBgmToggle" aria-label="배경음악 켜기" title="배경음악" hidden>
+                    <svg class="home-bgm-icon-on" width="22" height="22" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path fill="currentColor" d="M3 10v4h4l5 5V5L7 10H3zm13.5 2c0-1.77-1.02-3.29-2.5-4.03v8.06c1.48-.74 2.5-2.26 2.5-4.03zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/></svg>
+                    <svg class="home-bgm-icon-off" width="22" height="22" viewBox="0 0 24 24" aria-hidden="true" focusable="false" hidden><path fill="currentColor" d="M3.27 3L2 4.27l6.01 6.01L7 10v4h4l5 5v-6.73l4.25 4.25 1.41-1.41L3.27 3zM14 3.23v2.06c2.89.86 5 3.54 5 6.71 0 1.02-.31 1.96-.84 2.75L19.73 16c1.48-.74 2.5-2.26 2.5-4.03 0-4.01-2.99-7.86-7-8.77z"/></svg>
+                </button>
+            </div>
+        </section>
+        <audio id="homeBgm" loop preload="metadata">
+            <source src="img/intro-music.mp3" type="audio/mpeg">
+        </audio>
     </main>
     <footer class="site-footer">
         <div class="site-footer-inner">
@@ -118,10 +241,91 @@
                 });
             }
             syncAuthUi();
+
+            (function homeIntroMedia() {
+                var video = document.querySelector(".home-intro-video");
+                if (video) {
+                    video.muted = true;
+                    var playV = function () {
+                        var p = video.play();
+                        if (p && p.catch) p.catch(function () {});
+                    };
+                    playV();
+                    document.addEventListener("visibilitychange", function () {
+                        if (!document.hidden) playV();
+                    });
+                }
+
+                var bgm = document.getElementById("homeBgm");
+                var bgmBtn = document.getElementById("homeBgmToggle");
+                var bgmHint = document.getElementById("homeBgmHint");
+                if (!bgm || !bgmBtn) return;
+
+                var bgmReady = false;
+                var bgmOn = false;
+                var iconOn = bgmBtn.querySelector(".home-bgm-icon-on");
+                var iconOff = bgmBtn.querySelector(".home-bgm-icon-off");
+
+                function setBgmUi() {
+                    bgmBtn.setAttribute("aria-label", bgmOn ? "배경음악 끄기" : "배경음악 켜기");
+                    bgmBtn.title = bgmOn ? "배경음악 끄기" : "배경음악 켜기";
+                    if (iconOn) iconOn.hidden = !bgmOn;
+                    if (iconOff) iconOff.hidden = bgmOn;
+                }
+
+                function showBgmControl(ok) {
+                    bgmReady = !!ok;
+                    bgmBtn.hidden = !ok;
+                    if (bgmHint) {
+                        if (ok) {
+                            bgmHint.textContent = "아이콘을 눌러 배경음악";
+                            bgmHint.hidden = false;
+                        } else {
+                            bgmHint.textContent =
+                                "img/intro-music.mp3 를 넣으면 재생됩니다 (Pixabay 등 무료 음원 권장)";
+                            bgmHint.hidden = false;
+                        }
+                    }
+                }
+
+                bgm.volume = 0.28;
+
+                bgm.addEventListener("canplaythrough", function () {
+                    showBgmControl(true);
+                });
+                bgm.addEventListener("error", function () {
+                    showBgmControl(false);
+                });
+
+                if (bgm.readyState >= 3) showBgmControl(true);
+
+                function toggleBgm() {
+                    if (!bgmReady) return;
+                    if (bgmOn) {
+                        bgm.pause();
+                        bgmOn = false;
+                    } else {
+                        var p = bgm.play();
+                        if (p && p.then) {
+                            p.then(function () {
+                                bgmOn = true;
+                                setBgmUi();
+                            }).catch(function () {});
+                        } else {
+                            bgmOn = true;
+                        }
+                    }
+                    setBgmUi();
+                }
+
+                bgmBtn.addEventListener("click", toggleBgm);
+                setBgmUi();
+            })();
+
             try {
                 var sp = new URLSearchParams(window.location.search);
                 if (sp.get("denied") === "register") {
-                    alert("상품등록·업체등록은 슈퍼바이저·관리자만 이용할 수 있습니다.");
+                    alert("상품관리·업체관리는 슈퍼바이저·관리자만 이용할 수 있습니다.");
                     history.replaceState({}, "", window.location.pathname);
                 }
             } catch (ignore) {}

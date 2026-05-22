@@ -116,7 +116,16 @@
         return getRole() === "guest";
     }
 
-    /** 슈퍼바이저·관리자만 상품등록·업체등록 */
+    var PRODUCT_ADMIN_PAGES = [
+        "product-manage.html",
+        "product-register.html",
+        "product-edit.html",
+        "product-list-admin.html"
+    ];
+    var VENDOR_ADMIN_PAGES = ["vendor-manage.html", "vendor-register.html", "vendor-edit.html"];
+    var ADMIN_REGISTER_PAGES = PRODUCT_ADMIN_PAGES.concat(VENDOR_ADMIN_PAGES);
+
+    /** 슈퍼바이저·관리자만 상품·업체 관리 */
     function canManageRegisters() {
         return isStaffRole(getRole()) && !!(global.THEJHON_API && THEJHON_API.getToken && THEJHON_API.getToken());
     }
@@ -170,7 +179,7 @@
 
     function enforceRegisterPages() {
         var page = currentPageFile();
-        if (page !== "product-register.html" && page !== "vendor-register.html") return;
+        if (ADMIN_REGISTER_PAGES.indexOf(page) < 0) return;
         if (!isLoggedIn()) {
             window.location.replace("index.html?denied=register");
             return;
@@ -204,7 +213,7 @@
         try {
             normalizeLegacySession();
             var sel =
-                '.site-header-nav a[href="product-register.html"], .site-header-nav a[href="vendor-register.html"]';
+                '.site-header-nav [data-nav-dropdown="product-manage"], .site-header-nav [data-nav-dropdown="vendor-manage"]';
             var nodes = document.querySelectorAll(sel);
             var show = canManageRegisters();
             for (var i = 0; i < nodes.length; i++) {

@@ -1,0 +1,102 @@
+/* 상품·업체 관리 공통 */
+.am-subnav {
+    margin: 0 0 1.25rem;
+    font-size: 0.875rem;
+}
+.am-subnav a {
+    color: var(--dz-blue);
+    font-weight: 600;
+    text-decoration: none;
+}
+.am-subnav a:hover {
+    text-decoration: underline;
+}
+.am-dept-picker {
+    margin-bottom: 1rem;
+}
+.am-dept-picker > .am-dept-caption {
+    display: block;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: #3d5166;
+    margin-bottom: 0.45rem;
+}
+.am-dept-picker-btns {
+    display: flex;
+    flex-wrap: nowrap;
+    gap: 0.35rem;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    padding-bottom: 0.15rem;
+}
+.am-dept-btn {
+    flex: 1 1 0;
+    min-width: 3.25rem;
+    padding: 0.5rem 0.25rem;
+    border: 2px solid #d8e0e8;
+    border-radius: 8px;
+    background: #fff;
+    font-family: inherit;
+    font-size: clamp(0.68rem, 2.6vw, 0.82rem);
+    font-weight: 700;
+    color: #3d5166;
+    cursor: pointer;
+    white-space: nowrap;
+    text-align: center;
+    line-height: 1.25;
+}
+.am-dept-btn.is-selected {
+    border-color: var(--dz-blue);
+    background: #eef4fc;
+    color: var(--dz-blue);
+}
+.am-dept-btn:focus-visible {
+    outline: 2px solid var(--dz-blue);
+    outline-offset: 2px;
+}
+.am-filter-bar {
+    margin-bottom: 1rem;
+}
+.am-modal {
+    border: none;
+    border-radius: 12px;
+    padding: 0;
+    max-width: min(100vw - 1.5rem, 56rem);
+    width: 100%;
+    box-shadow: 0 12px 40px rgba(10, 40, 80, 0.2);
+}
+.am-modal::backdrop {
+    background: rgba(15, 25, 40, 0.45);
+}
+.am-modal-inner {
+    padding: 1rem 1.1rem 1.15rem;
+    max-height: min(90dvh, 90vh);
+    overflow-y: auto;
+}
+.am-modal-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    margin-bottom: 0.75rem;
+}
+.am-modal-head h2 {
+    margin: 0;
+    font-size: 1.1rem;
+    color: #052a4d;
+}
+.am-modal-close {
+    border: 1px solid #c5d0dc;
+    background: #f4f6f9;
+    border-radius: 6px;
+    padding: 0.35rem 0.65rem;
+    font-family: inherit;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    cursor: pointer;
+}
+.am-list-empty {
+    margin: 0;
+    color: #3d5166;
+    line-height: 1.55;
+}

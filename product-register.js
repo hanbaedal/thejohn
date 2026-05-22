@@ -1,21 +1,12 @@
 (function () {
-    var MAX_IMAGE_BYTES = 1 * 1024 * 1024;
     var api = window.THEJHON_API;
-
-    function apiErrorMessage(err, fallback) {
-        if (!err) return fallback || "요청에 실패했습니다.";
-        if (err.status === 401) return "관리자로 로그인한 뒤 다시 저장해 주세요.";
-        if (err.status === 403) return "관리자(스테프)만 상품을 등록·수정·삭제할 수 있습니다.";
-        if (err.status === 503) return err.message || "데이터베이스 연결을 확인해 주세요.";
-        return err.message || fallback || "요청에 실패했습니다.";
-    }
+    var PF = window.THEJHON_PRODUCT_FORM;
+    var catalog = window.THEJHON_PRODUCT_CATALOG;
 
     var form = document.getElementById("pr-form");
     var statusEl = document.getElementById("pr-status");
-    var editIdInput = document.getElementById("pr-edit-id");
-    var catalog = window.THEJHON_PRODUCT_CATALOG;
-    var deptSelect = document.getElementById("pr-pd-dept");
-    var groupSelect = document.getElementById("pr-pd-group");
+    var deptHidden = document.getElementById("pr-pd-dept");
+    var deptPickerRoot = document.getElementById("pr-dept-picker");
     var nameInput = document.getElementById("pr-pd-name");
     var photoInput = document.getElementById("pr-pd-image");
     var photoPreview = document.getElementById("pr-photo-preview");
@@ -28,111 +19,15 @@
     var perNameInput = document.getElementById("pr-per-name");
     var perNumberInput = document.getElementById("pr-per-number");
     var perEmailInput = document.getElementById("pr-per-email");
-    var cancelBtn = document.getElementById("pr-cancel-edit");
-    var listEl = document.getElementById("pr-list");
     var submitBtn = document.getElementById("pr-submit");
 
     var pendingImageData = "";
-    var cachedItems = [];
-
-    function fillDeptOptions() {
-        if (!deptSelect || !catalog) return;
-        var html = '<option value="">분야 선택</option>';
-        catalog.DEPARTMENTS.forEach(function (d) {
-            html +=
-                '<option value="' +
-                escapeHtml(d.id) +
-                '">' +
-                escapeHtml(d.label) +
-                "</option>";
-        });
-        deptSelect.innerHTML = html;
-    }
-
-    function fillGroupOptions(deptId, selectedGroup) {
-        if (!groupSelect || !catalog) return;
-        var groups = catalog.getGroups(deptId);
-        if (!groups.length) {
-            groupSelect.innerHTML = '<option value="">먼저 분야를 선택하세요</option>';
-            groupSelect.disabled = true;
-            return;
-        }
-        var html = '<option value="">메뉴 그룹 선택</option>';
-        groups.forEach(function (g) {
-            html +=
-                '<option value="' +
-                escapeHtml(g.id) +
-                '">' +
-                escapeHtml(g.label) +
-                "</option>";
-        });
-        groupSelect.innerHTML = html;
-        groupSelect.disabled = false;
-        if (selectedGroup) groupSelect.value = catalog.normalizeGroup(deptId, selectedGroup) || "";
-    }
-
-    if (deptSelect) {
-        deptSelect.addEventListener("change", function () {
-            fillGroupOptions(deptSelect.value, "");
-        });
-    }
-    fillDeptOptions();
+    var deptPicker = null;
 
     function setStatus(msg, isError) {
         if (!statusEl) return;
         statusEl.textContent = msg || "";
         statusEl.style.color = isError ? "#a12c2c" : "#3d5166";
-    }
-
-    function escapeHtml(s) {
-        return String(s)
-            .replace(/&/g, "&amp;")
-            .replace(/</g, "&lt;")
-            .replace(/>/g, "&gt;")
-            .replace(/"/g, "&quot;");
-    }
-
-    function formatWon(n) {
-        var num = Number(n);
-        if (!isFinite(num)) return "0";
-        return num.toLocaleString("ko-KR") + "원";
-    }
-
-    function parsePriceInput(el) {
-        if (!el) return 0;
-        var n = parseInt(String(el.value || "").trim(), 10);
-        return isFinite(n) && n >= 0 ? n : NaN;
-    }
-
-    function pricesHtml(it) {
-        var parts = [];
-        var labels = ["가격1", "가격2", "가격3", "가격4"];
-        var keys = ["pd_price1", "pd_price2", "pd_price3", "pd_price4"];
-        for (var i = 0; i < 4; i++) {
-            var v = Number(it[keys[i]]);
-            if (isFinite(v) && v > 0) {
-                parts.push(labels[i] + " " + escapeHtml(formatWon(v)));
-            }
-        }
-        if (!parts.length) parts.push(escapeHtml(formatWon(0)));
-        return parts.join(" · ");
-    }
-
-    function readFileAsDataURL(file) {
-        return new Promise(function (resolve, reject) {
-            if (file.size > MAX_IMAGE_BYTES) {
-                reject(new Error("이미지는 1MB 이하로 선택해 주세요."));
-                return;
-            }
-            var r = new FileReader();
-            r.onload = function () {
-                resolve(r.result);
-            };
-            r.onerror = function () {
-                reject(new Error("이미지를 읽을 수 없습니다."));
-            };
-            r.readAsDataURL(file);
-        });
     }
 
     function updatePhotoPreview(src) {
@@ -146,150 +41,21 @@
         }
     }
 
-    function resetForm() {
-        if (!form) return;
-        form.reset();
-        editIdInput.value = "";
-        pendingImageData = "";
-        updatePhotoPreview("");
-        if (groupSelect) {
-            groupSelect.innerHTML = '<option value="">먼저 분야를 선택하세요</option>';
-            groupSelect.disabled = true;
-        }
-        cancelBtn.hidden = true;
-        submitBtn.textContent = "저장";
-        submitBtn.disabled = false;
-    }
-
-    function contactLine(it) {
-        var parts = [];
-        if (it.per_name) parts.push("담당: " + escapeHtml(it.per_name));
-        if (it["per-number"]) parts.push(escapeHtml(it["per-number"]));
-        if (it["per-email"]) parts.push(escapeHtml(it["per-email"]));
-        if (!parts.length) return "";
-        return '<p class="pr-card-contact">' + parts.join(" · ") + "</p>";
-    }
-
-    function renderList() {
-        var items = cachedItems.slice().sort(function (a, b) {
-            return (b.updatedAt || 0) - (a.updatedAt || 0);
+    if (PF && deptPickerRoot && deptHidden) {
+        deptPicker = PF.initDeptPicker({
+            catalog: catalog,
+            root: deptPickerRoot,
+            hiddenInput: deptHidden
         });
-        if (!items.length) {
-            listEl.innerHTML =
-                '<p class="pr-card-content">등록된 상품이 없습니다. 위 양식에서 저장해 보세요.</p>';
-            return;
-        }
-        listEl.innerHTML = items
-            .map(function (it) {
-                var imgBlock = it.pd_image
-                    ? "<img class=\"pr-card-img\" src=" + JSON.stringify(it.pd_image) + ' alt="">'
-                    : '<div class="pr-card-img pr-card-img--empty" role="img" aria-label="사진 없음">사진<br>없음</div>';
-                var specHtml = "";
-                if (it.pd_size && String(it.pd_size).trim()) {
-                    specHtml =
-                        '<span class="pr-card-spec">규격: ' + escapeHtml(String(it.pd_size).trim()) + "</span>";
-                }
-                return (
-                    '<article class="pr-card" data-id="' +
-                    escapeHtml(it.id) +
-                    '"><div class="pr-card-head">' +
-                    imgBlock +
-                    '<div class="pr-card-body"><h3 class="pr-card-title">' +
-                    escapeHtml(it.pd_name) +
-                    '</h3><p class="pr-card-price">' +
-                    pricesHtml(it) +
-                    specHtml +
-                    '</p><p class="pr-card-content">' +
-                    escapeHtml(it.pd_explain) +
-                    "</p>" +
-                    contactLine(it) +
-                    '<div class="pr-card-actions"><button type="button" class="pr-btn-edit" data-id="' +
-                    escapeHtml(it.id) +
-                    '">수정</button><button type="button" class="pr-btn-del" data-id="' +
-                    escapeHtml(it.id) +
-                    '">삭제</button></div></div></div></article>'
-                );
-            })
-            .join("");
     }
-
-    function loadList() {
-        if (!api) {
-            setStatus("API를 불러오지 못했습니다. 서버를 실행했는지 확인해 주세요.", true);
-            return Promise.resolve();
-        }
-        setStatus("목록 불러오는 중…");
-        return api
-            .listProducts()
-            .then(function (items) {
-                cachedItems = items;
-                renderList();
-                setStatus("");
-            })
-            .catch(function (err) {
-                setStatus(err.message || "목록을 불러오지 못했습니다.", true);
-            });
-    }
-
-    function loadIntoForm(id) {
-        var it = cachedItems.filter(function (x) {
-            return x.id === id;
-        })[0];
-        if (!it) return;
-        editIdInput.value = it.id;
-        nameInput.value = it.pd_name || "";
-        explainInput.value = it.pd_explain || "";
-        if (price1Input) price1Input.value = String(it.pd_price1 != null ? it.pd_price1 : 0);
-        if (price2Input) price2Input.value = String(it.pd_price2 != null ? it.pd_price2 : 0);
-        if (price3Input) price3Input.value = String(it.pd_price3 != null ? it.pd_price3 : 0);
-        if (price4Input) price4Input.value = String(it.pd_price4 != null ? it.pd_price4 : 0);
-        if (sizeInput) sizeInput.value = it.pd_size != null ? String(it.pd_size) : "";
-        if (deptSelect && catalog) {
-            var dept = catalog.normalizeDept(it.pd_dept);
-            deptSelect.value = dept;
-            fillGroupOptions(dept, it.pd_group);
-        }
-        if (perNameInput) perNameInput.value = it.per_name || "";
-        if (perNumberInput) perNumberInput.value = it["per-number"] || "";
-        if (perEmailInput) perEmailInput.value = it["per-email"] || "";
-        photoInput.value = "";
-        pendingImageData = it.pd_image || "";
-        updatePhotoPreview(pendingImageData || "");
-        cancelBtn.hidden = false;
-        submitBtn.textContent = "수정 저장";
-        setStatus("수정 중입니다. 저장하면 반영됩니다.");
-        nameInput.focus();
-    }
-
-    function deleteById(id) {
-        if (!confirm("이 상품을 삭제할까요?")) return;
-        api.deleteProduct(id)
-            .then(function () {
-                if (editIdInput.value === id) resetForm();
-                return loadList();
-            })
-            .then(function () {
-                setStatus("삭제했습니다.");
-            })
-            .catch(function (err) {
-                setStatus(err.message || "삭제에 실패했습니다.", true);
-            });
-    }
-
-    listEl.addEventListener("click", function (e) {
-        var t = e.target;
-        if (!(t instanceof HTMLElement)) return;
-        if (t.classList.contains("pr-btn-edit")) loadIntoForm(t.getAttribute("data-id"));
-        else if (t.classList.contains("pr-btn-del")) deleteById(t.getAttribute("data-id"));
-    });
 
     photoInput.addEventListener("change", function () {
         var f = photoInput.files && photoInput.files[0];
         if (!f) {
-            updatePhotoPreview(editIdInput.value ? pendingImageData : "");
+            updatePhotoPreview("");
             return;
         }
-        readFileAsDataURL(f)
+        PF.readFileAsDataURL(f)
             .then(function (dataUrl) {
                 pendingImageData = dataUrl;
                 updatePhotoPreview(dataUrl);
@@ -297,114 +63,47 @@
             .catch(function (err) {
                 setStatus(err.message || "이미지 오류", true);
                 photoInput.value = "";
-                updatePhotoPreview(editIdInput.value ? pendingImageData : "");
+                updatePhotoPreview("");
             });
-    });
-
-    cancelBtn.addEventListener("click", function () {
-        resetForm();
-        setStatus("편집을 취소했습니다.");
     });
 
     form.addEventListener("submit", function (e) {
         e.preventDefault();
-        var pd_name = nameInput.value.trim();
-        var pd_explain = explainInput.value.trim();
-        var pd_size = sizeInput ? sizeInput.value.trim() : "";
-        var pd_price1 = parsePriceInput(price1Input);
-        var pd_price2 = parsePriceInput(price2Input);
-        var pd_price3 = parsePriceInput(price3Input);
-        var pd_price4 = parsePriceInput(price4Input);
-        var file = photoInput.files && photoInput.files[0];
-        var editingId = editIdInput.value.trim();
-
-        if (!pd_name) {
-            setStatus("상품 명칭을 입력해 주세요.", true);
-            nameInput.focus();
+        var body = {
+            pd_name: nameInput.value.trim(),
+            pd_explain: explainInput.value.trim(),
+            pd_size: sizeInput ? sizeInput.value.trim() : "",
+            pd_dept: deptPicker ? deptPicker.getValue() : "",
+            pd_group: "",
+            pd_price1: PF.parsePriceInput(price1Input),
+            pd_price2: PF.parsePriceInput(price2Input),
+            pd_price3: PF.parsePriceInput(price3Input),
+            pd_price4: PF.parsePriceInput(price4Input),
+            pd_image: pendingImageData || "",
+            per_name: perNameInput ? perNameInput.value.trim() : "",
+            "per-number": perNumberInput ? perNumberInput.value.trim() : "",
+            "per-email": perEmailInput ? perEmailInput.value.trim() : ""
+        };
+        var err = PF.validateProductFields(body, { requireImage: true });
+        if (err) {
+            setStatus(err, true);
             return;
         }
-        if (!pd_explain) {
-            setStatus("상품 설명을 입력해 주세요.", true);
-            explainInput.focus();
-            return;
-        }
-        if (
-            !isFinite(pd_price1) ||
-            !isFinite(pd_price2) ||
-            !isFinite(pd_price3) ||
-            !isFinite(pd_price4)
-        ) {
-            setStatus("가격 1~4를 올바르게 입력해 주세요.", true);
-            if (price1Input) price1Input.focus();
-            return;
-        }
-        if (!(pd_price1 > 0 || pd_price2 > 0 || pd_price3 > 0 || pd_price4 > 0)) {
-            setStatus("가격 1~4 중 하나 이상 0원보다 크게 입력해 주세요.", true);
-            if (price1Input) price1Input.focus();
-            return;
-        }
-        if (!catalog) {
-            setStatus("메뉴 정보를 불러오지 못했습니다. 페이지를 새로고침해 주세요.", true);
-            return;
-        }
-        var pd_dept = deptSelect ? catalog.normalizeDept(deptSelect.value) : "";
-        var pd_group = groupSelect && pd_dept ? catalog.normalizeGroup(pd_dept, groupSelect.value) : "";
-        if (!pd_dept) {
-            setStatus("분야(축산·수산물 등)를 선택해 주세요.", true);
-            if (deptSelect) deptSelect.focus();
-            return;
-        }
-        if (!pd_group) {
-            setStatus("메뉴 그룹을 선택해 주세요.", true);
-            if (groupSelect) groupSelect.focus();
-            return;
-        }
-
-        function saveWithImage(imageData) {
-            if (!editingId && !imageData) {
-                setStatus("신규 등록 시 상품 사진을 선택해 주세요.", true);
-                photoInput.focus();
-                return;
-            }
-            var body = {
-                pd_name: pd_name,
-                pd_explain: pd_explain,
-                pd_size: pd_size,
-                pd_dept: pd_dept,
-                pd_group: pd_group,
-                pd_price1: pd_price1,
-                pd_price2: pd_price2,
-                pd_price3: pd_price3,
-                pd_price4: pd_price4,
-                pd_image: imageData || "",
-                per_name: perNameInput ? perNameInput.value.trim() : "",
-                "per-number": perNumberInput ? perNumberInput.value.trim() : "",
-                "per-email": perEmailInput ? perEmailInput.value.trim() : ""
-            };
-            submitBtn.disabled = true;
-            var p = editingId ? api.updateProduct(editingId, body) : api.createProduct(body);
-            p.then(function () {
-                resetForm();
-                return loadList();
+        submitBtn.disabled = true;
+        api.createProduct(body)
+            .then(function () {
+                form.reset();
+                pendingImageData = "";
+                updatePhotoPreview("");
+                if (deptPicker) deptPicker.clear();
+                setStatus("저장했습니다. 계속 등록하거나 상품 리스트에서 확인하세요.");
             })
-                .then(function () {
-                    setStatus(editingId ? "수정했습니다." : "저장했습니다.");
-                })
-                .catch(function (err) {
-                    setStatus(err.message || "저장에 실패했습니다.", true);
-                })
-                .finally(function () {
-                    submitBtn.disabled = false;
-                });
-        }
-
-        if (file) {
-            readFileAsDataURL(file).then(saveWithImage).catch(function (err) {
-                setStatus(err.message || "이미지 오류", true);
+            .catch(function (err2) {
+                setStatus(err2.message || "저장에 실패했습니다.", true);
+            })
+            .finally(function () {
+                submitBtn.disabled = false;
             });
-        } else {
-            saveWithImage(editingId ? pendingImageData : "");
-        }
     });
 
     var access =
@@ -414,14 +113,8 @@
     if (!access.allowed) {
         setStatus(access.reason, true);
         if (form) {
-            var fields = form.querySelectorAll("input, textarea, button, select");
+            var fields = form.querySelectorAll("input, textarea, button");
             for (var i = 0; i < fields.length; i++) fields[i].disabled = true;
         }
-        if (listEl) {
-            listEl.innerHTML =
-                '<p class="vr-card-note">MongoDB <strong>products</strong> 저장은 관리자 로그인이 필요합니다. <a href="login.html?next=product-register.html">로그인</a></p>';
-        }
-        return;
     }
-    loadList();
 })();

@@ -211,7 +211,7 @@
 
     function renderProductList(items) {
         if (!items.length) {
-            return '<p class="ps-empty">이 그룹에 등록된 상품이 없습니다. <a href="product-register.html">상품등록</a>에서 분야·메뉴 그룹을 지정해 추가해 주세요.</p>';
+            return '<p class="ps-empty">이 그룹에 등록된 상품이 없습니다. <a href="product-register.html">상품 내용 등록</a>에서 사업부문을 지정해 추가해 주세요.</p>';
         }
         var sorted = items.slice().sort(function (a, b) {
             return (b.updatedAt || 0) - (a.updatedAt || 0);
@@ -267,7 +267,7 @@
         }
         if (!cachedItems.length) {
             root.innerHTML =
-                '<p class="ps-empty">등록된 상품이 없습니다. <a href="product-register.html">상품등록</a> 페이지에서 상품을 추가해 보세요.</p>';
+                '<p class="ps-empty">등록된 상품이 없습니다. <a href="product-register.html">상품 내용 등록</a>에서 상품을 추가해 보세요.</p>';
             return;
         }
         if (!activeDept) {

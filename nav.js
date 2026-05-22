@@ -23,19 +23,37 @@
         start.insertBefore(link, start.firstChild);
     })();
 
+    var AUTH_ICON_HTML = {
+        login:
+            '<svg class="btn-auth-icon-svg" width="22" height="22" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path fill="currentColor" d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>',
+        logout:
+            '<svg class="btn-auth-icon-svg" width="22" height="22" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path fill="currentColor" d="M17 7l-1.41 1.41L18.17 11H8v2h10.17l-2.58 2.59L17 17l5-5-5-5zM4 5h8V3H4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h8v-2H4V5z"/></svg>'
+    };
+
+    function applyAuthIconButton(el, kind) {
+        if (!el || el.getAttribute("data-auth-icon") === kind) return;
+        el.setAttribute("data-auth-icon", kind);
+        el.className = "btn btn-auth-icon btn-" + kind;
+        el.setAttribute("aria-label", kind === "login" ? "로그인" : "로그아웃");
+        el.title = kind === "login" ? "로그인" : "로그아웃";
+        el.innerHTML = AUTH_ICON_HTML[kind];
+    }
+
     (function syncHeaderAuthButtons() {
         var actions = document.querySelector(".site-header-actions");
         if (!actions) return;
         var loginBtn = document.getElementById("btnLogin");
         var logoutBtn = document.getElementById("btnLogout");
+        if (logoutBtn) applyAuthIconButton(logoutBtn, "logout");
         if (!loginBtn) {
             loginBtn = document.createElement("a");
             loginBtn.href = "login.html?next=" + encodeURIComponent(window.location.href);
-            loginBtn.className = "btn btn-login";
             loginBtn.id = "btnLogin";
-            loginBtn.textContent = "로그인";
+            applyAuthIconButton(loginBtn, "login");
             if (logoutBtn) actions.insertBefore(loginBtn, logoutBtn);
             else actions.appendChild(loginBtn);
+        } else {
+            applyAuthIconButton(loginBtn, "login");
         }
         function sync() {
             var loggedIn = window.THEJHON_AUTH && THEJHON_AUTH.isLoggedIn();
@@ -115,6 +133,25 @@
         return seg === "support.html" || seg.indexOf("support-") === 0;
     }
 
+    function isProductManageSectionPage() {
+        var seg = pageSegment();
+        return (
+            seg === "product-manage.html" ||
+            seg === "product-register.html" ||
+            seg === "product-edit.html" ||
+            seg === "product-list-admin.html"
+        );
+    }
+
+    function isVendorManageSectionPage() {
+        var seg = pageSegment();
+        return (
+            seg === "vendor-manage.html" ||
+            seg === "vendor-register.html" ||
+            seg === "vendor-edit.html"
+        );
+    }
+
     function syncDropdownChrome() {
         var anyOpen = roots.some(function (r) {
             return r.classList.contains("is-open");
@@ -168,6 +205,12 @@
         trigger.addEventListener("click", function (e) {
             if (!narrow()) return;
             if (kind === "support" && isSupportSectionPage()) {
+                e.preventDefault();
+                setOpen(root, !root.classList.contains("is-open"));
+            } else if (kind === "product-manage" && isProductManageSectionPage()) {
+                e.preventDefault();
+                setOpen(root, !root.classList.contains("is-open"));
+            } else if (kind === "vendor-manage" && isVendorManageSectionPage()) {
                 e.preventDefault();
                 setOpen(root, !root.classList.contains("is-open"));
             }

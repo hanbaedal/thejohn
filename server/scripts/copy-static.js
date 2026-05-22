@@ -16,7 +16,19 @@ const SKIP = new Set([
     "public"
 ]);
 const EXT = new Set([".html", ".js", ".css"]);
-const ASSET_EXT = new Set([".png", ".jpg", ".jpeg", ".gif", ".webp", ".svg", ".ico"]);
+const ASSET_EXT = new Set([
+    ".png",
+    ".jpg",
+    ".jpeg",
+    ".gif",
+    ".webp",
+    ".svg",
+    ".ico",
+    ".mp4",
+    ".webm",
+    ".mp3",
+    ".ogg"
+]);
 
 function shouldCopy(name) {
     const ext = path.extname(name).toLowerCase();

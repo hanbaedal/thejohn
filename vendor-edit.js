@@ -111,8 +111,8 @@
     var logoPreview = document.getElementById("vr-logo-preview");
     var noteInput = document.getElementById("vr-note");
     var cancelBtn = document.getElementById("vr-cancel-edit");
-    var listEl = document.getElementById("vr-list");
-    var isCreateOnly = !listEl;
+    var listEl = document.getElementById("ve-list");
+    var modal = document.getElementById("ve-modal");
     var submitBtn = document.getElementById("vr-submit");
 
     var pendingLogoData = "";
@@ -193,6 +193,14 @@
         }
     }
 
+    function openModal() {
+        if (modal && typeof modal.showModal === "function") modal.showModal();
+    }
+
+    function closeModal() {
+        if (modal && typeof modal.close === "function") modal.close();
+    }
+
     function resetForm() {
         if (!form) return;
         form.reset();
@@ -201,8 +209,9 @@
         setPreview(logoPreview, "");
         setGrade("1");
         cancelBtn.hidden = true;
-        submitBtn.textContent = "저장";
+        submitBtn.textContent = "수정 저장";
         submitBtn.disabled = false;
+        closeModal();
     }
 
     function thumbBlock(dataUrl, label) {
@@ -339,7 +348,8 @@
         setPreview(logoPreview, pendingLogoData);
         cancelBtn.hidden = false;
         submitBtn.textContent = "수정 저장";
-        setStatus("수정 중입니다. 저장하면 반영됩니다.");
+        setStatus("수정 중: " + (it.vn_company || ""));
+        openModal();
         loginIdInput.focus();
     }
 
@@ -387,8 +397,21 @@
 
     cancelBtn.addEventListener("click", function () {
         resetForm();
-        setStatus("편집을 취소했습니다.");
+        setStatus("");
     });
+
+    var modalCloseBtn = document.getElementById("ve-modal-close");
+    if (modalCloseBtn) {
+        modalCloseBtn.addEventListener("click", function () {
+            resetForm();
+            setStatus("");
+        });
+    }
+    if (modal) {
+        modal.addEventListener("cancel", function () {
+            resetForm();
+        });
+    }
 
     form.addEventListener("submit", function (e) {
         e.preventDefault();
@@ -397,6 +420,10 @@
         var editingId = editIdInput.value.trim();
         var pwdIn = passwordInput.value.trim();
 
+        if (!editingId) {
+            setStatus("목록에서 수정할 업체를 선택해 주세요.", true);
+            return;
+        }
         if (!loginId) {
             setStatus("아이디를 입력해 주세요.", true);
             loginIdInput.focus();
@@ -467,11 +494,6 @@
                 })
                 .then(function (saved) {
                     resetForm();
-                    if (isCreateOnly) {
-                        var idMsg0 = saved && saved.id ? " (ID: " + saved.id + ")" : "";
-                        setStatus("MongoDB vendors에 저장했습니다." + idMsg0);
-                        return;
-                    }
                     return loadList().then(function () {
                         return { saved: saved, wasEditing: wasEditing };
                     });
@@ -549,14 +571,6 @@
                     sess.userId +
                     ") · 저장 시 Atlas DB thejhon → 컬렉션 vendors 에 기록됩니다."
             );
-            if (isCreateOnly) {
-                setStatus(
-                    "관리자 확인됨 (" +
-                        sess.userId +
-                        ") · 저장 시 Atlas DB thejhon → 컬렉션 vendors 에 기록됩니다."
-                );
-                return;
-            }
             return loadList();
         })
         .catch(function (err) {
