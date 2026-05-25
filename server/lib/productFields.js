@@ -84,6 +84,26 @@ function fromLegacyDoc(doc) {
     return d;
 }
 
+function productHasImage(doc) {
+    const d = fromLegacyDoc(doc);
+    if (!d) return false;
+    return !!str(d[F.image]);
+}
+
+/** 목록 API용 — data URL 등 대용량 이미지는 제외(목록 JSON 과대 방지) */
+function toPublicListItem(doc) {
+    const pub = toPublic(doc);
+    if (!pub) return null;
+    const img = pub.pd_image;
+    if (img.length > 400 || /^data:/i.test(img)) {
+        pub.pd_has_image = true;
+        pub.pd_image = "";
+    } else {
+        pub.pd_has_image = !!img;
+    }
+    return pub;
+}
+
 function toPublic(doc) {
     const d = fromLegacyDoc(doc);
     if (!d) return null;
@@ -284,6 +304,8 @@ module.exports = {
     F,
     PRICE_KEYS,
     toPublic,
+    toPublicListItem,
+    productHasImage,
     buildFromBody,
     toDbDoc,
     validateBuilt,

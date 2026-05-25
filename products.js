@@ -103,6 +103,9 @@
                             '<img class="ps-card-img" src="' +
                             escapeHtml(it.pd_image) +
                             '" alt="">';
+                    } else if (it.pd_has_image) {
+                        imgBlock =
+                            '<div class="ps-card-img ps-card-img--empty" role="img" aria-label="사진 있음">사진<br>있음</div>';
                     } else {
                         imgBlock =
                             '<div class="ps-card-img ps-card-img--empty" role="img" aria-label="사진 없음">사진<br>없음</div>';
@@ -172,8 +175,21 @@
         renderAll();
     }
 
-    function loadAndRender() {
-        if (!api || !root) return;
+    function loadErrorHtml(msg) {
+        var detail = msg ? escapeHtml(msg) : "";
+        return (
+            '<p class="ps-empty">상품 목록을 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.' +
+            (detail ? "<br><small>" + detail + "</small>" : "") +
+            "</p>"
+        );
+    }
+
+    function loadAndRender(attempt) {
+        if (!root) return;
+        if (!api) {
+            root.innerHTML = loadErrorHtml("API 설정(thejhon-api.js)을 불러오지 못했습니다.");
+            return;
+        }
         readUrlState();
         if (!activeDept && catalog && catalog.DEPARTMENTS.length) {
             activeDept = catalog.DEPARTMENTS[0].id;
@@ -184,9 +200,16 @@
                 cachedItems = items;
                 renderAll();
             })
-            .catch(function () {
-                root.innerHTML =
-                    '<p class="ps-empty">상품 목록을 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.</p>';
+            .catch(function (err) {
+                var status = err && err.status;
+                var retry = (attempt || 0) < 2 && (status === 503 || !status);
+                if (retry) {
+                    setTimeout(function () {
+                        loadAndRender((attempt || 0) + 1);
+                    }, status === 503 ? 2000 : 800);
+                    return;
+                }
+                root.innerHTML = loadErrorHtml((err && err.message) || "");
             });
     }
 

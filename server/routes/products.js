@@ -3,6 +3,7 @@ const { getDb } = require("../db");
 const { requireRole, extractBearer, verifyToken } = require("../middleware/auth");
 const {
     toPublic,
+    toPublicListItem,
     buildFromBody,
     toDbDoc,
     validateBuilt,
@@ -44,7 +45,11 @@ router.get("/", async (req, res) => {
             .find(query)
             .sort({ updatedAt: -1 })
             .toArray();
-        res.json({ ok: true, items: items.map(toPublic), scope: auth && isStaffAuth(auth) ? "staff" : "public" });
+        res.json({
+            ok: true,
+            items: items.map(toPublicListItem).filter(Boolean),
+            scope: auth && isStaffAuth(auth) ? "staff" : "public"
+        });
     } catch (e) {
         console.error("GET /api/products", e);
         res.status(500).json({ ok: false, error: "상품 목록을 불러오지 못했습니다." });
