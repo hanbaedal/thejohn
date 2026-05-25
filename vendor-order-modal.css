@@ -1,31 +1,55 @@
 .vendor-order-modal {
     position: fixed;
     inset: 0;
-    z-index: 1200;
+    z-index: 10000;
     display: flex;
-    align-items: center;
+    align-items: flex-end;
     justify-content: center;
-    padding: 1rem;
+    padding: 0;
     background: rgba(5, 42, 77, 0.45);
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
 }
 .vendor-order-modal[hidden] {
     display: none !important;
 }
 .vendor-order-modal__panel {
-    width: min(100%, 40rem);
-    max-height: min(92vh, 52rem);
-    overflow: auto;
+    width: 100%;
+    max-height: min(94vh, 52rem);
+    max-height: min(94dvh, 52rem);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
     background: #fff;
-    border-radius: 14px;
-    box-shadow: 0 12px 40px rgba(10, 77, 156, 0.22);
-    padding: 1.1rem 1.2rem 1.25rem;
+    border-radius: 14px 14px 0 0;
+    box-shadow: 0 -8px 32px rgba(10, 77, 156, 0.22);
+    padding: 0;
+}
+@media (min-width: 721px) {
+    .vendor-order-modal {
+        align-items: center;
+        padding: 1rem;
+    }
+    .vendor-order-modal__panel {
+        width: min(100%, 40rem);
+        border-radius: 14px;
+        box-shadow: 0 12px 40px rgba(10, 77, 156, 0.22);
+        padding: 1.1rem 1.2rem 1.25rem;
+    }
 }
 .vendor-order-modal__head {
     display: flex;
     align-items: flex-start;
     justify-content: space-between;
     gap: 0.75rem;
-    margin-bottom: 0.75rem;
+    flex-shrink: 0;
+    padding: 1rem 1rem 0.65rem;
+}
+@media (min-width: 721px) {
+    .vendor-order-modal__head {
+        padding: 0;
+        margin-bottom: 0.75rem;
+    }
 }
 .vendor-order-modal__title {
     margin: 0;
@@ -36,23 +60,62 @@
     flex-shrink: 0;
     border: none;
     background: transparent;
-    font-size: 1.5rem;
+    font-size: 1.75rem;
     line-height: 1;
     color: #5a6d7e;
     cursor: pointer;
-    padding: 0.15rem 0.35rem;
+    padding: 0.35rem 0.5rem;
+    min-width: 44px;
+    min-height: 44px;
 }
 .vendor-order-modal__close:hover {
     color: #052a4d;
+}
+.vendor-order-modal__body {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-height: 0;
+    overflow: hidden;
+}
+.vendor-order-modal__scroll {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    overflow-x: hidden;
+    -webkit-overflow-scrolling: touch;
+    padding: 0 1rem;
+}
+@media (min-width: 721px) {
+    .vendor-order-modal__scroll {
+        padding: 0;
+    }
+}
+.vendor-order-modal__footer {
+    flex-shrink: 0;
+    padding: 0.75rem 1rem;
+    padding-bottom: max(0.85rem, env(safe-area-inset-bottom, 0));
+    background: #fff;
+    border-top: 1px solid #e0e6ed;
+    box-shadow: 0 -4px 12px rgba(10, 77, 156, 0.08);
+}
+@media (min-width: 721px) {
+    .vendor-order-modal__footer {
+        padding: 0.5rem 0 0;
+        border-top: none;
+        box-shadow: none;
+    }
 }
 .vendor-order-modal .cart-table-wrap {
     overflow-x: auto;
     border: 1px solid #e0e6ed;
     border-radius: 10px;
     margin-bottom: 0.75rem;
+    -webkit-overflow-scrolling: touch;
 }
 .vendor-order-modal .cart-table {
     width: 100%;
+    min-width: 0;
     border-collapse: collapse;
     font-size: 0.9rem;
 }
@@ -61,49 +124,141 @@
     padding: 0.55rem 0.65rem;
     border-bottom: 1px solid #e8edf2;
     text-align: left;
+    vertical-align: middle;
 }
 .vendor-order-modal .cart-table th {
     background: #f4f7fb;
     font-weight: 700;
 }
 .vendor-order-modal .cart-qty {
-    width: 4rem;
-    padding: 0.3rem 0.45rem;
+    width: 4.5rem;
+    min-height: 44px;
+    padding: 0.45rem 0.5rem;
     border: 1px solid #c5d0dc;
-    border-radius: 6px;
+    border-radius: 8px;
+    font-size: 16px;
+    box-sizing: border-box;
 }
 .vendor-order-modal .cart-note {
     width: 100%;
     margin: 0.5rem 0 0;
-    padding: 0.5rem 0.65rem;
+    padding: 0.65rem 0.75rem;
     border: 1px solid #c5d0dc;
     border-radius: 8px;
     font-family: inherit;
+    font-size: 16px;
+    box-sizing: border-box;
 }
 .vendor-order-modal .cart-contact-confirm {
-    margin-top: 0.75rem;
+    margin-top: 0;
+    margin-bottom: 0.75rem;
     padding: 0.85rem 1rem;
     background: #f4f8fc;
     border: 1px solid #c5d8eb;
     border-radius: 10px;
 }
+.vendor-order-modal .cart-contact-title {
+    margin: 0 0 0.35rem;
+    font-size: 1rem;
+    color: #052a4d;
+}
+.vendor-order-modal .cart-contact-desc {
+    margin: 0 0 0.6rem;
+    font-size: 0.88rem;
+    color: #3d5166;
+    line-height: 1.45;
+}
+.vendor-order-modal .cart-contact-dl {
+    margin: 0;
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 0.25rem 0.75rem;
+    font-size: 0.9rem;
+}
+.vendor-order-modal .cart-contact-dl dt {
+    font-weight: 700;
+    color: #2a4a5e;
+}
+.vendor-order-modal .cart-contact-dl dd {
+    margin: 0;
+}
+.vendor-order-modal .cart-contact-warn {
+    margin: 0.65rem 0 0;
+    font-size: 0.85rem;
+    color: #b71c1c;
+    line-height: 1.45;
+}
+.vendor-order-modal .cart-contact-check {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.65rem;
+    margin: 0 0 0.65rem;
+    padding: 0.65rem 0.75rem;
+    background: #fff;
+    border: 1px solid #c5d8eb;
+    border-radius: 10px;
+    cursor: pointer;
+    font-size: 0.95rem;
+    line-height: 1.45;
+    min-height: 48px;
+    box-sizing: border-box;
+}
+.vendor-order-modal .cart-contact-check input[type="checkbox"] {
+    flex-shrink: 0;
+    width: 1.35rem;
+    height: 1.35rem;
+    margin: 0.15rem 0 0;
+    cursor: pointer;
+}
+.vendor-order-modal .cart-contact-check-text {
+    flex: 1;
+    min-width: 0;
+}
+.vendor-order-modal .cart-note-label {
+    display: block;
+    font-size: 0.88rem;
+    color: #3d5166;
+    margin: 0.25rem 0 0.35rem;
+}
 .vendor-order-modal .cart-actions-row {
-    margin-top: 1rem;
+    margin-top: 0.65rem;
     display: flex;
     flex-wrap: wrap;
-    gap: 0.6rem;
+    gap: 0.55rem;
     align-items: center;
 }
+.vendor-order-modal .vom-submit-order,
+.vendor-order-modal .vom-continue-shop {
+    min-height: 48px;
+    padding: 0.65rem 1.1rem;
+    font-size: 1rem;
+    touch-action: manipulation;
+}
+.vendor-order-modal .vom-submit-order {
+    flex: 1 1 auto;
+    min-width: min(100%, 10rem);
+}
 .vendor-order-modal .cart-total {
-    margin-left: auto;
+    width: 100%;
+    flex: 1 1 100%;
     font-weight: 700;
+    font-size: 1.05rem;
     color: var(--dz-blue, #0a4d9c);
+    text-align: right;
+}
+@media (min-width: 721px) {
+    .vendor-order-modal .cart-total {
+        width: auto;
+        flex: 0 0 auto;
+        margin-left: auto;
+    }
 }
 .vendor-order-modal .cart-msg {
-    margin-top: 0.75rem;
+    margin-top: 0.65rem;
     padding: 0.65rem 0.85rem;
     border-radius: 8px;
     font-size: 0.9rem;
+    line-height: 1.45;
 }
 .vendor-order-modal .cart-msg--ok {
     background: #e8f5e9;
@@ -117,11 +272,61 @@
     color: #3d5166;
     line-height: 1.5;
     margin: 0.5rem 0;
+    padding: 0 1rem 1rem;
 }
 .vendor-order-modal .btn-remove {
     color: #c62828;
     background: transparent;
     border: none;
     cursor: pointer;
-    font-size: 0.85rem;
+    font-size: 0.9rem;
+    min-height: 44px;
+    padding: 0.35rem 0.5rem;
+    touch-action: manipulation;
+}
+
+/* 스마트폰: 표를 카드형으로 */
+@media (max-width: 720px) {
+    .vendor-order-modal .cart-table thead {
+        display: none;
+    }
+    .vendor-order-modal .cart-table tbody tr {
+        display: block;
+        padding: 0.75rem 0.85rem;
+        border-bottom: 1px solid #e8edf2;
+    }
+    .vendor-order-modal .cart-table tbody tr:last-child {
+        border-bottom: none;
+    }
+    .vendor-order-modal .cart-table td {
+        display: block;
+        padding: 0.2rem 0;
+        border: none;
+    }
+    .vendor-order-modal .cart-table td::before {
+        content: attr(data-label);
+        display: inline-block;
+        font-weight: 700;
+        color: #5a6d7e;
+        min-width: 3.2rem;
+        margin-right: 0.35rem;
+        font-size: 0.8rem;
+    }
+    .vendor-order-modal .cart-table td:first-child::before {
+        content: "";
+        display: none;
+    }
+    .vendor-order-modal .cart-table td:first-child {
+        font-weight: 700;
+        color: #052a4d;
+        font-size: 1rem;
+        padding-bottom: 0.35rem;
+    }
+    .vendor-order-modal .cart-table td:last-child {
+        text-align: right;
+        padding-top: 0.35rem;
+    }
+    .vendor-order-modal .cart-table td:last-child::before {
+        content: "";
+    }
 }

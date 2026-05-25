@@ -63,11 +63,17 @@
             '<h2 class="vendor-order-modal__title" id="vendorOrderModalTitle">주문하기</h2>' +
             '<button type="button" class="vendor-order-modal__close" id="vendorOrderModalClose" aria-label="닫기">&times;</button>' +
             "</div>" +
-            '<div id="vendorOrderModalBody"></div>' +
+            '<div id="vendorOrderModalBody" class="vendor-order-modal__body"></div>' +
             "</div>";
         document.body.appendChild(modalEl);
         bodyEl = document.getElementById("vendorOrderModalBody");
 
+        var panelEl = modalEl.querySelector(".vendor-order-modal__panel");
+        if (panelEl) {
+            panelEl.addEventListener("click", function (e) {
+                e.stopPropagation();
+            });
+        }
         modalEl.addEventListener("click", function (e) {
             if (e.target === modalEl) close();
         });
@@ -85,7 +91,24 @@
         el.hidden = false;
     }
 
-    function contactConfirmHtml(contact) {
+    function readFormState() {
+        var box = document.getElementById("vomContactConfirm");
+        var noteEl = document.getElementById("vom-note");
+        return {
+            confirmed: !!(box && box.checked),
+            note: noteEl ? String(noteEl.value || "") : ""
+        };
+    }
+
+    function applyFormState(state) {
+        if (!state) return;
+        var box = document.getElementById("vomContactConfirm");
+        var noteEl = document.getElementById("vom-note");
+        if (box && state.confirmed) box.checked = true;
+        if (noteEl) noteEl.value = state.note || "";
+    }
+
+    function contactInfoHtml(contact) {
         var company = escapeHtml((contact && contact.company) || "—");
         var mgrName = escapeHtml((contact && contact.mgrName) || "—");
         var mgrTel = (contact && contact.mgrTel) || "";
@@ -102,8 +125,8 @@
 
         return (
             '<section class="cart-contact-confirm" aria-labelledby="vom-contact-title">' +
-            '<h3 class="cart-contact-title" id="vom-contact-title" style="margin:0 0 0.35rem;font-size:1rem">주문 담당자 확인</h3>' +
-            '<p class="cart-contact-desc" style="margin:0 0 0.6rem;font-size:0.88rem">아래 담당자 정보로 주문이 접수·연락됩니다.</p>' +
+            '<h3 class="cart-contact-title" id="vom-contact-title">주문 담당자 확인</h3>' +
+            '<p class="cart-contact-desc">아래 담당자 정보로 주문이 접수·연락됩니다.</p>' +
             '<dl class="cart-contact-dl">' +
             "<dt>주문 업체</dt><dd>" +
             company +
@@ -113,10 +136,18 @@
             telCell +
             "</dd></dl>" +
             warn +
+            "</section>"
+        );
+    }
+
+    function contactCheckHtml(contact) {
+        var missing =
+            !contact || !String(contact.mgrName || "").trim() || !String(contact.mgrTel || "").trim();
+        return (
             '<label class="cart-contact-check">' +
             '<input type="checkbox" id="vomContactConfirm"' +
             (missing ? " disabled" : "") +
-            "> 위 주문 담당자가 <strong>본인</strong>이며, 주문·연락을 담당함을 확인합니다.</label></section>"
+            '> <span class="cart-contact-check-text">위 주문 담당자가 <strong>본인</strong>이며, 주문·연락을 담당함을 확인합니다.</span></label>'
         );
     }
 
@@ -179,49 +210,76 @@
             return;
         }
 
+        var savedForm = readFormState();
+
         var rows = cart.items
             .map(function (it) {
                 return (
                     "<tr data-product-id=\"" +
                     escapeHtml(it.productId) +
-                    "\"><td>" +
+                    '"><td data-label="">' +
                     escapeHtml(it.productName) +
                     (it.pd_size ? "<br><small>" + escapeHtml(it.pd_size) + "</small>" : "") +
-                    "</td><td>" +
+                    '</td><td data-label="단가">' +
                     escapeHtml(it.priceLabel || "") +
                     " " +
                     escapeHtml(formatWon(it.unitPrice)) +
-                    '</td><td><input type="number" class="cart-qty" min="1" value="' +
+                    '</td><td data-label="수량"><input type="number" class="cart-qty" min="1" step="1" inputmode="numeric" value="' +
                     escapeHtml(String(it.quantity)) +
-                    '" aria-label="수량"></td><td>' +
+                    '" aria-label="수량"></td><td class="cart-line-total" data-label="금액">' +
                     escapeHtml(formatWon(Cart.lineTotal(it))) +
-                    '</td><td><button type="button" class="btn-remove">삭제</button></td></tr>'
+                    '</td><td data-label=""><button type="button" class="btn-remove">삭제</button></td></tr>'
                 );
             })
             .join("");
 
         bodyEl.innerHTML =
+            '<div class="vendor-order-modal__scroll">' +
             '<div class="cart-table-wrap"><table class="cart-table"><thead><tr><th>상품</th><th>단가</th><th>수량</th><th>금액</th><th></th></tr></thead><tbody>' +
             rows +
             "</tbody></table></div>" +
-            contactConfirmHtml(vendorContact) +
+            contactInfoHtml(vendorContact) +
+            "</div>" +
+            '<div class="vendor-order-modal__footer">' +
+            contactCheckHtml(vendorContact) +
             '<label class="cart-note-label" for="vom-note">주문 비고 (선택)</label>' +
-            '<textarea id="vom-note" class="cart-note" rows="2" placeholder="배송·포장 요청 등"></textarea>' +
+            '<textarea id="vom-note" class="cart-note" rows="2" placeholder="배송·포장 요청 등" inputmode="text"></textarea>' +
             '<div class="cart-actions-row">' +
-            '<button type="button" class="btn btn-primary" id="vomSubmitOrder" disabled>주문하기</button>' +
-            '<button type="button" class="btn" id="vomContinueShop">쇼핑 계속</button>' +
+            '<button type="button" class="btn btn-primary vom-submit-order" id="vomSubmitOrder" disabled>주문하기</button>' +
+            '<button type="button" class="btn vom-continue-shop" id="vomContinueShop">쇼핑 계속</button>' +
             '<span class="cart-total">합계: ' +
             escapeHtml(formatWon(Cart.cartTotal(cart))) +
             "</span></div>" +
-            '<div id="vom-status-msg" class="cart-msg" hidden></div>';
+            '<div id="vom-status-msg" class="cart-msg" hidden></div></div>';
+
+        applyFormState(savedForm);
 
         bodyEl.querySelectorAll(".cart-qty").forEach(function (inp) {
-            inp.addEventListener("change", function () {
+            function commitQty() {
                 var tr = inp.closest("tr");
                 var pid = tr && tr.getAttribute("data-product-id");
                 if (pid) Cart.setQuantity(pid, inp.value);
                 renderBody();
-                bindContactConfirm();
+            }
+            inp.addEventListener("change", commitQty);
+            inp.addEventListener("blur", commitQty);
+            inp.addEventListener("input", function () {
+                var tr = inp.closest("tr");
+                var pid = tr && tr.getAttribute("data-product-id");
+                if (!pid) return;
+                var lineEl = tr.querySelector(".cart-line-total");
+                var item = null;
+                var items = Cart.readCart().items;
+                for (var i = 0; i < items.length; i++) {
+                    if (items[i].productId === pid) {
+                        item = items[i];
+                        break;
+                    }
+                }
+                if (item && lineEl) {
+                    var q = Math.max(1, parseInt(inp.value, 10) || 1);
+                    lineEl.textContent = formatWon(Cart.lineTotal(Object.assign({}, item, { quantity: q })));
+                }
             });
         });
         bodyEl.querySelectorAll(".btn-remove").forEach(function (btn) {
@@ -230,12 +288,26 @@
                 var pid = tr && tr.getAttribute("data-product-id");
                 if (pid) Cart.removeItem(pid);
                 renderBody();
-                bindContactConfirm();
             });
         });
 
         var submitBtn = document.getElementById("vomSubmitOrder");
-        if (submitBtn) submitBtn.addEventListener("click", submitOrder);
+        if (submitBtn) {
+            submitBtn.addEventListener("click", function () {
+                if (submitBtn.disabled) {
+                    showMsg("주문 담당자 확인에 체크해 주세요.", "err");
+                    var box = document.getElementById("vomContactConfirm");
+                    if (box) {
+                        try {
+                            box.focus({ preventScroll: false });
+                        } catch (ignore) {}
+                        box.scrollIntoView({ behavior: "smooth", block: "center" });
+                    }
+                    return;
+                }
+                submitOrder();
+            });
+        }
 
         var shopBtn = document.getElementById("vomContinueShop");
         if (shopBtn) {
