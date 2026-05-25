@@ -38,10 +38,19 @@ function optionalAuth(req) {
 
 function buildListFindQuery(auth, reqQuery) {
     const deptPart = reqQuery.dept ? deptQuery(reqQuery.dept) : null;
-    /** 사업부문(?dept=) — 로그인 관리자여도 담당 필터 없이 부문 전체 상품 */
+    /** 사업부문(?dept=) — 공개 카탈로그: 부문만 필터 */
     const catalogByDept = !!reqQuery.dept && !reqQuery.registeredBy;
     let base = {};
-    if (!catalogByDept) {
+    if (catalogByDept) {
+        base = {};
+    } else if (auth && isStaffAuth(auth)) {
+        /** 관리자 상품·업체 리스트 — products 컬렉션 전체, 담당 필터는 registeredBy 선택 시만 */
+        if (reqQuery.registeredBy) {
+            base = buildProductListQuery(auth, reqQuery.registeredBy);
+        } else {
+            base = {};
+        }
+    } else if (auth) {
         base = buildProductListQuery(auth, reqQuery.registeredBy);
     }
     if (!deptPart) return base;

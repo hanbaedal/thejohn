@@ -99,13 +99,15 @@ function productHasImage(doc) {
 
 /** 목록 API용 — MongoDB 표준 필드(pd_*) 그대로 읽기, 이미지 본문은 제외 */
 function toPublicListItem(doc) {
-    if (!doc || !doc.id) return null;
+    if (!doc) return null;
+    const id = ensureProductId(doc);
+    if (!id) return null;
     const prices = readPricesFromDoc(doc);
     const hasImage =
         doc.pd_has_image === true ||
         (doc.pd_has_image !== false && !!str(doc[F.image] || doc.pd_image));
     return {
-        id: String(doc.id),
+        id: id,
         pd_name: str(doc[F.name] || doc.pd_name),
         pd_price1: prices.pd_price1,
         pd_price2: prices.pd_price2,
