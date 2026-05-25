@@ -6,6 +6,7 @@
 
     var cachedItems = [];
     var activeDept = "jeongyuk";
+    var loaded = false;
 
     function escapeHtml(s) {
         return String(s)
@@ -38,9 +39,7 @@
 
     function itemsForDept(deptId) {
         return cachedItems.filter(function (it) {
-            var d = itemDept(it);
-            if (!deptId) return !d;
-            return d === deptId;
+            return itemDept(it) === deptId;
         });
     }
 
@@ -49,8 +48,7 @@
             var params = new URLSearchParams();
             if (activeDept) params.set("dept", activeDept);
             var q = params.toString();
-            var url = window.location.pathname + (q ? "?" + q : "");
-            history.replaceState({}, "", url);
+            history.replaceState({}, "", window.location.pathname + (q ? "?" + q : ""));
         } catch (ignore) {}
     }
 
@@ -62,32 +60,20 @@
         } catch (ignore) {}
     }
 
-    function renderDeptNav() {
-        if (!deptNav || !catalog) return;
-        deptNav.innerHTML = catalog.DEPARTMENTS.map(function (d) {
-            var active = d.id === activeDept ? " is-active" : "";
-            return (
-                '<li role="presentation">' +
-                '<button type="button" class="ps-dept-btn' +
-                active +
-                '" role="tab" aria-selected="' +
-                (active ? "true" : "false") +
-                '" data-dept="' +
-                escapeHtml(d.id) +
-                '">' +
-                '<span class="ps-dept-icon" aria-hidden="true">' +
-                escapeHtml(d.icon || "📦") +
-                "</span>" +
-                '<span class="ps-dept-label">' +
-                escapeHtml(d.label) +
-                "</span></button></li>"
-            );
-        }).join("");
+    function syncDeptActive() {
+        if (!deptNav) return;
+        var buttons = deptNav.querySelectorAll(".ps-icon-btn[data-dept]");
+        for (var i = 0; i < buttons.length; i++) {
+            var btn = buttons[i];
+            var on = btn.getAttribute("data-dept") === activeDept;
+            btn.classList.toggle("is-active", on);
+            btn.setAttribute("aria-selected", on ? "true" : "false");
+        }
     }
 
     function renderProductList(items) {
         if (!items.length) {
-            return '<p class="ps-empty">이 사업부문에 등록된 상품이 없습니다.</p>';
+            return '<p class="ps-empty">이 분야에 등록된 상품이 없습니다.</p>';
         }
         var sorted = items.slice().sort(function (a, b) {
             return (b.updatedAt || 0) - (a.updatedAt || 0);
@@ -97,42 +83,37 @@
             sorted
                 .map(function (it) {
                     var href = "product-detail.html?id=" + encodeURIComponent(it.id);
-                    var imgBlock;
+                    var thumb;
                     if (it.pd_image) {
-                        imgBlock =
-                            '<img class="ps-card-img" src="' +
+                        thumb =
+                            '<img class="ps-thumb" src="' +
                             escapeHtml(it.pd_image) +
                             '" alt="">';
                     } else if (it.pd_has_image) {
-                        imgBlock =
-                            '<div class="ps-card-img ps-card-img--empty" role="img" aria-label="사진 있음">사진<br>있음</div>';
+                        thumb =
+                            '<span class="ps-thumb ps-thumb--empty" aria-hidden="true">사진</span>';
                     } else {
-                        imgBlock =
-                            '<div class="ps-card-img ps-card-img--empty" role="img" aria-label="사진 없음">사진<br>없음</div>';
+                        thumb =
+                            '<span class="ps-thumb ps-thumb--empty" aria-hidden="true">없음</span>';
                     }
-                    var specHtml = "";
+                    var spec = "";
                     if (it.pd_size && String(it.pd_size).trim()) {
-                        specHtml =
+                        spec =
                             '<span class="ps-card-spec">규격: ' +
                             escapeHtml(String(it.pd_size).trim()) +
                             "</span>";
                     }
-                    var excerpt = String(it.pd_explain || "").trim();
-                    if (excerpt.length > 120) excerpt = excerpt.slice(0, 117) + "…";
                     return (
-                        '<li class="ps-card-wrap"><article class="ps-card">' +
-                        '<a class="ps-card-link" href="' +
+                        '<li><a class="ps-card-link" href="' +
                         escapeHtml(href) +
                         '">' +
-                        imgBlock +
-                        '<div class="ps-card-body"><h2 class="ps-card-title">' +
+                        thumb +
+                        '<div class="ps-card-text"><h2 class="ps-card-title">' +
                         escapeHtml(it.pd_name || "") +
-                        '</h2><p class="ps-card-price">' +
+                        '</h2><p class="ps-card-meta">' +
                         priceHtml(it) +
-                        specHtml +
-                        '</p><p class="ps-card-content ps-hide-scrollbar">' +
-                        escapeHtml(excerpt) +
-                        "</p></div></a></article></li>"
+                        spec +
+                        "</p></div></a></li>"
                     );
                 })
                 .join("") +
@@ -142,29 +123,13 @@
 
     function renderContent() {
         if (!root) return;
-        if (!catalog) {
-            root.innerHTML = '<p class="ps-empty">메뉴 정보를 불러오지 못했습니다.</p>';
-            return;
-        }
-        if (!cachedItems.length) {
-            root.innerHTML =
-                '<p class="ps-empty">등록된 상품이 없습니다. <a href="product-register.html">상품 내용 등록</a>에서 상품을 추가해 보세요.</p>';
-            return;
-        }
-        if (!activeDept && catalog.DEPARTMENTS.length) {
-            activeDept = catalog.DEPARTMENTS[0].id;
-        }
-        var dept = catalog.getDept(activeDept);
+        if (!loaded) return;
         var items = itemsForDept(activeDept);
-        root.innerHTML =
-            '<h2 class="ps-section-title">' +
-            escapeHtml(dept ? dept.label : "사업부문") +
-            " 상품</h2>" +
-            renderProductList(items);
+        root.innerHTML = renderProductList(items);
     }
 
     function renderAll() {
-        renderDeptNav();
+        syncDeptActive();
         renderContent();
         syncUrl();
     }
@@ -191,13 +156,14 @@
             return;
         }
         readUrlState();
-        if (!activeDept && catalog && catalog.DEPARTMENTS.length) {
-            activeDept = catalog.DEPARTMENTS[0].id;
+        syncDeptActive();
+        if (!loaded) {
+            root.innerHTML = '<p class="ps-empty">상품을 불러오는 중…</p>';
         }
-        root.innerHTML = '<p class="ps-empty">상품을 불러오는 중…</p>';
         api.listProducts()
             .then(function (items) {
-                cachedItems = items;
+                cachedItems = items || [];
+                loaded = true;
                 renderAll();
             })
             .catch(function (err) {
@@ -209,13 +175,14 @@
                     }, status === 503 ? 2000 : 800);
                     return;
                 }
+                loaded = false;
                 root.innerHTML = loadErrorHtml((err && err.message) || "");
             });
     }
 
     if (deptNav) {
         deptNav.addEventListener("click", function (e) {
-            var btn = e.target.closest(".ps-dept-btn");
+            var btn = e.target.closest(".ps-icon-btn");
             if (!btn || !deptNav.contains(btn)) return;
             setDept(btn.getAttribute("data-dept"));
         });

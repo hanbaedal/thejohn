@@ -6,307 +6,118 @@
     <title>사업부문 — 더존</title>
     <link rel="stylesheet" href="common.css">
     <style>
+        .ps-page { max-width: 1100px; margin: 0 auto; }
         .ps-empty { margin: 0; color: #3d5166; line-height: 1.55; }
         .ps-empty a { color: var(--dz-blue); font-weight: 600; }
-        .ps-nav-block { margin: 0 0 1rem; }
-        .ps-dept-nav {
-            display: flex;
-            flex-wrap: nowrap;
-            gap: 0.35rem;
-            margin: 0;
+        .ps-icons {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 0.65rem;
+            margin: 0 0 1.25rem;
             padding: 0;
             list-style: none;
-            overflow: hidden;
         }
-        .ps-dept-btn {
-            flex: 1 1 0;
-            min-width: 0;
+        @media (min-width: 640px) {
+            .ps-icons { grid-template-columns: repeat(6, 1fr); gap: 0.75rem; }
+        }
+        .ps-icon-btn {
             display: flex;
             flex-direction: column;
             align-items: center;
-            gap: 0.25rem;
-            padding: 0.45rem 0.15rem 0.5rem;
-            border: 0;
-            background: transparent;
+            gap: 0.35rem;
+            width: 100%;
+            padding: 0.65rem 0.35rem;
+            border: 2px solid #e0e6ed;
+            border-radius: 12px;
+            background: #fff;
             cursor: pointer;
             font-family: inherit;
             color: #3d5166;
             -webkit-tap-highlight-color: transparent;
-        }
-        .ps-dept-icon {
-            width: 2.75rem;
-            height: 2.75rem;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1.35rem;
-            background: #f0f3f7;
-            border: 2px solid transparent;
             transition: border-color 0.15s, background 0.15s;
         }
-        .ps-dept-label {
-            font-size: clamp(0.68rem, 2.8vw, 0.82rem);
-            font-weight: 600;
-            line-height: 1.2;
-            white-space: nowrap;
-        }
-        .ps-dept-btn.is-active .ps-dept-icon {
-            border-color: var(--dz-blue);
-            background: #eef4fc;
-        }
-        .ps-dept-btn.is-active .ps-dept-label {
-            color: var(--dz-blue);
-            font-weight: 700;
-        }
-        .ps-group-scroll {
-            overflow-x: auto;
-            -webkit-overflow-scrolling: touch;
-            margin: 0 -0.25rem;
-            padding: 0.15rem 0.25rem 0.35rem;
-        }
-        .ps-group-nav {
-            display: flex;
-            flex-wrap: nowrap;
-            gap: 0.45rem;
-            margin: 0;
-            padding: 0;
-            list-style: none;
-            width: max-content;
-            min-width: 100%;
-        }
-        .ps-group-chip {
-            flex: 0 0 auto;
-            padding: 0.45rem 0.85rem;
-            border: 1px solid #d8e0e8;
-            border-radius: 999px;
-            background: #fff;
-            font-family: inherit;
-            font-size: 0.84rem;
-            font-weight: 600;
-            color: #3d5166;
-            cursor: pointer;
-            white-space: nowrap;
-        }
-        .ps-group-chip.is-active {
+        .ps-icon-btn:hover { border-color: #b8c8dc; background: #f8fafc; }
+        .ps-icon-btn.is-active {
             border-color: var(--dz-blue);
             background: #eef4fc;
             color: var(--dz-blue);
         }
-        .ps-group-grid {
-            list-style: none;
-            margin: 0 0 1.25rem;
-            padding: 0;
-            display: grid;
-            grid-template-columns: repeat(2, minmax(0, 1fr));
-            gap: 0.75rem;
-        }
-        @media (min-width: 640px) {
-            .ps-group-grid { gap: 1rem; }
-        }
-        .ps-group-card {
-            display: block;
-            width: 100%;
-            padding: 0;
-            border: 0;
-            background: #fff;
-            border-radius: 14px;
-            overflow: hidden;
-            box-shadow: 0 2px 12px rgba(10, 77, 156, 0.08);
-            cursor: pointer;
-            text-align: center;
-            font-family: inherit;
-            color: inherit;
-        }
-        .ps-group-card-visual {
-            aspect-ratio: 1.15;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            background: linear-gradient(145deg, #f8fafc 0%, #eef2f7 100%);
-            overflow: hidden;
-        }
-        .ps-group-card-visual img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-        }
-        .ps-group-card-emoji {
-            font-size: 2.5rem;
+        .ps-icon-btn.is-active .ps-icon-label { font-weight: 700; }
+        .ps-icon {
+            font-size: 1.75rem;
             line-height: 1;
         }
-        .ps-group-card-text {
-            padding: 0.65rem 0.5rem 0.75rem;
-        }
-        .ps-group-card-title {
-            margin: 0 0 0.2rem;
-            font-size: 0.95rem;
-            font-weight: 700;
-            color: #052a4d;
-        }
-        .ps-group-card-desc {
-            margin: 0;
-            font-size: 0.78rem;
-            color: #5a6d7e;
-            line-height: 1.35;
-        }
-        .ps-section-title {
-            margin: 0 0 0.75rem;
-            font-size: 1rem;
-            font-weight: 700;
-            color: #052a4d;
-        }
-        .ps-hide-scrollbar {
-            scrollbar-width: none;
-            -ms-overflow-style: none;
-        }
-        .ps-hide-scrollbar::-webkit-scrollbar {
-            display: none;
-            width: 0;
-            height: 0;
+        .ps-icon-label {
+            font-size: clamp(0.72rem, 2.5vw, 0.88rem);
+            font-weight: 600;
+            line-height: 1.2;
         }
         .ps-grid {
             list-style: none;
             margin: 0;
             padding: 0;
             display: grid;
-            gap: 1.1rem;
+            gap: 0.75rem;
             grid-template-columns: 1fr;
         }
-        @media (min-width: 1024px) {
-            .ps-grid {
-                grid-template-columns: repeat(4, 1fr);
-            }
+        @media (min-width: 640px) {
+            .ps-grid { grid-template-columns: repeat(2, 1fr); }
         }
-        .ps-card-wrap { margin: 0; }
+        @media (min-width: 1024px) {
+            .ps-grid { grid-template-columns: repeat(3, 1fr); }
+        }
         .ps-card-link {
-            display: block;
-            width: 100%;
+            display: flex;
+            align-items: center;
+            gap: 0.85rem;
+            padding: 0.75rem 0.9rem;
             text-decoration: none;
             color: inherit;
-        }
-        .ps-card-link:hover .ps-card-img,
-        .ps-card-link:focus-visible .ps-card-img {
-            opacity: 0.94;
-        }
-        .ps-card {
             background: #fff;
             border: 1px solid #e0e6ed;
             border-radius: 10px;
-            overflow: hidden;
-            box-shadow: 0 1px 6px rgba(10, 77, 156, 0.05);
-            height: 100%;
-            display: flex;
-            flex-direction: column;
+            box-shadow: 0 1px 4px rgba(10, 77, 156, 0.05);
         }
-        .ps-card-img {
-            width: 100%;
-            aspect-ratio: 1;
+        .ps-card-link:hover { border-color: #b8c8dc; }
+        .ps-thumb {
+            flex: 0 0 4rem;
+            width: 4rem;
+            height: 4rem;
+            border-radius: 8px;
             object-fit: cover;
-            background: #f4f6f9;
-            border: 0;
-            display: block;
+            background: #f0f3f7;
         }
-        .ps-card-img--empty {
+        .ps-thumb--empty {
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 0.8rem;
+            font-size: 0.65rem;
             color: #8a9bab;
             text-align: center;
-            min-height: 0;
+            line-height: 1.2;
         }
-        .ps-card-body {
-            padding: 0.85rem 0.95rem 1rem;
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            min-width: 0;
-        }
+        .ps-card-text { flex: 1; min-width: 0; }
         .ps-card-title {
-            margin: 0 0 0.4rem;
-            font-size: 1rem;
+            margin: 0 0 0.25rem;
+            font-size: 0.95rem;
             font-weight: 700;
             color: #052a4d;
-            line-height: 1.35;
+            line-height: 1.3;
         }
-        .ps-card-price {
-            margin: 0 0 0.5rem;
-            font-size: 0.9rem;
+        .ps-card-meta {
+            margin: 0;
+            font-size: 0.84rem;
             font-weight: 600;
             color: var(--dz-blue);
-            display: flex;
-            flex-wrap: wrap;
-            gap: 0.35rem 0.65rem;
-            align-items: baseline;
         }
-        .ps-price-item { white-space: nowrap; }
-        .ps-card-spec { font-size: 0.82rem; font-weight: 600; color: #3d556d; }
-        .ps-price-masked {
+        .ps-card-spec {
+            display: block;
+            margin-top: 0.15rem;
+            font-size: 0.78rem;
             font-weight: 600;
-            color: #6b7c8e;
-            font-size: 0.88rem;
+            color: #5a6d7e;
         }
-        .ps-card-content {
-            margin: 0;
-            font-size: 0.85rem;
-            line-height: 1.5;
-            color: #3d5166;
-            white-space: pre-wrap;
-            word-break: break-word;
-            max-height: 10rem;
-            overflow-y: auto;
-        }
-        .ps-lightbox {
-            position: fixed;
-            inset: 0;
-            z-index: 10000;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: max(0.75rem, env(safe-area-inset-top, 0)) max(0.75rem, env(safe-area-inset-right, 0))
-                max(0.75rem, env(safe-area-inset-bottom, 0)) max(0.75rem, env(safe-area-inset-left, 0));
-            background: rgba(0, 0, 0, 0.88);
-            overflow: auto;
-            scrollbar-width: none;
-            -ms-overflow-style: none;
-            box-sizing: border-box;
-        }
-        .ps-lightbox::-webkit-scrollbar {
-            display: none;
-            width: 0;
-            height: 0;
-        }
-        .ps-lightbox[hidden] {
-            display: none !important;
-        }
-        .ps-lightbox-img {
-            max-width: 100%;
-            max-height: min(92dvh, 92vh);
-            width: auto;
-            height: auto;
-            object-fit: contain;
-            border-radius: 6px;
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.45);
-        }
-        .ps-lightbox-close {
-            position: fixed;
-            top: max(0.5rem, env(safe-area-inset-top, 0));
-            right: max(0.5rem, env(safe-area-inset-right, 0));
-            z-index: 10001;
-            padding: 0.4rem 0.75rem;
-            font-size: 0.9rem;
-            font-weight: 600;
-            font-family: inherit;
-            color: #fff;
-            background: rgba(30, 40, 55, 0.75);
-            border: 1px solid rgba(255, 255, 255, 0.35);
-            border-radius: 6px;
-            cursor: pointer;
-        }
-        .ps-lightbox-close:hover {
-            background: rgba(50, 60, 75, 0.9);
-        }
+        .ps-price-masked { color: #6b7c8e; font-weight: 600; }
     </style>
     <script src="api-config.js"></script>
     <script src="thejhon-api.js"></script>
@@ -341,11 +152,48 @@
             <button type="button" class="btn btn-auth-icon btn-logout" id="btnLogout" hidden aria-label="로그아웃" title="로그아웃"></button>
         </nav>
     </header>
-    <main class="page-main page-main--hide-scrollbar" id="ps-page-main">
-        <div class="ps-nav-block">
-            <ul class="ps-dept-nav" id="ps-dept-nav" role="tablist" aria-label="사업부문 분야"></ul>
+    <main class="page-main page-main--hide-scrollbar ps-page" id="ps-page-main">
+        <ul class="ps-icons" id="ps-dept-nav" role="tablist" aria-label="사업부문">
+            <li role="presentation">
+                <button type="button" class="ps-icon-btn is-active" role="tab" aria-selected="true" data-dept="jeongyuk">
+                    <span class="ps-icon" aria-hidden="true">🥩</span>
+                    <span class="ps-icon-label">정육</span>
+                </button>
+            </li>
+            <li role="presentation">
+                <button type="button" class="ps-icon-btn" role="tab" aria-selected="false" data-dept="driedfish">
+                    <span class="ps-icon" aria-hidden="true">🐟</span>
+                    <span class="ps-icon-label">건어물</span>
+                </button>
+            </li>
+            <li role="presentation">
+                <button type="button" class="ps-icon-btn" role="tab" aria-selected="false" data-dept="frozen">
+                    <span class="ps-icon" aria-hidden="true">🧊</span>
+                    <span class="ps-icon-label">냉동식품</span>
+                </button>
+            </li>
+            <li role="presentation">
+                <button type="button" class="ps-icon-btn" role="tab" aria-selected="false" data-dept="seafood">
+                    <span class="ps-icon" aria-hidden="true">🦐</span>
+                    <span class="ps-icon-label">수산물</span>
+                </button>
+            </li>
+            <li role="presentation">
+                <button type="button" class="ps-icon-btn" role="tab" aria-selected="false" data-dept="grocery">
+                    <span class="ps-icon" aria-hidden="true">🛒</span>
+                    <span class="ps-icon-label">공산품</span>
+                </button>
+            </li>
+            <li role="presentation">
+                <button type="button" class="ps-icon-btn" role="tab" aria-selected="false" data-dept="drink">
+                    <span class="ps-icon" aria-hidden="true">🥤</span>
+                    <span class="ps-icon-label">음료수</span>
+                </button>
+            </li>
+        </ul>
+        <div id="ps-root" aria-live="polite">
+            <p class="ps-empty">상품을 불러오는 중…</p>
         </div>
-        <div id="ps-root" aria-live="polite"></div>
     </main>
     <footer class="site-footer">
         <div class="site-footer-inner">
