@@ -1,6 +1,8 @@
 const {
     buildLoginFields,
     getStoredPassword,
+    getVendorStoredPassword,
+    vendorHasCanonicalLoginSchema,
     normalizeLoginId,
     normalizePasswordInput
 } = require("./loginAccount");
@@ -158,7 +160,7 @@ function toPublic(doc) {
 function resolvePasswordPlain(existing, loginId, password) {
     const incoming = normalizePasswordInput(password);
     if (incoming) return incoming;
-    if (existing) return getStoredPassword(existing);
+    if (existing) return getVendorStoredPassword(existing) || getStoredPassword(existing);
     return "";
 }
 
@@ -291,22 +293,42 @@ function ensureVendorId(doc) {
     return "vn_" + Date.now().toString(36) + "_" + Math.random().toString(36).slice(2, 8);
 }
 
+function vendorNeedsFieldMigration(doc) {
+    if (!doc) return false;
+    if (!doc.id) return true;
+    if (!doc[F.company] && (doc.companyName || doc.vn_company)) return true;
+    if (!doc[F.depts] || !doc[F.depts].length) {
+        if (doc.vn_depts && doc.vn_depts.length) return true;
+    }
+    if (!vendorHasCanonicalLoginSchema(doc)) {
+        const pw = getVendorStoredPassword(doc);
+        const hasHash = !!(doc.passwordHash && String(doc.passwordHash).length);
+        if (pw || hasHash) return true;
+    }
+    return false;
+}
+
 async function migrateVendorsCollection(db) {
     const col = db.collection("vendors");
     const docs = await col.find({}).toArray();
     let n = 0;
+    let skipped = 0;
     let idFixed = 0;
     for (const doc of docs) {
         const id = ensureVendorId(doc);
         if (!doc.id) idFixed++;
-        const pw = getStoredPassword(doc);
+        const pw = getVendorStoredPassword(doc);
         const hasHash = !!(doc.passwordHash && String(doc.passwordHash).length);
         if (!pw && hasHash) {
-            n++;
             if (!doc.id) {
                 await col.updateOne({ _id: doc._id }, { $set: { id: id } });
                 idFixed++;
             }
+            skipped++;
+            continue;
+        }
+        if (!vendorNeedsFieldMigration(doc)) {
+            skipped++;
             continue;
         }
         const built = buildFromBody(
@@ -357,6 +379,7 @@ async function migrateVendorsCollection(db) {
     const report = {
         collection: "vendors",
         processed: n,
+        skipped: skipped,
         idFixed: idFixed,
         legacyRegisteredBy: legacy.modifiedCount || 0
     };
@@ -366,6 +389,7 @@ async function migrateVendorsCollection(db) {
 
 module.exports = {
     F,
+    fromLegacyDoc,
     toPublic,
     buildFromBody,
     toDbDoc,

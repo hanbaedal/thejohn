@@ -22,8 +22,9 @@ function loginLookupFilter(loginId) {
     const trimmed = String(loginId || "").trim();
     const idn = normalizeLoginId(loginId);
     if (!trimmed) return { loginId: "__invalid__" };
-    if (trimmed === idn) return { loginId: idn };
-    return { $or: [{ loginId: trimmed }, { loginId: idn }] };
+    const clauses = [{ loginId: trimmed }, { loginId: idn }];
+    if (trimmed === idn) return { $or: clauses };
+    return { $or: clauses };
 }
 
 /** 신규·수정 시 저장 필드 */
@@ -62,9 +63,41 @@ function getStoredPassword(doc) {
     return "";
 }
 
-/** vendors — password 필드 우선, 레거시(loginIdNorm에 비밀번호) · bcrypt 지원 */
+/**
+ * vendors 비밀번호 읽기
+ * - password 필드 우선 (단, 소문자 아이디와 같으면 잘못 저장된 값으로 보고 무시)
+ * - 레거시: loginIdNorm에 비밀번호가 들어 있던 문서
+ */
 function getVendorStoredPassword(doc) {
-    return getStoredPassword(doc);
+    if (!doc) return "";
+    const normLogin = normalizeLoginId(doc.loginId);
+    const pwField =
+        doc.password != null && doc.password !== "" ? String(doc.password).trim() : "";
+    if (pwField && pwField !== normLogin) return pwField;
+
+    if (doc.passwordAscii) {
+        const decoded = decodePasswordFromAscii(doc.passwordAscii);
+        if (decoded) return decoded;
+    }
+
+    const idn = doc.loginIdNorm != null ? String(doc.loginIdNorm).trim() : "";
+    if (idn && idn !== normLogin) return idn;
+
+    if (pwField) return pwField;
+    return "";
+}
+
+function vendorHasCanonicalLoginSchema(doc) {
+    if (!doc || !doc.loginId) return false;
+    const normLogin = normalizeLoginId(doc.loginId);
+    const pw = getVendorStoredPassword(doc);
+    return !!(
+        pw &&
+        doc.loginIdNorm != null &&
+        String(doc.loginIdNorm).trim() === normLogin &&
+        doc.password != null &&
+        String(doc.password).trim() === pw
+    );
 }
 
 async function verifyVendorLoginPassword(doc, loginId, plainPassword) {
@@ -73,15 +106,10 @@ async function verifyVendorLoginPassword(doc, loginId, plainPassword) {
 
     const stored = getVendorStoredPassword(doc);
     if (stored) {
-        const valid = input === stored;
-        const normLogin = normalizeLoginId(doc.loginId);
-        const schemaOk =
-            doc.password != null &&
-            doc.password !== "" &&
-            doc.loginIdNorm === normLogin;
-        if (valid && schemaOk) return { valid: true };
-        if (valid) return { valid: true, migratePassword: input };
-        return { valid: false };
+        if (input === stored) {
+            if (vendorHasCanonicalLoginSchema(doc)) return { valid: true };
+            return { valid: true, migratePassword: input };
+        }
     }
 
     if (doc.passwordHash) {
@@ -220,6 +248,7 @@ module.exports = {
     migrateCollectionLoginFields,
     getStoredPassword,
     getVendorStoredPassword,
+    vendorHasCanonicalLoginSchema,
     legacyAuthUnset,
     sensitiveLoginProjection
 };

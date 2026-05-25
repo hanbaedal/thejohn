@@ -25,7 +25,7 @@
                 escapeHtml: escapeHtml
             });
         }
-        return '<p class="pd-price pd-price-masked">가격: 담당자에게 문의</p>';
+        return '<p class="pd-price pd-price-masked">가격: 전화 문의</p>';
     }
 
     function contactBlock(it) {

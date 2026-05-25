@@ -355,7 +355,7 @@
         return { unitPrice: p1, priceLabel: "가격1" };
     }
 
-    var PRICE_MASKED_TEXT = "담당자에게 문의";
+    var PRICE_MASKED_TEXT = "전화 문의";
     var DETAIL_PRICE_LABEL = "가격";
 
     function buildProductPriceHtml(it, options) {

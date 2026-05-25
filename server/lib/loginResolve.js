@@ -46,11 +46,19 @@ async function findStaffByLoginId(loginId) {
         .findOne({ active: { $ne: false }, $or: clauses });
 }
 
-/** vendors 컬렉션 — loginId로 1건 조회 */
+/** vendors 컬렉션 — loginId로 1건 조회 (loginIdNorm·대소문자 혼용 지원) */
 async function findVendorByLoginId(loginId) {
-    return getDb()
-        .collection("vendors")
-        .findOne(loginLookupFilter(resolveLoginIdForLookup(loginId)));
+    const resolved = resolveLoginIdForLookup(loginId);
+    const trimmed = String(resolved || "").trim();
+    const idn = normalizeId(resolved);
+    if (!trimmed) return null;
+
+    const clauses = [{ loginIdNorm: idn }];
+    const lf = loginLookupFilter(resolved);
+    if (lf.$or) clauses.push.apply(clauses, lf.$or);
+    else if (lf.loginId) clauses.push({ loginId: lf.loginId });
+
+    return getDb().collection("vendors").findOne({ $or: clauses });
 }
 
 /** staff · vendors 동시 조회 */
