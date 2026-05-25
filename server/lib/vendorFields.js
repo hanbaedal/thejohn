@@ -6,7 +6,13 @@ const {
 } = require("./loginAccount");
 
 /** vendors 컬렉션 필드 */
-const VALID_DEPT_IDS = ["livestock", "seafood", "meals", "banchan", "drink"];
+const VALID_DEPT_IDS = ["jeongyuk", "driedfish", "frozen", "seafood", "grocery", "drink"];
+
+const LEGACY_DEPT_MAP = {
+    livestock: "jeongyuk",
+    meals: "frozen",
+    banchan: "grocery"
+};
 
 const F = {
     company: "vn_company",
@@ -36,9 +42,11 @@ function parseGrade(v) {
 }
 
 function normalizeDeptId(v) {
-    return String(v || "")
+    var id = String(v || "")
         .trim()
         .toLowerCase();
+    if (LEGACY_DEPT_MAP[id]) return LEGACY_DEPT_MAP[id];
+    return id;
 }
 
 function parseDeptsList(body, prev) {

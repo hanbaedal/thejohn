@@ -714,6 +714,14 @@ a.company-division-card p {
     grid-template-columns: repeat(5, minmax(0, 1fr));
     max-width: 100%;
 }
+.company-org-rail--6 {
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+    max-width: 100%;
+}
+.company-org-rail--6::before {
+    left: 8%;
+    right: 8%;
+}
 .company-org-rail::before {
     content: "";
     position: absolute;
@@ -774,6 +782,12 @@ a.company-org-node:focus-visible {
     outline: 2px solid var(--dz-blue);
     outline-offset: 2px;
 }
+@media (max-width: 900px) {
+    .company-org-rail--6 {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        max-width: 24rem;
+    }
+}
 @media (max-width: 640px) {
     .company-org-rail--5 {
         grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -782,7 +796,8 @@ a.company-org-node:focus-visible {
 }
 @media (max-width: 520px) {
     .company-org-rail,
-    .company-org-rail--5 {
+    .company-org-rail--5,
+    .company-org-rail--6 {
         grid-template-columns: repeat(2, minmax(0, 1fr));
         gap: 0.65rem 0.5rem;
         max-width: 18rem;

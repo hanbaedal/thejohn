@@ -3,10 +3,17 @@
  * 그룹 추가·수정은 이 파일에서 하면 됩니다.
  */
 (function (global) {
+    /** 예전 부문 ID → 현재 ID (DB·URL 호환) */
+    var LEGACY_DEPT_MAP = {
+        livestock: "jeongyuk",
+        meals: "frozen",
+        banchan: "grocery"
+    };
+
     var DEPARTMENTS = [
         {
-            id: "livestock",
-            label: "축산",
+            id: "jeongyuk",
+            label: "정육",
             icon: "🥩",
             groups: [
                 { id: "hanwoo", label: "한우·육우", desc: "한우·육우 부위별 상품" },
@@ -16,47 +23,58 @@
             ]
         },
         {
+            id: "driedfish",
+            label: "건어물",
+            icon: "🐟",
+            groups: [
+                { id: "anchovy-broth", label: "멸치·다시", desc: "멸치·다시용 건어물" },
+                { id: "dried-shrimp", label: "건새우·건오징어", desc: "건새우·건오징어류" },
+                { id: "dried-sea", label: "기타 건어물", desc: "건조 수산물" },
+                { id: "dried-gift", label: "선물·세트", desc: "건어물 세트" }
+            ]
+        },
+        {
+            id: "frozen",
+            label: "냉동식품",
+            icon: "🧊",
+            groups: [
+                { id: "frozen-meat", label: "냉동육", desc: "냉동 육류" },
+                { id: "frozen-sea", label: "냉동수산", desc: "냉동 수산물" },
+                { id: "frozen-meal", label: "냉동간편식", desc: "냉동 간편식" },
+                { id: "frozen-other", label: "기타 냉동", desc: "기타 냉동식품" }
+            ]
+        },
+        {
             id: "seafood",
             label: "수산물",
-            icon: "🐟",
+            icon: "🦐",
             groups: [
                 { id: "fish", label: "생선", desc: "생선·회용어류" },
                 { id: "shellfish", label: "조개·굴", desc: "조개류·갑각류" },
-                { id: "dried-fish", label: "건어물", desc: "말린·건조 수산물" },
-                { id: "processed-sea", label: "수산가공", desc: "어묵·젓갈·반찬용 수산" }
+                { id: "processed-sea", label: "수산가공", desc: "어묵·젓갈 등" },
+                { id: "sea-other", label: "기타 수산", desc: "기타 수산물" }
             ]
         },
         {
-            id: "meals",
-            label: "식사",
-            icon: "🍱",
+            id: "grocery",
+            label: "공산품",
+            icon: "🛒",
             groups: [
-                { id: "lunchbox", label: "도시락", desc: "도시락·한끼 식사" },
-                { id: "ready-meal", label: "간편식", desc: "데우기만 하면 되는 식사" },
-                { id: "rice-noodle", label: "면·밥", desc: "면류·밥류" },
-                { id: "meal-set", label: "세트", desc: "패밀리·행사용 세트" }
-            ]
-        },
-        {
-            id: "banchan",
-            label: "반찬",
-            icon: "🥗",
-            groups: [
-                { id: "basic-banchan", label: "밑반찬", desc: "기본 반찬" },
-                { id: "namul", label: "나물", desc: "나물·무침" },
-                { id: "pickle", label: "절임·장아찌", desc: "절임류" },
-                { id: "kimchi", label: "김치", desc: "김치·포기김치" }
+                { id: "seasoning", label: "조미료·양념", desc: "조미료·양념류" },
+                { id: "grain-noodle", label: "면·곡물", desc: "면·쌀·곡물" },
+                { id: "daily", label: "일용·주방", desc: "일용·주방 공산품" },
+                { id: "grocery-other", label: "기타 공산", desc: "기타 공산품" }
             ]
         },
         {
             id: "drink",
-            label: "음료",
+            label: "음료수",
             icon: "🥤",
             groups: [
                 { id: "water-soda", label: "생수·탄산", desc: "생수·탄산음료" },
                 { id: "juice", label: "주스", desc: "과일·야채 주스" },
                 { id: "tea-coffee", label: "차·커피", desc: "차·커피·음료" },
-                { id: "traditional-drink", label: "전통주·음료", desc: "전통 음료" }
+                { id: "drink-other", label: "기타 음료", desc: "기타 음료수" }
             ]
         }
     ];
@@ -74,6 +92,7 @@
 
     function normalizeDept(v) {
         var id = String(v || "").trim().toLowerCase();
+        if (LEGACY_DEPT_MAP[id]) id = LEGACY_DEPT_MAP[id];
         return deptById[id] ? id : "";
     }
 
@@ -105,13 +124,20 @@
         });
     }
 
+    function companyPageForDept(deptId) {
+        var id = normalizeDept(deptId);
+        return id ? "company-" + id + ".html" : "company.html";
+    }
+
     global.THEJHON_PRODUCT_CATALOG = {
         DEPARTMENTS: DEPARTMENTS,
+        LEGACY_DEPT_MAP: LEGACY_DEPT_MAP,
         getDept: getDept,
         getGroups: getGroups,
         getGroup: getGroup,
         normalizeDept: normalizeDept,
         normalizeGroup: normalizeGroup,
-        allDeptIds: allDeptIds
+        allDeptIds: allDeptIds,
+        companyPageForDept: companyPageForDept
     };
 })(typeof window !== "undefined" ? window : global);
