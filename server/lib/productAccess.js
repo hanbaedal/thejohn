@@ -18,11 +18,9 @@ function productOwnedBy(doc, staffLoginId) {
     return normalizeStaffLoginId(doc[F.registeredBy]) === normalizeStaffLoginId(staffLoginId);
 }
 
-function canReadProduct(auth, doc) {
-    if (!auth || !isStaffAuth(auth)) return true;
-    if (isSupervisorAuth(auth)) return true;
-    if (isSharedLegacyProduct(doc)) return true;
-    return productOwnedBy(doc, auth.userId);
+/** 사업부문·상세 조회는 공개. 수정·삭제만 담당 관리자 제한(canWriteProduct) */
+function canReadProduct() {
+    return true;
 }
 
 function canWriteProduct(auth, doc) {

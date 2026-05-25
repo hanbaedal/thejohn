@@ -12,7 +12,6 @@ const {
 } = require("../lib/productFields");
 const {
     isStaffAuth,
-    canReadProduct,
     canWriteProduct,
     buildProductListQuery,
     stampNewProductRegistration,
@@ -118,13 +117,17 @@ router.get("/check-name", requireRole("supervisor", "admin"), async (req, res) =
 
 router.get("/:id", async (req, res) => {
     try {
-        const auth = optionalAuth(req);
         const doc = await getDb().collection("products").findOne({ id: req.params.id });
         if (!doc) return res.status(404).json({ ok: false, error: "상품을 찾을 수 없습니다." });
-        if (auth && isStaffAuth(auth) && !canReadProduct(auth, doc)) {
-            return res.status(403).json({ ok: false, error: "이 상품을 조회할 권한이 없습니다." });
+        const item = toPublic(doc);
+        const img = String(item.pd_image || "");
+        if (img.length > 400 || /^data:/i.test(img)) {
+            item.pd_has_image = true;
+            item.pd_image = "";
+        } else {
+            item.pd_has_image = !!img;
         }
-        res.json({ ok: true, item: toPublic(doc) });
+        res.json({ ok: true, item: item });
     } catch (e) {
         console.error("GET /api/products/:id", e);
         res.status(500).json({ ok: false, error: "상품을 불러오지 못했습니다." });

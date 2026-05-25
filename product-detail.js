@@ -103,7 +103,6 @@
             if (!priceEl) return;
             var info = unitInfo();
             var q = Math.max(1, parseInt(qtyEl.value, 10) || 1);
-            var line = (Number(info.unitPrice) || 0) * q;
             priceEl.textContent =
                 (info.priceLabel || "단가") +
                 " " +
@@ -111,7 +110,7 @@
                 " × " +
                 q +
                 " = " +
-                formatWon(line);
+                formatWon((Number(info.unitPrice) || 0) * q);
         }
 
         qtyEl.addEventListener("input", updateLinePreview);
@@ -144,23 +143,49 @@
 
     function getIdFromQuery() {
         try {
-            var params = new URLSearchParams(window.location.search);
-            return params.get("id") || "";
+            return new URLSearchParams(window.location.search).get("id") || "";
         } catch (e) {
             return "";
         }
     }
 
-    function showMissing() {
+    function showMissing(msg) {
         document.title = "상품 상세 — 더존";
         root.innerHTML =
-            '<p class="pd-missing">상품을 찾을 수 없습니다. <a href="products.html">사업부문</a>로 돌아가 주세요.</p>';
+            '<p class="pd-missing">' +
+            escapeHtml(msg || "상품을 찾을 수 없습니다.") +
+            ' <a href="products.html">사업부문</a>으로 돌아가 주세요.</p>';
     }
 
     function productsListHref(it) {
         var dept = it.pd_dept && String(it.pd_dept).trim();
         if (!dept) return "products.html";
         return "products.html?dept=" + encodeURIComponent(dept);
+    }
+
+    function loadCoverImage(productId) {
+        if (!api || !api.get) return;
+        api.get("api/products/" + encodeURIComponent(productId) + "/cover")
+            .then(function (data) {
+                if (!data || !data.pd_image) return;
+                var el = document.getElementById("pd-hero-img");
+                if (!el) return;
+                if (el.tagName === "IMG") {
+                    el.src = data.pd_image;
+                    el.classList.remove("pd-hero-img--empty");
+                    return;
+                }
+                var img = document.createElement("img");
+                img.id = "pd-hero-img";
+                img.className = "pd-hero-img";
+                img.alt = "";
+                img.src = data.pd_image;
+                el.replaceWith(img);
+            })
+            .catch(function () {
+                var el = document.getElementById("pd-hero-img");
+                if (el && el.classList) el.textContent = "사진 없음";
+            });
     }
 
     function renderItem(it) {
@@ -172,14 +197,26 @@
         var backEl = document.querySelector(".pd-back a");
         if (backEl) backEl.setAttribute("href", productsListHref(it));
 
-        var imgBlock = it.pd_image
-            ? "<img class=\"pd-hero-img\" src=" + JSON.stringify(it.pd_image) + ' alt="">'
-            : '<div class="pd-hero-img pd-hero-img--empty" role="img" aria-label="사진 없음">사진 없음</div>';
+        var imgBlock;
+        if (it.pd_image) {
+            imgBlock =
+                '<img id="pd-hero-img" class="pd-hero-img" src="' +
+                escapeHtml(it.pd_image) +
+                '" alt="">';
+        } else if (it.pd_has_image) {
+            imgBlock =
+                '<div id="pd-hero-img" class="pd-hero-img pd-hero-img--empty" role="img" aria-label="사진 로딩">사진 불러오는 중…</div>';
+        } else {
+            imgBlock =
+                '<div id="pd-hero-img" class="pd-hero-img pd-hero-img--empty" role="img" aria-label="사진 없음">사진 없음</div>';
+        }
 
         var specHtml = "";
         if (it.pd_size && String(it.pd_size).trim()) {
             specHtml =
-                '<p class="pd-spec">규격: <strong>' + escapeHtml(String(it.pd_size).trim()) + "</strong></p>";
+                '<p class="pd-spec">규격: <strong>' +
+                escapeHtml(String(it.pd_size).trim()) +
+                "</strong></p>";
         }
 
         root.innerHTML =
@@ -197,6 +234,10 @@
             contactBlock(it) +
             "</div></article>";
 
+        if (it.pd_has_image && !it.pd_image) {
+            loadCoverImage(it.id);
+        }
+
         bindOrderHandlers(it);
     }
 
@@ -204,28 +245,24 @@
         if (!root) return;
         var id = getIdFromQuery();
         if (!id) {
-            showMissing();
+            showMissing("상품 ID가 없습니다.");
             return;
         }
         if (!api) {
-            root.innerHTML = '<p class="pd-missing">API를 사용할 수 없습니다.</p>';
+            showMissing("API를 사용할 수 없습니다.");
             return;
         }
         root.innerHTML = '<p class="pd-missing">불러오는 중…</p>';
         api.getProduct(id)
             .then(function (it) {
-                if (!it) {
-                    document.title = "상품 상세 — 더존";
-                    root.innerHTML =
-                        '<p class="pd-missing">해당 상품이 없거나 삭제되었습니다. <a href="products.html">사업부문</a>로 돌아가 주세요.</p>';
+                if (!it || !it.id) {
+                    showMissing("해당 상품이 없거나 삭제되었습니다.");
                     return;
                 }
                 renderItem(it);
             })
-            .catch(function () {
-                document.title = "상품 상세 — 더존";
-                root.innerHTML =
-                    '<p class="pd-missing">해당 상품이 없거나 삭제되었습니다. <a href="products.html">사업부문</a>로 돌아가 주세요.</p>';
+            .catch(function (err) {
+                showMissing((err && err.message) || "상품 정보를 불러오지 못했습니다.");
             });
     }
 

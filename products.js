@@ -89,7 +89,7 @@
                             "</span>";
                     }
                     return (
-                        '<li><a class="ps-card-link" href="' +
+                        '<li class="ps-card-wrap"><a class="ps-card-link" href="' +
                         escapeHtml(href) +
                         '">' +
                         thumb +
