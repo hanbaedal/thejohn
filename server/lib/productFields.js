@@ -97,29 +97,34 @@ function productHasImage(doc) {
     return !!str(d[F.image]);
 }
 
-/** 목록 API용 — MongoDB 표준 필드(pd_*) 그대로 읽기, 이미지 본문은 제외 */
+/** 목록 API용 — products 컬렉션(pd_*, per-*, id) 그대로 매핑, 이미지 본문은 제외 */
 function toPublicListItem(doc) {
     if (!doc) return null;
-    const id = ensureProductId(doc);
+    const d = fromLegacyDoc(doc) || doc;
+    const id = ensureProductId(d);
     if (!id) return null;
-    const prices = readPricesFromDoc(doc);
+    const prices = readPricesFromDoc(d);
     const hasImage =
-        doc.pd_has_image === true ||
-        (doc.pd_has_image !== false && !!str(doc[F.image] || doc.pd_image));
+        d.pd_has_image === true ||
+        (d.pd_has_image !== false && !!str(d[F.image] || d.pd_image));
+    const pd_dept = readDeptFromDoc(d) || normalizeDeptForStorage(d[F.dept] || d.pd_dept);
     return {
         id: id,
-        pd_name: str(doc[F.name] || doc.pd_name),
+        pd_name: str(d[F.name] || d.pd_name),
         pd_price1: prices.pd_price1,
         pd_price2: prices.pd_price2,
         pd_price3: prices.pd_price3,
         pd_price4: prices.pd_price4,
-        pd_size: str(doc[F.size] || doc.pd_size),
-        pd_dept: normalizeDeptForStorage(doc[F.dept] || doc.pd_dept),
-        pd_explain: str(doc[F.explain] || doc.pd_explain).slice(0, 120),
+        pd_size: str(d[F.size] || d.pd_size),
+        pd_dept: pd_dept,
+        pd_explain: str(d[F.explain] || d.pd_explain).slice(0, 120),
         pd_has_image: hasImage,
-        pd_record_type: normalizeRecordType(doc[F.recordType] || doc.pd_record_type),
-        pd_registered_by: str(doc[F.registeredBy] || doc.pd_registered_by),
-        updatedAt: doc.updatedAt || 0
+        pd_record_type: normalizeRecordType(d[F.recordType] || d.pd_record_type),
+        pd_registered_by: str(d[F.registeredBy] || d.pd_registered_by),
+        pd_registered_by_name: str(d[F.registeredByName] || d.pd_registered_by_name),
+        pd_registered_at: d[F.registeredAt] || d.pd_registered_at || 0,
+        createdAt: d.createdAt || 0,
+        updatedAt: d.updatedAt || 0
     };
 }
 

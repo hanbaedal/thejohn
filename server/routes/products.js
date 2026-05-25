@@ -65,12 +65,21 @@ router.get("/", async (req, res) => {
         const catalogByDept = !!req.query.dept && !req.query.registeredBy;
         const items = await getDb()
             .collection("products")
-            .find(query, { projection: { [F.image]: 0, image: 0 } })
+            .find(query, { projection: { [F.image]: 0, pd_image: 0, image: 0 } })
             .sort({ updatedAt: -1 })
             .toArray();
+        const rows = [];
+        for (const doc of items) {
+            try {
+                const row = toPublicListItem(doc);
+                if (row) rows.push(row);
+            } catch (mapErr) {
+                console.error("GET /api/products map", doc && doc.id, mapErr.message);
+            }
+        }
         res.json({
             ok: true,
-            items: items.map(toPublicListItem).filter(Boolean),
+            items: rows,
             dept: req.query.dept ? normalizeDept(req.query.dept) : "",
             scope: catalogByDept ? "catalog" : auth && isStaffAuth(auth) ? "staff" : "public"
         });
@@ -126,7 +135,16 @@ router.get("/check-name", requireRole("supervisor", "admin"), async (req, res) =
 
 router.get("/:id", async (req, res) => {
     try {
-        const doc = await getDb().collection("products").findOne({ id: req.params.id });
+        const pid = String(req.params.id || "").trim();
+        let doc = await getDb().collection("products").findOne({ id: pid });
+        if (!doc && /^[a-f0-9]{24}$/i.test(pid)) {
+            try {
+                const { ObjectId } = require("mongodb");
+                doc = await getDb().collection("products").findOne({ _id: new ObjectId(pid) });
+            } catch (oidErr) {
+                /* ignore invalid ObjectId */
+            }
+        }
         if (!doc) return res.status(404).json({ ok: false, error: "상품을 찾을 수 없습니다." });
         const item = toPublic(doc);
         const img = String(item.pd_image || "");

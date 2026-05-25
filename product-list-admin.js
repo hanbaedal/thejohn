@@ -133,7 +133,7 @@
     }
 
     if (PF && filterRoot && catalog) {
-        PF.initDeptPicker({
+        var deptPicker = PF.initDeptPicker({
             catalog: catalog,
             root: filterRoot,
             hiddenInput: document.getElementById("pl-filter-dept"),
@@ -143,6 +143,7 @@
                 renderList();
             }
         });
+        if (deptPicker && deptPicker.setValue) deptPicker.setValue("");
     }
 
     if (VA && staffFilterWrap && staffFilterEl) {
