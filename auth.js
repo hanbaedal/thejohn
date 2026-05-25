@@ -2,7 +2,7 @@
  * 세션 + /api/auth/login (MongoDB staff · vendors)
  *
  * 권한 정의
- * 1. 관리자(staff: supervisor|admin) — 상품관리·업체관리 메뉴 표시, 사업부문 가격1~4 전체
+ * 1. 관리자(staff: admin) — 상품관리·업체관리 메뉴, 사업부문·상세는 가격1만 표시
  * 2. 업체(vendor) — 담당 관리자가 등록한 상품만 등급별 가격, 타 관리자 상품은 가격1
  * 3. 미로그인 — 관리 메뉴 숨김, 사업부문 가격 비표시
  * (비활성화 = 헤더에서 해당 메뉴가 보이지 않음)
@@ -18,8 +18,6 @@
     var VENDOR_ORDER_ENABLED_KEY = "thejhon_vendor_order_enabled";
     /** 주문·장바구니 허용 업체 등록 담당 (서버 ORDER_VENDOR_STAFF_ID 와 동일, 기본 aksangsa) */
     var ORDER_VENDOR_STAFF_ID = "aksangsa";
-
-    var SUPERVISOR_ID = "thejohn";
 
     function normalizeId(s) {
         return String(s || "")
@@ -78,7 +76,8 @@
 
     function parseVendorGrade(g) {
         var n = parseInt(g, 10);
-        if (n >= 1 && n <= 4) return String(n);
+        if (n >= 1 && n <= 3) return String(n);
+        if (n === 4) return "3";
         return "1";
     }
 
@@ -212,9 +211,9 @@
         return isStaffRole(r) || r === "vendor";
     }
 
-    /** 규칙 1: 관리자 — 가격1~4 전체 */
+    /** 사업부문·상품 상세 — 관리자도 가격1만 (등록 화면은 폼 필드로 1~4 입력) */
     function canSeeAllProductPrices() {
-        return isStaffRole(getRole());
+        return false;
     }
 
     function getVendorPriceGrade() {
@@ -226,8 +225,12 @@
         var g = parseVendorGrade(grade);
         if (g === "2") return "pd_price2";
         if (g === "3") return "pd_price3";
-        if (g === "4") return "pd_price4";
         return "pd_price1";
+    }
+
+    function vendorGradeLabel(grade) {
+        var g = parseVendorGrade(grade);
+        return g + "등급";
     }
 
     function syncVendorGradeFromSessionApi(sess) {
@@ -278,11 +281,9 @@
      * options: { mode: "inline"|"detail", formatWon, escapeHtml }
      */
     /** 업체(vendor)만 상품 주문·장바구니 */
-    /** thejohn(총괄) — 전체 업체·담당 변경 */
+    /** 레거시 role supervisor 만 (thejohn 은 일반 admin 과 동일) */
     function isSupervisorStaff() {
-        if (!isLoggedIn() || !isStaffRole(getRole())) return false;
-        if (getRole() === "supervisor") return true;
-        return normalizeId(getUserId()) === normalizeId(SUPERVISOR_ID);
+        return isLoggedIn() && getRole() === "supervisor";
     }
 
     function canPlaceVendorOrders() {
@@ -294,7 +295,7 @@
         );
     }
 
-    /** 업체관리 — 주문서관리 메뉴·화면 (aksangsa 관리자만, 총괄 thejohn 제외) */
+    /** 업체관리 — 주문서관리 메뉴·화면 (aksangsa 관리자만) */
     function canShowOrderManageMenu() {
         return (
             isLoggedIn() &&
@@ -327,20 +328,17 @@
 
     function getVendorUnitPriceForProduct(it) {
         if (!it || !canSeeProductPrices()) return { unitPrice: 0, priceLabel: "" };
-        if (canSeeAllProductPrices()) {
-            var g = getVendorPriceGrade() || "1";
-            var key = getPriceKeyForGrade(g);
-            var v = Number(it[key]);
-            if (!isFinite(v)) v = 0;
-            var lbl = g === "4" ? "구매가" : "가격" + g;
-            return { unitPrice: v, priceLabel: lbl };
+        if (isStaffRole(getRole())) {
+            var sp1 = Number(it.pd_price1);
+            if (!isFinite(sp1)) sp1 = 0;
+            return { unitPrice: sp1, priceLabel: "가격1" };
         }
         if (vendorProductUsesGradePrice(it)) {
             var grade = getVendorPriceGrade();
             var priceKey = getPriceKeyForGrade(grade);
             var priceVal = Number(it[priceKey]);
             if (!isFinite(priceVal)) priceVal = 0;
-            var label = grade === "4" ? "구매가" : "가격" + grade;
+            var label = vendorGradeLabel(grade);
             return { unitPrice: priceVal, priceLabel: label };
         }
         var p1 = Number(it.pd_price1);
@@ -369,42 +367,6 @@
                 return '<p class="pd-price pd-price-masked">가격: 비공개</p>';
             }
             return '<span class="ps-price-masked">가격: 비공개</span>';
-        }
-
-        var keys = ["pd_price1", "pd_price2", "pd_price3", "pd_price4"];
-        var labels = ["가격1", "가격2", "가격3", "구매가"];
-
-        if (canSeeAllProductPrices()) {
-            var parts = [];
-            for (var i = 0; i < 4; i++) {
-                var v = Number(it[keys[i]]);
-                if (isFinite(v) && v > 0) {
-                    if (mode === "detail") {
-                        parts.push(
-                            '<p class="pd-price"><span class="pd-price-label">' +
-                                escapeHtml(labels[i]) +
-                                "</span> " +
-                                escapeHtml(formatWon(v)) +
-                                "</p>"
-                        );
-                    } else {
-                        parts.push(
-                            '<span class="ps-price-item">' +
-                                escapeHtml(labels[i]) +
-                                " " +
-                                escapeHtml(formatWon(v)) +
-                                "</span>"
-                        );
-                    }
-                }
-            }
-            if (!parts.length) {
-                if (mode === "detail") {
-                    return '<p class="pd-price">' + escapeHtml(formatWon(0)) + "</p>";
-                }
-                return "<span>" + escapeHtml(formatWon(0)) + "</span>";
-            }
-            return parts.join(mode === "detail" ? "" : "");
         }
 
         var priced = getVendorUnitPriceForProduct(it);
@@ -461,7 +423,7 @@
 
         if (role === "vendor") {
             var priced = getVendorUnitPriceForProduct(it);
-            var lbl = priced.priceLabel || "가격1";
+            var lbl = priced.priceLabel || vendorGradeLabel(getVendorPriceGrade());
             return (
                 '<p class="ps-card-price"><span class="ps-card-price-label">' +
                 escapeHtml(lbl) +
@@ -513,7 +475,7 @@
     function enforceRegisterPages() {
         var page = currentPageFile();
         if (DATA_MIGRATE_PAGES.indexOf(page) >= 0) {
-            if (!isLoggedIn() || !isSupervisorStaff()) {
+            if (!canManageRegisters()) {
                 window.location.replace("index.html?denied=register");
             }
             return;
@@ -607,8 +569,6 @@
     global.THEJHON_AUTH = {
         AUTH_KEY: AUTH_KEY,
         ROLE_KEY: ROLE_KEY,
-        SUPERVISOR_ID: SUPERVISOR_ID,
-        ADMIN_ID: SUPERVISOR_ID,
         isStaffRole: isStaffRole,
         verifyFormCredentialsAsync: verifyFormCredentialsAsync,
         setFormSession: setFormSession,
@@ -628,6 +588,8 @@
         getVendorRegisteredBy: getVendorRegisteredBy,
         vendorProductUsesGradePrice: vendorProductUsesGradePrice,
         getPriceKeyForGrade: getPriceKeyForGrade,
+        vendorGradeLabel: vendorGradeLabel,
+        parseVendorGrade: parseVendorGrade,
         VENDOR_REGISTERED_BY_KEY: VENDOR_REGISTERED_BY_KEY,
         buildProductPriceHtml: buildProductPriceHtml,
         buildCatalogListPriceHtml: buildCatalogListPriceHtml,

@@ -184,7 +184,7 @@ router.put("/:id", requireRole("supervisor", "admin"), async (req, res) => {
         if (!canWriteVendor(req.auth, existing)) {
             return res.status(403).json({
                 ok: false,
-                error: "다른 관리자가 등록한 업체는 수정할 수 없습니다. 총괄(thejohn)에게 담당 변경을 요청하세요."
+                error: "다른 관리자가 등록한 업체는 수정할 수 없습니다."
             });
         }
 

@@ -25,7 +25,7 @@ const productRoutes = require("./routes/products");
 const vendorRoutes = require("./routes/vendors");
 const orderRoutes = require("./routes/orders");
 const adminRoutes = require("./routes/admin");
-const { requireSupervisor } = require("./middleware/supervisor");
+const { requireRole } = require("./middleware/auth");
 
 const app = express();
 const PORT = Number(process.env.PORT) || 3000;
@@ -151,7 +151,7 @@ app.get("/api/env-check", (req, res) => {
     });
 });
 
-app.post("/api/admin/reconnect-db", requireDb, requireSupervisor, async function (req, res) {
+app.post("/api/admin/reconnect-db", requireDb, requireRole("supervisor", "admin"), async function (req, res) {
     try {
         await connectDb();
         const { runFullDataMigration } = require("./lib/dataMigrate");

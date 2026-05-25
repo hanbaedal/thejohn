@@ -16,8 +16,7 @@ function str(v) {
 }
 
 function gradeLabel(grade) {
-    var g = parseGrade(grade) || "1";
-    if (g === "4") return "4등급(구매가)";
+    const g = parseGrade(grade) || "1";
     return g + "등급";
 }
 

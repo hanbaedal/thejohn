@@ -1,8 +1,6 @@
 const { F } = require("./vendorFields");
 const { findStaffByLoginId } = require("./loginResolve");
 const { getCompanyName: getStaffCompanyName } = require("./staffFields");
-const { SUPERVISOR_LOGIN } = require("./staffFields");
-
 const LEGACY_REGISTERED_BY = "legacy";
 
 function normalizeStaffLoginId(loginId) {
@@ -11,10 +9,10 @@ function normalizeStaffLoginId(loginId) {
         .toLowerCase();
 }
 
+/** 레거시 DB에 role supervisor 만 남아 있을 때만 true (thejohn 등 일반 admin 과 동일 권한) */
 function isSupervisorAuth(auth) {
     if (!auth) return false;
-    if (auth.role === "supervisor") return true;
-    return normalizeStaffLoginId(auth.userId) === normalizeStaffLoginId(SUPERVISOR_LOGIN);
+    return auth.role === "supervisor";
 }
 
 function isStaffAuth(auth) {

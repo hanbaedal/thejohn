@@ -5,9 +5,38 @@
         THEJHON_AUTH.applyNavRegisterVisibility();
     }
 
+    (function ensureHeaderLayout() {
+        var header = document.querySelector(".site-header");
+        if (!header || header.dataset.headerShell === "1") return;
+        var start = header.querySelector(".site-header-start");
+        if (!start) return;
+        var actions = header.querySelector(".site-header-actions");
+        var nav = start.querySelector(".site-header-nav");
+        var logo = start.querySelector(".dz-logo, .dz-logo--compact");
+        if (!nav) return;
+
+        var brand = document.createElement("div");
+        brand.className = "site-header-brand";
+
+        var scroll = document.createElement("div");
+        scroll.className = "site-header-menu-scroll";
+        scroll.setAttribute("aria-label", "메뉴");
+
+        if (logo) brand.appendChild(logo);
+        scroll.appendChild(nav);
+        if (actions) scroll.appendChild(actions);
+
+        header.insertBefore(brand, start);
+        header.insertBefore(scroll, start);
+        start.remove();
+        header.dataset.headerShell = "1";
+    })();
+
     (function injectCompactHomeLogo() {
         if (document.body && document.body.classList.contains("page-home")) return;
-        var start = document.querySelector(".site-header-start");
+        var start =
+            document.querySelector(".site-header-brand") ||
+            document.querySelector(".site-header-start");
         if (!start || start.querySelector(".dz-logo")) return;
         var link = document.createElement("a");
         link.href = "index.html";
@@ -66,6 +95,7 @@
         sync();
         function syncAll() {
             sync();
+            if (window.__thejhonRefreshHeaderCompany) window.__thejhonRefreshHeaderCompany();
             refreshVendorCartNav();
             if (window.THEJHON_AUTH && THEJHON_AUTH.applyNavRegisterVisibility) {
                 THEJHON_AUTH.applyNavRegisterVisibility();
@@ -87,41 +117,80 @@
     })();
 
     (function syncHeaderCompanyName() {
+        var header = document.querySelector(".site-header");
         var actions = document.querySelector(".site-header-actions");
-        if (!actions) return;
-        var el = document.getElementById("headerCompanyName");
-        if (!el) {
-            el = document.createElement("p");
-            el.id = "headerCompanyName";
-            el.className = "header-session-company";
-            el.setAttribute("aria-live", "polite");
+        if (!header || !actions) return;
+
+        var elWide = document.getElementById("headerCompanyName");
+        if (!elWide) {
+            elWide = document.createElement("p");
+            elWide.id = "headerCompanyName";
+            elWide.className = "header-session-company header-session-company--wide";
+            elWide.setAttribute("aria-live", "polite");
             var todayEl = document.getElementById("headerToday");
-            if (todayEl) actions.insertBefore(el, todayEl);
-            else actions.insertBefore(el, actions.firstChild);
+            if (todayEl) actions.insertBefore(elWide, todayEl);
+            else actions.insertBefore(elWide, actions.firstChild);
         }
+
+        var elMobile = document.getElementById("headerCompanyNameMobile");
+        if (!elMobile) {
+            elMobile = document.createElement("p");
+            elMobile.id = "headerCompanyNameMobile";
+            elMobile.className = "header-session-company header-session-company--mobile";
+            elMobile.setAttribute("aria-live", "polite");
+            header.appendChild(elMobile);
+        }
+
         function ping() {
             var text = "";
-            if (window.THEJHON_AUTH && typeof THEJHON_AUTH.getLoggedInCompanyDisplayName === "function") {
+            var loggedIn = window.THEJHON_AUTH && THEJHON_AUTH.isLoggedIn && THEJHON_AUTH.isLoggedIn();
+            if (
+                loggedIn &&
+                window.THEJHON_AUTH &&
+                typeof THEJHON_AUTH.getLoggedInCompanyDisplayName === "function"
+            ) {
                 text = THEJHON_AUTH.getLoggedInCompanyDisplayName() || "";
             }
             var wide =
                 window.THEJHON_AUTH &&
                 typeof THEJHON_AUTH.isNotebookViewport === "function" &&
                 THEJHON_AUTH.isNotebookViewport();
+            var narrow = false;
+            try {
+                narrow = window.matchMedia("(max-width: 720px)").matches;
+            } catch (e) {
+                narrow = window.innerWidth <= 720;
+            }
+
             if (text && wide) {
-                el.textContent = text;
-                el.classList.add("header-session-company--show");
+                elWide.textContent = text;
+                elWide.classList.add("header-session-company--show");
             } else {
-                el.textContent = "";
-                el.classList.remove("header-session-company--show");
+                elWide.textContent = "";
+                elWide.classList.remove("header-session-company--show");
+            }
+
+            if (text && narrow) {
+                elMobile.textContent = text;
+                elMobile.classList.add("header-session-company--show");
+                header.classList.add("header-has-company-mobile");
+            } else {
+                elMobile.textContent = "";
+                elMobile.classList.remove("header-session-company--show");
+                header.classList.remove("header-has-company-mobile");
             }
         }
         ping();
+        window.__thejhonRefreshHeaderCompany = ping;
+        window.addEventListener("pageshow", ping);
         var mq1024 = window.matchMedia("(min-width: 1024px)");
+        var mq720 = window.matchMedia("(max-width: 720px)");
         if (mq1024.addEventListener) {
             mq1024.addEventListener("change", ping);
+            mq720.addEventListener("change", ping);
         } else if (mq1024.addListener) {
             mq1024.addListener(ping);
+            mq720.addListener(ping);
         }
     })();
 

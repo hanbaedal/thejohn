@@ -108,7 +108,11 @@
         var rows = [];
         rows.push(contactRow("로그인 아이디", escapeHtml(it.loginId || "—")));
         rows.push(contactRow("사업부문", escapeHtml(deptLabels(it))));
-        rows.push(contactRow("업체등급", escapeHtml(String(it.vn_grade || "1"))));
+        var gradeLbl =
+            window.THEJHON_AUTH && THEJHON_AUTH.vendorGradeLabel
+                ? THEJHON_AUTH.vendorGradeLabel(it.vn_grade)
+                : String(it.vn_grade || "1") + "등급";
+        rows.push(contactRow("업체등급", escapeHtml(gradeLbl)));
         rows.push(contactRow("대표자", escapeHtml(it.vn_ceo || "—")));
         rows.push(contactRow("대표 연락처", telLink(it.vn_ceo_tel) || "—"));
         rows.push(contactRow("회사 전화", telLink(it.vn_phone) || "—"));
@@ -144,8 +148,12 @@
             imgBlock +
             '<div class="vd-text"><h1 class="vd-title">' +
             escapeHtml(it.vn_company || "") +
-            '</h1><p class="vd-badge">등급 ' +
-            escapeHtml(String(it.vn_grade || "1")) +
+            '</h1><p class="vd-badge">' +
+            escapeHtml(
+                window.THEJHON_AUTH && THEJHON_AUTH.vendorGradeLabel
+                    ? THEJHON_AUTH.vendorGradeLabel(it.vn_grade)
+                    : String(it.vn_grade || "1") + "등급"
+            ) +
             "</p>" +
             '<p class="vd-spec">사업부문: <strong>' +
             escapeHtml(deptLabels(it)) +

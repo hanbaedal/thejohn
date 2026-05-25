@@ -24,8 +24,8 @@
             window.location.replace("index.html?denied=register");
             return false;
         }
-        if (!Auth.isSupervisorStaff || !Auth.isSupervisorStaff()) {
-            setStatus("총괄 관리자(thejohn)로 로그인한 뒤 이용해 주세요.", true);
+        if (!Auth.canManageRegisters || !Auth.canManageRegisters()) {
+            setStatus("관리자로 로그인한 뒤 이용해 주세요.", true);
             if (runBtn) runBtn.disabled = true;
             return false;
         }

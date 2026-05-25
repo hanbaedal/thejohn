@@ -166,6 +166,22 @@ a.dz-logo--compact:focus-visible {
     flex: 1;
     min-width: 0;
 }
+.site-header-brand {
+    display: flex;
+    align-items: center;
+    flex-shrink: 0;
+}
+.site-header-menu-scroll {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    flex: 1;
+    min-width: 0;
+}
+.site-header-menu-scroll .site-header-nav {
+    flex: 1;
+    min-width: 0;
+}
 .site-header-nav {
     display: flex;
     align-items: center;
@@ -330,13 +346,12 @@ body.nav-admin-menus .site-header-nav a.header-nav-link[href="vendor-register.ht
     flex-shrink: 0;
     margin-left: auto;
 }
-/* 노트북: 로그인 회사명 — 날짜 왼쪽 (site-header-actions) */
+/* 로그인 회사명 — 노트북: 날짜 왼쪽 / 스마트폰: 메뉴 아래 줄 */
 .header-session-company {
     display: none;
     box-sizing: border-box;
     margin: 0;
-    padding: 0 0.15rem 0 0;
-    max-width: min(16rem, 30vw);
+    padding: 0;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -344,17 +359,24 @@ body.nav-admin-menus .site-header-nav a.header-nav-link[href="vendor-register.ht
     font-weight: 700;
     color: var(--header-footer-text);
     line-height: 1.25;
-    align-self: center;
-    flex-shrink: 1;
     min-width: 0;
 }
+.header-session-company--wide {
+    padding: 0 0.15rem 0 0;
+    max-width: min(16rem, 30vw);
+    align-self: center;
+    flex-shrink: 1;
+}
 @media (min-width: 1024px) {
-    .header-session-company.header-session-company--show {
+    .header-session-company--wide.header-session-company--show {
         display: block;
     }
 }
-@media (max-width: 1023px) {
-    .header-session-company {
+.header-session-company--mobile {
+    display: none;
+}
+@media (min-width: 721px) {
+    .header-session-company--mobile {
         display: none !important;
     }
 }
@@ -844,35 +866,44 @@ a.company-org-node:focus-visible {
 }
 
 @media (max-width: 720px) {
-    /* 헤더·본문은 노트북과 동일 타이포·표시(:root 패딩·기본 스타일). 푸터만 기존 스마트폰용 레이아웃·여백 유지. */
+    /* 헤더: 로고·회사명 고정, 메뉴만 가로 스크롤. 푸터는 기존 스마트폰 레이아웃 유지. */
     .site-header {
         position: -webkit-sticky;
         position: sticky;
         top: 0;
         flex-shrink: 0;
-        flex-direction: row;
-        align-items: center;
-        flex-wrap: nowrap;
-        justify-content: flex-start;
-        gap: 0.45rem;
+        display: grid;
+        grid-template-columns: auto minmax(0, 1fr);
+        grid-template-rows: auto auto;
+        align-items: start;
+        gap: 0.2rem 0.45rem;
+        min-width: 0;
+        overflow: visible;
+    }
+    .site-header-brand {
+        grid-column: 1;
+        grid-row: 1;
+        align-self: center;
+    }
+    .page-home .site-header-brand .dz-logo {
+        width: 2.75rem;
+        height: 2.75rem;
+    }
+    .site-header-menu-scroll {
+        grid-column: 2;
+        grid-row: 1;
+        flex: none;
         min-width: 0;
         overflow-x: auto;
         overflow-y: visible;
         -webkit-overflow-scrolling: touch;
         scrollbar-width: none;
         -ms-overflow-style: none;
+        gap: 0.35rem;
+        padding-bottom: 0.05rem;
     }
-    .site-header::-webkit-scrollbar {
+    .site-header-menu-scroll::-webkit-scrollbar {
         display: none;
-    }
-    .site-header-start {
-        flex-direction: row;
-        align-items: center;
-        flex-wrap: nowrap;
-        gap: 0.45rem;
-        flex: 0 0 auto;
-        min-width: min-content;
-        width: auto;
     }
     .site-header-nav {
         flex: 0 0 auto;
@@ -882,7 +913,7 @@ a.company-org-node:focus-visible {
         overflow: visible;
         justify-content: flex-start;
         gap: 0.2rem;
-        padding: 0.2rem 0 0.35rem;
+        padding: 0.2rem 0 0.1rem;
     }
     .header-nav-link {
         flex-shrink: 0;
@@ -892,8 +923,20 @@ a.company-org-node:focus-visible {
     .site-header-nav .header-nav-link[href="vendor-register.html"] {
         display: none !important;
     }
-    .header-session-company {
+    .header-session-company--wide {
         display: none !important;
+    }
+    .header-session-company--mobile.header-session-company--show {
+        display: block;
+        grid-column: 2;
+        grid-row: 2;
+        max-width: 100%;
+        padding: 0 0 0.15rem 0.05rem;
+        font-size: 0.78rem;
+        line-height: 1.2;
+    }
+    .site-header:not(.header-has-company-mobile) {
+        grid-template-rows: auto;
     }
     .site-header-actions {
         margin-left: 0;

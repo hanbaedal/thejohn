@@ -64,10 +64,13 @@
                           '" loading="lazy" width="200" height="120"></div>'
                         : '<div class="sp-partner-logo-wrap sp-partner-logo-wrap--empty" role="img" aria-label="로고 없음">로고 없음</div>';
                     var noteRaw = String(it.vn_note || "").trim();
-                    var grade = it.vn_grade || "1";
+                    var gradeLbl =
+                        window.THEJHON_AUTH && THEJHON_AUTH.vendorGradeLabel
+                            ? THEJHON_AUTH.vendorGradeLabel(it.vn_grade)
+                            : String(it.vn_grade || "1") + "등급";
                     var noteBlock = noteRaw
-                        ? '<div class="sp-partner-note"><span class="sp-partner-label">회사 상황 · 등급 ' +
-                          escapeHtml(grade) +
+                        ? '<div class="sp-partner-note"><span class="sp-partner-label">회사 상황 · ' +
+                          escapeHtml(gradeLbl) +
                           '</span><p class="sp-partner-note-body">' +
                           escapeMultiline(noteRaw) +
                           "</p></div>"

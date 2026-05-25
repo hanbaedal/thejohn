@@ -1,7 +1,6 @@
 const { getDb } = require("../db");
 const { loginLookupFilter, verifyLoginPassword, setLoginPassword, normalizeLoginId } = require("./loginAccount");
 const {
-    SUPERVISOR_LOGIN,
     toPublic,
     buildFromBody,
     toDbDoc,
@@ -55,7 +54,7 @@ async function createStaffAccount(
 ) {
     const idn = normalizeLoginId(loginId);
     if (!idn) throw new Error("아이디를 입력해 주세요.");
-    if (isReservedStaffLoginId(loginId) && role !== "supervisor") {
+    if (isReservedStaffLoginId(loginId)) {
         throw new Error("사용할 수 없는 아이디입니다.");
     }
     if (role !== "admin") throw new Error("관리자(admin)만 추가할 수 있습니다.");
@@ -93,7 +92,6 @@ async function createStaffAccount(
 }
 
 module.exports = {
-    SUPERVISOR_LOGIN,
     ensureStaffIndexes,
     findStaffByLogin,
     verifyStaffPassword,

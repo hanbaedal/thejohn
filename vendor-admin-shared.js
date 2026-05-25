@@ -23,6 +23,13 @@
         return "담당: " + id;
     }
 
+    function vendorGradeLabel(grade) {
+        var n = parseInt(grade, 10);
+        if (n === 4) n = 3;
+        if (n >= 1 && n <= 3) return n + "등급";
+        return "1등급";
+    }
+
     function isSupervisorView() {
         return (
             global.THEJHON_AUTH &&
@@ -72,6 +79,7 @@
     global.THEJHON_VENDOR_ADMIN = {
         escapeHtml: escapeHtml,
         registeredByMeta: registeredByMeta,
+        vendorGradeLabel: vendorGradeLabel,
         isSupervisorView: isSupervisorView,
         initStaffFilter: initStaffFilter
     };

@@ -1,7 +1,6 @@
 const { F: VF, fromLegacyDoc: vendorFromLegacy } = require("./vendorFields");
 
 const DEFAULT_ORDER_VENDOR_STAFF = "aksangsa";
-const SUPERVISOR_LOGIN = "thejohn";
 
 function normalizeStaffLoginId(loginId) {
     return String(loginId || "")
@@ -12,12 +11,6 @@ function normalizeStaffLoginId(loginId) {
 function isStaffAuth(auth) {
     if (!auth) return false;
     return auth.role === "supervisor" || auth.role === "admin";
-}
-
-function isSupervisorAuth(auth) {
-    if (!auth) return false;
-    if (auth.role === "supervisor") return true;
-    return normalizeStaffLoginId(auth.userId) === normalizeStaffLoginId(SUPERVISOR_LOGIN);
 }
 
 function getOrderEnabledStaffId() {
@@ -35,7 +28,7 @@ function vendorCanPlaceOrders(vendorDoc) {
     return reg === getOrderEnabledStaffId();
 }
 
-/** 주문서관리 메뉴·API — aksangsa 관리자만 (총괄 thejohn 제외) */
+/** 주문서관리 메뉴·API — aksangsa 관리자만 */
 function staffCanAccessOrderManage(auth) {
     if (!auth || auth.role !== "admin") return false;
     return normalizeStaffLoginId(auth.userId) === getOrderEnabledStaffId();

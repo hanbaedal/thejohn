@@ -89,7 +89,10 @@
                         encodeURIComponent(it.id) +
                         "&from=new";
                     var deptTxt = vendorDeptLabels(it) || "미지정";
-                    var grade = it.vn_grade || "1";
+                    var gradeTxt =
+                        VA && VA.vendorGradeLabel
+                            ? VA.vendorGradeLabel(it.vn_grade)
+                            : String(it.vn_grade || "1") + "등급";
                     return (
                         '<li><a class="vl-admin-item" href="' +
                         PF.escapeHtml(href) +
@@ -97,8 +100,8 @@
                         PF.escapeHtml(it.vn_company || "(이름 없음)") +
                         '</span><span class="vl-admin-meta">' +
                         PF.escapeHtml(deptTxt) +
-                        " · 등급 " +
-                        PF.escapeHtml(String(grade)) +
+                        " · " +
+                        PF.escapeHtml(gradeTxt) +
                         (it.loginId ? " · " + PF.escapeHtml(String(it.loginId)) : "") +
                         PF.escapeHtml(registrarSuffix(it)) +
                         "</span></a></li>"

@@ -89,7 +89,10 @@
                         encodeURIComponent(it.id) +
                         "&from=partner";
                     var deptTxt = vendorDeptLabels(it) || "미지정";
-                    var grade = it.vn_grade || "1";
+                    var gradeTxt =
+                        VA && VA.vendorGradeLabel
+                            ? VA.vendorGradeLabel(it.vn_grade)
+                            : String(it.vn_grade || "1") + "등급";
                     return (
                         '<li><a class="vl-admin-item" href="' +
                         PF.escapeHtml(href) +
@@ -97,8 +100,8 @@
                         PF.escapeHtml(it.vn_company || "(이름 없음)") +
                         '</span><span class="vl-admin-meta">' +
                         PF.escapeHtml(deptTxt) +
-                        " · 등급 " +
-                        PF.escapeHtml(String(grade)) +
+                        " · " +
+                        PF.escapeHtml(gradeTxt) +
                         (it.loginId ? " · " + PF.escapeHtml(String(it.loginId)) : "") +
                         PF.escapeHtml(registrarSuffix(it)) +
                         "</span></a></li>"
@@ -118,10 +121,7 @@
             cachedItems = items;
             renderList();
             var n = filteredItems().length;
-            var scope =
-                VA && VA.isSupervisorView && VA.isSupervisorView()
-                    ? " (총괄: 전체·담당 필터)"
-                    : " (내 담당 + 기존 공통 업체)";
+            var scope = " (내 담당 + 기존 공통 업체)";
             setStatus(
                 (filterDept ? PF.deptLabel(catalog, filterDept) + " · " : "전체 · ") +
                     n +

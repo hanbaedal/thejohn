@@ -1,7 +1,7 @@
 const { extractBearer, verifyToken } = require("./auth");
 const { isSupervisorAuth } = require("../lib/vendorAccess");
 
-/** 총괄 thejohn (및 role supervisor) 전용 */
+/** 레거시: role supervisor 전용 (thejohn 은 admin 과 동일 — 신규 코드는 requireRole 사용) */
 function requireSupervisor(req, res, next) {
     const token = extractBearer(req);
     if (!token) {
@@ -13,7 +13,7 @@ function requireSupervisor(req, res, next) {
         if (!isSupervisorAuth(payload)) {
             return res.status(403).json({
                 ok: false,
-                error: "총괄 관리자(thejohn)만 실행할 수 있습니다."
+                error: "이 기능을 사용할 권한이 없습니다."
             });
         }
         next();

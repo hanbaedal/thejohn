@@ -21,7 +21,7 @@ async function countEmptyProductDept(db) {
 
 /**
  * MongoDB products·vendors·staff 를 현재 프로그램 필드 형식으로 일괄 변환
- * (thejohn 총괄 관리자 API에서만 호출)
+ * (관리자 API — requireRole admin)
  */
 async function runFullDataMigration(db) {
     const before = {

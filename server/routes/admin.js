@@ -1,6 +1,6 @@
 const express = require("express");
 const { getDb } = require("../db");
-const { requireSupervisor } = require("../middleware/supervisor");
+const { requireRole } = require("../middleware/auth");
 const {
     runFullDataMigration,
     productDeptSummary,
@@ -9,7 +9,7 @@ const {
 
 const router = express.Router();
 
-router.get("/migrate-preview", requireSupervisor, async function (req, res) {
+router.get("/migrate-preview", requireRole("supervisor", "admin"), async function (req, res) {
     try {
         const db = getDb();
         res.json({
@@ -25,7 +25,7 @@ router.get("/migrate-preview", requireSupervisor, async function (req, res) {
     }
 });
 
-router.post("/migrate-data", requireSupervisor, async function (req, res) {
+router.post("/migrate-data", requireRole("supervisor", "admin"), async function (req, res) {
     try {
         const report = await runFullDataMigration(getDb());
         res.json(report);

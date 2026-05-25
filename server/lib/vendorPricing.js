@@ -19,14 +19,12 @@ function priceKeyForGrade(grade) {
     const g = parseGrade(grade) || "1";
     if (g === "2") return PF.price2;
     if (g === "3") return PF.price3;
-    if (g === "4") return PF.price4;
     return PF.price1;
 }
 
 function priceLabelForGrade(grade) {
     const g = parseGrade(grade) || "1";
-    if (g === "4") return "구매가";
-    return "가격" + g;
+    return g + "등급";
 }
 
 function resolveVendorUnitPrice(productDoc, vendorDoc) {

@@ -40,8 +40,6 @@ const EXPECTED_STAFF_LOGIN_IDS = DEFAULT_STAFF_ACCOUNTS.map(function (s) {
     return s.loginId;
 });
 
-const SUPERVISOR_LOGIN = DEFAULT_STAFF_ACCOUNTS[0].loginId;
-
 function str(v) {
     return String(v ?? "").trim();
 }
@@ -223,7 +221,6 @@ module.exports = {
     DEFAULT_STAFF_ACCOUNTS,
     DEFAULT_STAFF_IDS,
     EXPECTED_STAFF_LOGIN_IDS,
-    SUPERVISOR_LOGIN,
     toPublic,
     buildFromBody,
     toDbDoc,

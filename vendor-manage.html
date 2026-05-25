@@ -60,7 +60,7 @@
             </a>
             <a href="data-migrate-admin.html" class="company-division-card" id="vm-data-migrate" hidden>
                 <h2>DB 형식 변환</h2>
-                <p>예전 products·vendors 레코드를 현재 프로그램 형식으로 맞춤 (thejohn)</p>
+                <p>예전 products·vendors 레코드를 현재 프로그램 형식으로 맞춤</p>
             </a>
         </div>
     </main>
@@ -95,11 +95,7 @@
                     <dt>사업자등록번호</dt>
                     <dd>130-45-32935</dd>
                 </div>
-                <div class="site-footer-item">
-                    <dt>통신판매업신고</dt>
-                    <dd>제0000-서울강남-0000호</dd>
-                </div>
-                <div class="site-footer-item site-footer-item--full">
+<div class="site-footer-item site-footer-item--full">
                     <dt>주소</dt>
                     <dd>경기도 부천시 원미구 부천로 130번길 5, 삼도빌딩 1층</dd>
                 </div>
@@ -147,10 +143,6 @@
                     window.THEJHON_AUTH &&
                     THEJHON_AUTH.canShowOrderManageMenu &&
                     THEJHON_AUTH.canShowOrderManageMenu();
-                var supervisor =
-                    window.THEJHON_AUTH &&
-                    THEJHON_AUTH.isSupervisorStaff &&
-                    THEJHON_AUTH.isSupervisorStaff();
                 if (hubNews) {
                     hubNews.hidden = !admin;
                     hubNews.setAttribute("aria-hidden", admin ? "false" : "true");
@@ -164,8 +156,8 @@
                     orderCard.setAttribute("aria-hidden", orderAdmin ? "false" : "true");
                 }
                 if (migrateCard) {
-                    migrateCard.hidden = !supervisor;
-                    migrateCard.setAttribute("aria-hidden", supervisor ? "false" : "true");
+                    migrateCard.hidden = !admin;
+                    migrateCard.setAttribute("aria-hidden", admin ? "false" : "true");
                 }
             }
             syncSupportHubAdminCards();
