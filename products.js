@@ -4,9 +4,8 @@
     var root = document.getElementById("ps-root");
     var deptNav = document.getElementById("ps-dept-nav");
 
-    var cachedItems = [];
     var activeDept = "jeongyuk";
-    var loaded = false;
+    var loadToken = 0;
 
     function escapeHtml(s) {
         return String(s)
@@ -23,24 +22,16 @@
     }
 
     function priceHtml(it) {
-        if (window.THEJHON_AUTH && THEJHON_AUTH.buildProductPriceHtml) {
-            return THEJHON_AUTH.buildProductPriceHtml(it, {
-                mode: "inline",
-                formatWon: formatWon,
-                escapeHtml: escapeHtml
-            });
-        }
+        try {
+            if (window.THEJHON_AUTH && THEJHON_AUTH.buildProductPriceHtml) {
+                return THEJHON_AUTH.buildProductPriceHtml(it, {
+                    mode: "inline",
+                    formatWon: formatWon,
+                    escapeHtml: escapeHtml
+                });
+            }
+        } catch (ignore) {}
         return '<span class="ps-price-masked">가격: 비공개</span>';
-    }
-
-    function itemDept(it) {
-        return catalog ? catalog.normalizeDept(it.pd_dept) : "";
-    }
-
-    function itemsForDept(deptId) {
-        return cachedItems.filter(function (it) {
-            return itemDept(it) === deptId;
-        });
     }
 
     function syncUrl() {
@@ -75,21 +66,13 @@
         if (!items.length) {
             return '<p class="ps-empty">이 분야에 등록된 상품이 없습니다.</p>';
         }
-        var sorted = items.slice().sort(function (a, b) {
-            return (b.updatedAt || 0) - (a.updatedAt || 0);
-        });
         return (
             '<ul class="ps-grid" role="list">' +
-            sorted
+            items
                 .map(function (it) {
                     var href = "product-detail.html?id=" + encodeURIComponent(it.id);
                     var thumb;
-                    if (it.pd_image) {
-                        thumb =
-                            '<img class="ps-thumb" src="' +
-                            escapeHtml(it.pd_image) +
-                            '" alt="">';
-                    } else if (it.pd_has_image) {
+                    if (it.pd_has_image) {
                         thumb =
                             '<span class="ps-thumb ps-thumb--empty" aria-hidden="true">사진</span>';
                     } else {
@@ -121,23 +104,14 @@
         );
     }
 
-    function renderContent() {
+    function showList(items) {
         if (!root) return;
-        if (!loaded) return;
-        var items = itemsForDept(activeDept);
-        root.innerHTML = renderProductList(items);
-    }
-
-    function renderAll() {
-        syncDeptActive();
-        renderContent();
-        syncUrl();
-    }
-
-    function setDept(deptId) {
-        if (!catalog || !catalog.normalizeDept(deptId)) return;
-        activeDept = deptId;
-        renderAll();
+        try {
+            root.innerHTML = renderProductList(items || []);
+        } catch (e) {
+            root.innerHTML =
+                '<p class="ps-empty">목록을 표시하는 중 오류가 났습니다. 새로고침해 주세요.</p>';
+        }
     }
 
     function loadErrorHtml(msg) {
@@ -145,39 +119,58 @@
         return (
             '<p class="ps-empty">상품 목록을 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.' +
             (detail ? "<br><small>" + detail + "</small>" : "") +
-            "</p>"
+            '</p><p class="ps-empty"><button type="button" class="btn btn-primary" id="ps-retry">다시 시도</button></p>'
         );
     }
 
-    function loadAndRender(attempt) {
+    function bindRetry() {
+        var btn = document.getElementById("ps-retry");
+        if (btn) {
+            btn.addEventListener("click", function () {
+                loadDeptProducts(0);
+            });
+        }
+    }
+
+    function loadDeptProducts(attempt) {
         if (!root) return;
         if (!api) {
             root.innerHTML = loadErrorHtml("API 설정(thejhon-api.js)을 불러오지 못했습니다.");
             return;
         }
-        readUrlState();
-        syncDeptActive();
-        if (!loaded) {
-            root.innerHTML = '<p class="ps-empty">상품을 불러오는 중…</p>';
+        if (!catalog || !catalog.normalizeDept(activeDept)) {
+            activeDept = "jeongyuk";
         }
-        api.listProducts()
+
+        var token = ++loadToken;
+        root.innerHTML = '<p class="ps-empty">상품을 불러오는 중…</p>';
+
+        api.listProducts({ dept: activeDept })
             .then(function (items) {
-                cachedItems = items || [];
-                loaded = true;
-                renderAll();
+                if (token !== loadToken) return;
+                showList(items);
             })
             .catch(function (err) {
+                if (token !== loadToken) return;
                 var status = err && err.status;
-                var retry = (attempt || 0) < 2 && (status === 503 || !status);
+                var retry = (attempt || 0) < 3 && (status === 503 || status === 502 || !status);
                 if (retry) {
                     setTimeout(function () {
-                        loadAndRender((attempt || 0) + 1);
-                    }, status === 503 ? 2000 : 800);
+                        loadDeptProducts((attempt || 0) + 1);
+                    }, status === 503 ? 2500 : 1000);
                     return;
                 }
-                loaded = false;
                 root.innerHTML = loadErrorHtml((err && err.message) || "");
+                bindRetry();
             });
+    }
+
+    function setDept(deptId) {
+        if (!catalog || !catalog.normalizeDept(deptId)) return;
+        activeDept = deptId;
+        syncDeptActive();
+        syncUrl();
+        loadDeptProducts(0);
     }
 
     if (deptNav) {
@@ -188,5 +181,8 @@
         });
     }
 
-    loadAndRender();
+    readUrlState();
+    syncDeptActive();
+    syncUrl();
+    loadDeptProducts(0);
 })();

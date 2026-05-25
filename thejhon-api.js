@@ -46,10 +46,16 @@
     function parseJson(res) {
         return res.text().then(function (text) {
             if (!text) return {};
+            if (/^\s*</.test(text) || /<!DOCTYPE/i.test(text)) {
+                return {
+                    ok: false,
+                    error: "API가 HTML을 반환했습니다. 서버 배포·주소를 확인해 주세요."
+                };
+            }
             try {
                 return JSON.parse(text);
             } catch (e) {
-                return { ok: false, error: text || "응답 형식 오류" };
+                return { ok: false, error: "JSON 응답 형식 오류" };
             }
         });
     }
@@ -61,7 +67,7 @@
         }
         return fetch(apiUrl(path), opts).then(function (res) {
             return parseJson(res).then(function (data) {
-                if (!res.ok) {
+                if (!res.ok || (data && data.ok === false)) {
                     var msg = (data && data.error) || "요청에 실패했습니다.";
                     if (data && data.hint) msg += "\n\n" + data.hint;
                     var err = new Error(msg);
@@ -92,10 +98,15 @@
             return request("DELETE", path);
         },
         listProducts: function (opts) {
-            var q = "";
-            if (opts && opts.registeredBy) {
-                q = "?registeredBy=" + encodeURIComponent(String(opts.registeredBy));
+            var parts = [];
+            opts = opts || {};
+            if (opts.registeredBy) {
+                parts.push("registeredBy=" + encodeURIComponent(String(opts.registeredBy)));
             }
+            if (opts.dept) {
+                parts.push("dept=" + encodeURIComponent(String(opts.dept)));
+            }
+            var q = parts.length ? "?" + parts.join("&") : "";
             return request("GET", "/api/products" + q).then(function (d) {
                 return d.items || [];
             });

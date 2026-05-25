@@ -90,18 +90,26 @@ function productHasImage(doc) {
     return !!str(d[F.image]);
 }
 
-/** 목록 API용 — data URL 등 대용량 이미지는 제외(목록 JSON 과대 방지) */
+/** 목록 API용 — 이미지·설명 제외(대용량 base64 JSON 방지) */
 function toPublicListItem(doc) {
-    const pub = toPublic(doc);
-    if (!pub) return null;
-    const img = pub.pd_image;
-    if (img.length > 400 || /^data:/i.test(img)) {
-        pub.pd_has_image = true;
-        pub.pd_image = "";
-    } else {
-        pub.pd_has_image = !!img;
-    }
-    return pub;
+    const d = fromLegacyDoc(doc);
+    if (!d || !d.id) return null;
+    const prices = readPricesFromDoc(d);
+    const hasImage =
+        doc.pd_has_image === true ||
+        (doc.pd_has_image !== false && !!str(d[F.image]));
+    return {
+        id: d.id,
+        pd_name: str(d[F.name]),
+        pd_price1: prices.pd_price1,
+        pd_price2: prices.pd_price2,
+        pd_price3: prices.pd_price3,
+        pd_price4: prices.pd_price4,
+        pd_size: str(d[F.size]),
+        pd_dept: str(d[F.dept]),
+        pd_has_image: hasImage,
+        updatedAt: d.updatedAt || 0
+    };
 }
 
 function toPublic(doc) {

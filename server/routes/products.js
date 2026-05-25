@@ -19,6 +19,7 @@ const {
     applyProductRegistrationOnUpdate
 } = require("../lib/productAccess");
 const { normalizeStaffLoginId } = require("../lib/vendorAccess");
+const { normalizeDept, deptQuery } = require("../lib/productDept");
 
 const router = express.Router();
 
@@ -36,18 +37,54 @@ function optionalAuth(req) {
     }
 }
 
+function buildListFindQuery(auth, reqQuery) {
+    const base = buildProductListQuery(auth, reqQuery.registeredBy);
+    const deptPart = reqQuery.dept ? deptQuery(reqQuery.dept) : null;
+    if (!deptPart) return base;
+    if (!base || Object.keys(base).length === 0) return deptPart;
+    return { $and: [base, deptPart] };
+}
+
 router.get("/", async (req, res) => {
     try {
         const auth = optionalAuth(req);
-        const query = buildProductListQuery(auth, req.query.registeredBy);
+        const query = buildListFindQuery(auth, req.query);
         const items = await getDb()
             .collection("products")
-            .find(query)
-            .sort({ updatedAt: -1 })
+            .aggregate([
+                { $match: query },
+                { $sort: { updatedAt: -1 } },
+                {
+                    $project: {
+                        id: 1,
+                        [F.name]: 1,
+                        [F.price1]: 1,
+                        [F.price2]: 1,
+                        [F.price3]: 1,
+                        [F.price4]: 1,
+                        [F.size]: 1,
+                        [F.dept]: 1,
+                        pd_price: 1,
+                        price: 1,
+                        updatedAt: 1,
+                        pd_has_image: {
+                            $gt: [
+                                {
+                                    $strLenCP: {
+                                        $ifNull: ["$" + F.image, ""]
+                                    }
+                                },
+                                0
+                            ]
+                        }
+                    }
+                }
+            ])
             .toArray();
         res.json({
             ok: true,
             items: items.map(toPublicListItem).filter(Boolean),
+            dept: req.query.dept ? normalizeDept(req.query.dept) : "",
             scope: auth && isStaffAuth(auth) ? "staff" : "public"
         });
     } catch (e) {

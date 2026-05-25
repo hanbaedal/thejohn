@@ -4,5 +4,12 @@
  * - 'https://xxx.onrender.com' : 가비아 웹호스팅(정적만) + API 분리 배포 시
  */
 (function (global) {
-    global.THEJHON_API_BASE_URL = "";
+    var base = "";
+    if (typeof location !== "undefined" && location.hostname) {
+        var host = String(location.hostname).toLowerCase();
+        if (host === "thejohn.co.kr") {
+            base = "https://www.thejohn.co.kr";
+        }
+    }
+    global.THEJHON_API_BASE_URL = base;
 })(typeof window !== "undefined" ? window : this);
