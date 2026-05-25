@@ -1,3 +1,6 @@
+/**
+ * 상품 리스트(관리) — 사업부문(products.js)과 동일하게 THEJHON_API.listProducts 사용
+ */
 (function () {
     var api = window.THEJHON_API;
     var PF = window.THEJHON_PRODUCT_FORM;
@@ -12,6 +15,7 @@
     var cachedItems = [];
     var filterDept = "";
     var filterStaff = "all";
+    var loadToken = 0;
 
     function productRecordType(it) {
         return String((it && it.pd_record_type) || "catalog")
@@ -31,6 +35,18 @@
 
     function itemDept(it) {
         return catalog ? catalog.normalizeDept(it.pd_dept) : String(it.pd_dept || "").trim().toLowerCase();
+    }
+
+    /** 사업부문(products.js)과 동일 — API 쿼리만 구성 */
+    function listOpts() {
+        var opts = {};
+        if (filterDept && catalog && catalog.normalizeDept(filterDept)) {
+            opts.dept = catalog.normalizeDept(filterDept);
+        }
+        if (filterStaff && filterStaff !== "all" && VA && VA.isSupervisorView && VA.isSupervisorView()) {
+            opts.registeredBy = filterStaff;
+        }
+        return opts;
     }
 
     function filteredItems() {
@@ -104,40 +120,60 @@
         updateStatusLine();
     }
 
-    function loadProducts(attempt) {
-        var opts = {};
-        if (filterStaff && filterStaff !== "all" && VA && VA.isSupervisorView && VA.isSupervisorView()) {
-            opts.registeredBy = filterStaff;
-        }
-        setStatus(attempt ? "다시 불러오는 중…" : "불러오는 중…");
-        return api.listProducts(opts).then(function (items) {
-            cachedItems = Array.isArray(items) ? items : [];
-            renderList();
-        }).catch(function (err) {
-            var status = err && err.status;
-            var retry = (attempt || 0) < 3 && (status === 503 || status === 502 || status === 500 || !status);
-            if (retry) {
-                return new Promise(function (resolve) {
-                    setTimeout(resolve, status === 503 ? 2500 : 900);
-                }).then(function () {
-                    return loadProducts((attempt || 0) + 1);
-                });
-            }
-            throw err;
-        });
+    function loadErrorHtml(msg) {
+        var detail = msg ? escapeHtml(msg) : "";
+        return (
+            '<p class="am-list-empty">상품 목록을 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.' +
+            (detail ? "<br><small>" + detail + "</small>" : "") +
+            '</p><p class="am-list-empty"><button type="button" class="btn btn-primary" id="pl-retry">다시 시도</button></p>'
+        );
     }
 
-    function bootstrapThenLoad() {
-        var p = Promise.resolve();
-        if (THEJHON_AUTH.normalizeLegacySession) {
-            THEJHON_AUTH.normalizeLegacySession();
+    function bindRetry() {
+        var btn = document.getElementById("pl-retry");
+        if (btn) {
+            btn.addEventListener("click", function () {
+                loadProducts(0);
+            });
         }
-        if (api.checkSession) {
-            p = api.checkSession().catch(function () {});
+    }
+
+    /** products.js loadDeptProducts 와 동일 패턴 */
+    function loadProducts(attempt) {
+        if (!listEl) return;
+        if (!api || !api.listProducts) {
+            listEl.innerHTML = loadErrorHtml("API(thejhon-api.js)를 불러오지 못했습니다.");
+            bindRetry();
+            return;
         }
-        return p.then(function () {
-            return loadProducts(0);
-        });
+
+        var token = ++loadToken;
+        setStatus(attempt ? "다시 불러오는 중…" : "불러오는 중…");
+        listEl.innerHTML = '<p class="am-list-empty">불러오는 중…</p>';
+
+        return api
+            .listProducts(listOpts())
+            .then(function (items) {
+                if (token !== loadToken) return;
+                cachedItems = Array.isArray(items) ? items : [];
+                renderList();
+            })
+            .catch(function (err) {
+                if (token !== loadToken) return;
+                var status = err && err.status;
+                var retry = (attempt || 0) < 3 && (status === 503 || status === 502 || !status);
+                if (retry) {
+                    setTimeout(function () {
+                        loadProducts((attempt || 0) + 1);
+                    }, status === 503 ? 2500 : 1000);
+                    return;
+                }
+                var msg = (err && err.message) || "";
+                if (status) msg += (msg ? " " : "") + "(HTTP " + status + ")";
+                listEl.innerHTML = loadErrorHtml(msg);
+                bindRetry();
+                setStatus(msg || "목록을 불러오지 못했습니다.", true);
+            });
     }
 
     if (!window.THEJHON_AUTH || !THEJHON_AUTH.getRegisterAccess) {
@@ -145,14 +181,13 @@
         return;
     }
 
+    if (THEJHON_AUTH.normalizeLegacySession) {
+        THEJHON_AUTH.normalizeLegacySession();
+    }
+
     var access = THEJHON_AUTH.getRegisterAccess();
     if (!access.allowed) {
         setStatus(access.reason, true);
-        return;
-    }
-
-    if (!api || !api.listProducts) {
-        setStatus("API를 불러오지 못했습니다.", true);
         return;
     }
 
@@ -164,7 +199,7 @@
             showAll: true,
             onSelect: function (deptId) {
                 filterDept = deptId;
-                renderList();
+                loadProducts(0);
             }
         });
         if (deptPicker && deptPicker.setValue) deptPicker.setValue("");
@@ -176,17 +211,10 @@
             selectEl: staffFilterEl,
             onChange: function (val) {
                 filterStaff = val || "all";
-                bootstrapThenLoad().catch(function (err) {
-                    setStatus(err.message || "목록을 불러오지 못했습니다.", true);
-                });
+                loadProducts(0);
             }
         });
     }
 
-    bootstrapThenLoad().catch(function (err) {
-        var msg = (err && err.message) || "목록을 불러오지 못했습니다.";
-        if (err && err.status) msg += " (HTTP " + err.status + ")";
-        if (listEl) listEl.innerHTML = "";
-        setStatus(msg, true);
-    });
+    loadProducts(0);
 })();
