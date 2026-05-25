@@ -3,7 +3,7 @@ const { getDb } = require("../db");
 const { requireRole } = require("../middleware/auth");
 const { buildOrderPdfBuffer } = require("../lib/orderPdf");
 const { notifyOrderSms } = require("../lib/orderNotify");
-const { loginLookupFilter } = require("../lib/loginAccount");
+const { findVendorByLoginId } = require("../lib/loginResolve");
 const { resolveVendorUnitPrice } = require("../lib/vendorPricing");
 const { buildEnrichedOrder } = require("../lib/orderEnrich");
 const { deptLabel } = require("../lib/orderDeptLabels");
@@ -104,9 +104,7 @@ router.get("/", requireRole("admin"), async function (req, res) {
 router.post("/", requireRole("vendor"), async function (req, res) {
     try {
         const db = getDb();
-        const vendor = await db
-            .collection("vendors")
-            .findOne(loginLookupFilter(req.auth.userId || ""));
+        const vendor = await findVendorByLoginId(req.auth.userId || "");
         if (!vendor) {
             return res.status(403).json({ ok: false, error: "업체 정보를 찾을 수 없습니다." });
         }
@@ -117,6 +115,13 @@ router.post("/", requireRole("vendor"), async function (req, res) {
                     "주문 권한이 없습니다. 담당 거래처(" +
                     getOrderEnabledStaffId() +
                     ")에 등록된 업체만 주문할 수 있습니다."
+            });
+        }
+
+        if (!req.body || req.body.orderContactConfirmed !== true) {
+            return res.status(400).json({
+                ok: false,
+                error: "주문 담당자 확인에 체크해 주세요."
             });
         }
 
@@ -142,7 +147,9 @@ router.post("/", requireRole("vendor"), async function (req, res) {
             note: String((req.body && req.body.note) || "").trim(),
             totalAmount: totalAmount,
             createdAt: createdAt,
-            status: "submitted"
+            status: "submitted",
+            orderContactConfirmed: true,
+            orderContactConfirmedAt: createdAt
         });
 
         await db.collection("orders").insertOne(order);

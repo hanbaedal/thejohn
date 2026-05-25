@@ -139,6 +139,22 @@ function buildOrderPdfBuffer(order) {
         doc.moveDown(0.6);
         doc.fontSize(13).text("합계: " + formatWon(order.totalAmount), { align: "right" });
         doc.moveDown(0.5);
+        doc.fontSize(11).text("■ 주문 담당자 (본인 확인)", { underline: true });
+        doc.fontSize(10);
+        line(doc, "담당자: " + (order.vendorMgrName || ""));
+        line(doc, "연락처: " + (order.vendorMgrTel || ""));
+        if (order.orderContactConfirmed) {
+            line(
+                doc,
+                "확인: 주문 담당자 본인 확인 완료 (" +
+                    new Date(order.orderContactConfirmedAt || order.createdAt || Date.now()).toLocaleString(
+                        "ko-KR",
+                        { timeZone: "Asia/Seoul" }
+                    ) +
+                    ")"
+            );
+        }
+        doc.moveDown(0.45);
         doc.fontSize(8).fillColor("#555555").text(
             "본 주문서는 주문 시스템에서 자동 생성되었습니다.",
             { align: "center" }

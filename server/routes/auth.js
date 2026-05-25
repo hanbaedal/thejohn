@@ -1,6 +1,7 @@
 const express = require("express");
-const { signToken, extractBearer, verifyToken } = require("../middleware/auth");
-const { normalizeId, resolveFormLogin, findVendorByLoginId } = require("../lib/loginResolve");
+const { signToken, extractBearer, verifyToken, requireRole } = require("../middleware/auth");
+const { resolveFormLogin, findVendorByLoginId } = require("../lib/loginResolve");
+const { toPublic } = require("../lib/vendorFields");
 
 const router = express.Router();
 
@@ -51,11 +52,28 @@ router.post("/login", async (req, res) => {
             vendorRegisteredBy: result.vendorRegisteredBy || "",
             vendorRegisteredByName: result.vendorRegisteredByName || "",
             vendorOrderEnabled: !!result.vendorOrderEnabled,
+            vendorMgrName: result.vendorMgrName || "",
+            vendorMgrTel: result.vendorMgrTel || "",
+            vendorMgrEmail: result.vendorMgrEmail || "",
             token
         });
     } catch (e) {
         console.error("POST /api/auth/login", e);
         return res.status(500).json({ ok: false, error: "로그인 처리 중 오류가 발생했습니다." });
+    }
+});
+
+/** 업체 로그인 — 장바구니·주문 담당자 표시용 (비밀번호 제외) */
+router.get("/vendor-profile", requireRole("vendor"), async function (req, res) {
+    try {
+        const vendor = await findVendorByLoginId(req.auth.userId || "");
+        if (!vendor) {
+            return res.status(404).json({ ok: false, error: "업체 정보를 찾을 수 없습니다." });
+        }
+        return res.json({ ok: true, item: toPublic(vendor) });
+    } catch (e) {
+        console.error("GET /api/auth/vendor-profile", e);
+        return res.status(500).json({ ok: false, error: "업체 정보를 불러오지 못했습니다." });
     }
 });
 

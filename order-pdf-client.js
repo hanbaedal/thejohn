@@ -140,6 +140,28 @@
         doc.setFontSize(12);
         doc.text("합계: " + formatWon(order.totalAmount), 196, yRef.value, { align: "right" });
         yRef.value += 8;
+        doc.setFontSize(11);
+        doc.text("■ 주문 담당자 (본인 확인)", 14, yRef.value);
+        yRef.value += 6;
+        doc.setFontSize(10);
+        addLines(
+            doc,
+            [
+                order.vendorMgrName ? "담당자: " + order.vendorMgrName : "",
+                order.vendorMgrTel ? "연락처: " + order.vendorMgrTel : "",
+                order.orderContactConfirmed
+                    ? "확인: 주문 담당자 본인 확인 완료 (" +
+                      new Date(
+                          order.orderContactConfirmedAt || order.createdAt || Date.now()
+                      ).toLocaleString("ko-KR") +
+                      ")"
+                    : ""
+            ],
+            14,
+            yRef,
+            270
+        );
+        yRef.value += 4;
         doc.setFontSize(8);
         doc.text(
             "본 주문서는 주문 시스템에서 자동 생성되었습니다.",

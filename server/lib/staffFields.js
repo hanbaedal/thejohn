@@ -218,6 +218,7 @@ async function findExpectedStaffInDb(db) {
 
 module.exports = {
     F,
+    fromLegacyDoc,
     DEFAULT_STAFF_ACCOUNTS,
     DEFAULT_STAFF_IDS,
     EXPECTED_STAFF_LOGIN_IDS,

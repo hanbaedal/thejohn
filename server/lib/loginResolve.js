@@ -112,7 +112,10 @@ async function tryVendorLogin(vendor, loginId, password) {
         vendorGrade: vendorGradeFromDoc(vendor),
         vendorRegisteredBy: regBy,
         vendorRegisteredByName: String(vendor[VF.registeredByName] || "").trim(),
-        vendorOrderEnabled: vendorCanPlaceOrders(vendor)
+        vendorOrderEnabled: vendorCanPlaceOrders(vendor),
+        vendorMgrName: String(vendor[VF.mgrName] || "").trim(),
+        vendorMgrTel: String(vendor[VF.mgrTel] || "").trim(),
+        vendorMgrEmail: String(vendor[VF.mgrEmail] || "").trim()
     };
 }
 

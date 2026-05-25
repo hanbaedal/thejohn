@@ -16,6 +16,9 @@
     var VENDOR_GRADE_KEY = "thejhon_vendor_grade";
     var VENDOR_REGISTERED_BY_KEY = "thejhon_vendor_registered_by";
     var VENDOR_ORDER_ENABLED_KEY = "thejhon_vendor_order_enabled";
+    var VENDOR_MGR_NAME_KEY = "thejhon_vendor_mgr_name";
+    var VENDOR_MGR_TEL_KEY = "thejhon_vendor_mgr_tel";
+    var VENDOR_MGR_EMAIL_KEY = "thejhon_vendor_mgr_email";
     /** 주문·장바구니 허용 업체 등록 담당 (서버 ORDER_VENDOR_STAFF_ID 와 동일, 기본 aksangsa) */
     var ORDER_VENDOR_STAFF_ID = "aksangsa";
 
@@ -40,6 +43,9 @@
         sessionStorage.removeItem(VENDOR_GRADE_KEY);
         sessionStorage.removeItem(VENDOR_REGISTERED_BY_KEY);
         sessionStorage.removeItem(VENDOR_ORDER_ENABLED_KEY);
+        sessionStorage.removeItem(VENDOR_MGR_NAME_KEY);
+        sessionStorage.removeItem(VENDOR_MGR_TEL_KEY);
+        sessionStorage.removeItem(VENDOR_MGR_EMAIL_KEY);
         if (global.THEJHON_API && THEJHON_API.setToken) THEJHON_API.setToken("");
     }
 
@@ -70,8 +76,53 @@
             displayName: data.companyName || data.displayName || data.userId || "",
             vendorGrade: data.vendorGrade || "",
             vendorRegisteredBy: data.vendorRegisteredBy || "",
-            vendorOrderEnabled: !!data.vendorOrderEnabled
+            vendorOrderEnabled: !!data.vendorOrderEnabled,
+            vendorMgrName: data.vendorMgrName || "",
+            vendorMgrTel: data.vendorMgrTel || "",
+            vendorMgrEmail: data.vendorMgrEmail || ""
         };
+    }
+
+    function storeVendorOrderContact(contact) {
+        var c = contact || {};
+        var name = String(c.mgrName != null ? c.mgrName : c.vn_mgr_name || "").trim();
+        var tel = String(c.mgrTel != null ? c.mgrTel : c.vn_mgr_tel || "").trim();
+        var email = String(c.mgrEmail != null ? c.mgrEmail : c.vn_mgr_email || "").trim();
+        if (name) sessionStorage.setItem(VENDOR_MGR_NAME_KEY, name);
+        else sessionStorage.removeItem(VENDOR_MGR_NAME_KEY);
+        if (tel) sessionStorage.setItem(VENDOR_MGR_TEL_KEY, tel);
+        else sessionStorage.removeItem(VENDOR_MGR_TEL_KEY);
+        if (email) sessionStorage.setItem(VENDOR_MGR_EMAIL_KEY, email);
+        else sessionStorage.removeItem(VENDOR_MGR_EMAIL_KEY);
+    }
+
+    function getVendorOrderContact() {
+        return {
+            company: getLoggedInCompanyDisplayName(),
+            mgrName: String(sessionStorage.getItem(VENDOR_MGR_NAME_KEY) || "").trim(),
+            mgrTel: String(sessionStorage.getItem(VENDOR_MGR_TEL_KEY) || "").trim(),
+            mgrEmail: String(sessionStorage.getItem(VENDOR_MGR_EMAIL_KEY) || "").trim()
+        };
+    }
+
+    function fetchVendorOrderContactAsync() {
+        var cached = getVendorOrderContact();
+        if (cached.mgrName && cached.mgrTel) {
+            return Promise.resolve(cached);
+        }
+        if (!global.THEJHON_API || !THEJHON_API.getVendorProfile) {
+            return Promise.resolve(cached);
+        }
+        return THEJHON_API.getVendorProfile()
+            .then(function (item) {
+                if (item) {
+                    storeVendorOrderContact(item);
+                }
+                return getVendorOrderContact();
+            })
+            .catch(function () {
+                return getVendorOrderContact();
+            });
     }
 
     function parseVendorGrade(g) {
@@ -117,7 +168,10 @@
         displayName,
         vendorGrade,
         vendorRegisteredBy,
-        vendorOrderEnabled
+        vendorOrderEnabled,
+        vendorMgrName,
+        vendorMgrTel,
+        vendorMgrEmail
     ) {
         sessionStorage.setItem(AUTH_KEY, "1");
         sessionStorage.setItem(USER_ID_KEY, userId || "");
@@ -130,10 +184,18 @@
             else sessionStorage.removeItem(VENDOR_REGISTERED_BY_KEY);
             if (vendorOrderEnabled) sessionStorage.setItem(VENDOR_ORDER_ENABLED_KEY, "1");
             else sessionStorage.removeItem(VENDOR_ORDER_ENABLED_KEY);
+            storeVendorOrderContact({
+                mgrName: vendorMgrName,
+                mgrTel: vendorMgrTel,
+                mgrEmail: vendorMgrEmail
+            });
         } else {
             sessionStorage.removeItem(VENDOR_GRADE_KEY);
             sessionStorage.removeItem(VENDOR_REGISTERED_BY_KEY);
             sessionStorage.removeItem(VENDOR_ORDER_ENABLED_KEY);
+            sessionStorage.removeItem(VENDOR_MGR_NAME_KEY);
+            sessionStorage.removeItem(VENDOR_MGR_TEL_KEY);
+            sessionStorage.removeItem(VENDOR_MGR_EMAIL_KEY);
         }
         var label = companyName || "";
         if (isStaffRole(role) || role === "vendor") {
@@ -163,6 +225,9 @@
         sessionStorage.removeItem(VENDOR_GRADE_KEY);
         sessionStorage.removeItem(VENDOR_REGISTERED_BY_KEY);
         sessionStorage.removeItem(VENDOR_ORDER_ENABLED_KEY);
+        sessionStorage.removeItem(VENDOR_MGR_NAME_KEY);
+        sessionStorage.removeItem(VENDOR_MGR_TEL_KEY);
+        sessionStorage.removeItem(VENDOR_MGR_EMAIL_KEY);
     }
 
     function isLoggedIn() {
@@ -640,6 +705,9 @@
         syncVendorGradeFromSessionApi: syncVendorGradeFromSessionApi,
         VENDOR_GRADE_KEY: VENDOR_GRADE_KEY,
         getLoggedInCompanyDisplayName: getLoggedInCompanyDisplayName,
+        getVendorOrderContact: getVendorOrderContact,
+        storeVendorOrderContact: storeVendorOrderContact,
+        fetchVendorOrderContactAsync: fetchVendorOrderContactAsync,
         isNotebookViewport: isNotebookViewport,
         enforceRegisterPages: enforceRegisterPages,
         applyNavRegisterVisibility: applyNavRegisterVisibility,

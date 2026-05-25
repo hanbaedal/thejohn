@@ -178,6 +178,11 @@
         checkSession: function () {
             return request("GET", "/api/auth/session");
         },
+        getVendorProfile: function () {
+            return request("GET", "/api/auth/vendor-profile").then(function (d) {
+                return d.item;
+            });
+        },
         submitOrder: function (body) {
             return request("POST", "/api/orders", body);
         },

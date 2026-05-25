@@ -50,6 +50,40 @@
         .cart-msg--warn { background: #fff8e1; color: #6d4c00; }
         .cart-msg--err { background: #ffebee; color: #b71c1c; }
         .btn-remove { color: #c62828; background: transparent; border: none; cursor: pointer; font-size: 0.88rem; }
+        .cart-contact-confirm {
+            margin-top: 1.25rem;
+            padding: 1rem 1.1rem;
+            background: #f4f8fc;
+            border: 1px solid #c5d8eb;
+            border-radius: 12px;
+        }
+        .cart-contact-title { margin: 0 0 0.35rem; font-size: 1.05rem; color: #052a4d; }
+        .cart-contact-desc { margin: 0 0 0.75rem; font-size: 0.9rem; color: #3d5166; line-height: 1.5; }
+        .cart-contact-dl {
+            display: grid;
+            grid-template-columns: auto 1fr;
+            gap: 0.35rem 1rem;
+            margin: 0 0 0.85rem;
+            font-size: 0.95rem;
+        }
+        .cart-contact-dl dt { font-weight: 700; color: #2a4a5e; margin: 0; }
+        .cart-contact-dl dd { margin: 0; color: #1a2a3a; }
+        .cart-contact-check {
+            display: flex;
+            align-items: flex-start;
+            gap: 0.5rem;
+            font-size: 0.92rem;
+            line-height: 1.45;
+            cursor: pointer;
+        }
+        .cart-contact-check input { margin-top: 0.2rem; flex-shrink: 0; }
+        .cart-contact-warn {
+            margin: 0.5rem 0 0;
+            font-size: 0.88rem;
+            color: #b71c1c;
+        }
+        .cart-order-footer .site-footer-grid { max-width: 40rem; }
+        #btnSubmitOrder:disabled { opacity: 0.55; cursor: not-allowed; }
     </style>
     <script src="api-config.js"></script>
     <script src="thejhon-api.js"></script>
@@ -90,12 +124,12 @@
         <h1 class="cart-title">장바구니 · 주문</h1>
         <div id="cart-root" aria-live="polite"></div>
     </main>
-    <footer class="site-footer">
+    <footer class="site-footer cart-order-footer" id="cartOrderFooter" hidden aria-label="주문 담당자">
         <div class="site-footer-inner">
             <dl class="site-footer-grid">
-                <div class="site-footer-item"><dt>상호</dt><dd>(주)더존</dd></div>
-                <div class="site-footer-item"><dt>대표</dt><dd>이상범</dd></div>
-                <div class="site-footer-item"><dt>휴대폰</dt><dd><a class="footer-tel" href="tel:+821029288196">010-2928-8196</a></dd></div>
+                <div class="site-footer-item"><dt>주문 업체</dt><dd id="footerVendorCompany">—</dd></div>
+                <div class="site-footer-item"><dt>주문 담당</dt><dd id="footerVendorMgrName">—</dd></div>
+                <div class="site-footer-item"><dt>연락처</dt><dd id="footerVendorMgrTel">—</dd></div>
             </dl>
         </div>
     </footer>

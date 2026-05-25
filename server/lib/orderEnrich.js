@@ -104,6 +104,8 @@ async function buildEnrichedOrder(db, vendorDoc, items, extras) {
         vendorRegisteredByName: supplier.name,
         supplier: supplier,
         notifyStaff: supplier,
+        orderContactConfirmed: !!extras.orderContactConfirmed,
+        orderContactConfirmedAt: extras.orderContactConfirmedAt || 0,
         items: await enrichOrderItems(db, items)
     };
 }
