@@ -88,5 +88,6 @@ module.exports = {
     canWriteProduct,
     buildProductListQuery,
     stampNewProductRegistration,
-    applyProductRegistrationOnUpdate
+    applyProductRegistrationOnUpdate,
+    isStaffAuth
 };

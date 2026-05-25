@@ -11,13 +11,12 @@ const {
     F
 } = require("../lib/productFields");
 const {
-    isStaffAuth,
     canWriteProduct,
     buildProductListQuery,
     stampNewProductRegistration,
     applyProductRegistrationOnUpdate
 } = require("../lib/productAccess");
-const { normalizeStaffLoginId } = require("../lib/vendorAccess");
+const { normalizeStaffLoginId, isStaffAuth } = require("../lib/vendorAccess");
 const { normalizeDept, deptQuery } = require("../lib/productDept");
 
 const router = express.Router();
