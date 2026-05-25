@@ -428,6 +428,52 @@
         );
     }
 
+    /** 사업부문 목록 카드 — 미로그인: 가격 없음, 업체: 등급가, 관리자: 가격1만 */
+    function buildCatalogListPriceHtml(it, options) {
+        options = options || {};
+        var formatWon =
+            options.formatWon ||
+            function (n) {
+                var num = Number(n);
+                if (!isFinite(num)) return "0원";
+                return num.toLocaleString("ko-KR") + "원";
+            };
+        var escapeHtml =
+            options.escapeHtml ||
+            function (s) {
+                return String(s);
+            };
+
+        if (!isLoggedIn() || !canSeeProductPrices()) {
+            return "";
+        }
+
+        var role = getRole();
+        if (isStaffRole(role)) {
+            var p1 = Number(it.pd_price1);
+            if (!isFinite(p1)) p1 = 0;
+            return (
+                '<p class="ps-card-price"><span class="ps-card-price-label">가격1</span> ' +
+                escapeHtml(formatWon(p1)) +
+                "</p>"
+            );
+        }
+
+        if (role === "vendor") {
+            var priced = getVendorUnitPriceForProduct(it);
+            var lbl = priced.priceLabel || "가격1";
+            return (
+                '<p class="ps-card-price"><span class="ps-card-price-label">' +
+                escapeHtml(lbl) +
+                "</span> " +
+                escapeHtml(formatWon(priced.unitPrice)) +
+                "</p>"
+            );
+        }
+
+        return "";
+    }
+
     function getLoggedInCompanyDisplayName() {
         if (!isLoggedIn()) return "";
         var role = getRole();
@@ -584,6 +630,7 @@
         getPriceKeyForGrade: getPriceKeyForGrade,
         VENDOR_REGISTERED_BY_KEY: VENDOR_REGISTERED_BY_KEY,
         buildProductPriceHtml: buildProductPriceHtml,
+        buildCatalogListPriceHtml: buildCatalogListPriceHtml,
         canPlaceVendorOrders: canPlaceVendorOrders,
         canShowOrderManageMenu: canShowOrderManageMenu,
         getOrderManageAccess: getOrderManageAccess,

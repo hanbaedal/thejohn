@@ -21,17 +21,16 @@
         return num.toLocaleString("ko-KR") + "원";
     }
 
-    function priceHtml(it) {
+    function catalogPriceHtml(it) {
         try {
-            if (window.THEJHON_AUTH && THEJHON_AUTH.buildProductPriceHtml) {
-                return THEJHON_AUTH.buildProductPriceHtml(it, {
-                    mode: "inline",
+            if (window.THEJHON_AUTH && THEJHON_AUTH.buildCatalogListPriceHtml) {
+                return THEJHON_AUTH.buildCatalogListPriceHtml(it, {
                     formatWon: formatWon,
                     escapeHtml: escapeHtml
                 });
             }
         } catch (ignore) {}
-        return '<span class="ps-price-masked">가격: 비공개</span>';
+        return "";
     }
 
     function syncUrl() {
@@ -71,34 +70,39 @@
             items
                 .map(function (it) {
                     var href = "product-detail.html?id=" + encodeURIComponent(it.id);
-                    var thumb;
+                    var photo;
                     if (it.pd_has_image) {
-                        thumb =
-                            '<img class="ps-thumb ps-thumb--loading" alt="" loading="lazy" data-ps-cover="' +
+                        photo =
+                            '<img class="ps-card-photo ps-card-photo--loading" alt="" loading="lazy" data-ps-cover="' +
                             escapeHtml(it.id) +
                             '">';
                     } else {
-                        thumb =
-                            '<span class="ps-thumb ps-thumb--empty" aria-hidden="true">없음</span>';
+                        photo =
+                            '<span class="ps-card-photo ps-card-photo--empty" aria-hidden="true">사진<br>없음</span>';
                     }
-                    var spec = "";
+                    var specText = "";
                     if (it.pd_size && String(it.pd_size).trim()) {
-                        spec =
-                            '<span class="ps-card-spec">규격: ' +
-                            escapeHtml(String(it.pd_size).trim()) +
-                            "</span>";
+                        specText = escapeHtml(String(it.pd_size).trim());
+                    } else {
+                        specText = '<span class="ps-card-spec--none">—</span>';
                     }
+                    var priceBlock = catalogPriceHtml(it);
                     return (
                         '<li class="ps-card-wrap"><a class="ps-card-link" href="' +
                         escapeHtml(href) +
                         '">' +
-                        thumb +
-                        '<div class="ps-card-text"><h2 class="ps-card-title">' +
+                        '<div class="ps-card-visual">' +
+                        photo +
+                        "</div>" +
+                        '<div class="ps-card-body">' +
+                        '<h2 class="ps-card-title">' +
                         escapeHtml(it.pd_name || "") +
-                        '</h2><p class="ps-card-meta">' +
-                        priceHtml(it) +
-                        spec +
-                        "</p></div></a></li>"
+                        "</h2>" +
+                        '<p class="ps-card-spec">' +
+                        specText +
+                        "</p>" +
+                        priceBlock +
+                        "</div></a></li>"
                     );
                 })
                 .join("") +
@@ -134,6 +138,28 @@
         }
     }
 
+    function bindCoverImages() {
+        if (!root || !api) return;
+        root.querySelectorAll("img[data-ps-cover]").forEach(function (img) {
+            var id = img.getAttribute("data-ps-cover");
+            if (!id) return;
+            api.get("api/products/" + encodeURIComponent(id) + "/cover")
+                .then(function (data) {
+                    if (data && data.pd_image) {
+                        img.src = data.pd_image;
+                        img.classList.remove("ps-card-photo--loading");
+                    }
+                })
+                .catch(function () {
+                    var span = document.createElement("span");
+                    span.className = "ps-card-photo ps-card-photo--empty";
+                    span.setAttribute("aria-hidden", "true");
+                    span.innerHTML = "사진<br>없음";
+                    img.replaceWith(span);
+                });
+        });
+    }
+
     function loadDeptProducts(attempt) {
         if (!root) return;
         if (!api) {
@@ -151,6 +177,7 @@
             .then(function (items) {
                 if (token !== loadToken) return;
                 showList(items);
+                bindCoverImages();
             })
             .catch(function (err) {
                 if (token !== loadToken) return;
@@ -186,34 +213,5 @@
     readUrlState();
     syncDeptActive();
     syncUrl();
-    function bindCoverImages() {
-        if (!root || !api) return;
-        root.querySelectorAll("img[data-ps-cover]").forEach(function (img) {
-            var id = img.getAttribute("data-ps-cover");
-            if (!id) return;
-            api.get("api/products/" + encodeURIComponent(id) + "/cover")
-                .then(function (data) {
-                    if (data && data.pd_image) img.src = data.pd_image;
-                })
-                .catch(function () {
-                    img.replaceWith(
-                        (function () {
-                            var s = document.createElement("span");
-                            s.className = "ps-thumb ps-thumb--empty";
-                            s.setAttribute("aria-hidden", "true");
-                            s.textContent = "사진";
-                            return s;
-                        })()
-                    );
-                });
-        });
-    }
-
-    var _showList = showList;
-    showList = function (items) {
-        _showList(items);
-        bindCoverImages();
-    };
-
     loadDeptProducts(0);
 })();
