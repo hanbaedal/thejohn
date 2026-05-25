@@ -5,7 +5,7 @@ const { buildOrderPdfBuffer } = require("../lib/orderPdf");
 const { notifyOrderSms } = require("../lib/orderNotify");
 const { findVendorByLoginId } = require("../lib/loginResolve");
 const { resolveVendorUnitPrice } = require("../lib/vendorPricing");
-const { buildEnrichedOrder } = require("../lib/orderEnrich");
+const { buildEnrichedOrder, prepareOrderForPdf } = require("../lib/orderEnrich");
 const { deptLabel } = require("../lib/orderDeptLabels");
 const { F: PF } = require("../lib/productFields");
 const {
@@ -245,7 +245,8 @@ router.get("/:id/pdf", requireRole("vendor", "admin"), async function (req, res)
         if (!staffCanReadOrder(req.auth, order)) {
             return res.status(403).json({ ok: false, error: "권한이 없습니다." });
         }
-        const buf = await buildOrderPdfBuffer(order);
+        const pdfOrder = await prepareOrderForPdf(getDb(), order);
+        const buf = await buildOrderPdfBuffer(pdfOrder);
         res.setHeader("Content-Type", "application/pdf");
         res.setHeader(
             "Content-Disposition",

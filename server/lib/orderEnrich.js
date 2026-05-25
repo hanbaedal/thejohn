@@ -1,7 +1,7 @@
 const { F: VF, fromLegacyDoc: vendorFromLegacy, parseGrade } = require("./vendorFields");
 const { F: PF, fromLegacyDoc: productFromLegacy } = require("./productFields");
 const { deptLabel } = require("./orderDeptLabels");
-const { findStaffByLoginId } = require("./loginResolve");
+const { findStaffByLoginId, findVendorByLoginId } = require("./loginResolve");
 const {
     fromLegacyDoc: staffFromLegacy,
     getCompanyName: getStaffCompanyName,
@@ -39,7 +39,7 @@ async function staffSupplierFromLoginId(loginId) {
         name: getStaffCompanyName(staff) || id,
         ceo: getStaffCeoName(staff) || "",
         tel: str(d[SF.ceoTel]),
-        addr: ""
+        addr: str(d[SF.address] || staff.st_address)
     };
 }
 
@@ -110,9 +110,57 @@ async function buildEnrichedOrder(db, vendorDoc, items, extras) {
     };
 }
 
+/**
+ * PDF 생성용 — DB에 저장된 주문(과거 주문 포함)을 최신 발주서 양식에 맞게 보강
+ */
+async function prepareOrderForPdf(db, order) {
+    if (!order) return order;
+    const o = Object.assign({}, order);
+    let vendor = null;
+    if (o.vendorUserId) {
+        vendor = await findVendorByLoginId(o.vendorUserId);
+    }
+    const v = vendorFromLegacy(vendor) || {};
+
+    if (!str(o.vendorCompany)) o.vendorCompany = str(v[VF.company]);
+    if (!str(o.vendorAddr)) o.vendorAddr = str(v[VF.addr]);
+    if (!str(o.vendorPhone)) o.vendorPhone = str(v[VF.phone]);
+    if (!str(o.vendorMgrName)) o.vendorMgrName = str(v[VF.mgrName]);
+    if (!str(o.vendorMgrTel)) o.vendorMgrTel = str(v[VF.mgrTel]);
+    if (!str(o.vendorMgrEmail)) o.vendorMgrEmail = str(v[VF.mgrEmail]);
+    if (!str(o.vendorCeo)) o.vendorCeo = str(v[VF.ceo]);
+    if (!str(o.vendorCeoTel)) o.vendorCeoTel = str(v[VF.ceoTel]);
+
+    const supplierLogin =
+        str(o.vendorRegisteredBy) ||
+        (vendor ? await resolveSupplierStaffLoginId(vendor) : DEFAULT_STAFF_LOGIN);
+    o.vendorRegisteredBy = supplierLogin;
+    if (!o.supplier || !str(o.supplier.name)) {
+        o.supplier = await staffSupplierFromLoginId(supplierLogin);
+    }
+    if (!str(o.vendorRegisteredByName)) {
+        o.vendorRegisteredByName = o.supplier.name || supplierLogin;
+    }
+
+    o.items = await enrichOrderItems(db, Array.isArray(o.items) ? o.items : []);
+    let sum = 0;
+    o.items.forEach(function (it) {
+        const qty = Number(it.quantity) || 0;
+        const unit = Number(it.unitPrice) || 0;
+        if (!it.lineTotal && qty && unit) {
+            it.lineTotal = unit * qty;
+        }
+        sum += Number(it.lineTotal) || 0;
+    });
+    if (!o.totalAmount && sum) o.totalAmount = sum;
+
+    return o;
+}
+
 module.exports = {
     DEFAULT_STAFF_LOGIN,
     staffSupplierFromLoginId,
     buildEnrichedOrder,
+    prepareOrderForPdf,
     gradeLabel
 };
