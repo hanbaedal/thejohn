@@ -7,29 +7,68 @@
 
     (function ensureHeaderLayout() {
         var header = document.querySelector(".site-header");
-        if (!header || header.dataset.headerShell === "1") return;
-        var start = header.querySelector(".site-header-start");
-        if (!start) return;
-        var actions = header.querySelector(".site-header-actions");
-        var nav = start.querySelector(".site-header-nav");
-        var logo = start.querySelector(".dz-logo, .dz-logo--compact");
+        if (!header) return;
+
+        var nav =
+            header.querySelector(".site-header-menu-scroll-track .site-header-nav") ||
+            header.querySelector(".site-header-menu-scroll .site-header-nav") ||
+            header.querySelector(".site-header-start .site-header-nav") ||
+            header.querySelector(".site-header-nav");
         if (!nav) return;
 
-        var brand = document.createElement("div");
-        brand.className = "site-header-brand";
+        var actions = header.querySelector(".site-header-actions");
+        var logo =
+            header.querySelector(".site-header-brand .dz-logo") ||
+            header.querySelector(".site-header-brand .dz-logo--compact") ||
+            header.querySelector(".site-header-start .dz-logo") ||
+            header.querySelector(".site-header-start .dz-logo--compact");
 
-        var scroll = document.createElement("div");
-        scroll.className = "site-header-menu-scroll";
-        scroll.setAttribute("aria-label", "메뉴");
+        var brand = header.querySelector(".site-header-brand");
+        if (!brand) {
+            brand = document.createElement("div");
+            brand.className = "site-header-brand";
+            header.insertBefore(brand, header.firstChild);
+        }
+        if (logo && logo.parentNode !== brand) {
+            brand.appendChild(logo);
+        }
 
-        if (logo) brand.appendChild(logo);
-        scroll.appendChild(nav);
-        if (actions) scroll.appendChild(actions);
+        var start = header.querySelector(".site-header-start");
+        if (start) {
+            if (!logo) {
+                logo = start.querySelector(".dz-logo, .dz-logo--compact");
+                if (logo && logo.parentNode !== brand) brand.appendChild(logo);
+            }
+            start.remove();
+        }
 
-        header.insertBefore(brand, start);
-        header.insertBefore(scroll, start);
-        start.remove();
-        header.dataset.headerShell = "1";
+        var scroll = header.querySelector(".site-header-menu-scroll");
+        if (!scroll) {
+            scroll = document.createElement("div");
+            scroll.className = "site-header-menu-scroll";
+            scroll.setAttribute("aria-label", "메뉴");
+            if (brand.nextSibling) {
+                header.insertBefore(scroll, brand.nextSibling);
+            } else {
+                header.appendChild(scroll);
+            }
+        }
+
+        var track = scroll.querySelector(".site-header-menu-scroll-track");
+        if (!track) {
+            track = document.createElement("div");
+            track.className = "site-header-menu-scroll-track";
+            scroll.appendChild(track);
+        }
+
+        if (nav.parentNode !== track) {
+            track.appendChild(nav);
+        }
+        if (actions && actions.parentNode !== track) {
+            track.appendChild(actions);
+        }
+
+        header.dataset.headerShell = "2";
     })();
 
     (function injectCompactHomeLogo() {

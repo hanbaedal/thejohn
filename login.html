@@ -140,7 +140,7 @@
             form.addEventListener("submit", function (e) {
                 e.preventDefault();
                 var id = document.getElementById("userId").value.trim();
-                var pw = document.getElementById("password").value;
+                var pw = String(document.getElementById("password").value || "").trim();
                 if (!id || !pw) {
                     alert("아이디와 비밀번호를 입력해 주세요.");
                     return;
@@ -179,7 +179,10 @@
                             );
                             return;
                         }
-                        alert((err && err.message) || "로그인에 실패했습니다.");
+                        alert(
+                            (err && err.message) ||
+                                "아이디 또는 비밀번호가 올바르지 않습니다. 업체등록 시 입력한 비밀번호(8~16자)를 확인해 주세요."
+                        );
                     });
             });
         })();

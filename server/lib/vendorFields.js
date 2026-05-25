@@ -200,11 +200,12 @@ function buildFromBody(body, existing, loginId, password) {
 }
 
 function toDbDoc(id, built, existing) {
+    const passwordPlain = built.passwordPlain || "";
     const doc = {
         id,
         loginId: built.loginId,
         loginIdNorm: built.loginIdNorm,
-        password: built.passwordPlain || "",
+        password: passwordPlain,
         [F.company]: built.vn_company,
         [F.depts]: built.vn_depts,
         [F.ceo]: built.vn_ceo,
@@ -228,6 +229,13 @@ function toDbDoc(id, built, existing) {
         doc[F.registeredBy] = existing[F.registeredBy];
         doc[F.registeredByName] = existing[F.registeredByName] || "";
         if (existing[F.registeredAt]) doc[F.registeredAt] = existing[F.registeredAt];
+    }
+    if (existing) {
+        if (!passwordPlain && existing.passwordHash) doc.passwordHash = existing.passwordHash;
+        if (!passwordPlain && existing.passwordAscii) doc.passwordAscii = existing.passwordAscii;
+        if (!passwordPlain && existing.password && !doc.password) {
+            doc.password = String(existing.password);
+        }
     }
     return doc;
 }
@@ -292,6 +300,15 @@ async function migrateVendorsCollection(db) {
         const id = ensureVendorId(doc);
         if (!doc.id) idFixed++;
         const pw = getStoredPassword(doc);
+        const hasHash = !!(doc.passwordHash && String(doc.passwordHash).length);
+        if (!pw && hasHash) {
+            n++;
+            if (!doc.id) {
+                await col.updateOne({ _id: doc._id }, { $set: { id: id } });
+                idFixed++;
+            }
+            continue;
+        }
         const built = buildFromBody(
             {
                 vn_company: doc[F.company] || doc.companyName,

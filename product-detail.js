@@ -25,7 +25,7 @@
                 escapeHtml: escapeHtml
             });
         }
-        return '<p class="pd-price pd-price-masked">가격: 비공개</p>';
+        return '<p class="pd-price pd-price-masked">가격: 담당자에게 문의</p>';
     }
 
     function contactBlock(it) {
@@ -103,8 +103,12 @@
             if (!priceEl) return;
             var info = unitInfo();
             var q = Math.max(1, parseInt(qtyEl.value, 10) || 1);
+            var lineLabel =
+                window.THEJHON_AUTH && THEJHON_AUTH.DETAIL_PRICE_LABEL
+                    ? THEJHON_AUTH.DETAIL_PRICE_LABEL
+                    : "가격";
             priceEl.textContent =
-                (info.priceLabel || "단가") +
+                lineLabel +
                 " " +
                 formatWon(info.unitPrice) +
                 " × " +

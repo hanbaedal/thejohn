@@ -95,6 +95,15 @@
                     notReg.code = "NOT_REGISTERED";
                     throw notReg;
                 }
+                if (err && err.data && err.data.code === "BAD_PASSWORD") {
+                    var badPw = new Error(
+                        (err.data.hint && String(err.data.hint).trim()) ||
+                            err.data.error ||
+                            "아이디 또는 비밀번호가 올바르지 않습니다."
+                    );
+                    badPw.code = "BAD_PASSWORD";
+                    throw badPw;
+                }
                 if (err && err.message) throw err;
                 throw new Error("로그인에 실패했습니다. 잠시 후 다시 시도해 주세요.");
             });
@@ -346,6 +355,9 @@
         return { unitPrice: p1, priceLabel: "가격1" };
     }
 
+    var PRICE_MASKED_TEXT = "담당자에게 문의";
+    var DETAIL_PRICE_LABEL = "가격";
+
     function buildProductPriceHtml(it, options) {
         options = options || {};
         var mode = options.mode || "inline";
@@ -364,23 +376,58 @@
 
         if (!canSeeProductPrices()) {
             if (mode === "detail") {
-                return '<p class="pd-price pd-price-masked">가격: 비공개</p>';
+                return (
+                    '<p class="pd-price pd-price-masked">가격: ' +
+                    escapeHtml(PRICE_MASKED_TEXT) +
+                    "</p>"
+                );
             }
-            return '<span class="ps-price-masked">가격: 비공개</span>';
+            return (
+                '<span class="ps-price-masked">가격: ' + escapeHtml(PRICE_MASKED_TEXT) + "</span>"
+            );
+        }
+
+        if (mode === "detail") {
+            if (isStaffRole(getRole())) {
+                var keys = ["pd_price1", "pd_price2", "pd_price3"];
+                var parts = [];
+                for (var i = 0; i < keys.length; i++) {
+                    var v = Number(it[keys[i]]);
+                    if (isFinite(v) && v > 0) {
+                        parts.push(
+                            '<p class="pd-price"><span class="pd-price-label">' +
+                                escapeHtml(DETAIL_PRICE_LABEL) +
+                                "</span> " +
+                                escapeHtml(formatWon(v)) +
+                                "</p>"
+                        );
+                    }
+                }
+                if (parts.length) return parts.join("");
+                var z = Number(it.pd_price1);
+                if (!isFinite(z)) z = 0;
+                return (
+                    '<p class="pd-price"><span class="pd-price-label">' +
+                    escapeHtml(DETAIL_PRICE_LABEL) +
+                    "</span> " +
+                    escapeHtml(formatWon(z)) +
+                    "</p>"
+                );
+            }
+            var pricedDetail = getVendorUnitPriceForProduct(it);
+            var valDetail = pricedDetail.unitPrice;
+            return (
+                '<p class="pd-price"><span class="pd-price-label">' +
+                escapeHtml(DETAIL_PRICE_LABEL) +
+                "</span> " +
+                escapeHtml(formatWon(valDetail)) +
+                "</p>"
+            );
         }
 
         var priced = getVendorUnitPriceForProduct(it);
         var label = priced.priceLabel || "가격1";
         var priceVal = priced.unitPrice;
-        if (mode === "detail") {
-            return (
-                '<p class="pd-price"><span class="pd-price-label">' +
-                escapeHtml(label) +
-                "</span> " +
-                escapeHtml(formatWon(priceVal)) +
-                "</p>"
-            );
-        }
         return (
             '<span class="ps-price-item">' +
             escapeHtml(label) +
@@ -591,6 +638,8 @@
         vendorGradeLabel: vendorGradeLabel,
         parseVendorGrade: parseVendorGrade,
         VENDOR_REGISTERED_BY_KEY: VENDOR_REGISTERED_BY_KEY,
+        PRICE_MASKED_TEXT: PRICE_MASKED_TEXT,
+        DETAIL_PRICE_LABEL: DETAIL_PRICE_LABEL,
         buildProductPriceHtml: buildProductPriceHtml,
         buildCatalogListPriceHtml: buildCatalogListPriceHtml,
         canPlaceVendorOrders: canPlaceVendorOrders,

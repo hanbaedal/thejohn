@@ -2,6 +2,7 @@ const { getDb } = require("../db");
 const {
     loginLookupFilter,
     verifyLoginPassword,
+    verifyVendorLoginPassword,
     setLoginPassword,
     migrateCollectionLoginFields
 } = require("./loginAccount");
@@ -81,7 +82,7 @@ async function tryStaffLogin(staff, loginId, password) {
 async function tryVendorLogin(vendor, loginId, password) {
     if (!vendor) return null;
 
-    const vendorCheck = await verifyLoginPassword(vendor, loginId, password);
+    const vendorCheck = await verifyVendorLoginPassword(vendor, loginId, password);
     if (!vendorCheck.valid) return null;
 
     if (vendorCheck.migratePassword != null) {
@@ -116,11 +117,13 @@ async function resolveFormLogin(loginId, password) {
     const hasStaffAccount = !!(staff && isStaffRole(staff.role));
     const hasVendorAccount = !!vendor;
 
+    if (hasVendorAccount) {
+        const vendorResult = await tryVendorLogin(vendor, loginId, password);
+        if (vendorResult) return vendorResult;
+    }
+
     const staffResult = await tryStaffLogin(staff, loginId, password);
     if (staffResult) return staffResult;
-
-    const vendorResult = await tryVendorLogin(vendor, loginId, password);
-    if (vendorResult) return vendorResult;
 
     if (!hasStaffAccount && !hasVendorAccount) {
         return { ok: false, reason: "NOT_REGISTERED" };

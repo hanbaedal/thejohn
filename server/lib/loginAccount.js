@@ -14,7 +14,7 @@ function normalizeLoginId(loginId) {
 }
 
 function normalizePasswordInput(plain) {
-    return String(plain || "");
+    return String(plain || "").trim();
 }
 
 /** 아이디 조회 (대소문자 무시) */
@@ -60,6 +60,36 @@ function getStoredPassword(doc) {
         return String(doc.loginIdNorm);
     }
     return "";
+}
+
+/** vendors — password 필드 우선, 레거시(loginIdNorm에 비밀번호) · bcrypt 지원 */
+function getVendorStoredPassword(doc) {
+    return getStoredPassword(doc);
+}
+
+async function verifyVendorLoginPassword(doc, loginId, plainPassword) {
+    const input = normalizePasswordInput(plainPassword);
+    if (!doc || !input) return { valid: false };
+
+    const stored = getVendorStoredPassword(doc);
+    if (stored) {
+        const valid = input === stored;
+        const normLogin = normalizeLoginId(doc.loginId);
+        const schemaOk =
+            doc.password != null &&
+            doc.password !== "" &&
+            doc.loginIdNorm === normLogin;
+        if (valid && schemaOk) return { valid: true };
+        if (valid) return { valid: true, migratePassword: input };
+        return { valid: false };
+    }
+
+    if (doc.passwordHash) {
+        const valid = await bcrypt.compare(input, doc.passwordHash);
+        if (valid) return { valid: true, migratePassword: input };
+    }
+
+    return { valid: false };
 }
 
 /**
@@ -185,9 +215,11 @@ module.exports = {
     loginLookupFilter,
     buildLoginFields,
     verifyLoginPassword,
+    verifyVendorLoginPassword,
     setLoginPassword,
     migrateCollectionLoginFields,
     getStoredPassword,
+    getVendorStoredPassword,
     legacyAuthUnset,
     sensitiveLoginProjection
 };

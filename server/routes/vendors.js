@@ -137,7 +137,7 @@ router.get("/:id", async (req, res) => {
 router.post("/", requireRole("supervisor", "admin"), async (req, res) => {
     try {
         const loginId = String(req.body.loginId || "").trim();
-        const password = String(req.body.password || "");
+        const password = String(req.body.password || "").trim();
 
         if (isReservedAdminLoginId(loginId)) {
             return res.status(400).json({ ok: false, error: "사용할 수 없는 아이디입니다." });
@@ -189,7 +189,7 @@ router.put("/:id", requireRole("supervisor", "admin"), async (req, res) => {
         }
 
         const loginId = String(req.body.loginId || "").trim();
-        const password = String(req.body.password || "");
+        const password = String(req.body.password || "").trim();
 
         if (isReservedAdminLoginId(loginId)) {
             return res.status(400).json({ ok: false, error: "사용할 수 없는 아이디입니다." });

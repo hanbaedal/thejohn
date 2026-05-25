@@ -1,13 +1,13 @@
 const express = require("express");
 const { signToken, extractBearer, verifyToken } = require("../middleware/auth");
-const { normalizeId, resolveFormLogin } = require("../lib/loginResolve");
+const { normalizeId, resolveFormLogin, findVendorByLoginId } = require("../lib/loginResolve");
 
 const router = express.Router();
 
 router.post("/login", async (req, res) => {
     try {
         const loginId = String(req.body.loginId || "").trim();
-        const password = String(req.body.password || "");
+        const password = String(req.body.password || "").trim();
         if (!loginId || !password) {
             return res.status(400).json({ ok: false, error: "아이디와 비밀번호를 입력해 주세요." });
         }
@@ -24,10 +24,15 @@ router.post("/login", async (req, res) => {
                     hint: hint
                 });
             }
+            const vendorDoc = await findVendorByLoginId(loginId);
+            const hint = vendorDoc
+                ? "업체등록 시 설정한 비밀번호(8~16자)를 그대로 입력해 주세요. 아이디·비밀번호 앞뒤 공백은 제외됩니다."
+                : "아이디와 비밀번호를 다시 확인해 주세요.";
             return res.status(401).json({
                 ok: false,
                 code: "BAD_PASSWORD",
-                error: "아이디 또는 비밀번호가 올바르지 않습니다."
+                error: "아이디 또는 비밀번호가 올바르지 않습니다.",
+                hint: hint
             });
         }
 
