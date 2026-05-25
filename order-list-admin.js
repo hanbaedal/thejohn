@@ -1,33 +1,119 @@
 (function () {
     var api = window.THEJHON_API;
     var Auth = window.THEJHON_AUTH;
+    var OrderUI = window.THEJHON_ORDER_UI;
     var listEl = document.getElementById("ol-list");
+    var detailEl = document.getElementById("ol-detail");
     var statusEl = document.getElementById("ol-status");
     var hintEl = document.getElementById("ol-hint");
+    var selectedId = "";
 
     function escapeHtml(s) {
-        return String(s)
-            .replace(/&/g, "&amp;")
-            .replace(/</g, "&lt;")
-            .replace(/>/g, "&gt;")
-            .replace(/"/g, "&quot;");
+        return OrderUI ? OrderUI.escapeHtml(s) : String(s);
     }
 
     function formatWon(n) {
-        var num = Number(n);
-        if (!isFinite(num)) return "0원";
-        return num.toLocaleString("ko-KR") + "원";
+        return OrderUI ? OrderUI.formatWon(n) : String(n);
     }
 
     function formatDate(ts) {
-        if (!ts) return "";
-        return new Date(ts).toLocaleString("ko-KR");
+        return OrderUI ? OrderUI.formatDate(ts) : "";
     }
 
     function setStatus(msg, isError) {
         if (!statusEl) return;
         statusEl.textContent = msg || "";
         statusEl.style.color = isError ? "#a12c2c" : "#3d5166";
+    }
+
+    function showDetail(order) {
+        if (!detailEl || !OrderUI) return;
+        if (!order) {
+            detailEl.hidden = true;
+            detailEl.innerHTML = "";
+            return;
+        }
+        detailEl.hidden = false;
+        detailEl.innerHTML =
+            '<h2 class="ol-detail-title">주문 상세</h2>' +
+            OrderUI.renderOrderDetailHtml(order, { showVendor: true }) +
+            '<div class="ol-detail-actions">' +
+            '<button type="button" class="btn btn-primary" id="ol-detail-pdf">PDF 저장</button>' +
+            '<button type="button" class="btn" id="ol-detail-close">닫기</button>' +
+            "</div>";
+
+        var closeBtn = document.getElementById("ol-detail-close");
+        if (closeBtn) {
+            closeBtn.addEventListener("click", function () {
+                selectedId = "";
+                listEl.querySelectorAll(".ol-admin-item").forEach(function (li) {
+                    li.classList.remove("is-selected");
+                });
+                showDetail(null);
+            });
+        }
+        var pdfBtn = document.getElementById("ol-detail-pdf");
+        if (pdfBtn) {
+            pdfBtn.addEventListener("click", function () {
+                pdfBtn.disabled = true;
+                OrderUI.downloadOrderPdfWithAuth(api, order.id, order.orderNo)
+                    .catch(function (err) {
+                        alert((err && err.message) || "PDF 저장에 실패했습니다.");
+                    })
+                    .finally(function () {
+                        pdfBtn.disabled = false;
+                    });
+            });
+        }
+    }
+
+    function selectOrder(id) {
+        selectedId = id;
+        listEl.querySelectorAll(".ol-admin-item").forEach(function (li) {
+            li.classList.toggle("is-selected", li.getAttribute("data-order-id") === id);
+        });
+        if (!detailEl) return;
+        detailEl.hidden = false;
+        detailEl.innerHTML = '<p class="ol-detail-loading">주문 내용을 불러오는 중…</p>';
+        api.getOrder(id)
+            .then(function (order) {
+                showDetail(order);
+            })
+            .catch(function (err) {
+                detailEl.innerHTML =
+                    '<p class="order-detail-empty">' +
+                    escapeHtml((err && err.message) || "주문을 불러오지 못했습니다.") +
+                    "</p>";
+            });
+    }
+
+    function bindListEvents(items) {
+        listEl.querySelectorAll(".ol-admin-item").forEach(function (li) {
+            var id = li.getAttribute("data-order-id");
+            li.addEventListener("click", function (e) {
+                if (e.target.closest(".ol-admin-actions")) return;
+                if (selectedId === id) {
+                    selectedId = "";
+                    li.classList.remove("is-selected");
+                    showDetail(null);
+                    return;
+                }
+                selectOrder(id);
+            });
+            var pdfBtn = li.querySelector(".ol-btn-pdf");
+            if (pdfBtn) {
+                pdfBtn.addEventListener("click", function (e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    var row = items.find(function (it) {
+                        return it.id === id;
+                    });
+                    OrderUI.downloadOrderPdfWithAuth(api, id, row && row.orderNo).catch(function (err) {
+                        alert((err && err.message) || "PDF 저장에 실패했습니다.");
+                    });
+                });
+            }
+        });
     }
 
     var access =
@@ -41,7 +127,7 @@
 
     if (hintEl) {
         hintEl.textContent =
-            "aksangsa 담당으로 등록된 업체에서 접수된 주문 내역입니다.";
+            "목록을 클릭하면 주문 품목·금액이 아래에 표시됩니다. aksangsa 담당 업체 주문만 보입니다.";
         hintEl.hidden = false;
     }
 
@@ -50,6 +136,7 @@
         .then(function (items) {
             if (!items.length) {
                 listEl.innerHTML = '<p class="am-list-empty">접수된 주문이 없습니다.</p>';
+                showDetail(null);
                 setStatus("0건");
                 return;
             }
@@ -57,9 +144,10 @@
                 '<ul class="ol-admin-list">' +
                 items
                     .map(function (it) {
-                        var pdfHref = api.orderPdfUrl(it.id);
                         return (
-                            '<li class="ol-admin-item">' +
+                            '<li class="ol-admin-item" data-order-id="' +
+                            escapeHtml(it.id) +
+                            '" role="button" tabindex="0">' +
                             '<div class="ol-admin-main">' +
                             '<span class="ol-admin-name">' +
                             escapeHtml(it.orderNo || it.id) +
@@ -78,15 +166,14 @@
                                 : "") +
                             "</span></div>" +
                             '<div class="ol-admin-actions">' +
-                            '<a class="btn btn-primary" href="' +
-                            escapeHtml(pdfHref) +
-                            '" target="_blank" rel="noopener">PDF</a>' +
+                            '<button type="button" class="btn btn-primary ol-btn-pdf">PDF</button>' +
                             "</div></li>"
                         );
                     })
                     .join("") +
                 "</ul>";
-            setStatus(items.length + "건");
+            bindListEvents(items);
+            setStatus(items.length + "건 — 항목을 클릭해 상세를 확인하세요.");
         })
         .catch(function (err) {
             setStatus(err.message || "목록을 불러오지 못했습니다.", true);

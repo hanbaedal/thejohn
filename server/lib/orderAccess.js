@@ -39,10 +39,25 @@ function buildOrderListQuery(auth) {
     return { vendorRegisteredBy: getOrderEnabledStaffId() };
 }
 
+function buildVendorOrderListQuery(auth) {
+    const uid = String((auth && auth.userId) || "").trim();
+    if (!uid) return { id: "__none__" };
+    const idn = normalizeStaffLoginId(uid);
+    if (uid === idn) return { vendorUserId: uid };
+    return { $or: [{ vendorUserId: uid }, { vendorUserId: idn }] };
+}
+
+function vendorOwnsOrder(auth, order) {
+    if (!auth || auth.role !== "vendor" || !order) return false;
+    const mine = normalizeStaffLoginId(auth.userId);
+    const theirs = normalizeStaffLoginId(order.vendorUserId);
+    return !!mine && mine === theirs;
+}
+
 function staffCanReadOrder(auth, order) {
     if (!order) return false;
     if (auth.role === "vendor") {
-        return order.vendorUserId === auth.userId;
+        return vendorOwnsOrder(auth, order);
     }
     if (!staffCanAccessOrderManage(auth)) return false;
     return normalizeStaffLoginId(order.vendorRegisteredBy) === getOrderEnabledStaffId();
@@ -54,6 +69,8 @@ module.exports = {
     vendorCanPlaceOrders,
     staffCanAccessOrderManage,
     buildOrderListQuery,
+    buildVendorOrderListQuery,
+    vendorOwnsOrder,
     staffCanReadOrder,
     normalizeStaffLoginId
 };

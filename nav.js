@@ -413,7 +413,7 @@
         link.setAttribute("data-nav-cart", "1");
         var Cart = window.THEJHON_VENDOR_CART;
         var n = Cart && Cart.itemCount ? Cart.itemCount(Cart.readCart()) : 0;
-        link.textContent = n > 0 ? "장바구니 (" + n + ")" : "장바구니";
+        link.textContent = n > 0 ? "주문서 내역 (" + n + ")" : "주문서 내역";
     }
     refreshVendorCartNav();
     window.addEventListener("thejhon-cart-updated", refreshVendorCartNav);

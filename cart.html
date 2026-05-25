@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>장바구니 · 주문 — 더존</title>
+    <title>주문서 내역 — 더존</title>
     <link rel="stylesheet" href="common.css">
     <style>
         .cart-title { margin: 0 0 1rem; font-size: 1.35rem; color: #052a4d; }
@@ -84,12 +84,68 @@
         }
         .cart-order-footer .site-footer-grid { max-width: 40rem; }
         #btnSubmitOrder:disabled { opacity: 0.55; cursor: not-allowed; }
+        .cart-section { margin-top: 2rem; }
+        .cart-section-title {
+            margin: 0 0 0.75rem;
+            font-size: 1.15rem;
+            color: #052a4d;
+            padding-bottom: 0.35rem;
+            border-bottom: 2px solid #d4e2f0;
+        }
+        .cart-history-list { list-style: none; margin: 0; padding: 0; }
+        .cart-history-item {
+            padding: 0.75rem 1rem;
+            border: 1px solid #e0e6ed;
+            border-radius: 8px;
+            margin-bottom: 0.5rem;
+            background: #fff;
+            cursor: pointer;
+        }
+        .cart-history-item.is-selected {
+            border-color: var(--dz-blue, #0a4d9c);
+            box-shadow: 0 0 0 2px rgba(10, 77, 156, 0.12);
+        }
+        .cart-history-name { display: block; font-weight: 700; color: #052a4d; }
+        .cart-history-meta { font-size: 0.85rem; color: #5a6d7e; }
+        #cart-history-detail {
+            margin-top: 1rem;
+            padding: 1rem;
+            background: #f8fafc;
+            border: 1px solid #d4e2f0;
+            border-radius: 12px;
+        }
+        #cart-history-detail[hidden] { display: none !important; }
+        .order-detail-meta {
+            display: grid;
+            grid-template-columns: auto 1fr;
+            gap: 0.3rem 1rem;
+            margin: 0 0 1rem;
+            font-size: 0.92rem;
+        }
+        .order-detail-meta dt { font-weight: 700; color: #2a4a5e; margin: 0; }
+        .order-detail-meta dd { margin: 0; }
+        .order-detail-table-wrap {
+            overflow-x: auto;
+            background: #fff;
+            border: 1px solid #e0e6ed;
+            border-radius: 8px;
+        }
+        .order-detail-table { width: 100%; border-collapse: collapse; font-size: 0.88rem; }
+        .order-detail-table th,
+        .order-detail-table td {
+            padding: 0.5rem 0.6rem;
+            border-bottom: 1px solid #e8edf2;
+            text-align: left;
+        }
+        .order-detail-table th { background: #f4f7fb; }
+        .order-detail-total { margin: 0.75rem 0 0; text-align: right; font-size: 1rem; }
     </style>
     <script src="api-config.js"></script>
     <script src="thejhon-api.js"></script>
     <script src="auth.js"></script>
     <script src="vendor-cart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.2/dist/jspdf.umd.min.js"></script>
+    <script src="order-ui.js"></script>
     <script src="order-pdf-client.js"></script>
     <script src="admin-header.js"></script>
     <script src="nav.js" defer></script>
@@ -121,8 +177,14 @@
         </nav>
     </header>
     <main class="page-main">
-        <h1 class="cart-title">장바구니 · 주문</h1>
+        <h1 class="cart-title">주문서 내역</h1>
         <div id="cart-root" aria-live="polite"></div>
+        <section class="cart-section" id="cart-history-section" aria-labelledby="cart-history-title">
+            <h2 class="cart-section-title" id="cart-history-title">접수된 주문</h2>
+            <p id="cart-history-status" class="cart-contact-desc" role="status"></p>
+            <div id="cart-history-list"></div>
+            <div id="cart-history-detail" hidden aria-live="polite"></div>
+        </section>
     </main>
     <footer class="site-footer cart-order-footer" id="cartOrderFooter" hidden aria-label="주문 담당자">
         <div class="site-footer-inner">

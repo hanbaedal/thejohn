@@ -197,8 +197,29 @@
                 return d.items || [];
             });
         },
+        getOrder: function (orderId) {
+            return request("GET", "/api/orders/" + encodeURIComponent(orderId)).then(function (d) {
+                return d.order;
+            });
+        },
         orderPdfUrl: function (orderId) {
             return apiUrl("/api/orders/" + encodeURIComponent(orderId) + "/pdf");
+        },
+        fetchOrderPdfBlob: function (orderId) {
+            var url = apiUrl("/api/orders/" + encodeURIComponent(orderId) + "/pdf");
+            return fetch(url, { method: "GET", headers: headers() }).then(function (res) {
+                if (!res.ok) {
+                    return res.text().then(function (text) {
+                        var msg = "PDF를 불러오지 못했습니다.";
+                        try {
+                            var data = JSON.parse(text);
+                            if (data && data.error) msg = data.error;
+                        } catch (e) {}
+                        throw new Error(msg);
+                    });
+                }
+                return res.blob();
+            });
         }
     };
 })(typeof window !== "undefined" ? window : this);

@@ -68,12 +68,12 @@
         var price = THEJHON_AUTH.getVendorUnitPriceForProduct(it);
         return (
             '<section class="pd-order" aria-label="주문">' +
-            '<p class="pd-order-hint">수량을 입력한 뒤 장바구니에 담거나 바로 주문할 수 있습니다.</p>' +
+            '<p class="pd-order-hint">수량을 입력한 뒤 담거나 주문서 내역에서 주문할 수 있습니다.</p>' +
             '<div class="pd-order-row">' +
             '<label for="pd-qty">수량</label>' +
             '<input type="number" id="pd-qty" class="pd-qty-input" min="1" value="1" inputmode="numeric">' +
-            '<button type="button" class="btn btn-primary" id="pd-add-cart">장바구니 담기</button>' +
-            '<a class="btn" href="cart.html" id="pd-go-cart">장바구니 보기</a>' +
+            '<button type="button" class="btn btn-primary" id="pd-add-cart">주문 목록에 담기</button>' +
+            '<a class="btn" href="cart.html" id="pd-go-cart">주문서 내역</a>' +
             "</div>" +
             '<p class="pd-order-price" id="pd-order-price" data-unit="' +
             escapeHtml(String(price.unitPrice)) +
@@ -136,7 +136,7 @@
                 msgEl.hidden = false;
                 if (res.ok) {
                     msgEl.className = "pd-order-msg pd-order-msg--ok";
-                    msgEl.textContent = "장바구니에 담았습니다.";
+                    msgEl.textContent = "주문 목록에 담았습니다.";
                 } else {
                     msgEl.className = "pd-order-msg pd-order-msg--err";
                     msgEl.textContent = res.error || "담기 실패";

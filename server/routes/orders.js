@@ -11,6 +11,7 @@ const { F: PF } = require("../lib/productFields");
 const {
     vendorCanPlaceOrders,
     buildOrderListQuery,
+    buildVendorOrderListQuery,
     staffCanReadOrder,
     staffCanAccessOrderManage,
     getOrderEnabledStaffId
@@ -32,6 +33,22 @@ function toOrderListItem(order) {
         itemCount: Array.isArray(order.items) ? order.items.length : 0,
         note: order.note || ""
     };
+}
+
+function toOrderDetail(order) {
+    const base = toOrderListItem(order);
+    return Object.assign({}, base, {
+        vendorGrade: order.vendorGrade || "",
+        vendorGradeLabel: order.vendorGradeLabel || "",
+        vendorMgrName: order.vendorMgrName || "",
+        vendorMgrTel: order.vendorMgrTel || "",
+        vendorMgrEmail: order.vendorMgrEmail || "",
+        vendorAddr: order.vendorAddr || "",
+        vendorPhone: order.vendorPhone || "",
+        orderContactConfirmed: !!order.orderContactConfirmed,
+        orderContactConfirmedAt: order.orderContactConfirmedAt || 0,
+        items: Array.isArray(order.items) ? order.items : []
+    });
 }
 
 function newOrderId() {
@@ -79,15 +96,27 @@ async function buildOrderItemsFromDb(db, clientItems, vendorDoc) {
     return out.length ? out : null;
 }
 
-router.get("/", requireRole("admin"), async function (req, res) {
+router.get("/", requireRole("admin", "vendor"), async function (req, res) {
     try {
-        if (!staffCanAccessOrderManage(req.auth)) {
-            return res.status(403).json({
-                ok: false,
-                error: "주문서관리는 aksangsa 관리자만 이용할 수 있습니다."
-            });
+        let query;
+        if (req.auth.role === "vendor") {
+            const vendor = await findVendorByLoginId(req.auth.userId || "");
+            if (!vendor || !vendorCanPlaceOrders(vendor)) {
+                return res.status(403).json({
+                    ok: false,
+                    error: "주문 내역을 조회할 권한이 없습니다."
+                });
+            }
+            query = buildVendorOrderListQuery(req.auth);
+        } else {
+            if (!staffCanAccessOrderManage(req.auth)) {
+                return res.status(403).json({
+                    ok: false,
+                    error: "주문서관리는 aksangsa 관리자만 이용할 수 있습니다."
+                });
+            }
+            query = buildOrderListQuery(req.auth);
         }
-        const query = buildOrderListQuery(req.auth);
         const items = await getDb()
             .collection("orders")
             .find(query)
@@ -98,6 +127,26 @@ router.get("/", requireRole("admin"), async function (req, res) {
     } catch (e) {
         console.error("GET /api/orders", e);
         res.status(500).json({ ok: false, error: "주문 목록을 불러오지 못했습니다." });
+    }
+});
+
+router.get("/:id", requireRole("admin", "vendor"), async function (req, res) {
+    try {
+        const id = String(req.params.id || "").trim();
+        if (!id) {
+            return res.status(400).json({ ok: false, error: "주문 ID가 없습니다." });
+        }
+        const order = await getDb().collection("orders").findOne({ id: id });
+        if (!order) {
+            return res.status(404).json({ ok: false, error: "주문을 찾을 수 없습니다." });
+        }
+        if (!staffCanReadOrder(req.auth, order)) {
+            return res.status(403).json({ ok: false, error: "권한이 없습니다." });
+        }
+        return res.json({ ok: true, order: toOrderDetail(order) });
+    } catch (e) {
+        console.error("GET /api/orders/:id", e);
+        return res.status(500).json({ ok: false, error: "주문 내용을 불러오지 못했습니다." });
     }
 });
 
