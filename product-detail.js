@@ -68,12 +68,13 @@
         var price = THEJHON_AUTH.getVendorUnitPriceForProduct(it);
         return (
             '<section class="pd-order" aria-label="주문">' +
-            '<p class="pd-order-hint">수량을 입력한 뒤 담거나 주문서 내역에서 주문할 수 있습니다.</p>' +
+            '<p class="pd-order-hint">수량을 입력한 뒤 목록에 담고, <strong>주문하기</strong>에서 확인·주문하세요.</p>' +
             '<div class="pd-order-row">' +
             '<label for="pd-qty">수량</label>' +
             '<input type="number" id="pd-qty" class="pd-qty-input" min="1" value="1" inputmode="numeric">' +
             '<button type="button" class="btn btn-primary" id="pd-add-cart">주문 목록에 담기</button>' +
-            '<a class="btn" href="cart.html" id="pd-go-cart">주문서 내역</a>' +
+            '<button type="button" class="btn" id="pd-open-order">주문하기</button>' +
+            '<a class="btn" href="cart.html" id="pd-go-orders">주문서 관리</a>' +
             "</div>" +
             '<p class="pd-order-price" id="pd-order-price" data-unit="' +
             escapeHtml(String(price.unitPrice)) +
@@ -88,9 +89,29 @@
     function bindOrderHandlers(it) {
         var qtyEl = document.getElementById("pd-qty");
         var addBtn = document.getElementById("pd-add-cart");
+        var openOrderBtn = document.getElementById("pd-open-order");
         var msgEl = document.getElementById("pd-order-msg");
         var priceEl = document.getElementById("pd-order-price");
         if (!qtyEl || !addBtn || !window.THEJHON_VENDOR_CART) return;
+
+        function openOrderModal() {
+            function run() {
+                if (
+                    window.THEJHON_VENDOR_ORDER_MODAL &&
+                    THEJHON_VENDOR_ORDER_MODAL.open
+                ) {
+                    THEJHON_VENDOR_ORDER_MODAL.open();
+                }
+            }
+            if (window.THEJHON_VENDOR_ORDER_MODAL) run();
+            else if (window.loadVendorOrderModalAssets) {
+                window.loadVendorOrderModalAssets(run);
+            }
+        }
+
+        if (openOrderBtn) {
+            openOrderBtn.addEventListener("click", openOrderModal);
+        }
 
         function unitInfo() {
             if (THEJHON_AUTH.getVendorUnitPriceForProduct) {
@@ -136,7 +157,7 @@
                 msgEl.hidden = false;
                 if (res.ok) {
                     msgEl.className = "pd-order-msg pd-order-msg--ok";
-                    msgEl.textContent = "주문 목록에 담았습니다.";
+                    msgEl.textContent = "주문 목록에 담았습니다. 주문하기 버튼으로 확인하세요.";
                 } else {
                     msgEl.className = "pd-order-msg pd-order-msg--err";
                     msgEl.textContent = res.error || "담기 실패";

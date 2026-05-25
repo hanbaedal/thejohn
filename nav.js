@@ -387,33 +387,93 @@
         mq.addListener(onMqChange);
     }
 
+    function loadVendorOrderModalAssets(cb) {
+        if (!document.getElementById("vendor-order-modal-css")) {
+            var link = document.createElement("link");
+            link.id = "vendor-order-modal-css";
+            link.rel = "stylesheet";
+            link.href = "vendor-order-modal.css";
+            document.head.appendChild(link);
+        }
+        function loadScript(src, id, next) {
+            if (document.getElementById(id)) {
+                next();
+                return;
+            }
+            var s = document.createElement("script");
+            s.id = id;
+            s.src = src;
+            s.onload = next;
+            s.onerror = next;
+            document.body.appendChild(s);
+        }
+        loadScript("vendor-cart.js", "script-vendor-cart", function () {
+            loadScript("vendor-order-modal.js", "script-vendor-order-modal", function () {
+                if (cb) cb();
+            });
+        });
+    }
+
+    window.loadVendorOrderModalAssets = loadVendorOrderModalAssets;
+
     function refreshVendorCartNav() {
         var nav = document.querySelector(".site-header-nav");
         if (!nav) return;
-        var link = nav.querySelector('a[href="cart.html"]');
+        var legacyCart = nav.querySelector("a[data-nav-cart]");
+        if (legacyCart) legacyCart.remove();
+        var manageLink = nav.querySelector("[data-nav-order-manage]");
+        var orderBtn = nav.querySelector("[data-nav-order-btn]");
         var show =
             window.THEJHON_AUTH &&
             THEJHON_AUTH.canPlaceVendorOrders &&
             THEJHON_AUTH.canPlaceVendorOrders();
         if (!show) {
-            if (link) link.remove();
+            if (manageLink) manageLink.remove();
+            if (orderBtn) orderBtn.remove();
             return;
         }
-        if (!link) {
-            link = document.createElement("a");
-            link.href = "cart.html";
-            link.className = "header-nav-link";
-            var productsLink = nav.querySelector('a[href="products.html"]');
-            if (productsLink && productsLink.nextSibling) {
-                nav.insertBefore(link, productsLink.nextSibling);
-            } else {
-                nav.appendChild(link);
-            }
+
+        var productsLink = nav.querySelector('a[href="products.html"]');
+        var insertAfter = productsLink && productsLink.nextSibling;
+
+        if (!manageLink) {
+            manageLink = document.createElement("a");
+            manageLink.href = "cart.html";
+            manageLink.className = "header-nav-link";
+            manageLink.setAttribute("data-nav-order-manage", "1");
+            manageLink.textContent = "주문서 관리";
+            if (insertAfter) nav.insertBefore(manageLink, insertAfter);
+            else nav.appendChild(manageLink);
+            insertAfter = manageLink.nextSibling;
         }
-        link.setAttribute("data-nav-cart", "1");
+        manageLink.textContent = "주문서 관리";
+
+        if (!orderBtn) {
+            orderBtn = document.createElement("button");
+            orderBtn.type = "button";
+            orderBtn.className = "header-nav-order-btn";
+            orderBtn.setAttribute("data-nav-order-btn", "1");
+            orderBtn.setAttribute("aria-label", "담은 상품 주문하기");
+            if (insertAfter) nav.insertBefore(orderBtn, insertAfter);
+            else nav.appendChild(orderBtn);
+            orderBtn.addEventListener("click", function () {
+                function openModal() {
+                    if (
+                        window.THEJHON_VENDOR_ORDER_MODAL &&
+                        THEJHON_VENDOR_ORDER_MODAL.open
+                    ) {
+                        THEJHON_VENDOR_ORDER_MODAL.open();
+                    }
+                }
+                if (window.THEJHON_VENDOR_ORDER_MODAL) openModal();
+                else loadVendorOrderModalAssets(openModal);
+            });
+        }
+
         var Cart = window.THEJHON_VENDOR_CART;
         var n = Cart && Cart.itemCount ? Cart.itemCount(Cart.readCart()) : 0;
-        link.textContent = n > 0 ? "주문서 내역 (" + n + ")" : "주문서 내역";
+        orderBtn.textContent = n > 0 ? "주문하기 (" + n + ")" : "주문하기";
+        orderBtn.hidden = false;
     }
     refreshVendorCartNav();
     window.addEventListener("thejhon-cart-updated", refreshVendorCartNav);
