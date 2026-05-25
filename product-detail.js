@@ -179,12 +179,18 @@
                     el.classList.remove("pd-hero-img--empty");
                     return;
                 }
+                var wrap = el.closest(".pd-hero-wrap");
                 var img = document.createElement("img");
                 img.id = "pd-hero-img";
                 img.className = "pd-hero-img";
                 img.alt = "";
                 img.src = data.pd_image;
-                el.replaceWith(img);
+                if (wrap) {
+                    wrap.innerHTML = "";
+                    wrap.appendChild(img);
+                } else {
+                    el.replaceWith(img);
+                }
             })
             .catch(function () {
                 var el = document.getElementById("pd-hero-img");
@@ -198,22 +204,22 @@
         document.title =
             titlePlain.length > 60 ? titlePlain.slice(0, 57) + "… — 더존" : titlePlain + " — 더존";
 
-        var backEl = document.querySelector(".pd-back a");
-        if (backEl) backEl.setAttribute("href", productsListHref(it));
+        var listHref = productsListHref(it);
 
-        var imgBlock;
+        var imgInner;
         if (it.pd_image) {
-            imgBlock =
+            imgInner =
                 '<img id="pd-hero-img" class="pd-hero-img" src="' +
                 escapeHtml(it.pd_image) +
                 '" alt="">';
         } else if (it.pd_has_image) {
-            imgBlock =
+            imgInner =
                 '<div id="pd-hero-img" class="pd-hero-img pd-hero-img--empty" role="img" aria-label="사진 로딩">사진 불러오는 중…</div>';
         } else {
-            imgBlock =
+            imgInner =
                 '<div id="pd-hero-img" class="pd-hero-img pd-hero-img--empty" role="img" aria-label="사진 없음">사진 없음</div>';
         }
+        var imgBlock = '<div class="pd-hero-wrap">' + imgInner + "</div>";
 
         var specHtml = "";
         if (it.pd_size && String(it.pd_size).trim()) {
@@ -225,6 +231,9 @@
 
         root.innerHTML =
             '<article class="pd-article">' +
+            '<div class="pd-toolbar"><a class="pd-back-link" href="' +
+            escapeHtml(listHref) +
+            '">← 사업부문 목록</a></div>' +
             imgBlock +
             '<div class="pd-text"><h1 class="pd-title">' +
             escapeHtml(it.pd_name || "") +

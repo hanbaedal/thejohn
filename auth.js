@@ -340,7 +340,7 @@
         if (isStaffRole(getRole())) {
             var sp1 = Number(it.pd_price1);
             if (!isFinite(sp1)) sp1 = 0;
-            return { unitPrice: sp1, priceLabel: "가격1" };
+            return { unitPrice: sp1, priceLabel: DETAIL_PRICE_LABEL };
         }
         if (vendorProductUsesGradePrice(it)) {
             var grade = getVendorPriceGrade();
@@ -389,28 +389,13 @@
 
         if (mode === "detail") {
             if (isStaffRole(getRole())) {
-                var keys = ["pd_price1", "pd_price2", "pd_price3"];
-                var parts = [];
-                for (var i = 0; i < keys.length; i++) {
-                    var v = Number(it[keys[i]]);
-                    if (isFinite(v) && v > 0) {
-                        parts.push(
-                            '<p class="pd-price"><span class="pd-price-label">' +
-                                escapeHtml(DETAIL_PRICE_LABEL) +
-                                "</span> " +
-                                escapeHtml(formatWon(v)) +
-                                "</p>"
-                        );
-                    }
-                }
-                if (parts.length) return parts.join("");
-                var z = Number(it.pd_price1);
-                if (!isFinite(z)) z = 0;
+                var staffP1 = Number(it.pd_price1);
+                if (!isFinite(staffP1)) staffP1 = 0;
                 return (
                     '<p class="pd-price"><span class="pd-price-label">' +
                     escapeHtml(DETAIL_PRICE_LABEL) +
                     "</span> " +
-                    escapeHtml(formatWon(z)) +
+                    escapeHtml(formatWon(staffP1)) +
                     "</p>"
                 );
             }
@@ -462,7 +447,9 @@
             var p1 = Number(it.pd_price1);
             if (!isFinite(p1)) p1 = 0;
             return (
-                '<p class="ps-card-price"><span class="ps-card-price-label">가격1</span> ' +
+                '<p class="ps-card-price"><span class="ps-card-price-label">' +
+                escapeHtml(DETAIL_PRICE_LABEL) +
+                "</span> " +
                 escapeHtml(formatWon(p1)) +
                 "</p>"
             );
