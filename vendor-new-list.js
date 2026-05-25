@@ -1,13 +1,17 @@
 (function () {
     var api = window.THEJHON_API;
     var PF = window.THEJHON_PRODUCT_FORM;
+    var VA = window.THEJHON_VENDOR_ADMIN;
     var catalog = window.THEJHON_PRODUCT_CATALOG;
 
     var filterRoot = document.getElementById("vl-dept-filter");
     var listEl = document.getElementById("vl-list");
     var statusEl = document.getElementById("vl-status");
+    var staffFilterWrap = document.getElementById("vl-staff-filter-wrap");
+    var staffFilterEl = document.getElementById("vl-staff-filter");
     var cachedItems = [];
     var filterDept = "";
+    var filterStaff = "all";
 
     function vendorRecordType(it) {
         return String((it && it.vn_record_type) || "partner")
@@ -61,6 +65,12 @@
         });
     }
 
+    function registrarSuffix(it) {
+        if (!VA || !VA.registeredByMeta) return "";
+        var meta = VA.registeredByMeta(it);
+        return meta ? " · " + meta : "";
+    }
+
     function renderList() {
         var items = filteredItems().sort(function (a, b) {
             return (b.updatedAt || 0) - (a.updatedAt || 0);
@@ -90,11 +100,26 @@
                         " · 등급 " +
                         PF.escapeHtml(String(grade)) +
                         (it.loginId ? " · " + PF.escapeHtml(String(it.loginId)) : "") +
+                        PF.escapeHtml(registrarSuffix(it)) +
                         "</span></a></li>"
                     );
                 })
                 .join("") +
             "</ul>";
+    }
+
+    function loadVendors() {
+        var opts = {};
+        if (filterStaff && filterStaff !== "all" && VA && VA.isSupervisorView && VA.isSupervisorView()) {
+            opts.registeredBy = filterStaff;
+        }
+        setStatus("불러오는 중…");
+        return api.listVendors(opts).then(function (items) {
+            cachedItems = items;
+            renderList();
+            var n = filteredItems().length;
+            setStatus((filterDept ? PF.deptLabel(catalog, filterDept) + " · " : "전체 · ") + n + "건");
+        });
     }
 
     if (PF && filterRoot && catalog) {
@@ -106,12 +131,6 @@
             onSelect: function (deptId) {
                 filterDept = deptId;
                 renderList();
-                var n = filteredItems().length;
-                setStatus(
-                    filterDept
-                        ? PF.deptLabel(catalog, filterDept) + " · 신규 " + n + "건"
-                        : "신규 전체 · " + n + "건"
-                );
             }
         });
     }
@@ -124,14 +143,21 @@
         setStatus(access.reason, true);
         return;
     }
-    setStatus("불러오는 중…");
-    api.listVendors()
-        .then(function (items) {
-            cachedItems = items;
-            renderList();
-            setStatus("신규 · " + filteredItems().length + "건");
-        })
-        .catch(function (err) {
-            setStatus(err.message || "목록을 불러오지 못했습니다.", true);
+
+    if (VA && staffFilterWrap && staffFilterEl) {
+        VA.initStaffFilter({
+            wrapEl: staffFilterWrap,
+            selectEl: staffFilterEl,
+            onChange: function (val) {
+                filterStaff = val || "all";
+                loadVendors().catch(function (err) {
+                    setStatus(err.message || "목록을 불러오지 못했습니다.", true);
+                });
+            }
         });
+    }
+
+    loadVendors().catch(function (err) {
+        setStatus(err.message || "목록을 불러오지 못했습니다.", true);
+    });
 })();

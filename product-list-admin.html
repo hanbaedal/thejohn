@@ -29,6 +29,7 @@
     <script src="admin-header.js"></script>
     <script src="product-catalog.js"></script>
     <script src="product-form-shared.js"></script>
+    <script src="vendor-admin-shared.js"></script>
     <script src="nav.js" defer></script>
 </head>
 <body>
@@ -60,6 +61,12 @@
         <p class="am-subnav"><a href="product-manage.html">← 상품관리</a></p>
         <h1>상품 리스트</h1>
         <p id="pl-status" class="pl-status" role="status" aria-live="polite"></p>
+        <div id="pl-staff-filter-wrap" class="am-filter-bar" hidden>
+            <label for="pl-staff-filter" class="am-dept-caption">등록 담당</label>
+            <select id="pl-staff-filter" class="vr-select" style="max-width:18rem">
+                <option value="all">전체 관리자</option>
+            </select>
+        </div>
         <div class="am-filter-bar am-dept-picker">
             <span class="am-dept-caption">사업부문 선택</span>
             <input type="hidden" id="pl-filter-dept" value="">

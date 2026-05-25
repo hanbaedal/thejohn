@@ -26,6 +26,15 @@
     }
 
     function vendorManageHtml() {
+        var orderItem = "";
+        var Auth = window.THEJHON_AUTH;
+        if (Auth) {
+            if (Auth.normalizeLegacySession) Auth.normalizeLegacySession();
+            if (Auth.canShowOrderManageMenu && Auth.canShowOrderManageMenu()) {
+                orderItem =
+                    '<a href="order-list-admin.html" class="nav-dropdown-item" role="menuitem">주문서관리</a>';
+            }
+        }
         return (
             '<div class="nav-dropdown" data-nav-dropdown="vendor-manage">' +
             '<a href="vendor-manage.html" class="header-nav-link nav-dropdown-trigger" aria-haspopup="true" aria-expanded="false" aria-controls="vendorManageSubmenu">업체관리</a>' +
@@ -34,6 +43,7 @@
             '<a href="vendor-list-admin.html" class="nav-dropdown-item" role="menuitem">업체 리스트</a>' +
             '<a href="vendor-new-register.html" class="nav-dropdown-item" role="menuitem">신규업체 등록</a>' +
             '<a href="vendor-new-list.html" class="nav-dropdown-item" role="menuitem">신규업체 리스트</a>' +
+            orderItem +
             "</div></div>"
         );
     }
@@ -55,7 +65,8 @@
             "vendor-list-admin.html": true,
             "vendor-detail.html": true,
             "vendor-new-register.html": true,
-            "vendor-new-list.html": true
+            "vendor-new-list.html": true,
+            "order-list-admin.html": true
         };
         var productDrop = nav.querySelector('[data-nav-dropdown="product-manage"]');
         var vendorDrop = nav.querySelector('[data-nav-dropdown="vendor-manage"]');

@@ -189,6 +189,7 @@
     <script src="auth.js"></script>
     <script src="admin-header.js"></script>
     <script src="vendor-form-shared.js"></script>
+    <script src="vendor-admin-shared.js"></script>
     <script src="product-form-shared.js"></script>
     <script src="nav.js" defer></script>
 </head>
@@ -220,6 +221,7 @@
     <main class="page-main page-main--hide-scrollbar">
         <p class="am-subnav"><a href="vendor-manage.html">← 업체관리</a></p>
         <h1>업체 등록</h1>
+        <p id="vr-registrar-hint" class="vr-hint vr-hint--registrar" hidden></p>
         <p id="vr-status" class="vr-status" role="status" aria-live="polite"></p>
         <form id="vr-form" class="vr-form" novalidate>
             <input type="hidden" id="vr-edit-id" value="">
@@ -264,6 +266,7 @@
                         <option value="1" selected>1</option>
                         <option value="2">2</option>
                         <option value="3">3</option>
+                        <option value="4">4</option>
                     </select>
                 </div>
             </div>

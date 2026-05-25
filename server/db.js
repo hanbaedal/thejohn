@@ -197,11 +197,21 @@ async function connectDbOnce() {
 
             const database = newClient.db(dbName);
             await safeCreateIndex(database.collection("products"), { id: 1 }, { unique: true });
+            await safeCreateIndex(
+                database.collection("products"),
+                { pd_registered_by: 1, updatedAt: -1 },
+                { name: "products_registered_by_updated" }
+            );
             const { migrateProductsCollection } = require("./lib/productFields");
             await migrateProductsCollection(database);
             await safeCreateIndex(database.collection("vendors"), { id: 1 }, { unique: true });
             await dropObsoleteVendorIndexes(database);
             await safeCreateIndex(database.collection("vendors"), { loginId: 1 }, { unique: true });
+            await safeCreateIndex(
+                database.collection("vendors"),
+                { vn_registered_by: 1, updatedAt: -1 },
+                { name: "vendors_registered_by_updated" }
+            );
 
             const staff = require("./lib/staff");
             const {

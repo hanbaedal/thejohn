@@ -1,13 +1,17 @@
 (function () {
     var api = window.THEJHON_API;
     var PF = window.THEJHON_PRODUCT_FORM;
+    var VA = window.THEJHON_VENDOR_ADMIN;
     var catalog = window.THEJHON_PRODUCT_CATALOG;
 
     var filterRoot = document.getElementById("pl-dept-filter");
     var listEl = document.getElementById("pl-list");
     var statusEl = document.getElementById("pl-status");
+    var staffFilterWrap = document.getElementById("pl-staff-filter-wrap");
+    var staffFilterEl = document.getElementById("pl-staff-filter");
     var cachedItems = [];
     var filterDept = "";
+    var filterStaff = "all";
 
     function productRecordType(it) {
         return String((it && it.pd_record_type) || "catalog")
@@ -37,6 +41,12 @@
         });
     }
 
+    function registrarSuffix(it) {
+        if (!VA || !VA.registeredByMeta) return "";
+        var meta = VA.registeredByMeta(it);
+        return meta ? " · " + meta : "";
+    }
+
     function renderList() {
         var items = filteredItems().sort(function (a, b) {
             return (b.updatedAt || 0) - (a.updatedAt || 0);
@@ -63,11 +73,29 @@
                         '</span><span class="pl-admin-meta">' +
                         PF.escapeHtml(deptTxt || "미지정") +
                         (it.pd_size ? " · " + PF.escapeHtml(String(it.pd_size)) : "") +
+                        PF.escapeHtml(registrarSuffix(it)) +
                         "</span></a></li>"
                     );
                 })
                 .join("") +
             "</ul>";
+    }
+
+    function loadProducts() {
+        var opts = {};
+        if (filterStaff && filterStaff !== "all" && VA && VA.isSupervisorView && VA.isSupervisorView()) {
+            opts.registeredBy = filterStaff;
+        }
+        setStatus("불러오는 중…");
+        return api.listProducts(opts).then(function (items) {
+            cachedItems = items;
+            renderList();
+            setStatus(
+                (filterDept ? PF.deptLabel(catalog, filterDept) + " · " : "전체 · ") +
+                    filteredItems().length +
+                    "건"
+            );
+        });
     }
 
     if (PF && filterRoot && catalog) {
@@ -88,18 +116,21 @@
         setStatus(access.reason, true);
         return;
     }
-    setStatus("불러오는 중…");
-    api.listProducts()
-        .then(function (items) {
-            cachedItems = items;
-            renderList();
-            setStatus(
-                filterDept
-                    ? PF.deptLabel(catalog, filterDept) + " · " + filteredItems().length + "건"
-                    : "전체 · " + items.length + "건 (사업부문을 선택하면 필터됩니다)"
-            );
-        })
-        .catch(function (err) {
-            setStatus(err.message || "목록을 불러오지 못했습니다.", true);
+
+    if (VA && staffFilterWrap && staffFilterEl) {
+        VA.initStaffFilter({
+            wrapEl: staffFilterWrap,
+            selectEl: staffFilterEl,
+            onChange: function (val) {
+                filterStaff = val || "all";
+                loadProducts().catch(function (err) {
+                    setStatus(err.message || "목록을 불러오지 못했습니다.", true);
+                });
+            }
         });
+    }
+
+    loadProducts().catch(function (err) {
+        setStatus(err.message || "목록을 불러오지 못했습니다.", true);
+    });
 })();

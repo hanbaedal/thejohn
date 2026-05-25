@@ -29,6 +29,7 @@
     <script src="admin-header.js"></script>
     <script src="product-catalog.js"></script>
     <script src="product-form-shared.js"></script>
+    <script src="vendor-admin-shared.js"></script>
     <script src="nav.js" defer></script>
 </head>
 <body>
@@ -60,6 +61,12 @@
         <p class="am-subnav"><a href="vendor-manage.html">← 업체관리</a> · <a href="vendor-new-register.html">신규업체 등록</a></p>
         <h1>신규업체 리스트</h1>
         <p id="vl-status" class="vl-status" role="status" aria-live="polite"></p>
+        <div id="vl-staff-filter-wrap" class="am-filter-bar" hidden>
+            <label for="vl-staff-filter" class="am-dept-caption">등록 담당</label>
+            <select id="vl-staff-filter" class="vr-select" style="max-width:18rem">
+                <option value="all">전체 관리자</option>
+            </select>
+        </div>
         <div class="am-filter-bar am-dept-picker">
             <span class="am-dept-caption">사업부문 선택</span>
             <input type="hidden" id="vl-filter-dept" value="">

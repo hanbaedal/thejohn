@@ -91,10 +91,46 @@
             font-weight: 600;
             color: #6b7c8e;
         }
+        .pd-order {
+            margin: 1rem 0 1.25rem;
+            padding: 1rem 1rem 1.1rem;
+            background: #f4f8fc;
+            border: 1px solid #d4e2f0;
+            border-radius: 10px;
+        }
+        .pd-order-hint { margin: 0 0 0.75rem; font-size: 0.9rem; color: #3d556d; }
+        .pd-order-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem 0.65rem;
+            align-items: center;
+        }
+        .pd-order-row label { font-weight: 600; color: #2a4a5e; }
+        .pd-qty-input {
+            width: 4.5rem;
+            padding: 0.4rem 0.5rem;
+            border: 1px solid #c5d0dc;
+            border-radius: 6px;
+        }
+        .pd-order-price { margin: 0.65rem 0 0; font-weight: 700; color: var(--dz-blue); }
+        .pd-order-msg { margin: 0.5rem 0 0; font-size: 0.9rem; }
+        .pd-order-msg--ok { color: #1b5e20; }
+        .pd-order-msg--err { color: #b71c1c; }
+        .pd-order-browse-only {
+            margin: 1rem 0;
+            padding: 0.85rem 1rem;
+            background: #f8f4e8;
+            border: 1px solid #e6d9b8;
+            border-radius: 8px;
+            font-size: 0.92rem;
+            color: #5a4a2e;
+            line-height: 1.5;
+        }
     </style>
     <script src="api-config.js"></script>
     <script src="thejhon-api.js"></script>
     <script src="auth.js"></script>
+    <script src="vendor-cart.js"></script>
     <script src="admin-header.js"></script>
     <script src="nav.js" defer></script>
     <script src="product-detail.js" defer></script>

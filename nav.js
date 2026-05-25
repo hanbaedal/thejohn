@@ -66,6 +66,7 @@
         sync();
         function syncAll() {
             sync();
+            refreshVendorCartNav();
             if (window.THEJHON_AUTH && THEJHON_AUTH.applyNavRegisterVisibility) {
                 THEJHON_AUTH.applyNavRegisterVisibility();
             }
@@ -168,7 +169,8 @@
             seg === "vendor-list-admin.html" ||
             seg === "vendor-detail.html" ||
             seg === "vendor-new-register.html" ||
-            seg === "vendor-new-list.html"
+            seg === "vendor-new-list.html" ||
+            seg === "order-list-admin.html"
         );
     }
 
@@ -276,6 +278,37 @@
     } else if (mq.addListener) {
         mq.addListener(onMqChange);
     }
+
+    function refreshVendorCartNav() {
+        var nav = document.querySelector(".site-header-nav");
+        if (!nav) return;
+        var link = nav.querySelector('a[href="cart.html"]');
+        var show =
+            window.THEJHON_AUTH &&
+            THEJHON_AUTH.canPlaceVendorOrders &&
+            THEJHON_AUTH.canPlaceVendorOrders();
+        if (!show) {
+            if (link) link.remove();
+            return;
+        }
+        if (!link) {
+            link = document.createElement("a");
+            link.href = "cart.html";
+            link.className = "header-nav-link";
+            var productsLink = nav.querySelector('a[href="products.html"]');
+            if (productsLink && productsLink.nextSibling) {
+                nav.insertBefore(link, productsLink.nextSibling);
+            } else {
+                nav.appendChild(link);
+            }
+        }
+        link.setAttribute("data-nav-cart", "1");
+        var Cart = window.THEJHON_VENDOR_CART;
+        var n = Cart && Cart.itemCount ? Cart.itemCount(Cart.readCart()) : 0;
+        link.textContent = n > 0 ? "장바구니 (" + n + ")" : "장바구니";
+    }
+    refreshVendorCartNav();
+    window.addEventListener("thejhon-cart-updated", refreshVendorCartNav);
 
     (function injectSupportAdminOnlyNav() {
         var panel = document.getElementById("supportSubmenu");

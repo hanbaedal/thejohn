@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>장바구니 · 주문 — 더존</title>
+    <link rel="stylesheet" href="common.css">
+    <style>
+        .cart-title { margin: 0 0 1rem; font-size: 1.35rem; color: #052a4d; }
+        .cart-empty { color: #3d5166; line-height: 1.55; }
+        .cart-empty a { color: var(--dz-blue); font-weight: 600; }
+        .cart-table-wrap {
+            overflow-x: auto;
+            background: #fff;
+            border: 1px solid #e0e6ed;
+            border-radius: 12px;
+            box-shadow: 0 2px 14px rgba(10, 77, 156, 0.08);
+        }
+        .cart-table { width: 100%; border-collapse: collapse; font-size: 0.95rem; }
+        .cart-table th, .cart-table td {
+            padding: 0.65rem 0.75rem;
+            border-bottom: 1px solid #e8edf2;
+            text-align: left;
+        }
+        .cart-table th { background: #f4f7fb; font-weight: 700; color: #2a4a5e; }
+        .cart-qty {
+            width: 4rem;
+            padding: 0.35rem 0.5rem;
+            border: 1px solid #c5d0dc;
+            border-radius: 6px;
+        }
+        .cart-actions-row { margin-top: 1.25rem; display: flex; flex-wrap: wrap; gap: 0.75rem; align-items: center; }
+        .cart-total {
+            margin-left: auto;
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: var(--dz-blue);
+        }
+        .cart-note {
+            width: 100%;
+            max-width: 32rem;
+            margin-top: 1rem;
+            padding: 0.5rem 0.65rem;
+            border: 1px solid #c5d0dc;
+            border-radius: 8px;
+            font-family: inherit;
+        }
+        .cart-msg { margin: 1rem 0 0; padding: 0.75rem 1rem; border-radius: 8px; font-size: 0.92rem; }
+        .cart-msg--ok { background: #e8f5e9; color: #1b5e20; }
+        .cart-msg--warn { background: #fff8e1; color: #6d4c00; }
+        .cart-msg--err { background: #ffebee; color: #b71c1c; }
+        .btn-remove { color: #c62828; background: transparent; border: none; cursor: pointer; font-size: 0.88rem; }
+    </style>
+    <script src="api-config.js"></script>
+    <script src="thejhon-api.js"></script>
+    <script src="auth.js"></script>
+    <script src="vendor-cart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.2/dist/jspdf.umd.min.js"></script>
+    <script src="order-pdf-client.js"></script>
+    <script src="admin-header.js"></script>
+    <script src="nav.js" defer></script>
+    <script src="cart.js" defer></script>
+</head>
+<body>
+    <header class="site-header">
+        <div class="site-header-start">
+            <nav class="site-header-nav" aria-label="주요 메뉴">
+                <a href="company.html" class="header-nav-link">회사소개</a>
+                <a href="products.html" class="header-nav-link">사업부문</a>
+                <a href="product-register.html" class="header-nav-link">상품등록</a>
+                <a href="vendor-register.html" class="header-nav-link">업체등록</a>
+                <div class="nav-dropdown" data-nav-dropdown="support">
+                    <a href="support.html" class="header-nav-link nav-dropdown-trigger" aria-haspopup="true" aria-expanded="false" aria-controls="supportSubmenu">고객센터</a>
+                    <div id="supportSubmenu" class="nav-dropdown-panel" role="menu" aria-label="고객센터 하위 메뉴">
+                        <a href="support-partners.html" class="nav-dropdown-item" role="menuitem">파트너회사 소개</a>
+                        <a href="support-library.html" class="nav-dropdown-item" role="menuitem">최근소식</a>
+                        <a href="support-qna.html" class="nav-dropdown-item" role="menuitem">자유게시판</a>
+                        <a href="support-inquiry.html" class="nav-dropdown-item" role="menuitem">문의사항</a>
+                    </div>
+                </div>
+                <span class="header-nav-link is-static" title="준비 중입니다">카페</span>
+            </nav>
+        </div>
+        <nav class="site-header-actions" aria-label="계정">
+            <time class="header-date" id="headerToday" datetime=""></time>
+            <button type="button" class="btn btn-auth-icon btn-logout" id="btnLogout" hidden aria-label="로그아웃" title="로그아웃"></button>
+        </nav>
+    </header>
+    <main class="page-main">
+        <h1 class="cart-title">장바구니 · 주문</h1>
+        <div id="cart-root" aria-live="polite"></div>
+    </main>
+    <footer class="site-footer">
+        <div class="site-footer-inner">
+            <dl class="site-footer-grid">
+                <div class="site-footer-item"><dt>상호</dt><dd>(주)더존</dd></div>
+                <div class="site-footer-item"><dt>대표</dt><dd>이상범</dd></div>
+                <div class="site-footer-item"><dt>휴대폰</dt><dd><a class="footer-tel" href="tel:+821029288196">010-2928-8196</a></dd></div>
+            </dl>
+        </div>
+    </footer>
+</body>
+</html>

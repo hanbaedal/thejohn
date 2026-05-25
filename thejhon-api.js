@@ -91,8 +91,12 @@
         del: function (path) {
             return request("DELETE", path);
         },
-        listProducts: function () {
-            return request("GET", "/api/products").then(function (d) {
+        listProducts: function (opts) {
+            var q = "";
+            if (opts && opts.registeredBy) {
+                q = "?registeredBy=" + encodeURIComponent(String(opts.registeredBy));
+            }
+            return request("GET", "/api/products" + q).then(function (d) {
                 return d.items || [];
             });
         },
@@ -120,8 +124,17 @@
         deleteProduct: function (id) {
             return request("DELETE", "/api/products/" + encodeURIComponent(id));
         },
-        listVendors: function () {
-            return request("GET", "/api/vendors").then(function (d) {
+        listVendors: function (opts) {
+            var q = "";
+            if (opts && opts.registeredBy) {
+                q = "?registeredBy=" + encodeURIComponent(String(opts.registeredBy));
+            }
+            return request("GET", "/api/vendors" + q).then(function (d) {
+                return d.items || [];
+            });
+        },
+        listStaff: function () {
+            return request("GET", "/api/staff").then(function (d) {
                 return d.items || [];
             });
         },
@@ -153,6 +166,17 @@
         },
         checkSession: function () {
             return request("GET", "/api/auth/session");
+        },
+        submitOrder: function (body) {
+            return request("POST", "/api/orders", body);
+        },
+        listOrders: function () {
+            return request("GET", "/api/orders").then(function (d) {
+                return d.items || [];
+            });
+        },
+        orderPdfUrl: function (orderId) {
+            return apiUrl("/api/orders/" + encodeURIComponent(orderId) + "/pdf");
         }
     };
 })(typeof window !== "undefined" ? window : this);

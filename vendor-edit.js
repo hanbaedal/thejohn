@@ -104,7 +104,7 @@
     function setGrade(value) {
         if (!gradeSelect) return;
         var g = String(value || "1");
-        if (g !== "1" && g !== "2" && g !== "3") g = "1";
+        if (g !== "1" && g !== "2" && g !== "3" && g !== "4") g = "1";
         gradeSelect.value = g;
     }
 

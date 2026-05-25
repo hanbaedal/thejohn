@@ -194,5 +194,18 @@
             var fields = form.querySelectorAll("input, textarea, button, select");
             for (var i = 0; i < fields.length; i++) fields[i].disabled = true;
         }
+    } else {
+        var hintEl = document.getElementById("vr-registrar-hint");
+        if (hintEl && window.THEJHON_AUTH) {
+            var who = THEJHON_AUTH.getLoggedInCompanyDisplayName
+                ? THEJHON_AUTH.getLoggedInCompanyDisplayName()
+                : "";
+            var uid = THEJHON_AUTH.getUserId ? THEJHON_AUTH.getUserId() : "";
+            hintEl.textContent =
+                "신규 업체는 로그인한 관리자(" +
+                (who || uid) +
+                ") 담당으로 저장됩니다.";
+            hintEl.hidden = false;
+        }
     }
 })();

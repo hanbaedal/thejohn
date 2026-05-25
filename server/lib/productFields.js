@@ -13,7 +13,10 @@ const F = {
     personName: "per_name",
     personPhone: "per-number",
     personEmail: "per-email",
-    recordType: "pd_record_type"
+    recordType: "pd_record_type",
+    registeredBy: "pd_registered_by",
+    registeredByName: "pd_registered_by_name",
+    registeredAt: "pd_registered_at"
 };
 
 const RECORD_CATALOG = "catalog";
@@ -73,6 +76,11 @@ function fromLegacyDoc(doc) {
     if (!d[F.personEmail] && doc["per-email"]) d[F.personEmail] = String(doc["per-email"]).trim();
     if (!d[F.recordType] && doc.pd_record_type) d[F.recordType] = normalizeRecordType(doc.pd_record_type);
     if (!d[F.recordType]) d[F.recordType] = RECORD_CATALOG;
+    if (!d[F.registeredBy] && doc.pd_registered_by) d[F.registeredBy] = str(doc.pd_registered_by);
+    if (!d[F.registeredByName] && doc.pd_registered_by_name) {
+        d[F.registeredByName] = str(doc.pd_registered_by_name);
+    }
+    if (!d[F.registeredAt] && doc.pd_registered_at) d[F.registeredAt] = doc.pd_registered_at;
     return d;
 }
 
@@ -96,6 +104,9 @@ function toPublic(doc) {
         "per-number": str(d[F.personPhone]),
         "per-email": str(d[F.personEmail]),
         pd_record_type: normalizeRecordType(d[F.recordType]),
+        pd_registered_by: str(d[F.registeredBy]),
+        pd_registered_by_name: str(d[F.registeredByName]),
+        pd_registered_at: d[F.registeredAt] || 0,
         updatedAt: d.updatedAt || 0
     };
 }
@@ -182,11 +193,16 @@ function toDbDoc(id, built, existing) {
     };
     if (existing && existing.createdAt) doc.createdAt = existing.createdAt;
     else if (!existing) doc.createdAt = Date.now();
+    if (existing && existing[F.registeredBy]) {
+        doc[F.registeredBy] = existing[F.registeredBy];
+        doc[F.registeredByName] = existing[F.registeredByName] || "";
+        if (existing[F.registeredAt]) doc[F.registeredAt] = existing[F.registeredAt];
+    }
     return doc;
 }
 
 /** 같은 사업부문 내 동일 명칭(앞뒤 공백 제거 후 대소문자 무시) 상품 조회 */
-async function findDuplicateProductByName(db, name, excludeId, dept) {
+async function findDuplicateProductByName(db, name, excludeId, dept, registeredBy) {
     const n = str(name);
     const deptNorm = str(dept);
     if (!n || !deptNorm) return null;
@@ -196,6 +212,11 @@ async function findDuplicateProductByName(db, name, excludeId, dept) {
         [F.dept]: deptNorm,
         $or: [{ [F.name]: nameRe }, { title: nameRe }]
     };
+    if (registeredBy) {
+        filter[F.registeredBy] = String(registeredBy || "")
+            .trim()
+            .toLowerCase();
+    }
     if (excludeId) filter.id = { $ne: String(excludeId) };
     return db.collection("products").findOne(filter);
 }
@@ -238,6 +259,25 @@ async function migrateProductsCollection(db) {
         n++;
     }
     if (n) console.log("[products] migrated (incl. pd_price1~4):", n);
+
+    const legacy = await col.updateMany(
+        {
+            $or: [
+                { [F.registeredBy]: { $exists: false } },
+                { [F.registeredBy]: "" },
+                { [F.registeredBy]: null }
+            ]
+        },
+        {
+            $set: {
+                [F.registeredBy]: "legacy",
+                [F.registeredByName]: "기존(담당 미지정)"
+            }
+        }
+    );
+    if (legacy.modifiedCount) {
+        console.log("[products] pd_registered_by backfill (legacy):", legacy.modifiedCount);
+    }
 }
 
 module.exports = {

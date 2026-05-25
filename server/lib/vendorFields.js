@@ -29,7 +29,10 @@ const F = {
     mgrEmail: "vn_mgr_email",
     logo: "vn_logo",
     note: "vn_note",
-    recordType: "vn_record_type"
+    recordType: "vn_record_type",
+    registeredBy: "vn_registered_by",
+    registeredByName: "vn_registered_by_name",
+    registeredAt: "vn_registered_at"
 };
 
 const RECORD_PARTNER = "partner";
@@ -49,7 +52,7 @@ function str(v) {
 
 function parseGrade(v) {
     const n = parseInt(v, 10);
-    if (n >= 1 && n <= 3) return String(n);
+    if (n >= 1 && n <= 4) return String(n);
     return "";
 }
 
@@ -99,6 +102,11 @@ function fromLegacyDoc(doc) {
     if (!d[F.grade]) d[F.grade] = parseGrade(d[F.grade]) || "1";
     if (!d[F.recordType] && doc.vn_record_type) d[F.recordType] = normalizeRecordType(doc.vn_record_type);
     if (!d[F.recordType]) d[F.recordType] = RECORD_PARTNER;
+    if (!d[F.registeredBy] && doc.vn_registered_by) d[F.registeredBy] = str(doc.vn_registered_by);
+    if (!d[F.registeredByName] && doc.vn_registered_by_name) {
+        d[F.registeredByName] = str(doc.vn_registered_by_name);
+    }
+    if (!d[F.registeredAt] && doc.vn_registered_at) d[F.registeredAt] = doc.vn_registered_at;
     if (!d[F.depts] && Array.isArray(doc.vn_depts)) d[F.depts] = doc.vn_depts;
     else if (!d[F.depts] && typeof doc.vn_depts === "string") {
         d[F.depts] = parseDeptsList({ vn_depts: doc.vn_depts }, null);
@@ -132,6 +140,9 @@ function toPublic(doc) {
         vn_logo: String(d[F.logo] || ""),
         vn_note: str(d[F.note]),
         vn_record_type: normalizeRecordType(d[F.recordType]),
+        vn_registered_by: str(d[F.registeredBy]),
+        vn_registered_by_name: str(d[F.registeredByName]),
+        vn_registered_at: d[F.registeredAt] || 0,
         updatedAt: d.updatedAt || 0
     };
 }
@@ -205,6 +216,11 @@ function toDbDoc(id, built, existing) {
     };
     if (existing?.createdAt) doc.createdAt = existing.createdAt;
     else doc.createdAt = Date.now();
+    if (existing && existing[F.registeredBy]) {
+        doc[F.registeredBy] = existing[F.registeredBy];
+        doc[F.registeredByName] = existing[F.registeredByName] || "";
+        if (existing[F.registeredAt]) doc[F.registeredAt] = existing[F.registeredAt];
+    }
     return doc;
 }
 
@@ -232,7 +248,7 @@ function validateBuilt(built, requirePassword) {
     if (pwErr) return pwErr;
     if (!built.vn_company) return "업체이름을 입력해 주세요.";
     if (!built.vn_depts || !built.vn_depts.length) return "사업부문을 하나 이상 선택해 주세요.";
-    if (!built.vn_grade) return "업체등급(1~3)을 선택해 주세요.";
+    if (!built.vn_grade) return "업체등급(1~4)을 선택해 주세요.";
     return "";
 }
 
@@ -287,6 +303,25 @@ async function migrateVendorsCollection(db) {
         n++;
     }
     if (n) console.log("[vendors] migrated field names:", n);
+
+    const legacy = await col.updateMany(
+        {
+            $or: [
+                { [F.registeredBy]: { $exists: false } },
+                { [F.registeredBy]: "" },
+                { [F.registeredBy]: null }
+            ]
+        },
+        {
+            $set: {
+                [F.registeredBy]: "legacy",
+                [F.registeredByName]: "기존(담당 미지정)"
+            }
+        }
+    );
+    if (legacy.modifiedCount) {
+        console.log("[vendors] registered_by backfill (legacy):", legacy.modifiedCount);
+    }
 }
 
 module.exports = {

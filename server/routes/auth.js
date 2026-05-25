@@ -33,6 +33,8 @@ router.post("/login", async (req, res) => {
 
         const tokenPayload = { role: result.role, userId: result.userId };
         if (result.vendorGrade) tokenPayload.vendorGrade = result.vendorGrade;
+        if (result.vendorRegisteredBy) tokenPayload.vendorRegisteredBy = result.vendorRegisteredBy;
+        if (result.vendorOrderEnabled) tokenPayload.vendorOrderEnabled = true;
         const token = signToken(tokenPayload);
         return res.json({
             ok: true,
@@ -41,6 +43,9 @@ router.post("/login", async (req, res) => {
             companyName: result.companyName || "",
             displayName: result.companyName || result.displayName || result.userId,
             vendorGrade: result.vendorGrade || "",
+            vendorRegisteredBy: result.vendorRegisteredBy || "",
+            vendorRegisteredByName: result.vendorRegisteredByName || "",
+            vendorOrderEnabled: !!result.vendorOrderEnabled,
             token
         });
     } catch (e) {
@@ -61,7 +66,9 @@ router.get("/session", function (req, res) {
             loggedIn: true,
             role: payload.role,
             userId: payload.userId,
-            vendorGrade: payload.vendorGrade || ""
+            vendorGrade: payload.vendorGrade || "",
+            vendorRegisteredBy: payload.vendorRegisteredBy || "",
+            vendorOrderEnabled: !!payload.vendorOrderEnabled
         });
     } catch (e) {
         return res.json({ ok: true, loggedIn: false, error: "세션이 만료되었습니다." });

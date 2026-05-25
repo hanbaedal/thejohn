@@ -6,11 +6,12 @@ const {
     migrateCollectionLoginFields
 } = require("./loginAccount");
 const { verifyStaffPassword, isStaffRole } = require("./staff");
-const { getCompanyName: getVendorCompanyName, parseGrade, F } = require("./vendorFields");
+const { getCompanyName: getVendorCompanyName, parseGrade, F: VF } = require("./vendorFields");
+const { vendorCanPlaceOrders } = require("./orderAccess");
 
 function vendorGradeFromDoc(vendor) {
     if (!vendor) return "1";
-    const raw = vendor[F.grade] != null ? vendor[F.grade] : vendor.vn_grade;
+    const raw = vendor[VF.grade] != null ? vendor[VF.grade] : vendor.vn_grade;
     return parseGrade(raw) || "1";
 }
 const { getCompanyName: getStaffCompanyName } = require("./staffFields");
@@ -92,13 +93,17 @@ async function tryVendorLogin(vendor, loginId, password) {
         );
     }
 
+    const regBy = String(vendor[VF.registeredBy] || "").trim();
     return {
         ok: true,
         role: "vendor",
         userId: vendor.loginId,
         companyName: getVendorCompanyName(vendor),
         displayName: getVendorCompanyName(vendor) || vendor.loginId || "",
-        vendorGrade: vendorGradeFromDoc(vendor)
+        vendorGrade: vendorGradeFromDoc(vendor),
+        vendorRegisteredBy: regBy,
+        vendorRegisteredByName: String(vendor[VF.registeredByName] || "").trim(),
+        vendorOrderEnabled: vendorCanPlaceOrders(vendor)
     };
 }
 

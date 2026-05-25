@@ -95,6 +95,7 @@
     <main class="page-main page-main--hide-scrollbar">
         <p class="am-subnav"><a href="product-manage.html">← 상품관리</a></p>
         <h1>상품 내용 등록</h1>
+        <p id="pr-registrar-hint" class="pr-hint" hidden></p>
         <p id="pr-status" class="pr-status" role="status" aria-live="polite"></p>
         <form id="pr-form" class="pr-form" novalidate>
             <div class="am-dept-picker">
@@ -123,7 +124,7 @@
                         <input type="number" id="pr-pd-price3" name="pd_price3" min="0" step="1" inputmode="numeric" placeholder="0">
                     </div>
                     <div class="pr-field-half">
-                        <label for="pr-pd-price4">가격 4</label>
+                        <label for="pr-pd-price4">구매가</label>
                         <input type="number" id="pr-pd-price4" name="pd_price4" min="0" step="1" inputmode="numeric" placeholder="0">
                     </div>
                 </div>

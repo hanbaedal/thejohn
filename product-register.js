@@ -162,5 +162,18 @@
             var fields = form.querySelectorAll("input, textarea, button");
             for (var i = 0; i < fields.length; i++) fields[i].disabled = true;
         }
+    } else {
+        var hintEl = document.getElementById("pr-registrar-hint");
+        if (hintEl && window.THEJHON_AUTH) {
+            var who = THEJHON_AUTH.getLoggedInCompanyDisplayName
+                ? THEJHON_AUTH.getLoggedInCompanyDisplayName()
+                : "";
+            var uid = THEJHON_AUTH.getUserId ? THEJHON_AUTH.getUserId() : "";
+            hintEl.textContent =
+                "이 상품은 로그인한 관리자(" +
+                (who || uid) +
+                ") 사업 영역으로 등록됩니다. 업체는 담당 관리자 상품만 등급가, 타 관리자 상품은 가격1로 표시됩니다.";
+            hintEl.hidden = false;
+        }
     }
 })();

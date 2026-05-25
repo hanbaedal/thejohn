@@ -1,15 +1,24 @@
 const express = require("express");
 const { getDb } = require("../db");
 const { loginLookupFilter } = require("../lib/loginAccount");
-const { requireRole } = require("../middleware/auth");
+const { requireRole, extractBearer, verifyToken } = require("../middleware/auth");
 const { isReservedStaffLoginId } = require("../lib/staff");
 const {
     toPublic,
     buildFromBody,
     toDbDoc,
     validateBuilt,
-    validateLoginIdLength
+    validateLoginIdLength,
+    F
 } = require("../lib/vendorFields");
+const {
+    isStaffAuth,
+    canReadVendor,
+    canWriteVendor,
+    buildVendorListQuery,
+    stampNewVendorRegistration,
+    applyRegistrationOnUpdate
+} = require("../lib/vendorAccess");
 
 const router = express.Router();
 
@@ -36,6 +45,16 @@ function vendorWriteErrorMessage(e) {
     return "";
 }
 
+function optionalAuth(req) {
+    const token = extractBearer(req);
+    if (!token) return null;
+    try {
+        return verifyToken(token);
+    } catch (e) {
+        return null;
+    }
+}
+
 async function findDuplicateVendor(vendors, loginId, excludeId) {
     const idFilter = loginLookupFilter(loginId);
     const filter = excludeId ? { $and: [idFilter, { id: { $ne: excludeId } }] } : idFilter;
@@ -48,12 +67,14 @@ async function findStaffLoginConflict(loginId) {
 
 router.get("/", async (req, res) => {
     try {
+        const auth = optionalAuth(req);
+        const query = buildVendorListQuery(auth, req.query.registeredBy);
         const items = await getDb()
             .collection("vendors")
-            .find({})
+            .find(query)
             .sort({ updatedAt: -1 })
             .toArray();
-        res.json({ ok: true, items: items.map(toPublic) });
+        res.json({ ok: true, items: items.map(toPublic), scope: auth && isStaffAuth(auth) ? "staff" : "public" });
     } catch (e) {
         console.error("GET /api/vendors", e);
         res.status(500).json({ ok: false, error: "업체 목록을 불러오지 못했습니다." });
@@ -100,8 +121,12 @@ router.get("/check-login-id", requireRole("supervisor", "admin"), async (req, re
 
 router.get("/:id", async (req, res) => {
     try {
+        const auth = optionalAuth(req);
         const doc = await getDb().collection("vendors").findOne({ id: req.params.id });
         if (!doc) return res.status(404).json({ ok: false, error: "업체를 찾을 수 없습니다." });
+        if (auth && isStaffAuth(auth) && !canReadVendor(auth, doc)) {
+            return res.status(403).json({ ok: false, error: "이 업체를 조회할 권한이 없습니다." });
+        }
         res.json({ ok: true, item: toPublic(doc) });
     } catch (e) {
         console.error("GET /api/vendors/:id", e);
@@ -130,9 +155,17 @@ router.post("/", requireRole("supervisor", "admin"), async (req, res) => {
         const dup = await findDuplicateVendor(vendors, loginId);
         if (dup) return res.status(409).json({ ok: false, error: "이미 사용 중인 아이디입니다." });
 
-        const doc = toDbDoc(newId(), built, null);
+        let doc = toDbDoc(newId(), built, null);
+        doc = await stampNewVendorRegistration(doc, req.auth);
         await vendors.insertOne(doc);
-        console.log("[vendors] inserted:", doc.id, doc.loginId, doc.vn_company);
+        console.log(
+            "[vendors] inserted:",
+            doc.id,
+            doc.loginId,
+            doc.vn_company,
+            "by",
+            doc[F.registeredBy]
+        );
         res.status(201).json({ ok: true, item: toPublic(doc) });
     } catch (e) {
         console.error("POST /api/vendors", e);
@@ -148,6 +181,12 @@ router.put("/:id", requireRole("supervisor", "admin"), async (req, res) => {
         const vendors = getDb().collection("vendors");
         const existing = await vendors.findOne({ id });
         if (!existing) return res.status(404).json({ ok: false, error: "업체를 찾을 수 없습니다." });
+        if (!canWriteVendor(req.auth, existing)) {
+            return res.status(403).json({
+                ok: false,
+                error: "다른 관리자가 등록한 업체는 수정할 수 없습니다. 총괄(thejohn)에게 담당 변경을 요청하세요."
+            });
+        }
 
         const loginId = String(req.body.loginId || "").trim();
         const password = String(req.body.password || "");
@@ -167,9 +206,10 @@ router.put("/:id", requireRole("supervisor", "admin"), async (req, res) => {
         const dup = await findDuplicateVendor(vendors, loginId, id);
         if (dup) return res.status(409).json({ ok: false, error: "이미 사용 중인 아이디입니다." });
 
-        const doc = toDbDoc(id, built, existing);
+        let doc = toDbDoc(id, built, existing);
+        doc = await applyRegistrationOnUpdate(doc, existing, req.auth, req.body);
         await vendors.replaceOne({ id }, doc);
-        console.log("[vendors] updated:", doc.id, doc.loginId);
+        console.log("[vendors] updated:", doc.id, doc.loginId, "owner", doc[F.registeredBy]);
         res.json({ ok: true, item: toPublic(doc) });
     } catch (e) {
         console.error("PUT /api/vendors/:id", e);
@@ -181,6 +221,16 @@ router.put("/:id", requireRole("supervisor", "admin"), async (req, res) => {
 
 router.delete("/:id", requireRole("supervisor", "admin"), async (req, res) => {
     try {
+        const existing = await getDb().collection("vendors").findOne({ id: req.params.id });
+        if (!existing) {
+            return res.status(404).json({ ok: false, error: "업체를 찾을 수 없습니다." });
+        }
+        if (!canWriteVendor(req.auth, existing)) {
+            return res.status(403).json({
+                ok: false,
+                error: "다른 관리자가 등록한 업체는 삭제할 수 없습니다."
+            });
+        }
         const result = await getDb().collection("vendors").deleteOne({ id: req.params.id });
         if (result.deletedCount === 0) {
             return res.status(404).json({ ok: false, error: "업체를 찾을 수 없습니다." });

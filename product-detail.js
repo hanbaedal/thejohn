@@ -1,6 +1,7 @@
 (function () {
     var api = window.THEJHON_API;
     var root = document.getElementById("pd-root");
+    var currentProduct = null;
 
     function escapeHtml(s) {
         return String(s)
@@ -52,6 +53,95 @@
         return '<dl class="pd-contact">' + rows.join("") + "</dl>";
     }
 
+    function orderBlock(it) {
+        if (!window.THEJHON_AUTH) return "";
+        if (THEJHON_AUTH.getRole && THEJHON_AUTH.getRole() === "vendor") {
+            if (!THEJHON_AUTH.canPlaceVendorOrders || !THEJHON_AUTH.canPlaceVendorOrders()) {
+                return (
+                    '<p class="pd-order-browse-only">이 계정은 <strong>상품 조회</strong>만 가능합니다. ' +
+                    "주문·장바구니는 담당 거래처(aksangsa)에 등록된 업체만 이용할 수 있습니다.</p>"
+                );
+            }
+        } else if (!THEJHON_AUTH.canPlaceVendorOrders || !THEJHON_AUTH.canPlaceVendorOrders()) {
+            return "";
+        }
+        var price = THEJHON_AUTH.getVendorUnitPriceForProduct(it);
+        return (
+            '<section class="pd-order" aria-label="주문">' +
+            '<p class="pd-order-hint">수량을 입력한 뒤 장바구니에 담거나 바로 주문할 수 있습니다.</p>' +
+            '<div class="pd-order-row">' +
+            '<label for="pd-qty">수량</label>' +
+            '<input type="number" id="pd-qty" class="pd-qty-input" min="1" value="1" inputmode="numeric">' +
+            '<button type="button" class="btn btn-primary" id="pd-add-cart">장바구니 담기</button>' +
+            '<a class="btn" href="cart.html" id="pd-go-cart">장바구니 보기</a>' +
+            "</div>" +
+            '<p class="pd-order-price" id="pd-order-price" data-unit="' +
+            escapeHtml(String(price.unitPrice)) +
+            '" data-label="' +
+            escapeHtml(price.priceLabel) +
+            '"></p>' +
+            '<p class="pd-order-msg" id="pd-order-msg" role="status" hidden></p>' +
+            "</section>"
+        );
+    }
+
+    function bindOrderHandlers(it) {
+        var qtyEl = document.getElementById("pd-qty");
+        var addBtn = document.getElementById("pd-add-cart");
+        var msgEl = document.getElementById("pd-order-msg");
+        var priceEl = document.getElementById("pd-order-price");
+        if (!qtyEl || !addBtn || !window.THEJHON_VENDOR_CART) return;
+
+        function unitInfo() {
+            if (THEJHON_AUTH.getVendorUnitPriceForProduct) {
+                return THEJHON_AUTH.getVendorUnitPriceForProduct(it);
+            }
+            return { unitPrice: 0, priceLabel: "" };
+        }
+
+        function updateLinePreview() {
+            if (!priceEl) return;
+            var info = unitInfo();
+            var q = Math.max(1, parseInt(qtyEl.value, 10) || 1);
+            var line = (Number(info.unitPrice) || 0) * q;
+            priceEl.textContent =
+                (info.priceLabel || "단가") +
+                " " +
+                formatWon(info.unitPrice) +
+                " × " +
+                q +
+                " = " +
+                formatWon(line);
+        }
+
+        qtyEl.addEventListener("input", updateLinePreview);
+        updateLinePreview();
+
+        addBtn.addEventListener("click", function () {
+            var info = unitInfo();
+            var qty = Math.max(1, parseInt(qtyEl.value, 10) || 1);
+            var res = THEJHON_VENDOR_CART.addItem({
+                productId: it.id,
+                productName: it.pd_name,
+                pd_dept: it.pd_dept,
+                pd_size: it.pd_size,
+                unitPrice: info.unitPrice,
+                priceLabel: info.priceLabel,
+                quantity: qty
+            });
+            if (msgEl) {
+                msgEl.hidden = false;
+                if (res.ok) {
+                    msgEl.className = "pd-order-msg pd-order-msg--ok";
+                    msgEl.textContent = "장바구니에 담았습니다.";
+                } else {
+                    msgEl.className = "pd-order-msg pd-order-msg--err";
+                    msgEl.textContent = res.error || "담기 실패";
+                }
+            }
+        });
+    }
+
     function getIdFromQuery() {
         try {
             var params = new URLSearchParams(window.location.search);
@@ -68,17 +158,13 @@
     }
 
     function productsListHref(it) {
-        var href = "products.html";
         var dept = it.pd_dept && String(it.pd_dept).trim();
-        var group = it.pd_group && String(it.pd_group).trim();
-        if (dept) {
-            href += "?dept=" + encodeURIComponent(dept);
-            if (group) href += "&group=" + encodeURIComponent(group);
-        }
-        return href;
+        if (!dept) return "products.html";
+        return "products.html?dept=" + encodeURIComponent(dept);
     }
 
     function renderItem(it) {
+        currentProduct = it;
         var titlePlain = String(it.pd_name || "상품");
         document.title =
             titlePlain.length > 60 ? titlePlain.slice(0, 57) + "… — 더존" : titlePlain + " — 더존";
@@ -104,11 +190,14 @@
             "</h1>" +
             priceBlock(it) +
             specHtml +
+            orderBlock(it) +
             '<div class="pd-content">' +
             escapeHtml(it.pd_explain || "") +
             "</div>" +
             contactBlock(it) +
             "</div></article>";
+
+        bindOrderHandlers(it);
     }
 
     function render() {
