@@ -1,5 +1,6 @@
 /**
- * 브라우저 주문서 PDF — 서버 양식과 동일 (jsPDF)
+ * @deprecated 한글 미지원. 주문 PDF는 서버 API(THEJHON_ORDER_UI.downloadOrderPdfWithAuth) 사용.
+ * 브라우저 jsPDF — 레거시 (Helvetica, 한글 깨짐)
  */
 (function (global) {
     function formatWon(n) {

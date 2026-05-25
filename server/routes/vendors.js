@@ -68,7 +68,7 @@ async function findStaffLoginConflict(loginId) {
 router.get("/", async (req, res) => {
     try {
         const auth = optionalAuth(req);
-        const query = buildVendorListQuery(auth, req.query.registeredBy);
+        const query = buildVendorListQuery(auth);
         const items = await getDb()
             .collection("vendors")
             .find(query)

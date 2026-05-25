@@ -66,12 +66,16 @@
             return "";
         }
         var price = THEJHON_AUTH.getVendorUnitPriceForProduct(it);
+        var qtyField =
+            window.THEJHON_QTY_STEPPER && THEJHON_QTY_STEPPER.html
+                ? THEJHON_QTY_STEPPER.html(1, { inputId: "pd-qty", className: "pd-qty-stepper" })
+                : '<input type="number" id="pd-qty" class="pd-qty-input" min="1" value="1" inputmode="numeric">';
         return (
             '<section class="pd-order" aria-label="주문">' +
             '<p class="pd-order-hint">수량을 입력한 뒤 목록에 담고, 아래 <strong>주문하기</strong>에서 확인·주문하세요.</p>' +
             '<div class="pd-order-row">' +
             '<label for="pd-qty">수량</label>' +
-            '<input type="number" id="pd-qty" class="pd-qty-input" min="1" value="1" inputmode="numeric">' +
+            qtyField +
             '<button type="button" class="btn btn-primary" id="pd-add-cart">주문 목록에 담기</button>' +
             '<button type="button" class="btn" id="pd-open-order">주문하기</button>' +
             "</div>" +
@@ -87,11 +91,18 @@
 
     function bindOrderHandlers(it) {
         var qtyEl = document.getElementById("pd-qty");
+        var stepperEl = document.querySelector(".pd-order .qty-stepper");
+        var qtyCtl = null;
         var addBtn = document.getElementById("pd-add-cart");
         var openOrderBtn = document.getElementById("pd-open-order");
         var msgEl = document.getElementById("pd-order-msg");
         var priceEl = document.getElementById("pd-order-price");
-        if (!qtyEl || !addBtn || !window.THEJHON_VENDOR_CART) return;
+        if ((!qtyEl && !qtyCtl) || !addBtn || !window.THEJHON_VENDOR_CART) return;
+
+        function readQty() {
+            if (qtyCtl) return qtyCtl.read();
+            return Math.max(1, parseInt(qtyEl.value, 10) || 1);
+        }
 
         function openOrderModal() {
             function run() {
@@ -122,7 +133,7 @@
         function updateLinePreview() {
             if (!priceEl) return;
             var info = unitInfo();
-            var q = Math.max(1, parseInt(qtyEl.value, 10) || 1);
+            var q = readQty();
             var lineLabel =
                 window.THEJHON_AUTH && THEJHON_AUTH.DETAIL_PRICE_LABEL
                     ? THEJHON_AUTH.DETAIL_PRICE_LABEL
@@ -137,12 +148,19 @@
                 formatWon((Number(info.unitPrice) || 0) * q);
         }
 
-        qtyEl.addEventListener("input", updateLinePreview);
+        if (stepperEl && window.THEJHON_QTY_STEPPER && THEJHON_QTY_STEPPER.bind) {
+            qtyCtl = THEJHON_QTY_STEPPER.bind(stepperEl, {
+                onInput: updateLinePreview,
+                onChange: updateLinePreview
+            });
+        } else if (qtyEl) {
+            qtyEl.addEventListener("input", updateLinePreview);
+        }
         updateLinePreview();
 
         addBtn.addEventListener("click", function () {
             var info = unitInfo();
-            var qty = Math.max(1, parseInt(qtyEl.value, 10) || 1);
+            var qty = readQty();
             var res = THEJHON_VENDOR_CART.addItem({
                 productId: it.id,
                 productName: it.pd_name,

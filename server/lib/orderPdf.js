@@ -6,11 +6,14 @@ function resolveFontPath() {
     var fromEnv = String(process.env.PDF_FONT_PATH || "").trim();
     if (fromEnv && fs.existsSync(fromEnv)) return fromEnv;
     var candidates = [
-        path.join(__dirname, "..", "fonts", "NotoSansKR-Regular.otf"),
+        path.join(__dirname, "..", "fonts", "NotoSansKR-Regular.ttf"),
+        path.join(__dirname, "..", "fonts", "NotoSansCJKkr-Regular.otf"),
         path.join(__dirname, "..", "fonts", "NanumGothic.ttf"),
+        path.join(__dirname, "..", "fonts", "NotoSansKR-Regular.otf"),
         "C:\\Windows\\Fonts\\malgun.ttf",
         "C:\\Windows\\Fonts\\malgun.ttc",
-        "/usr/share/fonts/truetype/nanum/NanumGothic.ttf"
+        "/usr/share/fonts/truetype/nanum/NanumGothic.ttf",
+        "/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc"
     ];
     for (var i = 0; i < candidates.length; i++) {
         if (fs.existsSync(candidates[i])) return candidates[i];
@@ -43,15 +46,18 @@ function buildOrderPdfBuffer(order) {
         });
         doc.on("error", reject);
 
-        if (fontPath) {
-            try {
-                doc.registerFont("KR", fontPath);
-                doc.font("KR");
-            } catch (e) {
-                doc.font("Helvetica");
-            }
-        } else {
-            doc.font("Helvetica");
+        if (!fontPath) {
+            return reject(
+                new Error(
+                    "한글 PDF 폰트가 없습니다. server에서 npm run postinstall 또는 node scripts/ensure-pdf-font.js 를 실행하세요."
+                )
+            );
+        }
+        try {
+            doc.registerFont("KR", fontPath);
+            doc.font("KR");
+        } catch (e) {
+            return reject(new Error("PDF 한글 폰트 등록 실패: " + e.message));
         }
 
         var supplier = order.supplier || {};

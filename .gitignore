@@ -1,5 +1,7 @@
 node_modules/
 server/public/
+server/fonts/*.ttf
+server/fonts/*.otf
 .env
 *.log
 .DS_Store

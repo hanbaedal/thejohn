@@ -77,10 +77,11 @@ async function tryStaffLogin(staff, loginId, password) {
     if (!valid) return null;
 
     const company = getStaffCompanyName(staff);
-    const companyLabel = company || (staff.role === "supervisor" ? "(주)더존" : "");
+    const companyLabel = company || "";
+    var role = staff.role === "supervisor" ? "admin" : staff.role;
     return {
         ok: true,
-        role: staff.role,
+        role: role,
         userId: staff.loginId,
         companyName: companyLabel,
         displayName: companyLabel || staff.loginId

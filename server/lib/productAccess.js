@@ -1,7 +1,6 @@
 const { F } = require("./productFields");
 const {
     normalizeStaffLoginId,
-    isSupervisorAuth,
     isStaffAuth,
     LEGACY_REGISTERED_BY,
     staffDisplayName
@@ -25,30 +24,14 @@ function canReadProduct() {
 
 function canWriteProduct(auth, doc) {
     if (!auth || !isStaffAuth(auth)) return false;
-    if (isSupervisorAuth(auth)) return true;
     if (!doc) return true;
     if (isSharedLegacyProduct(doc)) return true;
     return productOwnedBy(doc, auth.userId);
 }
 
-function buildProductListQuery(auth, queryRegisteredBy) {
+/** 관리자별 본인 등록 상품 + legacy(담당 미지정) */
+function buildProductListQuery(auth) {
     if (!auth || !isStaffAuth(auth)) return {};
-    if (isSupervisorAuth(auth)) {
-        const filterId = normalizeStaffLoginId(queryRegisteredBy);
-        if (filterId && filterId !== "all") {
-            if (filterId === LEGACY_REGISTERED_BY) {
-                return {
-                    $or: [
-                        { [F.registeredBy]: LEGACY_REGISTERED_BY },
-                        { [F.registeredBy]: { $exists: false } },
-                        { [F.registeredBy]: "" }
-                    ]
-                };
-            }
-            return { [F.registeredBy]: filterId };
-        }
-        return {};
-    }
     const me = normalizeStaffLoginId(auth.userId);
     return {
         $or: [
@@ -70,13 +53,6 @@ async function stampNewProductRegistration(doc, auth) {
 
 async function applyProductRegistrationOnUpdate(doc, existing, auth, body) {
     if (!existing) return stampNewProductRegistration(doc, auth);
-    if (isSupervisorAuth(auth) && body && body.pd_registered_by != null) {
-        const next = normalizeStaffLoginId(body.pd_registered_by);
-        doc[F.registeredBy] = next;
-        doc[F.registeredByName] = await staffDisplayName(next);
-        doc[F.registeredAt] = existing[F.registeredAt] || Date.now();
-        return doc;
-    }
     doc[F.registeredBy] = existing[F.registeredBy] || LEGACY_REGISTERED_BY;
     doc[F.registeredByName] = existing[F.registeredByName] || "";
     if (existing[F.registeredAt]) doc[F.registeredAt] = existing[F.registeredAt];

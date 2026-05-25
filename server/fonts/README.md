@@ -1,10 +1,9 @@
-# 한글 PDF 폰트 (선택)
+# 한글 PDF 폰트
 
-서버에서 주문서 PDF를 한글로 생성하려면 아래 파일 중 하나를 이 폴더에 넣으세요.
+배포·시작 시 `npm run postinstall` / `node scripts/ensure-pdf-font.js` 가 `NotoSansKR-Regular.ttf` 를 이 폴더에 받습니다.
 
-- `NotoSansKR-Regular.otf`
-- `NanumGothic.ttf`
+수동으로 넣을 때: `NotoSansKR-Regular.ttf`, `NanumGothic.ttf`, `NotoSansCJKkr-Regular.otf` 등
 
-또는 환경 변수 `PDF_FONT_PATH`에 시스템 폰트 경로를 지정하세요.
+환경 변수 `PDF_FONT_PATH` 로 다른 TTF/OTF 경로를 지정할 수 있습니다.
 
-Windows 로컬 개발 시 `malgun.ttf`를 자동 탐색합니다.
+Windows 로컬은 `malgun.ttf` 도 자동 탐색합니다(폰트 파일이 없을 때).

@@ -9,15 +9,14 @@ function normalizeStaffLoginId(loginId) {
         .toLowerCase();
 }
 
-/** 레거시 DB에 role supervisor 만 남아 있을 때만 true (thejohn 등 일반 admin 과 동일 권한) */
-function isSupervisorAuth(auth) {
-    if (!auth) return false;
-    return auth.role === "supervisor";
+/** 슈퍼바이저 역할 없음 — 항상 false (레거시 호환) */
+function isSupervisorAuth() {
+    return false;
 }
 
 function isStaffAuth(auth) {
     if (!auth) return false;
-    return auth.role === "supervisor" || auth.role === "admin";
+    return auth.role === "admin" || auth.role === "supervisor";
 }
 
 /** 기존 28건 등 담당 미기록 — 모든 관리자가 조회·수정 가능 */
@@ -34,40 +33,20 @@ function vendorOwnedBy(doc, staffLoginId) {
 
 function canReadVendor(auth, doc) {
     if (!auth || !isStaffAuth(auth)) return true;
-    if (isSupervisorAuth(auth)) return true;
     if (isSharedLegacyVendor(doc)) return true;
     return vendorOwnedBy(doc, auth.userId);
 }
 
 function canWriteVendor(auth, doc) {
     if (!auth || !isStaffAuth(auth)) return false;
-    if (isSupervisorAuth(auth)) return true;
     if (!doc) return true;
     if (isSharedLegacyVendor(doc)) return true;
     return vendorOwnedBy(doc, auth.userId);
 }
 
-/**
- * MongoDB find 쿼리 — supervisor는 전체(또는 registeredBy 필터), admin은 본인+legacy
- */
-function buildVendorListQuery(auth, queryRegisteredBy) {
+/** MongoDB find 쿼리 — 관리자별 본인 등록 + legacy(담당 미지정) */
+function buildVendorListQuery(auth) {
     if (!auth || !isStaffAuth(auth)) return {};
-    if (isSupervisorAuth(auth)) {
-        const filterId = normalizeStaffLoginId(queryRegisteredBy);
-        if (filterId && filterId !== "all") {
-            if (filterId === LEGACY_REGISTERED_BY) {
-                return {
-                    $or: [
-                        { [F.registeredBy]: LEGACY_REGISTERED_BY },
-                        { [F.registeredBy]: { $exists: false } },
-                        { [F.registeredBy]: "" }
-                    ]
-                };
-            }
-            return { [F.registeredBy]: filterId };
-        }
-        return {};
-    }
     const me = normalizeStaffLoginId(auth.userId);
     return {
         $or: [
@@ -95,13 +74,6 @@ async function stampNewVendorRegistration(doc, auth) {
 
 async function applyRegistrationOnUpdate(doc, existing, auth, body) {
     if (!existing) return stampNewVendorRegistration(doc, auth);
-    if (isSupervisorAuth(auth) && body && body.vn_registered_by != null) {
-        const next = normalizeStaffLoginId(body.vn_registered_by);
-        doc[F.registeredBy] = next;
-        doc[F.registeredByName] = await staffDisplayName(next);
-        doc[F.registeredAt] = existing[F.registeredAt] || Date.now();
-        return doc;
-    }
     doc[F.registeredBy] = existing[F.registeredBy] || LEGACY_REGISTERED_BY;
     doc[F.registeredByName] = existing[F.registeredByName] || "";
     if (existing[F.registeredAt]) doc[F.registeredAt] = existing[F.registeredAt];

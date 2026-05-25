@@ -1182,3 +1182,57 @@ body:not(.page-login) .login-card {
     font-size: 0.9rem;
     color: var(--dz-blue);
 }
+
+/* 수량 스테퍼 — 상품 상세·주문 모달 공통 */
+.qty-stepper {
+    display: inline-flex;
+    align-items: stretch;
+    border: 1px solid #c5d0dc;
+    border-radius: 8px;
+    overflow: hidden;
+    background: #fff;
+    box-sizing: border-box;
+}
+.qty-stepper__btn {
+    flex: 0 0 2.75rem;
+    min-width: 44px;
+    min-height: 44px;
+    padding: 0;
+    border: none;
+    background: #f4f7fb;
+    color: #1a4a6e;
+    font-size: 1.25rem;
+    font-weight: 700;
+    line-height: 1;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+}
+.qty-stepper__btn:hover {
+    background: #e8edf2;
+}
+.qty-stepper__btn:active {
+    background: #d8e2eb;
+}
+.qty-stepper__input {
+    width: 3.25rem;
+    min-width: 2.5rem;
+    padding: 0.45rem 0.25rem;
+    border: none;
+    border-left: 1px solid #e8edf2;
+    border-right: 1px solid #e8edf2;
+    border-radius: 0;
+    font-size: 16px;
+    font-weight: 600;
+    text-align: center;
+    box-sizing: border-box;
+    -moz-appearance: textfield;
+    appearance: textfield;
+}
+.qty-stepper__input::-webkit-outer-spin-button,
+.qty-stepper__input::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+.pd-order-row .qty-stepper {
+    flex-shrink: 0;
+}

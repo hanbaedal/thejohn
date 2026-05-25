@@ -130,14 +130,13 @@
     background: #f4f7fb;
     font-weight: 700;
 }
-.vendor-order-modal .cart-qty {
-    width: 4.5rem;
-    min-height: 44px;
-    padding: 0.45rem 0.5rem;
-    border: 1px solid #c5d0dc;
-    border-radius: 8px;
-    font-size: 16px;
-    box-sizing: border-box;
+.vendor-order-modal .qty-stepper {
+    max-width: 10.5rem;
+}
+.vendor-order-modal .qty-stepper__btn {
+    flex: 0 0 48px;
+    min-width: 48px;
+    min-height: 48px;
 }
 .vendor-order-modal .cart-note {
     width: 100%;

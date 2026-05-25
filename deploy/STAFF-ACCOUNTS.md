@@ -9,7 +9,7 @@
 | `st_company` | 업체이름 |
 | `st_ceo` | 대표자 이름 |
 | `st_ceo_tel` | 대표자 연락처 |
-| `role` | `admin` (관리자) · 필요 시 `supervisor` |
+| `role` | `admin` (관리자만, 슈퍼바이저 없음) |
 
 ## 소스 코드 vs MongoDB
 

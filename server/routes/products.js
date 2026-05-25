@@ -37,20 +37,17 @@ function optionalAuth(req) {
 
 function buildListFindQuery(auth, reqQuery) {
     const deptPart = reqQuery.dept ? deptQuery(reqQuery.dept) : null;
-    /** 사업부문(?dept=) — 공개 카탈로그: 부문만 필터 */
-    const catalogByDept = !!reqQuery.dept && !reqQuery.registeredBy;
+    /** 사업부문(?dept=) — 비로그인·업체용 공개 카탈로그: 부문만 필터 */
+    const catalogByDept =
+        !!reqQuery.dept && !reqQuery.registeredBy && !(auth && isStaffAuth(auth));
     let base = {};
     if (catalogByDept) {
         base = {};
     } else if (auth && isStaffAuth(auth)) {
-        /** 관리자 상품·업체 리스트 — products 컬렉션 전체, 담당 필터는 registeredBy 선택 시만 */
-        if (reqQuery.registeredBy) {
-            base = buildProductListQuery(auth, reqQuery.registeredBy);
-        } else {
-            base = {};
-        }
+        /** 상품관리 리스트 — 로그인한 관리자 본인 등록 + legacy */
+        base = buildProductListQuery(auth);
     } else if (auth) {
-        base = buildProductListQuery(auth, reqQuery.registeredBy);
+        base = buildProductListQuery(auth);
     }
     if (!deptPart) return base;
     if (!base || Object.keys(base).length === 0) return deptPart;

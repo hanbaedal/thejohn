@@ -29,7 +29,7 @@
     }
 
     function isStaffRole(role) {
-        return role === "supervisor" || role === "admin";
+        return role === "admin" || role === "supervisor";
     }
 
     function clearSession() {
@@ -263,7 +263,7 @@
     var DATA_MIGRATE_PAGES = ["data-migrate-admin.html"];
     var ADMIN_REGISTER_PAGES = PRODUCT_ADMIN_PAGES.concat(VENDOR_ADMIN_PAGES);
 
-    /** 슈퍼바이저·관리자만 상품·업체 관리 메뉴·등록 API */
+    /** 관리자(staff admin)만 상품·업체 관리 메뉴·등록 API */
     function canManageRegisters() {
         return canShowAdminNavMenus();
     }
@@ -355,9 +355,9 @@
      * options: { mode: "inline"|"detail", formatWon, escapeHtml }
      */
     /** 업체(vendor)만 상품 주문·장바구니 */
-    /** 레거시 role supervisor 만 (thejohn 은 일반 admin 과 동일) */
+    /** 슈퍼바이저 역할 없음 — 항상 false */
     function isSupervisorStaff() {
-        return isLoggedIn() && getRole() === "supervisor";
+        return false;
     }
 
     function canPlaceVendorOrders() {
@@ -571,27 +571,39 @@
         }
     }
 
+    function redirectFromProtectedPage(showDeniedAlert) {
+        window.location.replace(
+            showDeniedAlert ? "index.html?denied=register" : "index.html"
+        );
+    }
+
     function enforceRegisterPages() {
         var page = currentPageFile();
         if (DATA_MIGRATE_PAGES.indexOf(page) >= 0) {
             if (!canManageRegisters()) {
-                window.location.replace("index.html?denied=register");
+                redirectFromProtectedPage(isLoggedIn());
             }
             return;
         }
         if (ORDER_MANAGE_PAGES.indexOf(page) >= 0) {
             if (!canShowOrderManageMenu()) {
-                window.location.replace("index.html?denied=register");
+                redirectFromProtectedPage(isLoggedIn());
             }
             return;
         }
         if (ADMIN_REGISTER_PAGES.indexOf(page) < 0) return;
         if (!isLoggedIn()) {
-            window.location.replace("index.html?denied=register");
+            redirectFromProtectedPage(false);
             return;
         }
         if (canManageRegisters()) return;
-        window.location.replace("index.html?denied=register");
+        redirectFromProtectedPage(true);
+    }
+
+    /** 로그아웃 — 세션 삭제 후 홈으로 (관리 페이지에서 reload 시 권한 알림이 뜨지 않음) */
+    function logout() {
+        clearSession();
+        window.location.replace("index.html");
     }
 
     function getRegisterAccess() {
@@ -673,6 +685,7 @@
         setFormSession: setFormSession,
         setOAuthSession: setOAuthSession,
         clearSession: clearSession,
+        logout: logout,
         normalizeLegacySession: normalizeLegacySession,
         isLoggedIn: isLoggedIn,
         getRole: getRole,

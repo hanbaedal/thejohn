@@ -14,7 +14,6 @@
     var staffFilterEl = document.getElementById("pl-staff-filter");
     var cachedItems = [];
     var filterDept = "";
-    var filterStaff = "all";
     var loadToken = 0;
 
     function productRecordType(it) {
@@ -37,14 +36,11 @@
         return catalog ? catalog.normalizeDept(it.pd_dept) : String(it.pd_dept || "").trim().toLowerCase();
     }
 
-    /** 사업부문(products.js)과 동일 — API 쿼리만 구성 */
+    /** 사업부문(products.js)과 동일 — API 쿼리(부문); 담당 상품은 서버에서 로그인 관리자 기준 */
     function listOpts() {
         var opts = {};
         if (filterDept && catalog && catalog.normalizeDept(filterDept)) {
             opts.dept = catalog.normalizeDept(filterDept);
-        }
-        if (filterStaff && filterStaff !== "all" && VA && VA.isSupervisorView && VA.isSupervisorView()) {
-            opts.registeredBy = filterStaff;
         }
         return opts;
     }
@@ -79,7 +75,9 @@
     function updateStatusLine() {
         var items = filteredItems();
         setStatus(
-            (filterDept ? deptLabel(filterDept) + " · " : "전체 · ") + items.length + "건"
+            (filterDept ? deptLabel(filterDept) + " · " : "전체 · ") +
+                items.length +
+                "건 (내 등록 + 담당 미지정)"
         );
     }
 
@@ -203,17 +201,6 @@
             }
         });
         if (deptPicker && deptPicker.setValue) deptPicker.setValue("");
-    }
-
-    if (VA && staffFilterWrap && staffFilterEl) {
-        VA.initStaffFilter({
-            wrapEl: staffFilterWrap,
-            selectEl: staffFilterEl,
-            onChange: function (val) {
-                filterStaff = val || "all";
-                loadProducts(0);
-            }
-        });
     }
 
     loadProducts(0);

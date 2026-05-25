@@ -30,12 +30,9 @@
         return "1등급";
     }
 
+    /** 슈퍼바이저 없음 — 등록 담당 필터 UI 비사용 */
     function isSupervisorView() {
-        return (
-            global.THEJHON_AUTH &&
-            THEJHON_AUTH.isSupervisorStaff &&
-            THEJHON_AUTH.isSupervisorStaff()
-        );
+        return false;
     }
 
     function initStaffFilter(options) {

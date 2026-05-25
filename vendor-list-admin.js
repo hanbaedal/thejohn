@@ -11,8 +11,6 @@
     var staffFilterEl = document.getElementById("vl-staff-filter");
     var cachedItems = [];
     var filterDept = "";
-    var filterStaff = "all";
-
     function vendorRecordType(it) {
         return String((it && it.vn_record_type) || "partner")
             .trim()
@@ -112,12 +110,8 @@
     }
 
     function loadVendors() {
-        var opts = {};
-        if (filterStaff && filterStaff !== "all" && VA && VA.isSupervisorView && VA.isSupervisorView()) {
-            opts.registeredBy = filterStaff;
-        }
         setStatus("불러오는 중…");
-        return api.listVendors(opts).then(function (items) {
+        return api.listVendors().then(function (items) {
             cachedItems = items;
             renderList();
             var n = filteredItems().length;
@@ -153,19 +147,6 @@
     if (!access.allowed) {
         setStatus(access.reason, true);
         return;
-    }
-
-    if (VA && staffFilterWrap && staffFilterEl) {
-        VA.initStaffFilter({
-            wrapEl: staffFilterWrap,
-            selectEl: staffFilterEl,
-            onChange: function (val) {
-                filterStaff = val || "all";
-                loadVendors().catch(function (err) {
-                    setStatus(err.message || "목록을 불러오지 못했습니다.", true);
-                });
-            }
-        });
     }
 
     loadVendors().catch(function (err) {

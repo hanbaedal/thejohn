@@ -224,9 +224,13 @@
                     escapeHtml(it.priceLabel || "") +
                     " " +
                     escapeHtml(formatWon(it.unitPrice)) +
-                    '</td><td data-label="수량"><input type="number" class="cart-qty" min="1" step="1" inputmode="numeric" value="' +
-                    escapeHtml(String(it.quantity)) +
-                    '" aria-label="수량"></td><td class="cart-line-total" data-label="금액">' +
+                    '</td><td data-label="수량">' +
+                    (window.THEJHON_QTY_STEPPER && THEJHON_QTY_STEPPER.html
+                        ? THEJHON_QTY_STEPPER.html(it.quantity, { className: "cart-qty-stepper" })
+                        : '<input type="number" class="cart-qty" min="1" step="1" inputmode="numeric" value="' +
+                          escapeHtml(String(it.quantity)) +
+                          '" aria-label="수량">') +
+                    '</td><td class="cart-line-total" data-label="금액">' +
                     escapeHtml(formatWon(Cart.lineTotal(it))) +
                     '</td><td data-label=""><button type="button" class="btn-remove">삭제</button></td></tr>'
                 );
@@ -254,34 +258,48 @@
 
         applyFormState(savedForm);
 
-        bodyEl.querySelectorAll(".cart-qty").forEach(function (inp) {
-            function commitQty() {
-                var tr = inp.closest("tr");
-                var pid = tr && tr.getAttribute("data-product-id");
-                if (pid) Cart.setQuantity(pid, inp.value);
-                renderBody();
-            }
-            inp.addEventListener("change", commitQty);
-            inp.addEventListener("blur", commitQty);
-            inp.addEventListener("input", function () {
-                var tr = inp.closest("tr");
-                var pid = tr && tr.getAttribute("data-product-id");
-                if (!pid) return;
-                var lineEl = tr.querySelector(".cart-line-total");
-                var item = null;
-                var items = Cart.readCart().items;
-                for (var i = 0; i < items.length; i++) {
-                    if (items[i].productId === pid) {
-                        item = items[i];
-                        break;
+        if (window.THEJHON_QTY_STEPPER && THEJHON_QTY_STEPPER.bind) {
+            bodyEl.querySelectorAll(".qty-stepper").forEach(function (el) {
+                THEJHON_QTY_STEPPER.bind(el, {
+                    onChange: function (q) {
+                        var tr = el.closest("tr");
+                        var pid = tr && tr.getAttribute("data-product-id");
+                        if (pid) Cart.setQuantity(pid, q);
+                        renderBody();
+                    },
+                    onInput: function (q) {
+                        var tr = el.closest("tr");
+                        var pid = tr && tr.getAttribute("data-product-id");
+                        if (!pid) return;
+                        var lineEl = tr.querySelector(".cart-line-total");
+                        var item = null;
+                        var items = Cart.readCart().items;
+                        for (var i = 0; i < items.length; i++) {
+                            if (items[i].productId === pid) {
+                                item = items[i];
+                                break;
+                            }
+                        }
+                        if (item && lineEl) {
+                            lineEl.textContent = formatWon(
+                                Cart.lineTotal(Object.assign({}, item, { quantity: q }))
+                            );
+                        }
                     }
-                }
-                if (item && lineEl) {
-                    var q = Math.max(1, parseInt(inp.value, 10) || 1);
-                    lineEl.textContent = formatWon(Cart.lineTotal(Object.assign({}, item, { quantity: q })));
-                }
+                });
             });
-        });
+        } else {
+            bodyEl.querySelectorAll(".cart-qty").forEach(function (inp) {
+                function commitQty() {
+                    var tr = inp.closest("tr");
+                    var pid = tr && tr.getAttribute("data-product-id");
+                    if (pid) Cart.setQuantity(pid, inp.value);
+                    renderBody();
+                }
+                inp.addEventListener("change", commitQty);
+                inp.addEventListener("blur", commitQty);
+            });
+        }
         bodyEl.querySelectorAll(".btn-remove").forEach(function (btn) {
             btn.addEventListener("click", function () {
                 var tr = btn.closest("tr");
@@ -381,8 +399,18 @@
                 window.dispatchEvent(new CustomEvent("thejhon-cart-updated"));
                 window.dispatchEvent(new CustomEvent("thejhon-orders-updated"));
 
-                if (global.THEJHON_ORDER_PDF && THEJHON_ORDER_PDF.downloadOrderPdf) {
-                    THEJHON_ORDER_PDF.downloadOrderPdf(fullOrder).catch(function () {});
+                var savedId = order.id || fullOrder.id;
+                if (
+                    savedId &&
+                    global.THEJHON_ORDER_UI &&
+                    THEJHON_ORDER_UI.downloadOrderPdfWithAuth &&
+                    global.THEJHON_API
+                ) {
+                    THEJHON_ORDER_UI.downloadOrderPdfWithAuth(
+                        THEJHON_API,
+                        savedId,
+                        order.orderNo || fullOrder.orderNo
+                    ).catch(function () {});
                 }
 
                 showMsg(

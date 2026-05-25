@@ -408,8 +408,12 @@
             document.body.appendChild(s);
         }
         loadScript("vendor-cart.js", "script-vendor-cart", function () {
-            loadScript("vendor-order-modal.js", "script-vendor-order-modal", function () {
-                if (cb) cb();
+            loadScript("order-ui.js", "script-order-ui", function () {
+                loadScript("qty-stepper.js", "script-qty-stepper", function () {
+                    loadScript("vendor-order-modal.js", "script-vendor-order-modal", function () {
+                        if (cb) cb();
+                    });
+                });
             });
         });
     }
