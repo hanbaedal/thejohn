@@ -1,3 +1,8 @@
+const {
+    normalizeDeptForStorage,
+    readDeptFromDoc
+} = require("./productDept");
+
 /** products 컬렉션 필드명 (Atlas 레코드 키) */
 const F = {
     name: "pd_name",
@@ -81,6 +86,8 @@ function fromLegacyDoc(doc) {
         d[F.registeredByName] = str(doc.pd_registered_by_name);
     }
     if (!d[F.registeredAt] && doc.pd_registered_at) d[F.registeredAt] = doc.pd_registered_at;
+    const deptNorm = readDeptFromDoc(doc);
+    if (deptNorm) d[F.dept] = deptNorm;
     return d;
 }
 
@@ -106,7 +113,7 @@ function toPublicListItem(doc) {
         pd_price3: prices.pd_price3,
         pd_price4: prices.pd_price4,
         pd_size: str(d[F.size]),
-        pd_dept: str(d[F.dept]),
+        pd_dept: normalizeDeptForStorage(d[F.dept]) || str(d[F.dept]),
         pd_has_image: hasImage,
         updatedAt: d.updatedAt || 0
     };
@@ -126,7 +133,7 @@ function toPublic(doc) {
         pd_size: str(d[F.size]),
         pd_image: String(d[F.image] || ""),
         pd_explain: str(d[F.explain]),
-        pd_dept: str(d[F.dept]),
+        pd_dept: normalizeDeptForStorage(d[F.dept]) || str(d[F.dept]),
         pd_group: str(d[F.group]),
         per_name: str(d[F.personName]),
         "per-number": str(d[F.personPhone]),
@@ -175,9 +182,13 @@ function buildFromBody(body, existing) {
         body["per-number"] != null ? body["per-number"] : prev[F.personPhone]
     );
     const perEmail = str(body["per-email"] != null ? body["per-email"] : prev[F.personEmail]);
-    const pd_dept = str(
-        body.pd_dept != null ? body.pd_dept : prev[F.dept] != null ? prev[F.dept] : ""
-    ).toLowerCase();
+    const pd_dept = normalizeDeptForStorage(
+        body.pd_dept != null
+            ? body.pd_dept
+            : prev[F.dept] != null
+              ? prev[F.dept]
+              : readDeptFromDoc(existing)
+    );
     const pd_group = str(
         body.pd_group != null ? body.pd_group : prev[F.group] != null ? prev[F.group] : ""
     ).toLowerCase();
@@ -259,17 +270,28 @@ function validateBuilt(built, requireImage) {
     return "";
 }
 
+function ensureProductId(doc) {
+    if (doc.id && str(doc.id)) return str(doc.id);
+    if (doc._id) return "pr_" + String(doc._id);
+    return "pr_" + Date.now().toString(36) + "_" + Math.random().toString(36).slice(2, 8);
+}
+
 async function migrateProductsCollection(db) {
     const col = db.collection("products");
     const docs = await col.find({}).toArray();
     let n = 0;
+    let idFixed = 0;
+    let deptFixed = 0;
     for (const doc of docs) {
-        if (!doc.id) continue;
+        const id = ensureProductId(doc);
+        if (!doc.id) idFixed++;
+        const rawDept = doc[F.dept] || doc.pd_dept || "";
         const built = buildFromBody(
             {
                 pd_name: doc[F.name] || doc.title,
                 pd_explain: doc[F.explain] || doc.content,
                 pd_size: doc[F.size] || doc.spec,
+                pd_dept: readDeptFromDoc(doc) || rawDept,
                 pd_price: doc[F.price1] != null ? doc[F.price1] : doc.pd_price,
                 pd_price1: doc[F.price1],
                 pd_price2: doc[F.price2],
@@ -278,15 +300,33 @@ async function migrateProductsCollection(db) {
                 pd_image: doc[F.image] || doc.image,
                 per_name: doc[F.personName] || doc.per_name,
                 "per-number": doc[F.personPhone] || doc["per-number"],
-                "per-email": doc[F.personEmail] || doc["per-email"]
+                "per-email": doc[F.personEmail] || doc["per-email"],
+                pd_record_type: doc[F.recordType] || doc.pd_record_type
             },
             doc
         );
-        const next = toDbDoc(doc.id, built, doc);
-        await col.replaceOne({ id: doc.id }, next);
+        if (built.pd_dept && built.pd_dept !== String(rawDept).trim().toLowerCase()) {
+            deptFixed++;
+        }
+        if (!doc.id) {
+            await col.updateOne({ _id: doc._id }, { $set: { id: id } });
+        }
+        const next = toDbDoc(id, built, doc);
+        const img = str(next[F.image]);
+        next.pd_has_image = !!img;
+        await col.replaceOne({ id: id }, next, { upsert: true });
         n++;
     }
-    if (n) console.log("[products] migrated (incl. pd_price1~4):", n);
+    if (n) {
+        console.log(
+            "[products] migrated:",
+            n,
+            "idFixed:",
+            idFixed,
+            "deptNormalized:",
+            deptFixed
+        );
+    }
 
     const legacy = await col.updateMany(
         {

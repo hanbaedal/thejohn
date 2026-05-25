@@ -55,8 +55,48 @@ router.get("/", async (req, res) => {
                 { $match: query },
                 { $sort: { updatedAt: -1 } },
                 {
+                    $addFields: {
+                        pd_has_image: {
+                            $or: [
+                                {
+                                    $gt: [
+                                        {
+                                            $strLenCP: {
+                                                $ifNull: [
+                                                    { $substrBytes: ["$" + F.image, 0, 1] },
+                                                    ""
+                                                ]
+                                            }
+                                        },
+                                        0
+                                    ]
+                                },
+                                {
+                                    $gt: [
+                                        {
+                                            $strLenCP: {
+                                                $ifNull: [
+                                                    { $substrBytes: ["$image", 0, 1] },
+                                                    ""
+                                                ]
+                                            }
+                                        },
+                                        0
+                                    ]
+                                }
+                            ]
+                        }
+                    }
+                },
+                {
                     $project: {
                         id: 1,
+                        title: 1,
+                        content: 1,
+                        spec: 1,
+                        image: 1,
+                        pd_price: 1,
+                        price: 1,
                         [F.name]: 1,
                         [F.price1]: 1,
                         [F.price2]: 1,
@@ -64,19 +104,13 @@ router.get("/", async (req, res) => {
                         [F.price4]: 1,
                         [F.size]: 1,
                         [F.dept]: 1,
-                        pd_price: 1,
-                        price: 1,
+                        pd_dept: 1,
+                        dept: 1,
+                        division: 1,
+                        category: 1,
                         updatedAt: 1,
-                        pd_has_image: {
-                            $gt: [
-                                {
-                                    $strLenCP: {
-                                        $ifNull: ["$" + F.image, ""]
-                                    }
-                                },
-                                0
-                            ]
-                        }
+                        pd_has_image: 1,
+                        [F.image]: 0
                     }
                 }
             ])

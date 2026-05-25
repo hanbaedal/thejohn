@@ -162,7 +162,26 @@ app.post("/api/admin/reconnect-db", async function (req, res) {
             });
         });
         const vendorCount = await getDb().collection("vendors").countDocuments();
-        res.json({ ok: true, db: true, staffOk, staffInDb, vendorCount });
+        const { migrateProductsCollection } = require("./lib/productFields");
+        await migrateProductsCollection(getDb());
+        const productCount = await getDb().collection("products").countDocuments();
+        const deptSamples = await getDb()
+            .collection("products")
+            .aggregate([
+                { $group: { _id: "$pd_dept", n: { $sum: 1 } } },
+                { $sort: { n: -1 } },
+                { $limit: 20 }
+            ])
+            .toArray();
+        res.json({
+            ok: true,
+            db: true,
+            staffOk,
+            staffInDb,
+            vendorCount,
+            productCount,
+            productDeptSamples: deptSamples
+        });
     } catch (err) {
         res.status(503).json({ ok: false, db: false, error: err.message });
     }

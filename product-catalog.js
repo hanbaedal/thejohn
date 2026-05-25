@@ -90,8 +90,22 @@
         });
     });
 
+    var DEPT_LABEL_TO_ID = {
+        정육: "jeongyuk",
+        건어물: "driedfish",
+        냉동식품: "frozen",
+        냉동: "frozen",
+        수산물: "seafood",
+        공산품: "grocery",
+        음료수: "drink",
+        음료: "drink"
+    };
+
     function normalizeDept(v) {
-        var id = String(v || "").trim().toLowerCase();
+        var raw = String(v || "").trim();
+        if (!raw) return "";
+        if (DEPT_LABEL_TO_ID[raw]) return DEPT_LABEL_TO_ID[raw];
+        var id = raw.toLowerCase();
         if (LEGACY_DEPT_MAP[id]) id = LEGACY_DEPT_MAP[id];
         return deptById[id] ? id : "";
     }
@@ -132,6 +146,7 @@
     global.THEJHON_PRODUCT_CATALOG = {
         DEPARTMENTS: DEPARTMENTS,
         LEGACY_DEPT_MAP: LEGACY_DEPT_MAP,
+        DEPT_LABEL_TO_ID: DEPT_LABEL_TO_ID,
         getDept: getDept,
         getGroups: getGroups,
         getGroup: getGroup,
