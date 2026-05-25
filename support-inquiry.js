@@ -27,7 +27,6 @@
         var uid = A.getUserId();
         if (role === "supervisor") return "슈퍼바이저";
         if (role === "admin") return "관리자";
-        if (role === "guest") return "게스트";
         if (role === "vendor") {
             var n = A.getLoggedInCompanyDisplayName && A.getLoggedInCompanyDisplayName();
             return (n && String(n).trim()) || uid || "업체";
@@ -247,7 +246,7 @@
         newForm.addEventListener("submit", function (e) {
             e.preventDefault();
             if (!loggedIn() || isAdmin()) {
-                setStatus("문의 작성은 업체·게스트·SNS 로그인 회원만 가능합니다.", true);
+                setStatus("문의 작성은 업체·SNS 로그인 회원만 가능합니다.", true);
                 return;
             }
             var subject = (subjInput && subjInput.value.trim()) || "";

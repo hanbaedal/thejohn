@@ -15,8 +15,8 @@
             .toLowerCase();
     }
 
-    function isPartnerVendor(it) {
-        return vendorRecordType(it) !== "new";
+    function isNewVendor(it) {
+        return vendorRecordType(it) === "new";
     }
 
     function setStatus(msg, isError) {
@@ -54,7 +54,7 @@
     }
 
     function filteredItems() {
-        var base = cachedItems.filter(isPartnerVendor);
+        var base = cachedItems.filter(isNewVendor);
         if (!filterDept) return base;
         return base.filter(function (it) {
             return vendorMatchesDept(it, filterDept);
@@ -67,7 +67,7 @@
         });
         if (!items.length) {
             listEl.innerHTML =
-                '<p class="am-list-empty">표시할 업체가 없습니다. 사업부문을 바꾸거나 <a href="vendor-register.html">업체 등록</a>에서 추가해 주세요.</p>';
+                '<p class="am-list-empty">신규 업체가 없습니다. <a href="vendor-new-register.html">신규업체 등록</a>에서 추가해 주세요.</p>';
             return;
         }
         listEl.innerHTML =
@@ -77,7 +77,7 @@
                     var href =
                         "vendor-edit.html?id=" +
                         encodeURIComponent(it.id) +
-                        "&from=partner";
+                        "&from=new";
                     var deptTxt = vendorDeptLabels(it) || "미지정";
                     var grade = it.vn_grade || "1";
                     return (
@@ -109,8 +109,8 @@
                 var n = filteredItems().length;
                 setStatus(
                     filterDept
-                        ? PF.deptLabel(catalog, filterDept) + " · " + n + "건"
-                        : "전체 · " + cachedItems.length + "건 (사업부문을 선택하면 필터됩니다)"
+                        ? PF.deptLabel(catalog, filterDept) + " · 신규 " + n + "건"
+                        : "신규 전체 · " + n + "건"
                 );
             }
         });
@@ -129,11 +129,7 @@
         .then(function (items) {
             cachedItems = items;
             renderList();
-            setStatus(
-                filterDept
-                    ? PF.deptLabel(catalog, filterDept) + " · " + filteredItems().length + "건"
-                    : "전체 · " + items.length + "건 (사업부문을 선택하면 필터됩니다)"
-            );
+            setStatus("신규 · " + filteredItems().length + "건");
         })
         .catch(function (err) {
             setStatus(err.message || "목록을 불러오지 못했습니다.", true);

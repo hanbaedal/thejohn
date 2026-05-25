@@ -12,8 +12,20 @@ const F = {
     group: "pd_group",
     personName: "per_name",
     personPhone: "per-number",
-    personEmail: "per-email"
+    personEmail: "per-email",
+    recordType: "pd_record_type"
 };
+
+const RECORD_CATALOG = "catalog";
+const RECORD_NEW = "new";
+
+function normalizeRecordType(v) {
+    return String(v || "")
+        .trim()
+        .toLowerCase() === RECORD_NEW
+        ? RECORD_NEW
+        : RECORD_CATALOG;
+}
 
 const PRICE_KEYS = ["pd_price1", "pd_price2", "pd_price3", "pd_price4"];
 
@@ -59,6 +71,8 @@ function fromLegacyDoc(doc) {
     if (!d[F.personName] && doc.per_name) d[F.personName] = String(doc.per_name).trim();
     if (!d[F.personPhone] && doc["per-number"]) d[F.personPhone] = String(doc["per-number"]).trim();
     if (!d[F.personEmail] && doc["per-email"]) d[F.personEmail] = String(doc["per-email"]).trim();
+    if (!d[F.recordType] && doc.pd_record_type) d[F.recordType] = normalizeRecordType(doc.pd_record_type);
+    if (!d[F.recordType]) d[F.recordType] = RECORD_CATALOG;
     return d;
 }
 
@@ -81,6 +95,7 @@ function toPublic(doc) {
         per_name: str(d[F.personName]),
         "per-number": str(d[F.personPhone]),
         "per-email": str(d[F.personEmail]),
+        pd_record_type: normalizeRecordType(d[F.recordType]),
         updatedAt: d.updatedAt || 0
     };
 }
@@ -138,6 +153,10 @@ function buildFromBody(body, existing) {
         per_name,
         perNumber,
         perEmail,
+        pd_record_type:
+            body.pd_record_type != null
+                ? normalizeRecordType(body.pd_record_type)
+                : normalizeRecordType(prev[F.recordType]),
         ...prices
     };
 }
@@ -158,6 +177,7 @@ function toDbDoc(id, built, existing) {
         [F.personName]: built.per_name,
         [F.personPhone]: built.perNumber,
         [F.personEmail]: built.perEmail,
+        [F.recordType]: built.pd_record_type,
         updatedAt: Date.now()
     };
     if (existing && existing.createdAt) doc.createdAt = existing.createdAt;

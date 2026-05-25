@@ -103,7 +103,7 @@
             pd_price3: PF.parsePriceInput(price3Input),
             pd_price4: PF.parsePriceInput(price4Input),
             pd_image: pendingImageData || "",
-            pd_record_type: "catalog",
+            pd_record_type: "new",
             per_name: perNameInput ? perNameInput.value.trim() : "",
             "per-number": perNumberInput ? perNumberInput.value.trim() : "",
             "per-email": perEmailInput ? perEmailInput.value.trim() : ""
@@ -124,7 +124,7 @@
                     if (nameDupCheck) nameDupCheck.reset();
                     updatePhotoPreview("");
                     if (deptPicker) deptPicker.clear();
-                    setStatus("저장했습니다. 계속 등록하거나 상품 리스트에서 확인하세요.");
+                    setStatus("신규상품을 저장했습니다. 신규상품 리스트에서 확인·수정할 수 있습니다.");
                 })
                 .catch(function (err2) {
                     setStatus(err2.message || "저장에 실패했습니다.", true);

@@ -19,7 +19,5 @@ services:
         sync: false
       - key: THEJHON_ADMIN_PASSWORD
         sync: false
-      - key: THEJHON_GUEST_PASSWORD
-        value: guest
       - key: ALLOWED_ORIGINS
         value: https://thejohn.onrender.com,https://thejohn.co.kr,https://www.thejohn.co.kr,http://localhost:3000

@@ -1,5 +1,5 @@
 /**
- * 업체 등록 — product-register.js 와 동일 패턴 (검증 → 중복 확인 → api.createVendor)
+ * 신규업체 등록 — vn_record_type: new
  */
 (function () {
     var api = window.THEJHON_API;
@@ -136,7 +136,7 @@
             vn_mgr_email: mgrEmailInput.value.trim(),
             vn_logo: pendingLogoData || "",
             vn_note: noteInput.value.trim(),
-            vn_record_type: "partner"
+            vn_record_type: "new"
         };
 
         var err = VF ? VF.validateVendorFields(body, { requirePassword: true }) : "";
@@ -156,7 +156,7 @@
                     updateLogoPreview("");
                     clearSelectedDepts();
                     if (gradeSelect) gradeSelect.value = "1";
-                    setStatus("저장했습니다. 계속 등록하거나 업체 수정·협력업체 목록에서 확인하세요.");
+                    setStatus("신규업체를 저장했습니다. 신규업체 리스트에서 확인·수정할 수 있습니다.");
                 })
                 .catch(function (err2) {
                     setStatus(err2.message || "저장에 실패했습니다.", true);

@@ -15,8 +15,8 @@
             .toLowerCase();
     }
 
-    function isCatalogProduct(it) {
-        return productRecordType(it) !== "new";
+    function isNewProduct(it) {
+        return productRecordType(it) === "new";
     }
 
     function setStatus(msg, isError) {
@@ -30,7 +30,7 @@
     }
 
     function filteredItems() {
-        var base = cachedItems.filter(isCatalogProduct);
+        var base = cachedItems.filter(isNewProduct);
         if (!filterDept) return base;
         return base.filter(function (it) {
             return itemDept(it) === filterDept;
@@ -43,7 +43,7 @@
         });
         if (!items.length) {
             listEl.innerHTML =
-                '<p class="am-list-empty">표시할 상품이 없습니다. 사업부문을 바꾸거나 <a href="product-register.html">상품 내용 등록</a>에서 추가해 주세요.</p>';
+                '<p class="am-list-empty">신규 상품이 없습니다. <a href="product-new-register.html">신규상품 등록</a>에서 추가해 주세요.</p>';
             return;
         }
         listEl.innerHTML =
@@ -53,7 +53,7 @@
                     var href =
                         "product-edit.html?id=" +
                         encodeURIComponent(it.id) +
-                        "&from=catalog";
+                        "&from=new";
                     var deptTxt = PF.deptLabel(catalog, itemDept(it));
                     return (
                         '<li><a class="pl-admin-item" href="' +
@@ -93,11 +93,7 @@
         .then(function (items) {
             cachedItems = items;
             renderList();
-            setStatus(
-                filterDept
-                    ? PF.deptLabel(catalog, filterDept) + " · " + filteredItems().length + "건"
-                    : "전체 · " + items.length + "건 (사업부문을 선택하면 필터됩니다)"
-            );
+            setStatus("신규 · " + filteredItems().length + "건");
         })
         .catch(function (err) {
             setStatus(err.message || "목록을 불러오지 못했습니다.", true);

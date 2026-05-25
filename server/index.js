@@ -140,7 +140,6 @@ app.get("/api/env-check", (req, res) => {
             MONGODB_DB: process.env.MONGODB_DB || "thejhon",
             JWT_SECRET: !!(process.env.JWT_SECRET && process.env.JWT_SECRET.length >= 16),
             THEJHON_SEED_SUPERVISOR_PASSWORD: !!process.env.THEJHON_SEED_SUPERVISOR_PASSWORD,
-            THEJHON_GUEST_PASSWORD: !!process.env.THEJHON_GUEST_PASSWORD,
             ALLOWED_ORIGINS: !!process.env.ALLOWED_ORIGINS,
             PORT_set: !!process.env.PORT
         },

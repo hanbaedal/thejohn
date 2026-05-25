@@ -29,7 +29,6 @@
 
 ```
 JWT_SECRET=(32자 이상 랜덤)
-THEJHON_GUEST_PASSWORD=guest
 NODE_ENV=production
 ALLOWED_ORIGINS=https://thejohn.onrender.com,https://thejohn.co.kr,https://www.thejohn.co.kr
 ```

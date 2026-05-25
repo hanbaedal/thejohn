@@ -27,7 +27,6 @@
         var uid = A.getUserId();
         if (role === "supervisor") return "슈퍼바이저";
         if (role === "admin") return "관리자";
-        if (role === "guest") return "게스트";
         if (role === "vendor") {
             var n = A.getLoggedInCompanyDisplayName && A.getLoggedInCompanyDisplayName();
             return (n && String(n).trim()) || uid || "업체";

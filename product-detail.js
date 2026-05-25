@@ -24,7 +24,7 @@
                 escapeHtml: escapeHtml
             });
         }
-        return '<p class="pd-price pd-price-masked">가격: 비공개 (업체·관리자 로그인 시 표시)</p>';
+        return '<p class="pd-price pd-price-masked">가격: 비공개</p>';
     }
 
     function contactBlock(it) {

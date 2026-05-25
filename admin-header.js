@@ -1,8 +1,15 @@
-/** 관리 메뉴 드롭다운 · 현재 페이지 표시 (nav.js보다 먼저 로드하지 않음) */
+/** 관리 메뉴 드롭다운 · 현재 페이지 표시 (스태프만 상품·업체 관리 노출) */
 (function () {
     function pageFile() {
         var path = (location.pathname || "").replace(/\\/g, "/");
         return (path.split("/").pop() || "").split("?")[0].toLowerCase();
+    }
+
+    function canShowAdminMenus() {
+        var Auth = window.THEJHON_AUTH;
+        if (!Auth) return false;
+        if (Auth.normalizeLegacySession) Auth.normalizeLegacySession();
+        return !!(Auth.canManageRegisters && Auth.canManageRegisters());
     }
 
     function productManageHtml() {
@@ -10,9 +17,10 @@
             '<div class="nav-dropdown" data-nav-dropdown="product-manage">' +
             '<a href="product-manage.html" class="header-nav-link nav-dropdown-trigger" aria-haspopup="true" aria-expanded="false" aria-controls="productManageSubmenu">상품관리</a>' +
             '<div id="productManageSubmenu" class="nav-dropdown-panel" role="menu" aria-label="상품관리 하위 메뉴">' +
-            '<a href="product-register.html" class="nav-dropdown-item" role="menuitem">상품 내용 등록</a>' +
-            '<a href="product-edit.html" class="nav-dropdown-item" role="menuitem">상품 등록 수정</a>' +
+            '<a href="product-register.html" class="nav-dropdown-item" role="menuitem">상품 등록</a>' +
             '<a href="product-list-admin.html" class="nav-dropdown-item" role="menuitem">상품 리스트</a>' +
+            '<a href="product-new-register.html" class="nav-dropdown-item" role="menuitem">신규상품 등록</a>' +
+            '<a href="product-new-list.html" class="nav-dropdown-item" role="menuitem">신규상품 리스트</a>' +
             "</div></div>"
         );
     }
@@ -23,8 +31,9 @@
             '<a href="vendor-manage.html" class="header-nav-link nav-dropdown-trigger" aria-haspopup="true" aria-expanded="false" aria-controls="vendorManageSubmenu">업체관리</a>' +
             '<div id="vendorManageSubmenu" class="nav-dropdown-panel" role="menu" aria-label="업체관리 하위 메뉴">' +
             '<a href="vendor-register.html" class="nav-dropdown-item" role="menuitem">업체 등록</a>' +
-            '<a href="vendor-edit.html" class="nav-dropdown-item" role="menuitem">업체 수정</a>' +
             '<a href="vendor-list-admin.html" class="nav-dropdown-item" role="menuitem">업체 리스트</a>' +
+            '<a href="vendor-new-register.html" class="nav-dropdown-item" role="menuitem">신규업체 등록</a>' +
+            '<a href="vendor-new-list.html" class="nav-dropdown-item" role="menuitem">신규업체 리스트</a>' +
             "</div></div>"
         );
     }
@@ -35,14 +44,18 @@
             "product-manage.html": true,
             "product-register.html": true,
             "product-edit.html": true,
-            "product-list-admin.html": true
+            "product-list-admin.html": true,
+            "product-new-register.html": true,
+            "product-new-list.html": true
         };
         var vendorPages = {
             "vendor-manage.html": true,
             "vendor-register.html": true,
             "vendor-edit.html": true,
             "vendor-list-admin.html": true,
-            "vendor-detail.html": true
+            "vendor-detail.html": true,
+            "vendor-new-register.html": true,
+            "vendor-new-list.html": true
         };
         var productDrop = nav.querySelector('[data-nav-dropdown="product-manage"]');
         var vendorDrop = nav.querySelector('[data-nav-dropdown="vendor-manage"]');
@@ -60,9 +73,37 @@
         }
     }
 
+    function removeAdminNavFromNav(nav) {
+        var drops = nav.querySelectorAll(
+            '[data-nav-dropdown="product-manage"], [data-nav-dropdown="vendor-manage"]'
+        );
+        for (var i = 0; i < drops.length; i++) drops[i].remove();
+
+        var links = nav.querySelectorAll(
+            'a.header-nav-link[href="product-register.html"],' +
+                'a.header-nav-link[href="vendor-register.html"],' +
+                'a.header-nav-link[href="product-manage.html"],' +
+                'a.header-nav-link[href="vendor-manage.html"]'
+        );
+        for (var j = 0; j < links.length; j++) {
+            if (!links[j].classList.contains("nav-dropdown-item")) links[j].remove();
+        }
+    }
+
     function inject() {
         var nav = document.querySelector(".site-header-nav");
         if (!nav) return;
+
+        var showAdmin = canShowAdminMenus();
+
+        if (!showAdmin) {
+            removeAdminNavFromNav(nav);
+            if (window.THEJHON_AUTH && THEJHON_AUTH.applyNavRegisterVisibility) {
+                THEJHON_AUTH.applyNavRegisterVisibility();
+            }
+            return;
+        }
+
         if (!nav.querySelector('[data-nav-dropdown="product-manage"]')) {
             var productA = nav.querySelector('a.header-nav-link[href="product-register.html"]');
             if (productA && !productA.classList.contains("nav-dropdown-item")) {

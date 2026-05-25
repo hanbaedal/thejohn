@@ -28,8 +28,20 @@ const F = {
     mgrTel: "vn_mgr_tel",
     mgrEmail: "vn_mgr_email",
     logo: "vn_logo",
-    note: "vn_note"
+    note: "vn_note",
+    recordType: "vn_record_type"
 };
+
+const RECORD_PARTNER = "partner";
+const RECORD_NEW = "new";
+
+function normalizeRecordType(v) {
+    return String(v || "")
+        .trim()
+        .toLowerCase() === RECORD_NEW
+        ? RECORD_NEW
+        : RECORD_PARTNER;
+}
 
 function str(v) {
     return String(v ?? "").trim();
@@ -85,6 +97,8 @@ function fromLegacyDoc(doc) {
     if (!d[F.logo] && doc.logo) d[F.logo] = String(doc.logo);
     if (!d[F.note] && doc.note) d[F.note] = String(doc.note).trim();
     if (!d[F.grade]) d[F.grade] = parseGrade(d[F.grade]) || "1";
+    if (!d[F.recordType] && doc.vn_record_type) d[F.recordType] = normalizeRecordType(doc.vn_record_type);
+    if (!d[F.recordType]) d[F.recordType] = RECORD_PARTNER;
     if (!d[F.depts] && Array.isArray(doc.vn_depts)) d[F.depts] = doc.vn_depts;
     else if (!d[F.depts] && typeof doc.vn_depts === "string") {
         d[F.depts] = parseDeptsList({ vn_depts: doc.vn_depts }, null);
@@ -117,6 +131,7 @@ function toPublic(doc) {
         vn_mgr_email: str(d[F.mgrEmail]),
         vn_logo: String(d[F.logo] || ""),
         vn_note: str(d[F.note]),
+        vn_record_type: normalizeRecordType(d[F.recordType]),
         updatedAt: d.updatedAt || 0
     };
 }
@@ -155,7 +170,11 @@ function buildFromBody(body, existing, loginId, password) {
                 : body.logo !== undefined && body.logo !== null
                   ? String(body.logo)
                   : String(prev[F.logo] || ""),
-        vn_note: str(body.vn_note != null ? body.vn_note : body.note)
+        vn_note: str(body.vn_note != null ? body.vn_note : body.note),
+        vn_record_type:
+            body.vn_record_type != null
+                ? normalizeRecordType(body.vn_record_type)
+                : normalizeRecordType(prev[F.recordType])
     };
 
     return built;
@@ -181,6 +200,7 @@ function toDbDoc(id, built, existing) {
         [F.mgrEmail]: built.vn_mgr_email,
         [F.logo]: built.vn_logo,
         [F.note]: built.vn_note,
+        [F.recordType]: built.vn_record_type,
         updatedAt: Date.now()
     };
     if (existing?.createdAt) doc.createdAt = existing.createdAt;

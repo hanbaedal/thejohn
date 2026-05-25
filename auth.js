@@ -1,6 +1,11 @@
 /**
- * 세션 + /api/auth/login (MongoDB staff · vendors 컬렉션 조회)
- * 역할: supervisor | admin | guest | vendor | oauth
+ * 세션 + /api/auth/login (MongoDB staff · vendors)
+ *
+ * 권한 정의
+ * 1. 관리자(staff: supervisor|admin) — 상품관리·업체관리 메뉴 표시, 사업부문 가격1~4 전체
+ * 2. 업체(vendor, 업체등록 아이디) — 관리 메뉴 숨김, 사업부문에 업체 등급별 가격(1→가격1, 2→가격2, 3→가격3)
+ * 3. 미로그인 — 관리 메뉴 숨김, 사업부문 가격 비표시
+ * (비활성화 = 헤더에서 해당 메뉴가 보이지 않음)
  */
 (function (global) {
     var AUTH_KEY = "thejhon_logged_in";
@@ -11,7 +16,6 @@
     var VENDOR_GRADE_KEY = "thejhon_vendor_grade";
 
     var SUPERVISOR_ID = "thejohn";
-    var GUEST_ID = "guest";
 
     function normalizeId(s) {
         return String(s || "")
@@ -40,6 +44,10 @@
             clearSession();
         }
         var role = sessionStorage.getItem(ROLE_KEY);
+        if (role === "guest") {
+            clearSession();
+            return;
+        }
         if (isStaffRole(role) || role === "vendor") {
             var company = sessionStorage.getItem(COMPANY_KEY);
             if (company) sessionStorage.setItem(DISPLAY_KEY, company);
@@ -83,10 +91,6 @@
                 if (err && err.message) throw err;
                 throw new Error("로그인에 실패했습니다. 잠시 후 다시 시도해 주세요.");
             });
-    }
-
-    function loginAsGuestAsync() {
-        return verifyFormCredentialsAsync(GUEST_ID, "guest");
     }
 
     function setFormSession(userId, role, token, companyName, displayName, vendorGrade) {
@@ -139,45 +143,48 @@
         return sessionStorage.getItem(USER_ID_KEY) || "";
     }
 
-    /** 미로그인·게스트 로그인 — 상품 가격 비공개, 등록 메뉴 비표시 */
-    function isGuestMode() {
-        if (!isLoggedIn()) return true;
-        return getRole() === "guest";
-    }
-
     var PRODUCT_ADMIN_PAGES = [
         "product-manage.html",
         "product-register.html",
         "product-edit.html",
-        "product-list-admin.html"
+        "product-list-admin.html",
+        "product-new-register.html",
+        "product-new-list.html"
     ];
     var VENDOR_ADMIN_PAGES = [
         "vendor-manage.html",
         "vendor-register.html",
         "vendor-edit.html",
         "vendor-list-admin.html",
-        "vendor-detail.html"
+        "vendor-detail.html",
+        "vendor-new-register.html",
+        "vendor-new-list.html"
     ];
     var ADMIN_REGISTER_PAGES = PRODUCT_ADMIN_PAGES.concat(VENDOR_ADMIN_PAGES);
 
-    /** 슈퍼바이저·관리자만 상품·업체 관리 */
+    /** 슈퍼바이저·관리자만 상품·업체 관리 메뉴·등록 API */
     function canManageRegisters() {
+        return canShowAdminNavMenus();
+    }
+
+    /** 규칙 1: 관리자만 상품관리·업체관리 메뉴 표시 */
+    function canShowAdminNavMenus() {
         return isStaffRole(getRole()) && !!(global.THEJHON_API && THEJHON_API.getToken && THEJHON_API.getToken());
     }
 
-    /** 업체·관리자만 상품 가격 표시 (게스트·미로그인·SNS 제외) */
+    /** 규칙 2·3: 업체·관리자만 가격 표시 가능 (미로그인·SNS 제외) */
     function canSeePrices() {
         return canSeeProductPrices();
     }
 
     function canSeeProductPrices() {
-        if (!isLoggedIn() || isGuestMode()) return false;
+        if (!isLoggedIn()) return false;
         var r = getRole();
         if (r === "oauth") return false;
         return isStaffRole(r) || r === "vendor";
     }
 
-    /** 관리자·슈퍼바이저: 가격1~4 전체 표시 */
+    /** 규칙 1: 관리자 — 가격1~4 전체 */
     function canSeeAllProductPrices() {
         return isStaffRole(getRole());
     }
@@ -222,13 +229,9 @@
 
         if (!canSeeProductPrices()) {
             if (mode === "detail") {
-                return (
-                    '<p class="pd-price pd-price-masked">가격: 비공개 (업체·관리자 로그인 시 표시)</p>'
-                );
+                return '<p class="pd-price pd-price-masked">가격: 비공개</p>';
             }
-            return (
-                '<span class="ps-price-masked">가격: 비공개 (업체·관리자 로그인 시 표시)</span>'
-            );
+            return '<span class="ps-price-masked">가격: 비공개</span>';
         }
 
         var keys = ["pd_price1", "pd_price2", "pd_price3", "pd_price4"];
@@ -293,7 +296,6 @@
     function getLoggedInCompanyDisplayName() {
         if (!isLoggedIn()) return "";
         var role = getRole();
-        if (role === "guest") return "";
         var company = sessionStorage.getItem(COMPANY_KEY);
         if (company) return company;
         if (role === "supervisor" || role === "admin") return "(주)더존";
@@ -344,7 +346,7 @@
             return {
                 allowed: false,
                 reason:
-                    "관리자(thejohn, aksangsa 등)로 로그인해야 저장됩니다. 상단 로그인 → 저장 시 MongoDB에 기록됩니다."
+                    "관리자로 로그인해야 저장됩니다. 상단 로그인 후 다시 시도해 주세요."
             };
         }
         if (!isLoggedIn()) {
@@ -362,21 +364,38 @@
     function applyNavRegisterVisibility() {
         try {
             normalizeLegacySession();
-            var showAdmin = canManageRegisters();
+            var showAdmin = canShowAdminNavMenus();
+            if (document.body) {
+                document.body.classList.toggle("nav-admin-menus", showAdmin);
+            }
+            var nav = document.querySelector(".site-header-nav");
+            if (!nav) return;
+
             var sel =
-                '.site-header-nav [data-nav-dropdown="product-manage"],' +
-                '.site-header-nav [data-nav-dropdown="vendor-manage"],' +
-                '.site-header-nav a.header-nav-link[href="product-register.html"],' +
-                '.site-header-nav a.header-nav-link[href="vendor-register.html"]';
-            var nodes = document.querySelectorAll(sel);
+                '[data-nav-dropdown="product-manage"],' +
+                '[data-nav-dropdown="vendor-manage"],' +
+                'a.header-nav-link[href="product-register.html"],' +
+                'a.header-nav-link[href="vendor-register.html"],' +
+                'a.header-nav-link[href="product-manage.html"],' +
+                'a.header-nav-link[href="vendor-manage.html"]';
+            var nodes = nav.querySelectorAll(sel);
             for (var i = 0; i < nodes.length; i++) {
+                var el = nodes[i];
+                if (el.classList.contains("nav-dropdown-item")) continue;
                 if (showAdmin) {
-                    nodes[i].classList.remove("header-nav-link--register-hidden");
-                    nodes[i].removeAttribute("aria-hidden");
+                    el.classList.remove("header-nav-link--register-hidden");
+                    el.removeAttribute("aria-hidden");
+                    el.style.removeProperty("display");
                 } else {
-                    nodes[i].classList.add("header-nav-link--register-hidden");
-                    nodes[i].setAttribute("aria-hidden", "true");
+                    el.classList.add("header-nav-link--register-hidden");
+                    el.setAttribute("aria-hidden", "true");
                 }
+            }
+            if (!showAdmin) {
+                var drops = nav.querySelectorAll(
+                    '[data-nav-dropdown="product-manage"], [data-nav-dropdown="vendor-manage"]'
+                );
+                for (var d = 0; d < drops.length; d++) drops[d].remove();
             }
         } catch (e) {}
     }
@@ -388,7 +407,6 @@
         ADMIN_ID: SUPERVISOR_ID,
         isStaffRole: isStaffRole,
         verifyFormCredentialsAsync: verifyFormCredentialsAsync,
-        loginAsGuestAsync: loginAsGuestAsync,
         setFormSession: setFormSession,
         setOAuthSession: setOAuthSession,
         clearSession: clearSession,
@@ -396,9 +414,9 @@
         isLoggedIn: isLoggedIn,
         getRole: getRole,
         getUserId: getUserId,
-        isGuestMode: isGuestMode,
         getRegisterAccess: getRegisterAccess,
         canManageRegisters: canManageRegisters,
+        canShowAdminNavMenus: canShowAdminNavMenus,
         canSeePrices: canSeePrices,
         canSeeProductPrices: canSeeProductPrices,
         canSeeAllProductPrices: canSeeAllProductPrices,

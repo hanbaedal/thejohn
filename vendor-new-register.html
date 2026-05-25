@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>업체 수정 — 더존</title>
+    <title>신규업체 등록 — 더존</title>
     <link rel="stylesheet" href="common.css">
     <link rel="stylesheet" href="admin-manage.css">
     <style>
@@ -218,8 +218,8 @@
         </nav>
     </header>
     <main class="page-main page-main--hide-scrollbar">
-        <p class="am-subnav"><a href="vendor-list-admin.html" id="ve-back-list">← 업체 리스트</a></p>
-        <h1>업체 수정</h1>
+        <p class="am-subnav"><a href="vendor-manage.html">← 업체관리</a></p>
+        <h1>신규업체 등록</h1>
         <p id="vr-status" class="vr-status" role="status" aria-live="polite"></p>
         <form id="vr-form" class="vr-form" novalidate>
             <input type="hidden" id="vr-edit-id" value="">
@@ -244,7 +244,7 @@
                 <div class="vr-slot">
                     <label for="vr-login-pw">비밀번호</label>
                     <div class="vr-pw-wrap">
-                        <input type="password" id="vr-login-pw" name="password" maxlength="16" autocomplete="new-password" placeholder="8~16자 (변경 시)">
+                        <input type="password" id="vr-login-pw" name="password" maxlength="16" autocomplete="new-password" placeholder="8~16자">
                         <button type="button" class="vr-pw-toggle" id="vr-pw-toggle" aria-label="비밀번호 보기">보기</button>
                     </div>
                 </div>
@@ -257,7 +257,6 @@
                     <p id="vr-pw-match-hint" class="vr-pw-match-hint vr-pw-match-hint--idle" hidden></p>
                 </div>
             </div>
-            <p class="vr-hint vr-hint--after-login">수정 시 비밀번호를 비우면 기존 비밀번호를 유지합니다.</p>
             <div class="vr-row vr-row--3">
                 <div class="vr-slot">
                     <label for="vr-grade">업체등급</label>
@@ -322,7 +321,7 @@
                     <button type="button" class="pr-photo-btn" id="vr-logo-gallery-btn">앨범·파일에서 선택</button>
                     <button type="button" class="pr-photo-btn pr-photo-btn--camera" id="vr-logo-camera-btn">카메라로 촬영</button>
                 </div>
-                <p class="vr-hint vr-hint--logo">앨범·촬영 후 1:1·1MB 이하로 맞춥니다. 새로 고르지 않으면 기존 로고를 유지합니다.</p>
+                <p class="vr-hint vr-hint--logo">앨범·촬영 후 1:1 정사각형·1MB 이하로 자동 맞춥니다.</p>
                 <img id="vr-logo-preview" class="vr-preview-sm pr-photo-preview tj-image-preview" alt="로고 미리보기" width="96" height="96" hidden>
             </div>
             <div class="vr-field">
@@ -330,8 +329,8 @@
                 <textarea id="vr-note" name="vn_note" rows="4" maxlength="8000" placeholder="회사 상황·추가 설명"></textarea>
             </div>
             <div class="vr-actions">
-                <button type="submit" class="btn btn-primary" id="vr-submit">수정 저장</button>
-                <button type="button" class="btn btn-secondary" id="vr-cancel-edit">취소</button>
+                <button type="submit" class="btn btn-primary" id="vr-submit">저장</button>
+                <button type="button" class="btn btn-secondary" id="vr-cancel-edit" hidden>편집 취소</button>
             </div>
         </form>
     </main>
@@ -407,6 +406,6 @@
             syncAuthUi();
         })();
     </script>
-    <script src="vendor-edit.js"></script>
+    <script src="vendor-new-register.js"></script>
 </body>
 </html>

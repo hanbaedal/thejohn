@@ -15,8 +15,6 @@ function vendorGradeFromDoc(vendor) {
 }
 const { getCompanyName: getStaffCompanyName } = require("./staffFields");
 
-const GUEST_ID = "guest";
-
 function normalizeId(s) {
     return String(s || "")
         .trim()
@@ -106,7 +104,7 @@ async function tryVendorLogin(vendor, loginId, password) {
 
 /**
  * staff · vendors 컬렉션에서 아이디를 찾고 비밀번호를 검증합니다.
- * (게스트·환경 변수 관리자 비밀번호는 사용하지 않음)
+ * 업체는 업체등록(vendors)에 저장된 loginId·password 로만 로그인합니다.
  */
 async function resolveFormLogin(loginId, password) {
     const { staff, vendor } = await lookupStaffAndVendor(loginId);
@@ -126,30 +124,16 @@ async function resolveFormLogin(loginId, password) {
     return { ok: false, reason: "BAD_PASSWORD" };
 }
 
-function resolveGuestLogin(password) {
-    const guestPw = String(process.env.THEJHON_GUEST_PASSWORD || "guest").trim();
-    if (password !== guestPw) return { ok: false };
-    return {
-        ok: true,
-        role: "guest",
-        userId: GUEST_ID,
-        companyName: "",
-        displayName: ""
-    };
-}
-
 async function ensureLoginFieldsMigrated(db) {
     await migrateCollectionLoginFields(db, "staff");
     /** vendors는 vendorFields.migrateVendorsCollection 이 password·loginIdNorm 스키마를 유지합니다 */
 }
 
 module.exports = {
-    GUEST_ID,
     normalizeId,
     findStaffByLoginId,
     findVendorByLoginId,
     lookupStaffAndVendor,
     resolveFormLogin,
-    resolveGuestLogin,
     ensureLoginFieldsMigrated
 };

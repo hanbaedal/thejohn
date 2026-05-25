@@ -6,7 +6,7 @@
     function apiErrorMessage(err, fallback) {
         if (!err) return fallback || "요청에 실패했습니다.";
         if (err.status === 401) {
-            return "로그인이 필요합니다. 관리자(thejohn, aksangsa)로 로그인한 뒤 다시 저장해 주세요.";
+            return "로그인이 필요합니다. 관리자로 로그인한 뒤 다시 저장해 주세요.";
         }
         if (err.status === 403) {
             return "관리자(스테프)만 업체를 등록·수정·삭제할 수 있습니다.";
@@ -51,9 +51,20 @@
     var logoPicker = null;
     var noteInput = document.getElementById("vr-note");
     var cancelBtn = document.getElementById("vr-cancel-edit");
-    var listEl = document.getElementById("ve-list");
-    var modal = document.getElementById("ve-modal");
     var submitBtn = document.getElementById("vr-submit");
+    var backListLink = document.getElementById("ve-back-list");
+
+    function queryParam(name) {
+        try {
+            return new URLSearchParams(window.location.search).get(name) || "";
+        } catch (e) {
+            return "";
+        }
+    }
+
+    function listReturnUrl() {
+        return queryParam("from") === "new" ? "vendor-new-list.html" : "vendor-list-admin.html";
+    }
 
     var pendingLogoData = "";
     var cachedItems = [];
@@ -150,14 +161,6 @@
         }
     }
 
-    function openModal() {
-        if (modal && typeof modal.showModal === "function") modal.showModal();
-    }
-
-    function closeModal() {
-        if (modal && typeof modal.close === "function") modal.close();
-    }
-
     function resetForm() {
         if (!form) return;
         form.reset();
@@ -169,10 +172,9 @@
         clearSelectedDepts();
         if (idDupCheck) idDupCheck.reset();
         if (password2Input) password2Input.value = "";
-        cancelBtn.hidden = true;
+        cancelBtn.hidden = false;
         submitBtn.textContent = "수정 저장";
         submitBtn.disabled = false;
-        closeModal();
     }
 
     function thumbBlock(dataUrl, label) {
@@ -188,106 +190,7 @@
         );
     }
 
-    function renderList() {
-        var items = cachedItems.slice().sort(function (a, b) {
-            return (b.updatedAt || 0) - (a.updatedAt || 0);
-        });
-        if (!items.length) {
-            listEl.innerHTML =
-                '<p class="vr-card-note">등록된 업체가 없습니다. 위 양식에서 저장해 보세요.</p>';
-            return;
-        }
-        listEl.innerHTML = items
-            .map(function (it) {
-                var w = it.vn_web && String(it.vn_web).trim();
-                var em = it.vn_email && String(it.vn_email).trim();
-                var webLine = "";
-                if (w) {
-                    var href = safeWebHref(w);
-                    webLine =
-                        '홈페이지: <a href="' +
-                        escapeHtml(href) +
-                        '" target="_blank" rel="noopener noreferrer">' +
-                        escapeHtml(w) +
-                        "</a><br>";
-                }
-                var emailLine = em
-                    ? '회사 이메일: <a href="mailto:' + escapeHtml(em) + '">' + escapeHtml(em) + "</a><br>"
-                    : "";
-                var noteBlock = it.vn_note && String(it.vn_note).trim()
-                    ? '<p class="vr-card-note">' + escapeMultiline(String(it.vn_note).trim()) + "</p>"
-                    : "";
-                var addrBlock = "";
-                if (it.vn_addr && String(it.vn_addr).trim()) {
-                    addrBlock =
-                        '주소: <span class="vr-card-addr">' +
-                        escapeMultiline(String(it.vn_addr).trim()) +
-                        "</span><br>";
-                }
-                var grade = it.vn_grade || "1";
-                return (
-                    '<article class="vr-card" data-id="' +
-                    escapeHtml(it.id) +
-                    '"><div class="vr-card-head">' +
-                    thumbBlock(it.vn_logo, "로고") +
-                    '<div class="vr-card-main"><h3 class="vr-card-title">' +
-                    escapeHtml(it.vn_company || "") +
-                    '<span class="vr-grade-badge">등급 ' +
-                    escapeHtml(grade) +
-                    "</span></h3><p class="vr-card-meta">아이디: " +
-                    escapeHtml(it.loginId || "—") +
-                    "<br>" +
-                    addrBlock +
-                    "대표: " +
-                    escapeHtml(it.vn_ceo || "—") +
-                    " · 대표 연락처: " +
-                    escapeHtml(it.vn_ceo_tel || "—") +
-                    " · 회사 전화: " +
-                    escapeHtml(it.vn_phone || "—") +
-                    "<br>" +
-                    "담당: " +
-                    escapeHtml(it.vn_mgr_name || "—") +
-                    " · " +
-                    escapeHtml(it.vn_mgr_tel || "—") +
-                    " · " +
-                    escapeHtml(it.vn_mgr_email || "—") +
-                    "<br>" +
-                    webLine +
-                    emailLine +
-                    '</p>' +
-                    noteBlock +
-                    '<div class="vr-card-actions"><button type="button" class="vr-btn-edit" data-id="' +
-                    escapeHtml(it.id) +
-                    '">수정</button><button type="button" class="vr-btn-del" data-id="' +
-                    escapeHtml(it.id) +
-                    '">삭제</button></div></div></div></article>'
-                );
-            })
-            .join("");
-    }
-
-    function loadList() {
-        if (!api) {
-            setStatus("API를 불러오지 못했습니다.", true);
-            return Promise.resolve();
-        }
-        setStatus("목록 불러오는 중…");
-        return api
-            .listVendors()
-            .then(function (items) {
-                cachedItems = items;
-                renderList();
-                setStatus("");
-            })
-            .catch(function (err) {
-                setStatus(apiErrorMessage(err, "목록을 불러오지 못했습니다."), true);
-            });
-    }
-
-    function loadIntoForm(id) {
-        var it = cachedItems.filter(function (x) {
-            return x.id === id;
-        })[0];
+    function fillFormFromItem(it) {
         if (!it) return;
         editIdInput.value = it.id;
         loginIdInput.value = it.loginId || "";
@@ -313,32 +216,6 @@
         cancelBtn.hidden = false;
         submitBtn.textContent = "수정 저장";
         setStatus("수정 중: " + (it.vn_company || ""));
-        openModal();
-        loginIdInput.focus();
-    }
-
-    function deleteById(id) {
-        if (!confirm("이 업체 정보를 삭제할까요?")) return;
-        api.deleteVendor(id)
-            .then(function () {
-                if (editIdInput.value === id) resetForm();
-                return loadList();
-            })
-            .then(function () {
-                setStatus("삭제했습니다.");
-            })
-            .catch(function (err) {
-                setStatus(apiErrorMessage(err, "삭제에 실패했습니다."), true);
-            });
-    }
-
-    if (listEl) {
-        listEl.addEventListener("click", function (e) {
-            var t = e.target;
-            if (!(t instanceof HTMLElement)) return;
-            if (t.classList.contains("vr-btn-edit")) loadIntoForm(t.getAttribute("data-id"));
-            else if (t.classList.contains("vr-btn-del")) deleteById(t.getAttribute("data-id"));
-        });
     }
 
     function handleLogoFile(dataUrl) {
@@ -363,22 +240,8 @@
     }
 
     cancelBtn.addEventListener("click", function () {
-        resetForm();
-        setStatus("");
+        location.href = listReturnUrl();
     });
-
-    var modalCloseBtn = document.getElementById("ve-modal-close");
-    if (modalCloseBtn) {
-        modalCloseBtn.addEventListener("click", function () {
-            resetForm();
-            setStatus("");
-        });
-    }
-    if (modal) {
-        modal.addEventListener("cancel", function () {
-            resetForm();
-        });
-    }
 
     form.addEventListener("submit", function (e) {
         e.preventDefault();
@@ -389,7 +252,7 @@
         var vn_depts = getSelectedDepts();
 
         if (!editingId) {
-            setStatus("목록에서 수정할 업체를 선택해 주세요.", true);
+            setStatus("업체를 찾을 수 없습니다. 리스트에서 다시 선택해 주세요.", true);
             return;
         }
         if (VF && pwConfirmCheck) {
@@ -431,13 +294,10 @@
             submitBtn.disabled = true;
             api.updateVendor(editingId, body)
                 .then(function () {
-                    return api.listVendors();
-                })
-                .then(function (items) {
-                    cachedItems = items;
-                    renderList();
-                    resetForm();
-                    setStatus("수정했습니다.");
+                    setStatus("수정했습니다. 리스트로 이동합니다…");
+                    setTimeout(function () {
+                        location.href = listReturnUrl();
+                    }, 350);
                 })
                 .catch(function (err) {
                     setStatus(err.message || "저장에 실패했습니다.", true);
@@ -479,16 +339,26 @@
     if (!access.allowed) {
         setStatus(access.reason, true);
         setFormDisabled(true);
-        if (listEl) {
-            listEl.innerHTML =
-                '<p class="vr-card-note">업체를 수정하려면 관리자로 <a href="login.html?next=vendor-edit.html">로그인</a>해 주세요.</p>';
-        }
         return;
     }
 
-    if (api && api.listVendors) {
-        loadList().catch(function (err) {
-            setStatus(err.message || "업체 목록을 불러오지 못했습니다.", true);
-        });
+    if (backListLink) backListLink.href = listReturnUrl();
+
+    var editId = queryParam("id").trim();
+    if (!editId) {
+        location.replace("vendor-list-admin.html");
+        return;
     }
+
+    editIdInput.value = editId;
+    setStatus("불러오는 중…");
+    api.getVendor(editId)
+        .then(function (it) {
+            if (!it || !it.id) throw new Error("업체를 찾을 수 없습니다.");
+            fillFormFromItem(it);
+        })
+        .catch(function (err) {
+            setStatus(apiErrorMessage(err, "업체 정보를 불러오지 못했습니다."), true);
+            setFormDisabled(true);
+        });
 })();

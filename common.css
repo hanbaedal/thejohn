@@ -202,9 +202,20 @@ a.dz-logo--compact:focus-visible {
     cursor: default;
     pointer-events: none;
 }
-/* 관리자 외(게스트·업체 등): 헤더에서 상품등록·업체등록 숨김 — hidden 속성만으로는 inline-flex에 가려지므로 클래스로 처리 */
-.site-header-nav a.header-nav-link.header-nav-link--register-hidden {
+/* 관리자 외(미로그인·업체): 상품·업체 관리 메뉴 비표시 */
+.site-header-nav a.header-nav-link.header-nav-link--register-hidden,
+.site-header-nav [data-nav-dropdown="product-manage"].header-nav-link--register-hidden,
+.site-header-nav [data-nav-dropdown="vendor-manage"].header-nav-link--register-hidden {
     display: none !important;
+}
+/* JS 적용 전 깜빡임 방지: 기본은 등록 링크 숨김, 스태프만 body.nav-admin-menus 에서 표시 */
+body:not(.nav-admin-menus) .site-header-nav a.header-nav-link[href="product-register.html"],
+body:not(.nav-admin-menus) .site-header-nav a.header-nav-link[href="vendor-register.html"] {
+    display: none !important;
+}
+body.nav-admin-menus .site-header-nav a.header-nav-link[href="product-register.html"],
+body.nav-admin-menus .site-header-nav a.header-nav-link[href="vendor-register.html"] {
+    display: inline-flex;
 }
 /* 회사소개 — 호버 서브메뉴 (세로 목록) */
 .nav-dropdown {
@@ -973,8 +984,20 @@ body:not(.page-login) .login-card {
     padding: 0.65rem 0.75rem;
     font-size: 1rem;
     font-family: inherit;
+    color: #1a2b3c;
+    background-color: #fff;
+    -webkit-text-fill-color: #1a2b3c;
+    caret-color: #1a2b3c;
     border: 1px solid #c5d0dc;
     border-radius: 6px;
+}
+.page-login .field input::placeholder {
+    color: transparent;
+}
+.page-login .field input:-webkit-autofill,
+.page-login .field input:-webkit-autofill:focus {
+    -webkit-text-fill-color: #1a2b3c;
+    box-shadow: 0 0 0 1000px #fff inset;
 }
 .page-login .field input:focus {
     outline: none;

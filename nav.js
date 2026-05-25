@@ -153,7 +153,9 @@
             seg === "product-manage.html" ||
             seg === "product-register.html" ||
             seg === "product-edit.html" ||
-            seg === "product-list-admin.html"
+            seg === "product-list-admin.html" ||
+            seg === "product-new-register.html" ||
+            seg === "product-new-list.html"
         );
     }
 
@@ -164,7 +166,9 @@
             seg === "vendor-register.html" ||
             seg === "vendor-edit.html" ||
             seg === "vendor-list-admin.html" ||
-            seg === "vendor-detail.html"
+            seg === "vendor-detail.html" ||
+            seg === "vendor-new-register.html" ||
+            seg === "vendor-new-list.html"
         );
     }
 

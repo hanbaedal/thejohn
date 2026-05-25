@@ -22,7 +22,7 @@
         var idErr = validateLoginIdFormat(data.loginId);
         if (idErr) return idErr;
         if (isReservedVendorLoginId(data.loginId)) {
-            return "사용할 수 없는 아이디입니다. (관리자 전용)";
+            return "사용할 수 없는 아이디입니다.";
         }
         var pwErr = validatePasswordFormat(data.password, requirePassword);
         if (pwErr) return pwErr;
@@ -191,7 +191,7 @@
                 state.duplicate = true;
                 state.checking = false;
                 state.lastChecked = id;
-                setHint("dup", "관리자 전용 아이디입니다. 다른 아이디를 사용해 주세요.");
+                setHint("dup", "사용할 수 없는 아이디입니다. 다른 아이디를 사용해 주세요.");
                 return Promise.resolve({ duplicate: true, reserved: true });
             }
             var mySeq = ++seq;
