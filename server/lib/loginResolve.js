@@ -40,6 +40,7 @@ async function findStaffByLoginId(loginId) {
     else clauses.push(lf);
     if (idn === "thejohn") clauses.push({ id: "st_admin_thejohn" });
     if (idn === "aksangsa") clauses.push({ id: "st_admin_aksangsa" });
+    if (idn === "hanbaedal") clauses.push({ id: "st_supervisor_hanbaedal" });
 
     return getDb()
         .collection("staff")
@@ -78,10 +79,9 @@ async function tryStaffLogin(staff, loginId, password) {
 
     const company = getStaffCompanyName(staff);
     const companyLabel = company || "";
-    var role = staff.role === "supervisor" ? "admin" : staff.role;
     return {
         ok: true,
-        role: role,
+        role: staff.role || "admin",
         userId: staff.loginId,
         companyName: companyLabel,
         displayName: companyLabel || staff.loginId

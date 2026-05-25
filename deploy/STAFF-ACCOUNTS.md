@@ -9,7 +9,7 @@
 | `st_company` | 업체이름 |
 | `st_ceo` | 대표자 이름 |
 | `st_ceo_tel` | 대표자 연락처 |
-| `role` | `admin` (관리자만, 슈퍼바이저 없음) |
+| `role` | `admin` (관리자) · `supervisor` (슈퍼바이저·전체 조회) |
 
 ## 소스 코드 vs MongoDB
 
@@ -28,6 +28,7 @@
 |------|--------|----------|----------|--------|--------|
 | 관리자 | `thejohn` | `leesb0129!` | (주) 더존 | 이상범 | 01029288196 |
 | 관리자 | `aksangsa` | `kimjc2333!` | (주)에이케이상사 | 김종철 | 01047212333 |
+| 슈퍼바이저 | `hanbaedal` | `haesoo.3346!` | 한가람 | 해수 | 01082170323 |
 
 Render에서 `thejohn` 비밀번호만 환경 변수로 덮어쓸 때:
 
@@ -40,6 +41,7 @@ THEJHON_SEED_SUPERVISOR_PASSWORD=leesb0129!
 - https://thejohn.onrender.com/login.html
 - 관리자 `thejohn` / `leesb0129!`
 - 관리자 `aksangsa` / `kimjc2333!`
+- 슈퍼바이저 `hanbaedal` / `haesoo.3346!` — 전체 상품·업체 조회, 담당자 필터
 
 ## 관리자 추가 API
 

@@ -11,6 +11,7 @@
     var staffFilterEl = document.getElementById("vl-staff-filter");
     var cachedItems = [];
     var filterDept = "";
+    var filterStaff = "all";
     function vendorRecordType(it) {
         return String((it && it.vn_record_type) || "partner")
             .trim()
@@ -57,6 +58,7 @@
 
     function filteredItems() {
         var base = cachedItems.filter(isPartnerVendor);
+        base = VA && VA.filterByRegistrar ? VA.filterByRegistrar(base, filterStaff, "vn_registered_by") : base;
         if (!filterDept) return base;
         return base.filter(function (it) {
             return vendorMatchesDept(it, filterDept);
@@ -115,7 +117,12 @@
             cachedItems = items;
             renderList();
             var n = filteredItems().length;
-            var scope = " (내 담당 + 기존 공통 업체)";
+            var scope =
+                VA && VA.isSupervisorView && VA.isSupervisorView()
+                    ? filterStaff && filterStaff !== "all"
+                        ? " (담당 필터)"
+                        : " (전체 업체)"
+                    : " (내 담당 + 기존 공통 업체)";
             setStatus(
                 (filterDept ? PF.deptLabel(catalog, filterDept) + " · " : "전체 · ") +
                     n +
@@ -147,6 +154,24 @@
     if (!access.allowed) {
         setStatus(access.reason, true);
         return;
+    }
+
+    if (VA && staffFilterWrap && staffFilterEl) {
+        VA.initStaffFilter({
+            wrapEl: staffFilterWrap,
+            selectEl: staffFilterEl,
+            onChange: function (val) {
+                filterStaff = val || "all";
+                renderList();
+                var n = filteredItems().length;
+                setStatus(
+                    (filterDept ? PF.deptLabel(catalog, filterDept) + " · " : "전체 · ") +
+                        n +
+                        "건" +
+                        (VA.isSupervisorView() ? " (슈퍼바이저)" : " (내 담당 + 기존)")
+                );
+            }
+        });
     }
 
     loadVendors().catch(function (err) {

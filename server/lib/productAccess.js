@@ -2,6 +2,7 @@ const { F } = require("./productFields");
 const {
     normalizeStaffLoginId,
     isStaffAuth,
+    isSupervisorAuth,
     LEGACY_REGISTERED_BY,
     staffDisplayName
 } = require("./vendorAccess");
@@ -24,14 +25,16 @@ function canReadProduct() {
 
 function canWriteProduct(auth, doc) {
     if (!auth || !isStaffAuth(auth)) return false;
+    if (isSupervisorAuth(auth)) return true;
     if (!doc) return true;
     if (isSharedLegacyProduct(doc)) return true;
     return productOwnedBy(doc, auth.userId);
 }
 
-/** 관리자별 본인 등록 상품 + legacy(담당 미지정) */
+/** 슈퍼바이저: 전체, 관리자: 본인 등록 + legacy */
 function buildProductListQuery(auth) {
     if (!auth || !isStaffAuth(auth)) return {};
+    if (isSupervisorAuth(auth)) return {};
     const me = normalizeStaffLoginId(auth.userId);
     return {
         $or: [

@@ -261,6 +261,7 @@
     ];
     var ORDER_MANAGE_PAGES = ["order-list-admin.html"];
     var DATA_MIGRATE_PAGES = ["data-migrate-admin.html"];
+    var STAFF_MANAGE_PAGES = ["staff-manage.html"];
     var ADMIN_REGISTER_PAGES = PRODUCT_ADMIN_PAGES.concat(VENDOR_ADMIN_PAGES);
 
     /** 관리자(staff admin)만 상품·업체 관리 메뉴·등록 API */
@@ -355,9 +356,36 @@
      * options: { mode: "inline"|"detail", formatWon, escapeHtml }
      */
     /** 업체(vendor)만 상품 주문·장바구니 */
-    /** 슈퍼바이저 역할 없음 — 항상 false */
     function isSupervisorStaff() {
-        return false;
+        return isLoggedIn() && getRole() === "supervisor";
+    }
+
+    /** 슈퍼바이저 — 관리자(staff) 등록·목록·수정 */
+    function canManageStaffAccounts() {
+        return (
+            isSupervisorStaff() &&
+            !!(global.THEJHON_API && THEJHON_API.getToken && THEJHON_API.getToken())
+        );
+    }
+
+    function getStaffManageAccess() {
+        normalizeLegacySession();
+        if (!global.THEJHON_API || !THEJHON_API.getToken || !THEJHON_API.getToken()) {
+            return {
+                allowed: false,
+                reason: "로그인이 필요합니다. 슈퍼바이저로 로그인해 주세요."
+            };
+        }
+        if (!isLoggedIn()) {
+            return { allowed: false, reason: "로그인이 필요합니다." };
+        }
+        if (!canManageStaffAccounts()) {
+            return {
+                allowed: false,
+                reason: "관리자 관리는 슈퍼바이저만 이용할 수 있습니다."
+            };
+        }
+        return { allowed: true, role: getRole() };
     }
 
     function canPlaceVendorOrders() {
@@ -591,6 +619,12 @@
             }
             return;
         }
+        if (STAFF_MANAGE_PAGES.indexOf(page) >= 0) {
+            if (!canManageStaffAccounts()) {
+                redirectFromProtectedPage(isLoggedIn());
+            }
+            return;
+        }
         if (ADMIN_REGISTER_PAGES.indexOf(page) < 0) return;
         if (!isLoggedIn()) {
             redirectFromProtectedPage(false);
@@ -674,6 +708,17 @@
                     orderLinks[o].remove();
                 }
             }
+            var staffManage = nav.querySelector('a[href="staff-manage.html"]');
+            var showStaffManage = canManageStaffAccounts();
+            if (staffManage) {
+                if (showStaffManage) {
+                    staffManage.classList.remove("header-nav-link--register-hidden");
+                    staffManage.removeAttribute("aria-hidden");
+                    staffManage.style.removeProperty("display");
+                } else {
+                    staffManage.remove();
+                }
+            }
         } catch (e) {}
     }
 
@@ -713,6 +758,8 @@
         isVendorOrderEnabled: isVendorOrderEnabled,
         ORDER_VENDOR_STAFF_ID: ORDER_VENDOR_STAFF_ID,
         isSupervisorStaff: isSupervisorStaff,
+        canManageStaffAccounts: canManageStaffAccounts,
+        getStaffManageAccess: getStaffManageAccess,
         VENDOR_ORDER_ENABLED_KEY: VENDOR_ORDER_ENABLED_KEY,
         getVendorUnitPriceForProduct: getVendorUnitPriceForProduct,
         syncVendorGradeFromSessionApi: syncVendorGradeFromSessionApi,

@@ -30,9 +30,35 @@
         return "1등급";
     }
 
-    /** 슈퍼바이저 없음 — 등록 담당 필터 UI 비사용 */
     function isSupervisorView() {
-        return false;
+        return (
+            global.THEJHON_AUTH &&
+            THEJHON_AUTH.isSupervisorStaff &&
+            THEJHON_AUTH.isSupervisorStaff()
+        );
+    }
+
+    /** 슈퍼바이저 목록 — 담당 관리자 필터 (all | legacy | loginId) */
+    function filterByRegistrar(items, filterStaff, fieldKey) {
+        var list = items || [];
+        if (!filterStaff || filterStaff === "all" || !isSupervisorView()) return list;
+        var key = fieldKey || "vn_registered_by";
+        if (filterStaff === "legacy") {
+            return list.filter(function (it) {
+                var by = String((it && it[key]) || "")
+                    .trim()
+                    .toLowerCase();
+                return !by || by === "legacy";
+            });
+        }
+        var want = String(filterStaff).trim().toLowerCase();
+        return list.filter(function (it) {
+            return (
+                String((it && it[key]) || "")
+                    .trim()
+                    .toLowerCase() === want
+            );
+        });
     }
 
     function initStaffFilter(options) {
@@ -78,6 +104,7 @@
         registeredByMeta: registeredByMeta,
         vendorGradeLabel: vendorGradeLabel,
         isSupervisorView: isSupervisorView,
+        filterByRegistrar: filterByRegistrar,
         initStaffFilter: initStaffFilter
     };
 })(typeof window !== "undefined" ? window : this);

@@ -101,9 +101,34 @@
         }
     }
 
+    function staffManageLinkHtml() {
+        var Auth = window.THEJHON_AUTH;
+        if (!Auth || !Auth.canManageStaffAccounts || !Auth.canManageStaffAccounts()) {
+            return "";
+        }
+        return '<a href="staff-manage.html" class="header-nav-link">관리자관리</a>';
+    }
+
+    function injectStaffManageLink(nav) {
+        if (!nav || nav.querySelector('a[href="staff-manage.html"]')) return;
+        var html = staffManageLinkHtml();
+        if (!html) return;
+        var wrap = document.createElement("div");
+        wrap.innerHTML = html;
+        var link = wrap.firstChild;
+        var support = nav.querySelector('[data-nav-dropdown="support"]');
+        if (support) {
+            nav.insertBefore(link, support);
+        } else {
+            nav.appendChild(link);
+        }
+    }
+
     function inject() {
         var nav = document.querySelector(".site-header-nav");
         if (!nav) return;
+
+        injectStaffManageLink(nav);
 
         var showAdmin = canShowAdminMenus();
 

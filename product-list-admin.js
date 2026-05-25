@@ -14,6 +14,7 @@
     var staffFilterEl = document.getElementById("pl-staff-filter");
     var cachedItems = [];
     var filterDept = "";
+    var filterStaff = "all";
     var loadToken = 0;
 
     function productRecordType(it) {
@@ -47,6 +48,7 @@
 
     function filteredItems() {
         var base = (cachedItems || []).filter(isCatalogProduct);
+        base = VA && VA.filterByRegistrar ? VA.filterByRegistrar(base, filterStaff, "pd_registered_by") : base;
         if (!filterDept) return base;
         return base.filter(function (it) {
             return itemDept(it) === filterDept;
@@ -74,11 +76,13 @@
 
     function updateStatusLine() {
         var items = filteredItems();
-        setStatus(
-            (filterDept ? deptLabel(filterDept) + " · " : "전체 · ") +
-                items.length +
-                "건 (내 등록 + 담당 미지정)"
-        );
+        var scope =
+            VA && VA.isSupervisorView && VA.isSupervisorView()
+                ? filterStaff && filterStaff !== "all"
+                    ? "건 (담당 필터)"
+                    : "건 (전체 상품)"
+                : "건 (내 등록 + 담당 미지정)";
+        setStatus((filterDept ? deptLabel(filterDept) + " · " : "전체 · ") + items.length + scope);
     }
 
     function renderList() {
@@ -187,6 +191,17 @@
     if (!access.allowed) {
         setStatus(access.reason, true);
         return;
+    }
+
+    if (VA && staffFilterWrap && staffFilterEl) {
+        VA.initStaffFilter({
+            wrapEl: staffFilterWrap,
+            selectEl: staffFilterEl,
+            onChange: function (val) {
+                filterStaff = val || "all";
+                renderList();
+            }
+        });
     }
 
     if (PF && filterRoot && catalog) {

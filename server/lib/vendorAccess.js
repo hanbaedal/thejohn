@@ -9,9 +9,9 @@ function normalizeStaffLoginId(loginId) {
         .toLowerCase();
 }
 
-/** 슈퍼바이저 역할 없음 — 항상 false (레거시 호환) */
-function isSupervisorAuth() {
-    return false;
+function isSupervisorAuth(auth) {
+    if (!auth) return false;
+    return auth.role === "supervisor";
 }
 
 function isStaffAuth(auth) {
@@ -33,20 +33,23 @@ function vendorOwnedBy(doc, staffLoginId) {
 
 function canReadVendor(auth, doc) {
     if (!auth || !isStaffAuth(auth)) return true;
+    if (isSupervisorAuth(auth)) return true;
     if (isSharedLegacyVendor(doc)) return true;
     return vendorOwnedBy(doc, auth.userId);
 }
 
 function canWriteVendor(auth, doc) {
     if (!auth || !isStaffAuth(auth)) return false;
+    if (isSupervisorAuth(auth)) return true;
     if (!doc) return true;
     if (isSharedLegacyVendor(doc)) return true;
     return vendorOwnedBy(doc, auth.userId);
 }
 
-/** MongoDB find 쿼리 — 관리자별 본인 등록 + legacy(담당 미지정) */
+/** MongoDB find 쿼리 — 슈퍼바이저: 전체, 관리자: 본인 등록 + legacy */
 function buildVendorListQuery(auth) {
     if (!auth || !isStaffAuth(auth)) return {};
+    if (isSupervisorAuth(auth)) return {};
     const me = normalizeStaffLoginId(auth.userId);
     return {
         $or: [

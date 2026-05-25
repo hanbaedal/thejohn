@@ -149,6 +149,21 @@
                 return d.items || [];
             });
         },
+        getStaff: function (id) {
+            return request("GET", "/api/staff/" + encodeURIComponent(id)).then(function (d) {
+                return d.staff;
+            });
+        },
+        createStaff: function (body) {
+            return request("POST", "/api/staff", body).then(function (d) {
+                return d.staff;
+            });
+        },
+        updateStaff: function (id, body) {
+            return request("PUT", "/api/staff/" + encodeURIComponent(id), body).then(function (d) {
+                return d.staff;
+            });
+        },
         getVendor: function (id) {
             return request("GET", "/api/vendors/" + encodeURIComponent(id)).then(function (d) {
                 return d.item;
