@@ -317,7 +317,7 @@
                     "주문이 접수되었습니다. 주문번호: <strong>" +
                         escapeHtml(order.orderNo || order.id) +
                         "</strong>. " +
-                        '<a href="cart.html">주문서 관리</a>에서 확인할 수 있습니다.',
+                        '<a href="cart.html">주문서 보기</a>에서 확인할 수 있습니다.',
                     "ok"
                 );
 

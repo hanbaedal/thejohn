@@ -1,5 +1,5 @@
 /**
- * 주문서 관리 — 접수된 주문만 조회 (담은 상품·주문하기는 모달)
+ * 주문서 보기 — 접수된 주문만 조회 (담은 상품·주문하기는 상품 상세 모달)
  */
 (function () {
     var Auth = window.THEJHON_AUTH;
@@ -38,7 +38,7 @@
         }
         if (!Auth.canPlaceVendorOrders || !Auth.canPlaceVendorOrders()) {
             showAccessMsg(
-                '<p class="cart-empty">이 계정은 주문서 관리를 사용할 수 없습니다. ' +
+                '<p class="cart-empty">이 계정은 주문서 보기를 사용할 수 없습니다. ' +
                     '<a href="products.html">사업부문</a>에서 상품 조회만 가능합니다.</p>'
             );
             return false;
@@ -107,7 +107,7 @@
             .then(function (items) {
                 if (!items.length) {
                     historyListEl.innerHTML =
-                        '<p class="cart-empty">접수된 주문이 없습니다. <a href="products.html">사업부문</a>에서 상품을 담은 뒤 <strong>주문하기</strong>로 주문해 주세요.</p>';
+                        '<p class="cart-empty">접수된 주문이 없습니다. <a href="products.html">사업부문</a> 상품 상세에서 담은 뒤 <strong>주문하기</strong>로 주문해 주세요.</p>';
                     showHistoryDetail(null);
                     if (historyStatusEl) historyStatusEl.textContent = "0건";
                     return;

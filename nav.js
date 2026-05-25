@@ -422,14 +422,14 @@
         var legacyCart = nav.querySelector("a[data-nav-cart]");
         if (legacyCart) legacyCart.remove();
         var manageLink = nav.querySelector("[data-nav-order-manage]");
-        var orderBtn = nav.querySelector("[data-nav-order-btn]");
+        var legacyOrderBtn = nav.querySelector("[data-nav-order-btn]");
+        if (legacyOrderBtn) legacyOrderBtn.remove();
         var show =
             window.THEJHON_AUTH &&
             THEJHON_AUTH.canPlaceVendorOrders &&
             THEJHON_AUTH.canPlaceVendorOrders();
         if (!show) {
             if (manageLink) manageLink.remove();
-            if (orderBtn) orderBtn.remove();
             return;
         }
 
@@ -441,42 +441,13 @@
             manageLink.href = "cart.html";
             manageLink.className = "header-nav-link";
             manageLink.setAttribute("data-nav-order-manage", "1");
-            manageLink.textContent = "주문서 관리";
+            manageLink.textContent = "주문서 보기";
             if (insertAfter) nav.insertBefore(manageLink, insertAfter);
             else nav.appendChild(manageLink);
-            insertAfter = manageLink.nextSibling;
         }
-        manageLink.textContent = "주문서 관리";
-
-        if (!orderBtn) {
-            orderBtn = document.createElement("button");
-            orderBtn.type = "button";
-            orderBtn.className = "header-nav-order-btn";
-            orderBtn.setAttribute("data-nav-order-btn", "1");
-            orderBtn.setAttribute("aria-label", "담은 상품 주문하기");
-            if (insertAfter) nav.insertBefore(orderBtn, insertAfter);
-            else nav.appendChild(orderBtn);
-            orderBtn.addEventListener("click", function () {
-                function openModal() {
-                    if (
-                        window.THEJHON_VENDOR_ORDER_MODAL &&
-                        THEJHON_VENDOR_ORDER_MODAL.open
-                    ) {
-                        THEJHON_VENDOR_ORDER_MODAL.open();
-                    }
-                }
-                if (window.THEJHON_VENDOR_ORDER_MODAL) openModal();
-                else loadVendorOrderModalAssets(openModal);
-            });
-        }
-
-        var Cart = window.THEJHON_VENDOR_CART;
-        var n = Cart && Cart.itemCount ? Cart.itemCount(Cart.readCart()) : 0;
-        orderBtn.textContent = n > 0 ? "주문하기 (" + n + ")" : "주문하기";
-        orderBtn.hidden = false;
+        manageLink.textContent = "주문서 보기";
     }
     refreshVendorCartNav();
-    window.addEventListener("thejhon-cart-updated", refreshVendorCartNav);
 
     (function injectSupportAdminOnlyNav() {
         var panel = document.getElementById("supportSubmenu");

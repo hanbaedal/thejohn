@@ -220,22 +220,6 @@ a.dz-logo--compact:focus-visible {
     border-color: rgba(10, 77, 156, 0.45);
     background: rgba(255, 255, 255, 0.55);
 }
-.site-header-nav .header-nav-order-btn {
-    font: inherit;
-    font-size: inherit;
-    line-height: inherit;
-    cursor: pointer;
-    border: 1px solid rgba(10, 77, 156, 0.35);
-    background: #fff;
-    color: var(--dz-blue);
-    border-radius: 6px;
-    padding: 0.35rem 0.65rem;
-    font-weight: 600;
-    white-space: nowrap;
-}
-.site-header-nav .header-nav-order-btn:hover {
-    background: #eef4fb;
-}
 .header-nav-link.is-static {
     opacity: 0.55;
     cursor: default;
