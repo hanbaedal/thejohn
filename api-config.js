@@ -9,6 +9,8 @@
         var host = String(location.hostname).toLowerCase();
         if (host === "thejohn.co.kr") {
             base = "https://www.thejohn.co.kr";
+        } else if (host === "www.thejohn.co.kr") {
+            base = "";
         }
     }
     global.THEJHON_API_BASE_URL = base;

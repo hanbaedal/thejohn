@@ -1,5 +1,5 @@
 const express = require("express");
-const { getDb } = require("../db");
+const { getDb, isDbReady } = require("../db");
 const { requireRole, extractBearer, verifyToken } = require("../middleware/auth");
 const {
     toPublic,
@@ -60,6 +60,12 @@ function buildListFindQuery(auth, reqQuery) {
 
 router.get("/", async (req, res) => {
     try {
+        if (!isDbReady()) {
+            return res.status(503).json({
+                ok: false,
+                error: "데이터베이스에 연결 중입니다. 잠시 후 다시 시도해 주세요."
+            });
+        }
         const auth = optionalAuth(req);
         const query = buildListFindQuery(auth, req.query);
         const catalogByDept = !!req.query.dept && !req.query.registeredBy;
@@ -77,12 +83,18 @@ router.get("/", async (req, res) => {
                 console.error("GET /api/products map", doc && doc.id, mapErr.message);
             }
         }
-        res.json({
+        const payload = {
             ok: true,
             items: rows,
             dept: req.query.dept ? normalizeDept(req.query.dept) : "",
             scope: catalogByDept ? "catalog" : auth && isStaffAuth(auth) ? "staff" : "public"
-        });
+        };
+        try {
+            res.json(payload);
+        } catch (jsonErr) {
+            console.error("GET /api/products json", jsonErr);
+            res.status(500).json({ ok: false, error: "상품 목록을 불러오지 못했습니다." });
+        }
     } catch (e) {
         console.error("GET /api/products", e);
         res.status(500).json({ ok: false, error: "상품 목록을 불러오지 못했습니다." });

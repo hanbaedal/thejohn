@@ -104,15 +104,39 @@
         updateStatusLine();
     }
 
-    function loadProducts() {
+    function loadProducts(attempt) {
         var opts = {};
         if (filterStaff && filterStaff !== "all" && VA && VA.isSupervisorView && VA.isSupervisorView()) {
             opts.registeredBy = filterStaff;
         }
-        setStatus("불러오는 중…");
+        setStatus(attempt ? "다시 불러오는 중…" : "불러오는 중…");
         return api.listProducts(opts).then(function (items) {
             cachedItems = Array.isArray(items) ? items : [];
             renderList();
+        }).catch(function (err) {
+            var status = err && err.status;
+            var retry = (attempt || 0) < 3 && (status === 503 || status === 502 || status === 500 || !status);
+            if (retry) {
+                return new Promise(function (resolve) {
+                    setTimeout(resolve, status === 503 ? 2500 : 900);
+                }).then(function () {
+                    return loadProducts((attempt || 0) + 1);
+                });
+            }
+            throw err;
+        });
+    }
+
+    function bootstrapThenLoad() {
+        var p = Promise.resolve();
+        if (THEJHON_AUTH.normalizeLegacySession) {
+            THEJHON_AUTH.normalizeLegacySession();
+        }
+        if (api.checkSession) {
+            p = api.checkSession().catch(function () {});
+        }
+        return p.then(function () {
+            return loadProducts(0);
         });
     }
 
@@ -152,15 +176,16 @@
             selectEl: staffFilterEl,
             onChange: function (val) {
                 filterStaff = val || "all";
-                loadProducts().catch(function (err) {
+                bootstrapThenLoad().catch(function (err) {
                     setStatus(err.message || "목록을 불러오지 못했습니다.", true);
                 });
             }
         });
     }
 
-    loadProducts().catch(function (err) {
+    bootstrapThenLoad().catch(function (err) {
         var msg = (err && err.message) || "목록을 불러오지 못했습니다.";
+        if (err && err.status) msg += " (HTTP " + err.status + ")";
         if (listEl) listEl.innerHTML = "";
         setStatus(msg, true);
     });

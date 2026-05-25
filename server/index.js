@@ -30,6 +30,16 @@ const { requireRole } = require("./middleware/auth");
 const app = express();
 const PORT = Number(process.env.PORT) || 3000;
 
+app.use(function (req, res, next) {
+    const host = String(req.headers.host || "")
+        .split(":")[0]
+        .toLowerCase();
+    if (host === "thejohn.co.kr") {
+        return res.redirect(301, "https://www.thejohn.co.kr" + req.originalUrl);
+    }
+    next();
+});
+
 function resolveStaticRoot() {
     var pub = path.join(__dirname, "public");
     if (fs.existsSync(path.join(pub, "index.html"))) return pub;

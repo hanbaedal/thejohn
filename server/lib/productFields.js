@@ -38,7 +38,25 @@ function normalizeRecordType(v) {
 const PRICE_KEYS = ["pd_price1", "pd_price2", "pd_price3", "pd_price4"];
 
 function str(v) {
-    return String(v ?? "").trim();
+    return jsonSafeStr(v).trim();
+}
+
+function toNum(v) {
+    if (v == null) return 0;
+    if (typeof v === "number" && isFinite(v)) return v;
+    if (typeof v === "object" && typeof v.toNumber === "function") {
+        const n = v.toNumber();
+        return isFinite(n) ? n : 0;
+    }
+    const n = Number(v);
+    return isFinite(n) ? n : 0;
+}
+
+/** JSON 응답 직렬화 오류 방지(깨진 surrogate 등) */
+function jsonSafeStr(v) {
+    return String(v ?? "")
+        .replace(/[\uD800-\uDBFF](?![\uDC00-\uDFFF])|(?<![\uD800-\uDBFF])[\uDC00-\uDFFF]/g, "\uFFFD")
+        .replace(/\u0000/g, "");
 }
 
 function parsePrice(v) {
@@ -122,9 +140,9 @@ function toPublicListItem(doc) {
         pd_record_type: normalizeRecordType(d[F.recordType] || d.pd_record_type),
         pd_registered_by: str(d[F.registeredBy] || d.pd_registered_by),
         pd_registered_by_name: str(d[F.registeredByName] || d.pd_registered_by_name),
-        pd_registered_at: d[F.registeredAt] || d.pd_registered_at || 0,
-        createdAt: d.createdAt || 0,
-        updatedAt: d.updatedAt || 0
+        pd_registered_at: toNum(d[F.registeredAt] || d.pd_registered_at),
+        createdAt: toNum(d.createdAt),
+        updatedAt: toNum(d.updatedAt)
     };
 }
 
