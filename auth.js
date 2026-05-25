@@ -187,6 +187,7 @@
         "vendor-new-list.html"
     ];
     var ORDER_MANAGE_PAGES = ["order-list-admin.html"];
+    var DATA_MIGRATE_PAGES = ["data-migrate-admin.html"];
     var ADMIN_REGISTER_PAGES = PRODUCT_ADMIN_PAGES.concat(VENDOR_ADMIN_PAGES);
 
     /** 슈퍼바이저·관리자만 상품·업체 관리 메뉴·등록 API */
@@ -465,6 +466,12 @@
 
     function enforceRegisterPages() {
         var page = currentPageFile();
+        if (DATA_MIGRATE_PAGES.indexOf(page) >= 0) {
+            if (!isLoggedIn() || !isSupervisorStaff()) {
+                window.location.replace("index.html?denied=register");
+            }
+            return;
+        }
         if (ORDER_MANAGE_PAGES.indexOf(page) >= 0) {
             if (!canShowOrderManageMenu()) {
                 window.location.replace("index.html?denied=register");

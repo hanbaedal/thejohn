@@ -282,6 +282,7 @@ async function migrateProductsCollection(db) {
     let n = 0;
     let idFixed = 0;
     let deptFixed = 0;
+    let emptyDept = 0;
     for (const doc of docs) {
         const id = ensureProductId(doc);
         if (!doc.id) idFixed++;
@@ -308,6 +309,7 @@ async function migrateProductsCollection(db) {
         if (built.pd_dept && built.pd_dept !== String(rawDept).trim().toLowerCase()) {
             deptFixed++;
         }
+        if (!built.pd_dept) emptyDept++;
         if (!doc.id) {
             await col.updateOne({ _id: doc._id }, { $set: { id: id } });
         }
@@ -317,17 +319,6 @@ async function migrateProductsCollection(db) {
         await col.replaceOne({ id: id }, next, { upsert: true });
         n++;
     }
-    if (n) {
-        console.log(
-            "[products] migrated:",
-            n,
-            "idFixed:",
-            idFixed,
-            "deptNormalized:",
-            deptFixed
-        );
-    }
-
     const legacy = await col.updateMany(
         {
             $or: [
@@ -343,9 +334,16 @@ async function migrateProductsCollection(db) {
             }
         }
     );
-    if (legacy.modifiedCount) {
-        console.log("[products] pd_registered_by backfill (legacy):", legacy.modifiedCount);
-    }
+    const report = {
+        collection: "products",
+        processed: n,
+        idFixed: idFixed,
+        deptNormalized: deptFixed,
+        emptyDeptAfter: emptyDept,
+        legacyRegisteredBy: legacy.modifiedCount || 0
+    };
+    if (n) console.log("[products] migrated:", report);
+    return report;
 }
 
 module.exports = {

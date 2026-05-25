@@ -24,6 +24,8 @@ const staffRoutes = require("./routes/staff");
 const productRoutes = require("./routes/products");
 const vendorRoutes = require("./routes/vendors");
 const orderRoutes = require("./routes/orders");
+const adminRoutes = require("./routes/admin");
+const { requireSupervisor } = require("./middleware/supervisor");
 
 const app = express();
 const PORT = Number(process.env.PORT) || 3000;
@@ -149,9 +151,10 @@ app.get("/api/env-check", (req, res) => {
     });
 });
 
-app.post("/api/admin/reconnect-db", async function (req, res) {
+app.post("/api/admin/reconnect-db", requireDb, requireSupervisor, async function (req, res) {
     try {
         await connectDb();
+        const { runFullDataMigration } = require("./lib/dataMigrate");
         const { ensureDefaultStaffSeeds, findExpectedStaffInDb, EXPECTED_STAFF_LOGIN_IDS } =
             require("./lib/staffFields");
         await ensureDefaultStaffSeeds(getDb());
@@ -161,26 +164,13 @@ app.post("/api/admin/reconnect-db", async function (req, res) {
                 return d.loginId === id;
             });
         });
-        const vendorCount = await getDb().collection("vendors").countDocuments();
-        const { migrateProductsCollection } = require("./lib/productFields");
-        await migrateProductsCollection(getDb());
-        const productCount = await getDb().collection("products").countDocuments();
-        const deptSamples = await getDb()
-            .collection("products")
-            .aggregate([
-                { $group: { _id: "$pd_dept", n: { $sum: 1 } } },
-                { $sort: { n: -1 } },
-                { $limit: 20 }
-            ])
-            .toArray();
+        const migration = await runFullDataMigration(getDb());
         res.json({
             ok: true,
             db: true,
             staffOk,
             staffInDb,
-            vendorCount,
-            productCount,
-            productDeptSamples: deptSamples
+            migration: migration
         });
     } catch (err) {
         res.status(503).json({ ok: false, db: false, error: err.message });
@@ -192,6 +182,7 @@ app.use("/api/staff", requireDb, staffRoutes);
 app.use("/api/products", requireDb, productRoutes);
 app.use("/api/vendors", requireDb, vendorRoutes);
 app.use("/api/orders", requireDb, orderRoutes);
+app.use("/api/admin", requireDb, adminRoutes);
 
 app.use(express.static(staticRoot, { index: "index.html", extensions: ["html"] }));
 

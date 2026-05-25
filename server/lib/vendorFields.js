@@ -269,12 +269,20 @@ const legacyVendorUnset = {
     passwordHash: ""
 };
 
+function ensureVendorId(doc) {
+    if (doc.id && str(doc.id)) return str(doc.id);
+    if (doc._id) return "vn_" + String(doc._id);
+    return "vn_" + Date.now().toString(36) + "_" + Math.random().toString(36).slice(2, 8);
+}
+
 async function migrateVendorsCollection(db) {
     const col = db.collection("vendors");
     const docs = await col.find({}).toArray();
     let n = 0;
+    let idFixed = 0;
     for (const doc of docs) {
-        if (!doc.id) continue;
+        const id = ensureVendorId(doc);
+        if (!doc.id) idFixed++;
         const pw = getStoredPassword(doc);
         const built = buildFromBody(
             {
@@ -298,11 +306,13 @@ async function migrateVendorsCollection(db) {
             doc.loginId || "",
             pw
         );
-        const next = toDbDoc(doc.id, built, doc);
-        await col.replaceOne({ id: doc.id }, next);
+        if (!doc.id) {
+            await col.updateOne({ _id: doc._id }, { $set: { id: id } });
+        }
+        const next = toDbDoc(id, built, doc);
+        await col.replaceOne({ id: id }, next, { upsert: true });
         n++;
     }
-    if (n) console.log("[vendors] migrated field names:", n);
 
     const legacy = await col.updateMany(
         {
@@ -319,9 +329,14 @@ async function migrateVendorsCollection(db) {
             }
         }
     );
-    if (legacy.modifiedCount) {
-        console.log("[vendors] registered_by backfill (legacy):", legacy.modifiedCount);
-    }
+    const report = {
+        collection: "vendors",
+        processed: n,
+        idFixed: idFixed,
+        legacyRegisteredBy: legacy.modifiedCount || 0
+    };
+    if (n) console.log("[vendors] migrated:", report);
+    return report;
 }
 
 module.exports = {

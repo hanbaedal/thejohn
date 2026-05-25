@@ -181,6 +181,12 @@
         submitOrder: function (body) {
             return request("POST", "/api/orders", body);
         },
+        migrateDatabasePreview: function () {
+            return request("GET", "/api/admin/migrate-preview");
+        },
+        migrateDatabase: function () {
+            return request("POST", "/api/admin/migrate-data");
+        },
         listOrders: function () {
             return request("GET", "/api/orders").then(function (d) {
                 return d.items || [];
