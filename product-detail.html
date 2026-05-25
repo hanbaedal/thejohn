@@ -7,7 +7,7 @@
     <link rel="stylesheet" href="common.css">
     <style>
         .page-main--product-detail {
-            max-width: 48rem;
+            max-width: 56rem;
             padding: 0.75rem 0.85rem 1.25rem;
         }
         .pd-missing { margin: 0; color: #3d5166; line-height: 1.55; }
@@ -37,37 +37,63 @@
             line-height: 1.35;
         }
         .pd-back-link:hover { text-decoration: underline; }
+        .pd-main {
+            display: flex;
+            flex-direction: row;
+            align-items: flex-start;
+            gap: 0.75rem;
+            padding: 0.65rem 0.85rem 0.7rem 0.3rem;
+        }
         .pd-hero-wrap {
+            flex: 0 0 auto;
+            width: 42%;
+            max-width: 20rem;
+            min-width: 0;
             background: #f4f6f9;
-            border-bottom: 1px solid #e8edf2;
+            border-radius: 8px;
+            overflow: hidden;
         }
         .pd-hero-img {
             width: 100%;
-            max-height: min(52vh, 22rem);
+            max-height: min(48vh, 33rem);
             object-fit: contain;
+            object-position: left top;
             display: block;
-            margin: 0 auto;
+            margin: 0;
             background: #f4f6f9;
         }
         .pd-hero-img--empty {
-            min-height: 9rem;
-            max-height: min(38vh, 11rem);
+            width: 100%;
+            min-height: 13.5rem;
+            max-height: min(48vh, 33rem);
             display: flex;
             align-items: center;
-            justify-content: center;
+            justify-content: flex-start;
+            padding: 0.5rem 0.65rem;
             font-size: 0.95rem;
             color: #8a9bab;
+            box-sizing: border-box;
         }
-        .pd-text { padding: 1rem 1.1rem 1.35rem; }
+        .pd-summary {
+            flex: 1;
+            min-width: 0;
+            display: flex;
+            flex-direction: column;
+            gap: 0.4rem;
+            padding-top: 0.1rem;
+        }
         .pd-title {
-            margin: 0 0 0.4rem;
+            margin: 0;
             font-size: 1.35rem;
             font-weight: 700;
             color: #052a4d;
             line-height: 1.32;
         }
+        .pd-prices .pd-price {
+            margin: 0;
+        }
         .pd-price {
-            margin: 0 0 0.3rem;
+            margin: 0;
             font-size: 1rem;
             font-weight: 700;
             color: var(--dz-blue);
@@ -81,7 +107,7 @@
             color: #3d556d;
         }
         .pd-spec {
-            margin: 0 0 0.65rem;
+            margin: 0;
             font-size: 0.92rem;
             color: #3d556d;
             line-height: 1.45;
@@ -93,6 +119,10 @@
             color: #3d5166;
             white-space: pre-wrap;
             word-break: break-word;
+        }
+        .pd-below {
+            padding: 0 1rem 1.2rem;
+            border-top: 1px solid #e8edf2;
         }
         .pd-contact {
             margin: 0.85rem 0 0;
@@ -149,36 +179,42 @@
         }
         @media (max-width: 720px) {
             .page-main--product-detail {
-                padding: 0.45rem 0.65rem 0.85rem;
+                padding: 0.45rem 0.55rem 0.85rem;
             }
             .pd-article {
                 border-radius: 10px;
                 box-shadow: 0 1px 8px rgba(10, 77, 156, 0.06);
             }
             .pd-toolbar {
-                padding: 0.45rem 0.65rem;
+                padding: 0.45rem 0.55rem;
             }
             .pd-back-link {
                 font-size: 0.84rem;
             }
+            .pd-main {
+                gap: 0.55rem;
+                padding: 0.5rem 0.55rem 0.55rem 0.2rem;
+            }
+            .pd-hero-wrap {
+                width: 44%;
+                max-width: none;
+            }
             .pd-hero-img {
-                max-height: min(36vh, 10.5rem);
+                max-height: min(42vh, 16rem);
             }
             .pd-hero-img--empty {
-                min-height: 5.5rem;
-                max-height: min(32vh, 9rem);
-                font-size: 0.88rem;
+                min-height: 8rem;
+                max-height: min(42vh, 16rem);
+                font-size: 0.86rem;
             }
-            .pd-text {
-                padding: 0.7rem 0.75rem 0.9rem;
+            .pd-summary {
+                gap: 0.32rem;
             }
             .pd-title {
-                margin: 0 0 0.28rem;
-                font-size: 1.08rem;
+                font-size: 1.05rem;
                 line-height: 1.28;
             }
             .pd-price {
-                margin: 0 0 0.22rem;
                 font-size: 0.92rem;
             }
             .pd-price-label {
@@ -186,13 +222,15 @@
                 font-size: 0.82rem;
             }
             .pd-spec {
-                margin: 0 0 0.45rem;
                 font-size: 0.84rem;
                 line-height: 1.4;
             }
             .pd-content {
                 font-size: 0.86rem;
                 line-height: 1.48;
+            }
+            .pd-below {
+                padding: 0 0.65rem 0.85rem;
             }
             .pd-order {
                 margin: 0.65rem 0 0.75rem;

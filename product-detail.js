@@ -221,29 +221,33 @@
         }
         var imgBlock = '<div class="pd-hero-wrap">' + imgInner + "</div>";
 
-        var specHtml = "";
-        if (it.pd_size && String(it.pd_size).trim()) {
-            specHtml =
-                '<p class="pd-spec">규격: <strong>' +
-                escapeHtml(String(it.pd_size).trim()) +
-                "</strong></p>";
-        }
+        var specTxt = String(it.pd_size || "").trim();
+        var specHtml =
+            '<p class="pd-spec">규격: <strong>' +
+            escapeHtml(specTxt || "—") +
+            "</strong></p>";
 
         root.innerHTML =
             '<article class="pd-article">' +
             '<div class="pd-toolbar"><a class="pd-back-link" href="' +
             escapeHtml(listHref) +
             '">← 사업부문 목록</a></div>' +
+            '<div class="pd-main">' +
             imgBlock +
-            '<div class="pd-text"><h1 class="pd-title">' +
+            '<div class="pd-summary">' +
+            '<h1 class="pd-title">' +
             escapeHtml(it.pd_name || "") +
             "</h1>" +
+            '<div class="pd-prices">' +
             priceBlock(it) +
+            "</div>" +
             specHtml +
-            orderBlock(it) +
             '<div class="pd-content">' +
             escapeHtml(it.pd_explain || "") +
             "</div>" +
+            "</div></div>" +
+            '<div class="pd-below">' +
+            orderBlock(it) +
             contactBlock(it) +
             "</div></article>";
 
