@@ -97,25 +97,27 @@ function productHasImage(doc) {
     return !!str(d[F.image]);
 }
 
-/** 목록 API용 — 이미지·설명 제외(대용량 base64 JSON 방지) */
+/** 목록 API용 — MongoDB 표준 필드(pd_*) 그대로 읽기, 이미지 본문은 제외 */
 function toPublicListItem(doc) {
-    const d = fromLegacyDoc(doc);
-    if (!d || !d.id) return null;
-    const prices = readPricesFromDoc(d);
+    if (!doc || !doc.id) return null;
+    const prices = readPricesFromDoc(doc);
     const hasImage =
         doc.pd_has_image === true ||
-        (doc.pd_has_image !== false && !!str(d[F.image]));
+        (doc.pd_has_image !== false && !!str(doc[F.image] || doc.pd_image));
     return {
-        id: d.id,
-        pd_name: str(d[F.name]),
+        id: String(doc.id),
+        pd_name: str(doc[F.name] || doc.pd_name),
         pd_price1: prices.pd_price1,
         pd_price2: prices.pd_price2,
         pd_price3: prices.pd_price3,
         pd_price4: prices.pd_price4,
-        pd_size: str(d[F.size]),
-        pd_dept: normalizeDeptForStorage(d[F.dept]) || str(d[F.dept]),
+        pd_size: str(doc[F.size] || doc.pd_size),
+        pd_dept: normalizeDeptForStorage(doc[F.dept] || doc.pd_dept),
+        pd_explain: str(doc[F.explain] || doc.pd_explain).slice(0, 120),
         pd_has_image: hasImage,
-        updatedAt: d.updatedAt || 0
+        pd_record_type: normalizeRecordType(doc[F.recordType] || doc.pd_record_type),
+        pd_registered_by: str(doc[F.registeredBy] || doc.pd_registered_by),
+        updatedAt: doc.updatedAt || 0
     };
 }
 
@@ -228,6 +230,7 @@ function toDbDoc(id, built, existing) {
         [F.personPhone]: built.perNumber,
         [F.personEmail]: built.perEmail,
         [F.recordType]: built.pd_record_type,
+        pd_has_image: !!str(built.pd_image),
         updatedAt: Date.now()
     };
     if (existing && existing.createdAt) doc.createdAt = existing.createdAt;

@@ -74,7 +74,9 @@
                     var thumb;
                     if (it.pd_has_image) {
                         thumb =
-                            '<span class="ps-thumb ps-thumb--empty" aria-hidden="true">사진</span>';
+                            '<img class="ps-thumb ps-thumb--loading" alt="" loading="lazy" data-ps-cover="' +
+                            escapeHtml(it.id) +
+                            '">';
                     } else {
                         thumb =
                             '<span class="ps-thumb ps-thumb--empty" aria-hidden="true">없음</span>';
@@ -184,5 +186,34 @@
     readUrlState();
     syncDeptActive();
     syncUrl();
+    function bindCoverImages() {
+        if (!root || !api) return;
+        root.querySelectorAll("img[data-ps-cover]").forEach(function (img) {
+            var id = img.getAttribute("data-ps-cover");
+            if (!id) return;
+            api.get("api/products/" + encodeURIComponent(id) + "/cover")
+                .then(function (data) {
+                    if (data && data.pd_image) img.src = data.pd_image;
+                })
+                .catch(function () {
+                    img.replaceWith(
+                        (function () {
+                            var s = document.createElement("span");
+                            s.className = "ps-thumb ps-thumb--empty";
+                            s.setAttribute("aria-hidden", "true");
+                            s.textContent = "사진";
+                            return s;
+                        })()
+                    );
+                });
+        });
+    }
+
+    var _showList = showList;
+    showList = function (items) {
+        _showList(items);
+        bindCoverImages();
+    };
+
     loadDeptProducts(0);
 })();

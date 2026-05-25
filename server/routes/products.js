@@ -38,8 +38,13 @@ function optionalAuth(req) {
 }
 
 function buildListFindQuery(auth, reqQuery) {
-    const base = buildProductListQuery(auth, reqQuery.registeredBy);
     const deptPart = reqQuery.dept ? deptQuery(reqQuery.dept) : null;
+    /** 사업부문(?dept=) — 로그인 관리자여도 담당 필터 없이 부문 전체 상품 */
+    const catalogByDept = !!reqQuery.dept && !reqQuery.registeredBy;
+    let base = {};
+    if (!catalogByDept) {
+        base = buildProductListQuery(auth, reqQuery.registeredBy);
+    }
     if (!deptPart) return base;
     if (!base || Object.keys(base).length === 0) return deptPart;
     return { $and: [base, deptPart] };
@@ -49,81 +54,44 @@ router.get("/", async (req, res) => {
     try {
         const auth = optionalAuth(req);
         const query = buildListFindQuery(auth, req.query);
+        const catalogByDept = !!req.query.dept && !req.query.registeredBy;
         const items = await getDb()
             .collection("products")
-            .aggregate([
-                { $match: query },
-                { $sort: { updatedAt: -1 } },
-                {
-                    $addFields: {
-                        pd_has_image: {
-                            $or: [
-                                {
-                                    $gt: [
-                                        {
-                                            $strLenCP: {
-                                                $ifNull: [
-                                                    { $substrBytes: ["$" + F.image, 0, 1] },
-                                                    ""
-                                                ]
-                                            }
-                                        },
-                                        0
-                                    ]
-                                },
-                                {
-                                    $gt: [
-                                        {
-                                            $strLenCP: {
-                                                $ifNull: [
-                                                    { $substrBytes: ["$image", 0, 1] },
-                                                    ""
-                                                ]
-                                            }
-                                        },
-                                        0
-                                    ]
-                                }
-                            ]
-                        }
-                    }
-                },
-                {
-                    $project: {
-                        id: 1,
-                        title: 1,
-                        content: 1,
-                        spec: 1,
-                        image: 1,
-                        pd_price: 1,
-                        price: 1,
-                        [F.name]: 1,
-                        [F.price1]: 1,
-                        [F.price2]: 1,
-                        [F.price3]: 1,
-                        [F.price4]: 1,
-                        [F.size]: 1,
-                        [F.dept]: 1,
-                        pd_dept: 1,
-                        dept: 1,
-                        division: 1,
-                        category: 1,
-                        updatedAt: 1,
-                        pd_has_image: 1,
-                        [F.image]: 0
-                    }
-                }
-            ])
+            .find(query, { projection: { [F.image]: 0, image: 0 } })
+            .sort({ updatedAt: -1 })
             .toArray();
         res.json({
             ok: true,
             items: items.map(toPublicListItem).filter(Boolean),
             dept: req.query.dept ? normalizeDept(req.query.dept) : "",
-            scope: auth && isStaffAuth(auth) ? "staff" : "public"
+            scope: catalogByDept ? "catalog" : auth && isStaffAuth(auth) ? "staff" : "public"
         });
     } catch (e) {
         console.error("GET /api/products", e);
         res.status(500).json({ ok: false, error: "상품 목록을 불러오지 못했습니다." });
+    }
+});
+
+/** 목록 썸네일 — pd_image 만 반환(사업부문 카드용) */
+router.get("/:id/cover", async function (req, res) {
+    try {
+        const doc = await getDb()
+            .collection("products")
+            .findOne(
+                { id: req.params.id },
+                { projection: { [F.image]: 1, pd_image: 1 } }
+            );
+        if (!doc) {
+            return res.status(404).json({ ok: false, error: "상품을 찾을 수 없습니다." });
+        }
+        const img = String(doc[F.image] || doc.pd_image || "");
+        if (!img) {
+            return res.status(404).json({ ok: false, error: "사진이 없습니다." });
+        }
+        res.json({ ok: true, pd_image: img });
+    } catch (e) {
+        console.error("GET /api/products/:id/cover", e);
+        res.status(500).json({ ok: false, error: "사진을 불러오지 못했습니다." });
     }
 });
 
