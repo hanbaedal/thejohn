@@ -77,15 +77,30 @@ body {
     -webkit-tap-highlight-color: rgba(10, 77, 156, 0.2);
     touch-action: manipulation;
 }
+.site-footer-head {
+    text-align: center;
+    margin: 0 0 0.65rem;
+    padding-bottom: 0.65rem;
+    border-bottom: 1px solid var(--header-footer-border);
+}
+.site-footer-copy {
+    margin: 0 0 0.55rem;
+    padding: 0;
+    font-size: 0.68rem;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    color: var(--header-footer-text);
+    line-height: 1.35;
+}
 .site-footer-social {
     display: flex;
     justify-content: center;
     align-items: center;
     flex-wrap: wrap;
     gap: 0.65rem;
-    margin-top: 0.75rem;
-    padding-top: 0.7rem;
-    border-top: 1px solid var(--header-footer-border);
+    margin: 0;
+    padding: 0;
+    border: none;
 }
 .site-footer-social__btn {
     display: inline-flex;
@@ -104,7 +119,7 @@ a.site-footer-social__btn:hover {
     box-shadow: 0 3px 8px rgba(10, 40, 80, 0.14);
 }
 .site-footer-social__btn.is-soon {
-    opacity: 0.42;
+    opacity: 0.55;
     cursor: default;
     pointer-events: none;
 }
@@ -120,8 +135,26 @@ a.site-footer-social__btn:hover {
     background: linear-gradient(135deg, #f58529 0%, #dd2a7b 50%, #8134af 100%);
     color: #fff;
 }
+.site-footer-social__btn--navercafe {
+    background: #03c75a;
+    color: #fff;
+}
+.site-footer-social__btn--youtube {
+    background: #ff0000;
+    color: #fff;
+}
 .site-footer-social__icon {
     display: block;
+}
+.site-footer-company-msg {
+    margin: 0.35rem 0 0;
+    font-size: 0.75rem;
+    text-align: center;
+    color: var(--header-footer-muted);
+}
+.site-footer-loading {
+    margin: 0;
+    color: var(--header-footer-muted);
 }
 @media (hover: none) and (pointer: coarse) {
     .site-footer-item a.footer-tel {

@@ -208,6 +208,11 @@
                 return d.item;
             });
         },
+        getPublicFooterStaff: function () {
+            return request("GET", "/api/auth/public-footer-staff").then(function (d) {
+                return d.item;
+            });
+        },
         submitOrder: function (body) {
             return request("POST", "/api/orders", body);
         },

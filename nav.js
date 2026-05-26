@@ -674,4 +674,19 @@
         };
         document.body.appendChild(s);
     })();
+
+    (function loadFooterCompany() {
+        if (!document.getElementById("siteFooterCompanyGrid")) return;
+        if (document.getElementById("script-footer-company")) {
+            if (window.THEJHON_FOOTER_COMPANY) THEJHON_FOOTER_COMPANY.mount();
+            return;
+        }
+        var s2 = document.createElement("script");
+        s2.id = "script-footer-company";
+        s2.src = "footer-company.js";
+        s2.onload = function () {
+            if (window.THEJHON_FOOTER_COMPANY) THEJHON_FOOTER_COMPANY.mount();
+        };
+        document.body.appendChild(s2);
+    })();
 })();

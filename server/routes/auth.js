@@ -6,6 +6,12 @@ const { toPublic: toPublicStaff } = require("../lib/staffFields");
 
 const router = express.Router();
 
+function normalizeFooterStaffLoginId(loginIdRaw) {
+    var id = String(loginIdRaw || "thejohn").trim();
+    var idn = id.toLowerCase();
+    return idn === "thejhon" ? "thejohn" : id || "thejohn";
+}
+
 router.post("/login", async (req, res) => {
     try {
         const loginId = String(req.body.loginId || "").trim();
@@ -75,6 +81,23 @@ router.get("/vendor-profile", requireRole("vendor"), async function (req, res) {
     } catch (e) {
         console.error("GET /api/auth/vendor-profile", e);
         return res.status(500).json({ ok: false, error: "업체 정보를 불러오지 못했습니다." });
+    }
+});
+
+/** 비로그인 푸터 — 기본 staff(기본 thejohn, 환경변수 DEFAULT_FOOTER_STAFF_ID로 변경) */
+router.get("/public-footer-staff", async function (_req, res) {
+    try {
+        var loginHint = normalizeFooterStaffLoginId(
+            process.env.DEFAULT_FOOTER_STAFF_ID || "thejohn"
+        );
+        var staff = await findStaffByLoginId(loginHint);
+        if (!staff) {
+            return res.status(404).json({ ok: false, error: "기본 관리자 정보를 찾을 수 없습니다." });
+        }
+        return res.json({ ok: true, item: toPublicStaff(staff) });
+    } catch (e) {
+        console.error("GET /api/auth/public-footer-staff", e);
+        return res.status(500).json({ ok: false, error: "관리자 정보를 불러오지 못했습니다." });
     }
 });
 
