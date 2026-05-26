@@ -6,6 +6,37 @@ const {
     LEGACY_REGISTERED_BY,
     staffDisplayName
 } = require("./vendorAccess");
+const { F: VF, fromLegacyDoc: vendorFromLegacy } = require("./vendorFields");
+const { vendorOwnsProductPricing } = require("./vendorPricing");
+
+function vendorRegistrarFromDoc(vendorDoc, auth) {
+    var reg = "";
+    if (vendorDoc) {
+        var v = vendorFromLegacy(vendorDoc) || vendorDoc;
+        reg = normalizeStaffLoginId(v[VF.registeredBy]);
+    }
+    if (!reg && auth && auth.vendorRegisteredBy) {
+        reg = normalizeStaffLoginId(auth.vendorRegisteredBy);
+    }
+    return reg;
+}
+
+/** 업체 카탈로그 — 등록 담당 관리자(vn_registered_by)와 동일한 pd_registered_by 상품만 */
+function buildVendorCatalogProductQuery(vendorDoc, auth) {
+    var reg = vendorRegistrarFromDoc(vendorDoc, auth);
+    if (!reg || reg === LEGACY_REGISTERED_BY) {
+        return { id: "__none__" };
+    }
+    return { [F.registeredBy]: reg };
+}
+
+function vendorCanAccessProduct(vendorDoc, productDoc, auth) {
+    if (!productDoc) return false;
+    var vReg = vendorRegistrarFromDoc(vendorDoc, auth);
+    var pReg = normalizeStaffLoginId(productDoc[F.registeredBy]);
+    if (!vReg || vReg === LEGACY_REGISTERED_BY) return false;
+    return vendorOwnsProductPricing(vReg, pReg);
+}
 
 function isSharedLegacyProduct(doc) {
     if (!doc) return false;
@@ -66,6 +97,9 @@ module.exports = {
     canReadProduct,
     canWriteProduct,
     buildProductListQuery,
+    buildVendorCatalogProductQuery,
+    vendorCanAccessProduct,
+    vendorRegistrarFromDoc,
     stampNewProductRegistration,
     applyProductRegistrationOnUpdate,
     isStaffAuth

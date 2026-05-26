@@ -4,10 +4,11 @@ const { requireRole } = require("../middleware/auth");
 const { buildOrderPdfBuffer } = require("../lib/orderPdf");
 const { notifyOrderAdmin } = require("../lib/orderNotify");
 const { findVendorByLoginId } = require("../lib/loginResolve");
-const { resolveVendorUnitPrice } = require("../lib/vendorPricing");
+const { resolveVendorUnitPrice, vendorOwnsProductPricing } = require("../lib/vendorPricing");
 const { buildEnrichedOrder, prepareOrderForPdf } = require("../lib/orderEnrich");
 const { deptLabel } = require("../lib/orderDeptLabels");
 const { F: PF } = require("../lib/productFields");
+const { F: VF } = require("../lib/vendorFields");
 const {
     vendorCanPlaceOrders,
     buildOrderListQuery,
@@ -120,6 +121,10 @@ async function buildOrderItemsFromDb(db, clientItems, vendorDoc) {
 
         var product = await db.collection("products").findOne({ id: productId });
         if (!product) continue;
+
+        if (!vendorOwnsProductPricing(vendorDoc[VF.registeredBy], product[PF.registeredBy])) {
+            return { error: "담당 거래처 상품만 주문할 수 있습니다: " + productId };
+        }
 
         var priced = resolveVendorUnitPrice(product, vendorDoc);
         var unitPrice = priced.unitPrice;
@@ -240,8 +245,12 @@ router.post("/", requireRole("vendor"), async function (req, res) {
             });
         }
 
-        const items = await buildOrderItemsFromDb(db, req.body && req.body.items, vendor);
-        if (!items) {
+        const builtItems = await buildOrderItemsFromDb(db, req.body && req.body.items, vendor);
+        if (builtItems && builtItems.error) {
+            return res.status(403).json({ ok: false, error: builtItems.error });
+        }
+        const items = builtItems;
+        if (!items || !items.length) {
             return res.status(400).json({ ok: false, error: "주문할 상품이 없습니다." });
         }
 

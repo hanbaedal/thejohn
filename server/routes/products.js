@@ -13,10 +13,13 @@ const {
 const {
     canWriteProduct,
     buildProductListQuery,
+    buildVendorCatalogProductQuery,
+    vendorCanAccessProduct,
     stampNewProductRegistration,
     applyProductRegistrationOnUpdate
 } = require("../lib/productAccess");
 const { normalizeStaffLoginId, isStaffAuth } = require("../lib/vendorAccess");
+const { findVendorByLoginId } = require("../lib/loginResolve");
 const { normalizeDept, deptQuery } = require("../lib/productDept");
 
 const router = express.Router();
@@ -35,23 +38,33 @@ function optionalAuth(req) {
     }
 }
 
-function buildListFindQuery(auth, reqQuery) {
+function buildListFindQuery(auth, reqQuery, vendorDoc) {
     const deptPart = reqQuery.dept ? deptQuery(reqQuery.dept) : null;
-    /** 사업부문(?dept=) — 비로그인·업체용 공개 카탈로그: 부문만 필터 */
-    const catalogByDept =
-        !!reqQuery.dept && !reqQuery.registeredBy && !(auth && isStaffAuth(auth));
     let base = {};
-    if (catalogByDept) {
-        base = {};
-    } else if (auth && isStaffAuth(auth)) {
-        /** 상품관리 리스트 — 로그인한 관리자 본인 등록 + legacy */
-        base = buildProductListQuery(auth);
-    } else if (auth) {
-        base = buildProductListQuery(auth);
+
+    if (auth && auth.role === "vendor") {
+        base = buildVendorCatalogProductQuery(vendorDoc, auth);
+    } else {
+        /** 사업부문(?dept=) — 비로그인 공개 카탈로그: 부문만 필터 */
+        const catalogByDept =
+            !!reqQuery.dept && !reqQuery.registeredBy && !(auth && isStaffAuth(auth));
+        if (catalogByDept) {
+            base = {};
+        } else if (auth && isStaffAuth(auth)) {
+            base = buildProductListQuery(auth);
+        } else if (auth) {
+            base = buildProductListQuery(auth);
+        }
     }
+
     if (!deptPart) return base;
     if (!base || Object.keys(base).length === 0) return deptPart;
     return { $and: [base, deptPart] };
+}
+
+async function resolveVendorForAuth(auth) {
+    if (!auth || auth.role !== "vendor") return null;
+    return findVendorByLoginId(auth.userId || "");
 }
 
 router.get("/", async (req, res) => {
@@ -63,8 +76,13 @@ router.get("/", async (req, res) => {
             });
         }
         const auth = optionalAuth(req);
-        const query = buildListFindQuery(auth, req.query);
-        const catalogByDept = !!req.query.dept && !req.query.registeredBy;
+        const vendorDoc = await resolveVendorForAuth(auth);
+        const query = buildListFindQuery(auth, req.query, vendorDoc);
+        const catalogByDept =
+            !!req.query.dept &&
+            !req.query.registeredBy &&
+            !(auth && isStaffAuth(auth)) &&
+            !(auth && auth.role === "vendor");
         const items = await getDb()
             .collection("products")
             .find(query, { projection: { [F.image]: 0, pd_image: 0, image: 0 } })
@@ -83,7 +101,14 @@ router.get("/", async (req, res) => {
             ok: true,
             items: rows,
             dept: req.query.dept ? normalizeDept(req.query.dept) : "",
-            scope: catalogByDept ? "catalog" : auth && isStaffAuth(auth) ? "staff" : "public"
+            scope:
+                auth && auth.role === "vendor"
+                    ? "vendor"
+                    : catalogByDept
+                      ? "catalog"
+                      : auth && isStaffAuth(auth)
+                        ? "staff"
+                        : "public"
         };
         try {
             res.json(payload);
@@ -100,13 +125,18 @@ router.get("/", async (req, res) => {
 /** 목록 썸네일 — pd_image 만 반환(사업부문 카드용) */
 router.get("/:id/cover", async function (req, res) {
     try {
+        const auth = optionalAuth(req);
+        const vendorDoc = await resolveVendorForAuth(auth);
         const doc = await getDb()
             .collection("products")
             .findOne(
                 { id: req.params.id },
-                { projection: { [F.image]: 1, pd_image: 1 } }
+                { projection: { [F.image]: 1, pd_image: 1, [F.registeredBy]: 1 } }
             );
         if (!doc) {
+            return res.status(404).json({ ok: false, error: "상품을 찾을 수 없습니다." });
+        }
+        if (auth && auth.role === "vendor" && !vendorCanAccessProduct(vendorDoc, doc, auth)) {
             return res.status(404).json({ ok: false, error: "상품을 찾을 수 없습니다." });
         }
         const img = String(doc[F.image] || doc.pd_image || "");
@@ -143,6 +173,8 @@ router.get("/check-name", requireRole("supervisor", "admin"), async (req, res) =
 
 router.get("/:id", async (req, res) => {
     try {
+        const auth = optionalAuth(req);
+        const vendorDoc = await resolveVendorForAuth(auth);
         const pid = String(req.params.id || "").trim();
         let doc = await getDb().collection("products").findOne({ id: pid });
         if (!doc && /^[a-f0-9]{24}$/i.test(pid)) {
@@ -154,6 +186,9 @@ router.get("/:id", async (req, res) => {
             }
         }
         if (!doc) return res.status(404).json({ ok: false, error: "상품을 찾을 수 없습니다." });
+        if (auth && auth.role === "vendor" && !vendorCanAccessProduct(vendorDoc, doc, auth)) {
+            return res.status(404).json({ ok: false, error: "상품을 찾을 수 없습니다." });
+        }
         const item = toPublic(doc);
         const img = String(item.pd_image || "");
         if (img.length > 400 || /^data:/i.test(img)) {
