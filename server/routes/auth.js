@@ -1,7 +1,7 @@
 const express = require("express");
 const { signToken, extractBearer, verifyToken, requireRole } = require("../middleware/auth");
 const { resolveFormLogin, findVendorByLoginId, findStaffByLoginId } = require("../lib/loginResolve");
-const { toPublic } = require("../lib/vendorFields");
+const { toPublic, F: VF } = require("../lib/vendorFields");
 const { toPublic: toPublicStaff } = require("../lib/staffFields");
 
 const router = express.Router();
@@ -78,10 +78,23 @@ router.get("/vendor-profile", requireRole("vendor"), async function (req, res) {
     }
 });
 
-/** 관리자 로그인 — footer 등 정보 표시용 (비밀번호 제외) */
-router.get("/staff-profile", requireRole("admin", "supervisor"), async function (req, res) {
+/** 로그인 사용자 footer — staff 컬렉션 (관리자·슈퍼바이저: 본인, 업체: 등록 담당 관리자) */
+router.get("/staff-profile", requireRole("admin", "supervisor", "vendor"), async function (req, res) {
     try {
-        const staff = await findStaffByLoginId(req.auth.userId || "");
+        let staffLoginId = "";
+        if (req.auth.role === "vendor") {
+            const vendor = await findVendorByLoginId(req.auth.userId || "");
+            if (!vendor) {
+                return res.status(404).json({ ok: false, error: "업체 정보를 찾을 수 없습니다." });
+            }
+            staffLoginId = String(vendor[VF.registeredBy] || req.auth.vendorRegisteredBy || "").trim();
+            if (!staffLoginId) {
+                return res.status(404).json({ ok: false, error: "등록 담당 관리자 정보가 없습니다." });
+            }
+        } else {
+            staffLoginId = String(req.auth.userId || "").trim();
+        }
+        const staff = await findStaffByLoginId(staffLoginId);
         if (!staff) {
             return res.status(404).json({ ok: false, error: "관리자 정보를 찾을 수 없습니다." });
         }

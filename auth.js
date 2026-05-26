@@ -213,6 +213,11 @@
             else sessionStorage.removeItem(DISPLAY_KEY);
         }
         if (global.THEJHON_API && THEJHON_API.setToken) THEJHON_API.setToken(token || "");
+        if (typeof global.__thejhonRefreshFooterCompany === "function") {
+            try {
+                global.__thejhonRefreshFooterCompany();
+            } catch (e) {}
+        }
     }
 
     function setOAuthSession(provider) {

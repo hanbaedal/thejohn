@@ -268,7 +268,66 @@
                 }
                 a.textContent = txt;
                 var digits = txt.replace(/[^0-9+]/g, "");
-                if (digits && digits[0] !== \"+\" && digits.length >= 9) {\n+                    // KR 기본: +82\n+                    if (digits.startsWith(\"0\")) digits = \"+82\" + digits.slice(1);\n+                }\n+                a.href = \"tel:\" + digits;\n+                return;\n+            }\n+        }\n+        function setMailByLabel(grid, label, email) {\n+            if (!grid) return;\n+            var want = normalizeLabel(label);\n+            var dts = grid.querySelectorAll(\"dt\");\n+            for (var i = 0; i < dts.length; i++) {\n+                var dt = dts[i];\n+                if (normalizeLabel(dt.textContent) !== want) continue;\n+                var dd = dt.nextElementSibling;\n+                if (!dd || dd.tagName !== \"DD\") return;\n+                var a = dd.querySelector('a[href^=\"mailto:\"]');\n+                var txt = String(email || \"\");\n+                if (!txt) return;\n+                if (!a) {\n+                    dd.textContent = txt;\n+                    return;\n+                }\n+                a.textContent = txt;\n+                a.href = \"mailto:\" + txt;\n+                return;\n+            }\n+        }\n+\n+        function applyFromStaff(st) {\n+            var grid = document.querySelector(\".site-footer .site-footer-grid\");\n+            if (!grid || !st) return;\n+            setDdTextByLabel(grid, \"상호\", st.st_company || \"\");\n+            setDdTextByLabel(grid, \"대표\", st.st_ceo || \"\");\n+            setTelByLabel(grid, \"휴대폰\", st.st_ceo_tel || \"\");\n+            setDdTextByLabel(grid, \"사업자등록번호\", st.st_biz_no || \"\");\n+            setDdTextByLabel(grid, \"주소\", st.st_address || \"\");\n+        }\n+\n+        function applyFromVendor(v) {\n+            var grid = document.querySelector(\".site-footer .site-footer-grid\");\n+            if (!grid || !v) return;\n+            setDdTextByLabel(grid, \"상호\", v.vn_company || \"\");\n+            setDdTextByLabel(grid, \"대표\", v.vn_ceo || \"\");\n+            // 업체는 담당자 연락처 우선\n+            setTelByLabel(grid, \"휴대폰\", v.vn_mgr_tel || v.vn_phone || v.vn_ceo_tel || \"\");\n+            setMailByLabel(grid, \"이메일\", v.vn_email || v.vn_mgr_email || \"\");\n+            setDdTextByLabel(grid, \"주소\", v.vn_addr || \"\");\n+        }\n+\n+        function run() {\n+            var Auth = window.THEJHON_AUTH;\n+            var Api = window.THEJHON_API;\n+            if (!Auth || !Api || !Auth.isLoggedIn || !Auth.isLoggedIn()) return;\n+            var role = Auth.getRole ? Auth.getRole() : \"\";\n+            if (role === \"admin\" || role === \"supervisor\") {\n+                if (!Api.getStaffProfile) return;\n+                Api.getStaffProfile()\n+                    .then(applyFromStaff)\n+                    .catch(function () {});\n+                return;\n+            }\n+            if (role === \"vendor\") {\n+                if (!Api.getVendorProfile) return;\n+                Api.getVendorProfile()\n+                    .then(applyFromVendor)\n+                    .catch(function () {});\n+            }\n+        }\n+\n+        if (document.readyState === \"loading\") {\n+            document.addEventListener(\"DOMContentLoaded\", run);\n+        } else {\n+            run();\n+        }\n+        window.addEventListener(\"pageshow\", run);\n+    })();
+                if (digits && digits[0] !== "+" && digits.length >= 9) {
+                    if (digits.startsWith("0")) digits = "+82" + digits.slice(1);
+                }
+                a.href = "tel:" + digits;
+                return;
+            }
+        }
+        function setMailByLabel(grid, label, email) {
+            if (!grid) return;
+            var want = normalizeLabel(label);
+            var dts = grid.querySelectorAll("dt");
+            for (var i = 0; i < dts.length; i++) {
+                var dt = dts[i];
+                if (normalizeLabel(dt.textContent) !== want) continue;
+                var dd = dt.nextElementSibling;
+                if (!dd || dd.tagName !== "DD") return;
+                var a = dd.querySelector('a[href^="mailto:"]');
+                var txt = String(email || "");
+                if (!txt) return;
+                if (!a) {
+                    dd.textContent = txt;
+                    return;
+                }
+                a.textContent = txt;
+                a.href = "mailto:" + txt;
+                return;
+            }
+        }
+
+        function applyFromStaff(st) {
+            var grid = document.querySelector(".site-footer .site-footer-grid");
+            if (!grid || !st) return;
+            setDdTextByLabel(grid, "상호", st.st_company || "");
+            setDdTextByLabel(grid, "대표", st.st_ceo || "");
+            setTelByLabel(grid, "휴대폰", st.st_ceo_tel || "");
+            setMailByLabel(grid, "이메일", st.st_email || "");
+            setDdTextByLabel(grid, "사업자등록번호", st.st_biz_no || "");
+            setDdTextByLabel(grid, "주소", st.st_address || "");
+        }
+
+        function run() {
+            var Auth = window.THEJHON_AUTH;
+            var Api = window.THEJHON_API;
+            if (!Auth || !Api || !Auth.isLoggedIn || !Auth.isLoggedIn()) return;
+            var role = Auth.getRole ? Auth.getRole() : "";
+            if (role !== "admin" && role !== "supervisor" && role !== "vendor") return;
+            if (!Api.getStaffProfile) return;
+            Api.getStaffProfile()
+                .then(applyFromStaff)
+                .catch(function () {});
+        }
+
+        if (document.readyState === "loading") {
+            document.addEventListener("DOMContentLoaded", run);
+        } else {
+            run();
+        }
+        window.addEventListener("pageshow", run);
+        window.__thejhonRefreshFooterCompany = run;
+    })();
 
     var mq = window.matchMedia("(max-width: 720px)");
     function narrow() {
