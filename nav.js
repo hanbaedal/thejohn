@@ -233,6 +233,28 @@
         }
     })();
 
+    var SITE_FOOTER_INNER_HTML =
+        '<div class="site-footer-inner">' +
+        '<dl class="site-footer-grid">' +
+        '<div class="site-footer-item"><dt>상호</dt><dd>(주)더존</dd></div>' +
+        '<div class="site-footer-item"><dt>대표</dt><dd>이상범</dd></div>' +
+        '<div class="site-footer-item"><dt>휴대폰</dt><dd><a class="footer-tel" href="tel:+821029288196">010-2928-8196</a></dd></div>' +
+        '<div class="site-footer-item"><dt>이메일</dt><dd><a href="mailto:leesb0129@daum.net">leesb0129@daum.net</a></dd></div>' +
+        '<div class="site-footer-item"><dt>전화</dt><dd><a class="footer-tel" href="tel:+82326665255">032-666-5255</a></dd></div>' +
+        '<div class="site-footer-item"><dt>팩스</dt><dd>032-662-5246</dd></div>' +
+        '<div class="site-footer-item"><dt>사업자등록번호</dt><dd>130-45-32935</dd></div>' +
+        '<div class="site-footer-item site-footer-item--full"><dt>주소</dt><dd>경기도 부천시 원미구 부천로 130번길 5, 삼도빌딩 1층</dd></div>' +
+        "</dl></div>";
+
+    function ensureUnifiedSiteFooter() {
+        var footer = document.querySelector("footer.site-footer");
+        if (!footer) return;
+        var grid = footer.querySelector(".site-footer-grid");
+        if (!grid || grid.querySelectorAll("dt").length < 8) {
+            footer.innerHTML = SITE_FOOTER_INNER_HTML;
+        }
+    }
+
     (function syncFooterCompanyFromDb() {
         function normalizeLabel(t) {
             return String(t || "").replace(/\s+/g, "").trim();
@@ -334,6 +356,7 @@
         }
 
         function run() {
+            ensureUnifiedSiteFooter();
             var Auth = window.THEJHON_AUTH;
             var Api = window.THEJHON_API;
             if (!Auth || !Api || !Auth.isLoggedIn || !Auth.isLoggedIn()) return;
@@ -345,13 +368,17 @@
                 .catch(function () {});
         }
 
-        if (document.readyState === "loading") {
-            document.addEventListener("DOMContentLoaded", run);
-        } else {
+        function bootFooter() {
+            ensureUnifiedSiteFooter();
             run();
         }
-        window.addEventListener("pageshow", run);
-        window.__thejhonRefreshFooterCompany = run;
+        if (document.readyState === "loading") {
+            document.addEventListener("DOMContentLoaded", bootFooter);
+        } else {
+            bootFooter();
+        }
+        window.addEventListener("pageshow", bootFooter);
+        window.__thejhonRefreshFooterCompany = bootFooter;
     })();
 
     var mq = window.matchMedia("(max-width: 720px)");
