@@ -53,18 +53,6 @@
         return '<dl class="pd-contact">' + rows.join("") + "</dl>";
     }
 
-    function vendorDetailNote(it) {
-        if (!window.THEJHON_AUTH || !THEJHON_AUTH.getRole || THEJHON_AUTH.getRole() !== "vendor") {
-            return "";
-        }
-        var listHref = productsListHref(it || currentProduct || {});
-        return (
-            '<p class="pd-vendor-list-hint">주문은 <a href="' +
-            escapeHtml(listHref) +
-            '">사업부문 목록</a>에서 <strong>주문 목록에 담기</strong>·<strong>주문하기</strong>를 이용해 주세요.</p>'
-        );
-    }
-
     function getIdFromQuery() {
         try {
             return new URLSearchParams(window.location.search).get("id") || "";
@@ -167,7 +155,6 @@
             "</div>" +
             "</div></div>" +
             '<div class="pd-below">' +
-            vendorDetailNote(it) +
             contactBlock(it) +
             "</div></article>";
 
