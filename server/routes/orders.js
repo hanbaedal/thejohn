@@ -4,11 +4,10 @@ const { requireRole } = require("../middleware/auth");
 const { buildOrderPdfBuffer } = require("../lib/orderPdf");
 const { notifyOrderAdmin } = require("../lib/orderNotify");
 const { findVendorByLoginId } = require("../lib/loginResolve");
-const { resolveVendorUnitPrice, vendorOwnsProductPricing } = require("../lib/vendorPricing");
+const { vendorProductAllowsOrder, resolveVendorUnitPrice } = require("../lib/vendorPricing");
 const { buildEnrichedOrder, prepareOrderForPdf } = require("../lib/orderEnrich");
 const { deptLabel } = require("../lib/orderDeptLabels");
 const { F: PF } = require("../lib/productFields");
-const { F: VF } = require("../lib/vendorFields");
 const {
     vendorCanPlaceOrders,
     buildOrderListQuery,
@@ -122,8 +121,14 @@ async function buildOrderItemsFromDb(db, clientItems, vendorDoc) {
         var product = await db.collection("products").findOne({ id: productId });
         if (!product) continue;
 
-        if (!vendorOwnsProductPricing(vendorDoc[VF.registeredBy], product[PF.registeredBy])) {
-            return { error: "담당 거래처 상품만 주문할 수 있습니다: " + productId };
+        if (!vendorProductAllowsOrder(product[PF.registeredBy])) {
+            return {
+                error:
+                    "주문 가능한 상품(" +
+                    getOrderEnabledStaffId() +
+                    " 등록)만 담을 수 있습니다: " +
+                    (product[PF.name] || productId)
+            };
         }
 
         var priced = resolveVendorUnitPrice(product, vendorDoc);

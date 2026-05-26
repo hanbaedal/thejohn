@@ -355,6 +355,17 @@
         return mine === productOwner;
     }
 
+    /** 주문·장바구니 — aksangsa(ORDER_VENDOR_STAFF_ID) 등록 상품만 */
+    function vendorProductCanOrder(it) {
+        if (!it || getRole() !== "vendor") return false;
+        if (!isVendorOrderEnabled()) return false;
+        var owner = String(it.pd_registered_by || "")
+            .trim()
+            .toLowerCase();
+        if (!owner || owner === "legacy") return false;
+        return owner === normalizeId(ORDER_VENDOR_STAFF_ID);
+    }
+
     /**
      * 상품 가격 HTML (products 목록·상세 공통)
      * options: { mode: "inline"|"detail", formatWon, escapeHtml }
@@ -742,6 +753,7 @@
         getVendorPriceGrade: getVendorPriceGrade,
         getVendorRegisteredBy: getVendorRegisteredBy,
         vendorProductUsesGradePrice: vendorProductUsesGradePrice,
+        vendorProductCanOrder: vendorProductCanOrder,
         getPriceKeyForGrade: getPriceKeyForGrade,
         vendorGradeLabel: vendorGradeLabel,
         parseVendorGrade: parseVendorGrade,

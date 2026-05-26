@@ -1,5 +1,5 @@
 /**
- * 사업부문 목록 카드 — 주문 목록에 담기 · 주문하기 (수량 등은 주문 모달에서 처리)
+ * 사업부문 목록 카드 — 주문 목록에 담기 · 주문하기 (aksangsa 등록 상품만)
  */
 (function (global) {
     function canShowCatalogOrder() {
@@ -8,8 +8,14 @@
         return !!global.THEJHON_AUTH.canPlaceVendorOrders();
     }
 
-    function renderOrderSection() {
-        if (!canShowCatalogOrder()) {
+    function canOrderProduct(it) {
+        if (!canShowCatalogOrder()) return false;
+        if (!global.THEJHON_AUTH || !global.THEJHON_AUTH.vendorProductCanOrder) return false;
+        return !!global.THEJHON_AUTH.vendorProductCanOrder(it);
+    }
+
+    function renderOrderSection(it) {
+        if (!canOrderProduct(it)) {
             return "";
         }
         return (
@@ -33,7 +39,7 @@
     }
 
     function bindOrderSection(cardEl, it) {
-        if (!cardEl || !it || !canShowCatalogOrder()) return;
+        if (!cardEl || !it || !canOrderProduct(it)) return;
         if (!global.THEJHON_VENDOR_CART) return;
 
         var orderSec = cardEl.querySelector("[data-ps-order]");
@@ -93,6 +99,7 @@
 
     global.THEJHON_CATALOG_ORDER = {
         canShow: canShowCatalogOrder,
+        canOrderProduct: canOrderProduct,
         renderSection: renderOrderSection,
         bind: bindOrderSection,
         openOrderModal: openOrderModal

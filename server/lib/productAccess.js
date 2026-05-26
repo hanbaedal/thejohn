@@ -7,8 +7,6 @@ const {
     staffDisplayName
 } = require("./vendorAccess");
 const { F: VF, fromLegacyDoc: vendorFromLegacy } = require("./vendorFields");
-const { vendorOwnsProductPricing } = require("./vendorPricing");
-const { vendorCanPlaceOrders, getOrderEnabledStaffId } = require("./orderAccess");
 
 function vendorRegistrarFromDoc(vendorDoc, auth) {
     var reg = "";
@@ -22,27 +20,14 @@ function vendorRegistrarFromDoc(vendorDoc, auth) {
     return reg;
 }
 
-/** 업체 카탈로그 — 주문 가능 업체(aksangsa 등록)는 해당 관리자 상품만, 그 외 업체는 본인 담당 상품만 조회 */
-function buildVendorCatalogProductQuery(vendorDoc, auth) {
-    if (vendorDoc && vendorCanPlaceOrders(vendorDoc)) {
-        return { [F.registeredBy]: getOrderEnabledStaffId() };
-    }
-    var reg = vendorRegistrarFromDoc(vendorDoc, auth);
-    if (!reg || reg === LEGACY_REGISTERED_BY) {
-        return { id: "__none__" };
-    }
-    return { [F.registeredBy]: reg };
+/** 업체 카탈로그 — 사업부문(?dept=)만 필터, 등록 관리자(pd_registered_by)로는 제한하지 않음 */
+function buildVendorCatalogProductQuery(_vendorDoc, _auth) {
+    return {};
 }
 
-function vendorCanAccessProduct(vendorDoc, productDoc, auth) {
-    if (!productDoc) return false;
-    if (vendorDoc && vendorCanPlaceOrders(vendorDoc)) {
-        return normalizeStaffLoginId(productDoc[F.registeredBy]) === getOrderEnabledStaffId();
-    }
-    var vReg = vendorRegistrarFromDoc(vendorDoc, auth);
-    var pReg = normalizeStaffLoginId(productDoc[F.registeredBy]);
-    if (!vReg || vReg === LEGACY_REGISTERED_BY) return false;
-    return vendorOwnsProductPricing(vReg, pReg);
+/** 업체 상품 조회(목록·상세·썸네일) — 전체 허용. 가격은 vendorPricing, 주문은 별도 검증 */
+function vendorCanAccessProduct(_vendorDoc, _productDoc, _auth) {
+    return true;
 }
 
 function isSharedLegacyProduct(doc) {

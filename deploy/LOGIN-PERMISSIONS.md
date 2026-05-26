@@ -40,8 +40,8 @@
 
 | 대상 | 조건 | 가능 기능 |
 |------|------|-----------|
-| **업체 주문** | `vn_registered_by` = **aksangsa** (`ORDER_VENDOR_STAFF_ID`) | 사업부문에서 **aksangsa** 등록 상품(`pd_registered_by`)만 목록·**주문 목록에 담기**·**주문하기** |
-| **그 외 업체** | thejohn 등 다른 관리자가 등록 | 상품·가격 **조회만** (주문 버튼·API·주문서 메뉴 없음) |
+| **업체 주문** | `vn_registered_by` = **aksangsa** (`ORDER_VENDOR_STAFF_ID`) | 사업부문 **전체 상품 조회**(타 관리자 상품은 가격1). **주문·장바구니**는 **aksangsa** 등록 상품(`pd_registered_by`)만 |
+| **그 외 업체** | thejohn 등 다른 관리자가 등록 | 전체 상품 **조회·가격**(타 관리자 가격1). **주문 없음** |
 | **관리자 주문서관리** | 로그인 `aksangsa` | 업체관리 → 주문 리스트 |
 
 - 환경 변수 `ORDER_VENDOR_STAFF_ID=aksangsa` (Render·`.env`)

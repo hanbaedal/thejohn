@@ -49,8 +49,17 @@ function resolveVendorUnitPrice(productDoc, vendorDoc) {
     };
 }
 
+/** 주문·장바구니 — pd_registered_by 가 ORDER_VENDOR_STAFF_ID(기본 aksangsa) 인 상품만 */
+function vendorProductAllowsOrder(productRegisteredBy) {
+    const { getOrderEnabledStaffId } = require("./orderAccess");
+    const p = normalizeStaffLoginId(productRegisteredBy);
+    if (!p || p === LEGACY_REGISTERED_BY) return false;
+    return p === getOrderEnabledStaffId();
+}
+
 module.exports = {
     vendorOwnsProductPricing,
     resolveVendorUnitPrice,
-    priceLabelForGrade
+    priceLabelForGrade,
+    vendorProductAllowsOrder
 };
