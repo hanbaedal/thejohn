@@ -8,6 +8,10 @@ const ROW_H = 20;
 const FONT_TITLE = 22;
 const FONT_BODY = 9;
 const FONT_SMALL = 8;
+const FONT_CONFIRM = 12;
+const TITLE_BLANK_LINES = 3;
+const TITLE_BLANK_LINE_H = 18;
+const CONFIRM_LINE_H = 21;
 const MAX_ITEM_ROWS = 15;
 
 function resolveFontPath() {
@@ -264,13 +268,13 @@ function drawConfirmBlock(doc, order, pageW) {
                 ")"
         );
     }
-    var blockW = 220;
-    var blockH = lines.length * 14 + 8;
+    var blockW = 260;
+    var blockH = lines.length * CONFIRM_LINE_H + 10;
     var bx = pageW - PAGE_MARGIN - blockW;
     var by = doc.page.height - PAGE_MARGIN - blockH - 8;
-    doc.fontSize(FONT_SMALL).fillColor("#000000");
+    doc.fontSize(FONT_CONFIRM).fillColor("#000000");
     for (var i = 0; i < lines.length; i++) {
-        doc.text(lines[i], bx, by + i * 14, { width: blockW, align: "left" });
+        doc.text(lines[i], bx, by + i * CONFIRM_LINE_H, { width: blockW, align: "left" });
     }
 }
 
@@ -282,7 +286,8 @@ function renderOrderPage(doc, order, pageItems, rowOffset, isFirstPage) {
     if (isFirstPage) {
         doc.fontSize(FONT_TITLE).fillColor("#000000");
         doc.text("발  주  서", PAGE_MARGIN, y, { width: contentW, align: "center" });
-        y += 36;
+        y += 30;
+        y += TITLE_BLANK_LINES * TITLE_BLANK_LINE_H;
 
         y = drawHeaderTable(doc, order, PAGE_MARGIN, y, contentW) + 10;
         doc.fontSize(FONT_BODY);
