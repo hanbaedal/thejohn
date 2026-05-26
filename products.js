@@ -6,6 +6,8 @@
 
     var activeDept = "jeongyuk";
     var loadToken = 0;
+    var lastItems = [];
+    var lastItemsById = {};
 
     function escapeHtml(s) {
         return String(s)
@@ -61,59 +63,123 @@
         }
     }
 
+    function cardPhotoHtml(it) {
+        if (it.pd_has_image) {
+            return (
+                '<img class="ps-card-photo ps-card-photo--loading" alt="" loading="lazy" data-ps-cover="' +
+                escapeHtml(it.id) +
+                '">'
+            );
+        }
+        return (
+            '<span class="ps-card-photo ps-card-photo--empty" aria-hidden="true">사진<br>없음</span>'
+        );
+    }
+
+    function cardSpecHtml(it) {
+        if (it.pd_size && String(it.pd_size).trim()) {
+            return escapeHtml(String(it.pd_size).trim());
+        }
+        return '<span class="ps-card-spec--none">—</span>';
+    }
+
+    function renderProductCard(it) {
+        var href = "product-detail.html?id=" + encodeURIComponent(it.id);
+        var photo = cardPhotoHtml(it);
+        var specText = cardSpecHtml(it);
+        var priceBlock = catalogPriceHtml(it);
+        var useOrderCard =
+            window.THEJHON_CATALOG_ORDER &&
+            THEJHON_CATALOG_ORDER.renderSection &&
+            ((THEJHON_CATALOG_ORDER.canShow && THEJHON_CATALOG_ORDER.canShow()) ||
+                (window.THEJHON_AUTH &&
+                    THEJHON_AUTH.getRole &&
+                    THEJHON_AUTH.getRole() === "vendor"));
+        var orderBlock = useOrderCard ? THEJHON_CATALOG_ORDER.renderSection(it) : "";
+
+        if (useOrderCard) {
+            return (
+                '<li class="ps-card-wrap ps-card-wrap--order">' +
+                '<article class="ps-card" data-product-id="' +
+                escapeHtml(it.id) +
+                '">' +
+                '<a class="ps-card-detail-link" href="' +
+                escapeHtml(href) +
+                '">' +
+                '<div class="ps-card-visual">' +
+                photo +
+                "</div>" +
+                '<div class="ps-card-body ps-card-body--top">' +
+                '<h2 class="ps-card-title">' +
+                escapeHtml(it.pd_name || "") +
+                "</h2>" +
+                '<p class="ps-card-spec">' +
+                specText +
+                "</p>" +
+                "</div></a>" +
+                '<div class="ps-card-body ps-card-body--meta">' +
+                priceBlock +
+                '<p class="ps-card-detail-hint"><a href="' +
+                escapeHtml(href) +
+                '">상세 설명 보기</a></p>' +
+                orderBlock +
+                "</div></article></li>"
+            );
+        }
+
+        return (
+            '<li class="ps-card-wrap"><a class="ps-card-link" href="' +
+            escapeHtml(href) +
+            '">' +
+            '<div class="ps-card-visual">' +
+            photo +
+            "</div>" +
+            '<div class="ps-card-body">' +
+            '<h2 class="ps-card-title">' +
+            escapeHtml(it.pd_name || "") +
+            "</h2>" +
+            '<p class="ps-card-spec">' +
+            specText +
+            "</p>" +
+            priceBlock +
+            "</div></a></li>"
+        );
+    }
+
     function renderProductList(items) {
         if (!items.length) {
             return '<p class="ps-empty">이 분야에 등록된 상품이 없습니다.</p>';
         }
         return (
             '<ul class="ps-grid" role="list">' +
-            items
-                .map(function (it) {
-                    var href = "product-detail.html?id=" + encodeURIComponent(it.id);
-                    var photo;
-                    if (it.pd_has_image) {
-                        photo =
-                            '<img class="ps-card-photo ps-card-photo--loading" alt="" loading="lazy" data-ps-cover="' +
-                            escapeHtml(it.id) +
-                            '">';
-                    } else {
-                        photo =
-                            '<span class="ps-card-photo ps-card-photo--empty" aria-hidden="true">사진<br>없음</span>';
-                    }
-                    var specText = "";
-                    if (it.pd_size && String(it.pd_size).trim()) {
-                        specText = escapeHtml(String(it.pd_size).trim());
-                    } else {
-                        specText = '<span class="ps-card-spec--none">—</span>';
-                    }
-                    var priceBlock = catalogPriceHtml(it);
-                    return (
-                        '<li class="ps-card-wrap"><a class="ps-card-link" href="' +
-                        escapeHtml(href) +
-                        '">' +
-                        '<div class="ps-card-visual">' +
-                        photo +
-                        "</div>" +
-                        '<div class="ps-card-body">' +
-                        '<h2 class="ps-card-title">' +
-                        escapeHtml(it.pd_name || "") +
-                        "</h2>" +
-                        '<p class="ps-card-spec">' +
-                        specText +
-                        "</p>" +
-                        priceBlock +
-                        "</div></a></li>"
-                    );
-                })
-                .join("") +
+            items.map(renderProductCard).join("") +
             "</ul>"
         );
+    }
+
+    function indexItems(items) {
+        lastItems = items || [];
+        lastItemsById = {};
+        lastItems.forEach(function (it) {
+            if (it && it.id) lastItemsById[it.id] = it;
+        });
+    }
+
+    function bindCatalogOrders() {
+        if (!root || !window.THEJHON_CATALOG_ORDER || !THEJHON_CATALOG_ORDER.bind) return;
+        root.querySelectorAll(".ps-card[data-product-id]").forEach(function (card) {
+            var id = card.getAttribute("data-product-id");
+            var it = id && lastItemsById[id];
+            if (it) THEJHON_CATALOG_ORDER.bind(card, it);
+        });
     }
 
     function showList(items) {
         if (!root) return;
         try {
+            indexItems(items);
             root.innerHTML = renderProductList(items || []);
+            bindCatalogOrders();
         } catch (e) {
             root.innerHTML =
                 '<p class="ps-empty">목록을 표시하는 중 오류가 났습니다. 새로고침해 주세요.</p>';

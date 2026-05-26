@@ -53,134 +53,16 @@
         return '<dl class="pd-contact">' + rows.join("") + "</dl>";
     }
 
-    function orderBlock(it) {
-        if (!window.THEJHON_AUTH) return "";
-        if (THEJHON_AUTH.getRole && THEJHON_AUTH.getRole() === "vendor") {
-            if (!THEJHON_AUTH.canPlaceVendorOrders || !THEJHON_AUTH.canPlaceVendorOrders()) {
-                return (
-                    '<p class="pd-order-browse-only">이 계정은 <strong>상품 조회</strong>만 가능합니다. ' +
-                    "주문·장바구니는 담당 거래처(aksangsa)에 등록된 업체만 이용할 수 있습니다.</p>"
-                );
-            }
-        } else if (!THEJHON_AUTH.canPlaceVendorOrders || !THEJHON_AUTH.canPlaceVendorOrders()) {
+    function vendorDetailNote(it) {
+        if (!window.THEJHON_AUTH || !THEJHON_AUTH.getRole || THEJHON_AUTH.getRole() !== "vendor") {
             return "";
         }
-        var price = THEJHON_AUTH.getVendorUnitPriceForProduct(it);
-        var qtyField =
-            window.THEJHON_QTY_STEPPER && THEJHON_QTY_STEPPER.html
-                ? THEJHON_QTY_STEPPER.html(1, { inputId: "pd-qty", className: "pd-qty-stepper" })
-                : '<input type="number" id="pd-qty" class="pd-qty-input" min="1" value="1" inputmode="numeric">';
+        var listHref = productsListHref(it || currentProduct || {});
         return (
-            '<section class="pd-order" aria-label="주문">' +
-            '<p class="pd-order-hint">수량을 입력한 뒤 목록에 담고, 아래 <strong>주문하기</strong>에서 확인·주문하세요.</p>' +
-            '<div class="pd-order-row">' +
-            '<label for="pd-qty">수량</label>' +
-            qtyField +
-            '<button type="button" class="btn btn-primary" id="pd-add-cart">주문 목록에 담기</button>' +
-            '<button type="button" class="btn" id="pd-open-order">주문하기</button>' +
-            "</div>" +
-            '<p class="pd-order-price" id="pd-order-price" data-unit="' +
-            escapeHtml(String(price.unitPrice)) +
-            '" data-label="' +
-            escapeHtml(price.priceLabel) +
-            '"></p>' +
-            '<p class="pd-order-msg" id="pd-order-msg" role="status" hidden></p>' +
-            "</section>"
+            '<p class="pd-vendor-list-hint">주문은 <a href="' +
+            escapeHtml(listHref) +
+            '">사업부문 목록</a>에서 수량을 입력한 뒤 <strong>주문 목록에 담기</strong>·<strong>주문하기</strong>를 이용해 주세요.</p>'
         );
-    }
-
-    function bindOrderHandlers(it) {
-        var qtyEl = document.getElementById("pd-qty");
-        var stepperEl = document.querySelector(".pd-order .qty-stepper");
-        var qtyCtl = null;
-        var addBtn = document.getElementById("pd-add-cart");
-        var openOrderBtn = document.getElementById("pd-open-order");
-        var msgEl = document.getElementById("pd-order-msg");
-        var priceEl = document.getElementById("pd-order-price");
-        if ((!qtyEl && !qtyCtl) || !addBtn || !window.THEJHON_VENDOR_CART) return;
-
-        function readQty() {
-            if (qtyCtl) return qtyCtl.read();
-            return Math.max(1, parseInt(qtyEl.value, 10) || 1);
-        }
-
-        function openOrderModal() {
-            function run() {
-                if (
-                    window.THEJHON_VENDOR_ORDER_MODAL &&
-                    THEJHON_VENDOR_ORDER_MODAL.open
-                ) {
-                    THEJHON_VENDOR_ORDER_MODAL.open();
-                }
-            }
-            if (window.THEJHON_VENDOR_ORDER_MODAL) run();
-            else if (window.loadVendorOrderModalAssets) {
-                window.loadVendorOrderModalAssets(run);
-            }
-        }
-
-        if (openOrderBtn) {
-            openOrderBtn.addEventListener("click", openOrderModal);
-        }
-
-        function unitInfo() {
-            if (THEJHON_AUTH.getVendorUnitPriceForProduct) {
-                return THEJHON_AUTH.getVendorUnitPriceForProduct(it);
-            }
-            return { unitPrice: 0, priceLabel: "" };
-        }
-
-        function updateLinePreview() {
-            if (!priceEl) return;
-            var info = unitInfo();
-            var q = readQty();
-            var lineLabel =
-                window.THEJHON_AUTH && THEJHON_AUTH.DETAIL_PRICE_LABEL
-                    ? THEJHON_AUTH.DETAIL_PRICE_LABEL
-                    : "가격";
-            priceEl.textContent =
-                lineLabel +
-                " " +
-                formatWon(info.unitPrice) +
-                " × " +
-                q +
-                " = " +
-                formatWon((Number(info.unitPrice) || 0) * q);
-        }
-
-        if (stepperEl && window.THEJHON_QTY_STEPPER && THEJHON_QTY_STEPPER.bind) {
-            qtyCtl = THEJHON_QTY_STEPPER.bind(stepperEl, {
-                onInput: updateLinePreview,
-                onChange: updateLinePreview
-            });
-        } else if (qtyEl) {
-            qtyEl.addEventListener("input", updateLinePreview);
-        }
-        updateLinePreview();
-
-        addBtn.addEventListener("click", function () {
-            var info = unitInfo();
-            var qty = readQty();
-            var res = THEJHON_VENDOR_CART.addItem({
-                productId: it.id,
-                productName: it.pd_name,
-                pd_dept: it.pd_dept,
-                pd_size: it.pd_size,
-                unitPrice: info.unitPrice,
-                priceLabel: info.priceLabel,
-                quantity: qty
-            });
-            if (msgEl) {
-                msgEl.hidden = false;
-                if (res.ok) {
-                    msgEl.className = "pd-order-msg pd-order-msg--ok";
-                    msgEl.textContent = "주문 목록에 담았습니다. 아래 주문하기로 확인하세요.";
-                } else {
-                    msgEl.className = "pd-order-msg pd-order-msg--err";
-                    msgEl.textContent = res.error || "담기 실패";
-                }
-            }
-        });
     }
 
     function getIdFromQuery() {
@@ -285,15 +167,13 @@
             "</div>" +
             "</div></div>" +
             '<div class="pd-below">' +
-            orderBlock(it) +
+            vendorDetailNote(it) +
             contactBlock(it) +
             "</div></article>";
 
         if (it.pd_has_image && !it.pd_image) {
             loadCoverImage(it.id);
         }
-
-        bindOrderHandlers(it);
     }
 
     function render() {

@@ -1,5 +1,5 @@
 /**
- * 주문서 보기 — 접수된 주문만 조회 (담은 상품·주문하기는 상품 상세 모달)
+ * 주문서 보기 — 접수된 주문만 조회 (담은 상품·주문하기는 사업부문 목록·주문 모달)
  */
 (function () {
     var Auth = window.THEJHON_AUTH;
@@ -132,7 +132,7 @@
             .then(function (items) {
                 if (!items.length) {
                     historyListEl.innerHTML =
-                        '<p class="cart-empty">접수된 주문이 없습니다. <a href="products.html">사업부문</a> 상품 상세에서 담은 뒤 <strong>주문하기</strong>로 주문해 주세요.</p>';
+                        '<p class="cart-empty">접수된 주문이 없습니다. <a href="products.html">사업부문</a> 목록에서 담은 뒤 <strong>주문하기</strong>로 주문해 주세요.</p>';
                     showHistoryDetail(null);
                     if (historyStatusEl) historyStatusEl.textContent = "0건";
                     return;

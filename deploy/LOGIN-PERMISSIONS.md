@@ -22,13 +22,13 @@
 | 메뉴 DOM | `admin-header.js` — 스태프만 드롭다운 생성 |
 | 가격 HTML | `auth.js` — `buildProductPriceHtml` |
 | 사업부문 목록·상세 | `products.js`, `product-detail.js` |
-| 업체 주문·장바구니 | `product-detail.js`, `vendor-cart.js`, `cart.html`, `cart.js` |
+| 업체 주문·장바구니 | `products.js`, `catalog-order-ui.js`, `vendor-cart.js`, `cart.html` |
 | 주문 API·PDF·SMS | `server/routes/orders.js`, `server/lib/orderPdf.js`, `server/lib/orderNotify.js` |
 | 업체 등록 담당 | `vn_registered_by` — `deploy/VENDOR-REGISTRATION.md` |
 
 ## 업체 주문
 
-- **업체(vendor)** 로그인 후 사업부문 → 상품 상세에서 수량·**장바구니 담기** → **장바구니**에서 **주문하기**
+- **업체(vendor)** 로그인 후 **사업부문 목록**에서 수량·**주문 목록에 담기**·**주문하기** (상세 페이지는 설명만)
 - **주문·장바구니**: `vn_registered_by` = `ORDER_VENDOR_STAFF_ID`(기본 **aksangsa**) 인 업체만. 그 외 업체는 상품·가격 **조회만**
 - **관리자**: 업체관리 → **주문 리스트** (`order-list-admin.html`), 본인 등록 업체 주문(총괄은 전체)
 - 주문 저장 후 브라우저 PDF 다운로드(jsPDF), 서버 PDF: `GET /api/orders/:id/pdf`
