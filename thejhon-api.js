@@ -198,6 +198,11 @@
                 return d.item;
             });
         },
+        getStaffProfile: function () {
+            return request("GET", "/api/auth/staff-profile").then(function (d) {
+                return d.item;
+            });
+        },
         submitOrder: function (body) {
             return request("POST", "/api/orders", body);
         },

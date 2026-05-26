@@ -1,7 +1,8 @@
 const express = require("express");
 const { signToken, extractBearer, verifyToken, requireRole } = require("../middleware/auth");
-const { resolveFormLogin, findVendorByLoginId } = require("../lib/loginResolve");
+const { resolveFormLogin, findVendorByLoginId, findStaffByLoginId } = require("../lib/loginResolve");
 const { toPublic } = require("../lib/vendorFields");
+const { toPublic: toPublicStaff } = require("../lib/staffFields");
 
 const router = express.Router();
 
@@ -74,6 +75,20 @@ router.get("/vendor-profile", requireRole("vendor"), async function (req, res) {
     } catch (e) {
         console.error("GET /api/auth/vendor-profile", e);
         return res.status(500).json({ ok: false, error: "업체 정보를 불러오지 못했습니다." });
+    }
+});
+
+/** 관리자 로그인 — footer 등 정보 표시용 (비밀번호 제외) */
+router.get("/staff-profile", requireRole("admin", "supervisor"), async function (req, res) {
+    try {
+        const staff = await findStaffByLoginId(req.auth.userId || "");
+        if (!staff) {
+            return res.status(404).json({ ok: false, error: "관리자 정보를 찾을 수 없습니다." });
+        }
+        return res.json({ ok: true, item: toPublicStaff(staff) });
+    } catch (e) {
+        console.error("GET /api/auth/staff-profile", e);
+        return res.status(500).json({ ok: false, error: "관리자 정보를 불러오지 못했습니다." });
     }
 });
 
