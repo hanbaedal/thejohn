@@ -5,6 +5,8 @@ const F = {
     company: "st_company",
     ceo: "st_ceo",
     ceoTel: "st_ceo_tel",
+    email: "st_email",
+    web: "st_web",
     bizNo: "st_biz_no",
     bizType: "st_biz_type",
     bizItem: "st_biz_item",
@@ -71,6 +73,8 @@ function fromLegacyDoc(doc) {
         else if (doc.role === "supervisor") d[F.ceo] = "슈퍼바이저";
     }
     if (!d[F.ceoTel] && doc.st_ceo_tel) d[F.ceoTel] = str(doc.st_ceo_tel);
+    if (!d[F.email] && doc.st_email) d[F.email] = str(doc.st_email);
+    if (!d[F.web] && doc.st_web) d[F.web] = str(doc.st_web);
     if (!d[F.bizNo] && doc.st_biz_no) d[F.bizNo] = str(doc.st_biz_no);
     if (!d[F.bizType] && doc.st_biz_type) d[F.bizType] = str(doc.st_biz_type);
     if (!d[F.bizItem] && doc.st_biz_item) d[F.bizItem] = str(doc.st_biz_item);
@@ -87,6 +91,8 @@ function toPublic(doc) {
         st_company: str(d[F.company]),
         st_ceo: str(d[F.ceo]),
         st_ceo_tel: str(d[F.ceoTel]),
+        st_email: str(d[F.email]),
+        st_web: str(d[F.web]),
         st_biz_no: str(d[F.bizNo]),
         st_biz_type: str(d[F.bizType]),
         st_biz_item: str(d[F.bizItem]),
@@ -120,6 +126,8 @@ function buildFromBody(body, existing, loginId, password) {
         st_company: str(body.st_company != null ? body.st_company : body.companyName || prev[F.company]),
         st_ceo: str(body.st_ceo != null ? body.st_ceo : body.name || prev[F.ceo]),
         st_ceo_tel: str(body.st_ceo_tel != null ? body.st_ceo_tel : body.ceoPhone || prev[F.ceoTel]),
+        st_email: str(body.st_email != null ? body.st_email : prev[F.email]),
+        st_web: str(body.st_web != null ? body.st_web : prev[F.web]),
         st_biz_no: str(body.st_biz_no != null ? body.st_biz_no : prev[F.bizNo]),
         st_biz_type: str(body.st_biz_type != null ? body.st_biz_type : prev[F.bizType]),
         st_biz_item: str(body.st_biz_item != null ? body.st_biz_item : prev[F.bizItem]),
@@ -136,6 +144,8 @@ function toDbDoc(id, built, existing) {
         [F.company]: built.st_company,
         [F.ceo]: built.st_ceo,
         [F.ceoTel]: built.st_ceo_tel,
+        [F.email]: built.st_email,
+        [F.web]: built.st_web,
         [F.bizNo]: built.st_biz_no,
         [F.bizType]: built.st_biz_type,
         [F.bizItem]: built.st_biz_item,
@@ -222,6 +232,8 @@ async function migrateStaffCollection(db) {
                 st_company: doc[F.company] || doc.companyName,
                 st_ceo: doc[F.ceo] || doc.name || doc.ceo,
                 st_ceo_tel: doc[F.ceoTel] || doc.ceoPhone,
+                st_email: doc[F.email] || doc.st_email,
+                st_web: doc[F.web] || doc.st_web,
                 st_biz_no: doc[F.bizNo] || doc.st_biz_no,
                 st_biz_type: doc[F.bizType] || doc.st_biz_type,
                 st_biz_item: doc[F.bizItem] || doc.st_biz_item,

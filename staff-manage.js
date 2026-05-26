@@ -52,6 +52,8 @@
             loginId: String(fd.get("loginId") || "").trim(),
             password: String(fd.get("password") || ""),
             st_company: String(fd.get("st_company") || "").trim(),
+            st_email: String(fd.get("st_email") || "").trim(),
+            st_web: String(fd.get("st_web") || "").trim(),
             st_ceo: String(fd.get("st_ceo") || "").trim(),
             st_ceo_tel: String(fd.get("st_ceo_tel") || "").trim(),
             st_biz_no: String(fd.get("st_biz_no") || "").trim(),
@@ -138,6 +140,8 @@
                 document.getElementById("sm-edit-loginId").value = st.loginId || "";
                 document.getElementById("sm-edit-password").value = "";
                 document.getElementById("sm-edit-st_company").value = st.st_company || "";
+                document.getElementById("sm-edit-st_email").value = st.st_email || "";
+                document.getElementById("sm-edit-st_web").value = st.st_web || "";
                 document.getElementById("sm-edit-st_ceo").value = st.st_ceo || "";
                 document.getElementById("sm-edit-st_ceo_tel").value = st.st_ceo_tel || "";
                 document.getElementById("sm-edit-st_biz_no").value = st.st_biz_no || "";
