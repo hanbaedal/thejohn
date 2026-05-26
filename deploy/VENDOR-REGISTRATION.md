@@ -23,6 +23,16 @@
 - 화면: `auth.js` — `vendorProductUsesGradePrice`, `buildProductPriceHtml`
 - 주문: `server/lib/vendorPricing.js` — 서버가 동일 규칙으로 금액 재계산 (조작 방지)
 
+## 업체 주문 (aksangsa 전용)
+
+| | |
+|---|---|
+| **주문 가능 업체** | `vn_registered_by` = **aksangsa** 인 업체만 |
+| **주문 가능 상품** | `pd_registered_by` = **aksangsa** 인 상품만 |
+| **그 외 관리자 업체** | 해당 관리자 상품 **조회만**, 주문·장바구니 **불가** |
+
+환경 변수: `ORDER_VENDOR_STAFF_ID=aksangsa` (기본값 동일)
+
 ## 관리자 권한
 
 | 역할 | 업체·상품 목록 |

@@ -12,7 +12,7 @@
         if (!global.THEJHON_AUTH || global.THEJHON_AUTH.getRole() !== "vendor") return "";
         return (
             '<p class="ps-order-browse-only">이 계정은 <strong>상품 조회</strong>만 가능합니다. ' +
-            "주문·장바구니는 담당 거래처에 등록된 업체만 이용할 수 있습니다.</p>"
+            "주문·장바구니는 <strong>aksangsa</strong>에 등록된 업체만 이용할 수 있습니다.</p>"
         );
     }
 
