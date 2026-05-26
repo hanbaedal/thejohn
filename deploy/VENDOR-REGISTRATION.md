@@ -48,4 +48,4 @@
 
 ## 주문 SMS
 
-업체 `vn_registered_by` → 해당 관리자 `staff.st_ceo_tel` (Twilio 설정 시).
+업체 `vn_registered_by` → 해당 관리자 `staff.st_ceo_tel` (SOLAPI SMS).

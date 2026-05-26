@@ -41,6 +41,16 @@
         return -1;
     }
 
+    /** 목록에 없을 때만 1개 담기 (카드 「주문하기」용 — 이미 있으면 수량 유지) */
+    function ensureItem(item) {
+        if (!canUseCart()) return { ok: false, error: "업체 로그인 후 이용할 수 있습니다." };
+        var cart = readCart();
+        if (findIndex(cart.items, item.productId) >= 0) {
+            return { ok: true, cart: cart };
+        }
+        return addItem(item);
+    }
+
     function addItem(item) {
         if (!canUseCart()) return { ok: false, error: "업체 로그인 후 이용할 수 있습니다." };
         var cart = readCart();
@@ -115,6 +125,7 @@
         canUseCart: canUseCart,
         readCart: readCart,
         addItem: addItem,
+        ensureItem: ensureItem,
         setQuantity: setQuantity,
         removeItem: removeItem,
         clearCart: clearCart,

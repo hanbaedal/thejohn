@@ -6,6 +6,8 @@
     var bodyEl = null;
     var vendorContact = null;
     var contactReady = false;
+    /** 주문 접수 직후 clearCart → thejhon-cart-updated 시 빈 장바구니 화면으로 덮이지 않도록 */
+    var orderSuccessPending = false;
 
     function escapeHtml(s) {
         return String(s)
@@ -205,7 +207,7 @@
         var cart = Cart.readCart();
         if (!cart.items.length) {
             bodyEl.innerHTML =
-                '<p class="cart-empty">담은 상품이 없습니다. <a href="products.html">사업부문</a>에서 상품을 담아 주세요.</p>' +
+                '<p class="cart-empty">담은 상품이 없습니다. <a href="products.html">사업부문</a> 목록에서 <strong>주문 목록에 담기</strong>를 누르거나, 상품 카드의 <strong>주문하기</strong>를 이용해 주세요.</p>' +
                 '<div class="cart-actions-row"><a href="products.html" class="btn btn-primary">사업부문으로</a></div>';
             return;
         }
@@ -395,10 +397,6 @@
                     createdAt: order.createdAt
                 };
 
-                Cart.clearCart();
-                window.dispatchEvent(new CustomEvent("thejhon-cart-updated"));
-                window.dispatchEvent(new CustomEvent("thejhon-orders-updated"));
-
                 var savedId = order.id || fullOrder.id;
                 if (
                     savedId &&
@@ -415,17 +413,13 @@
                     ).catch(function () {});
                 }
 
-                showMsg(
-                    "주문이 접수되었습니다. 주문번호: <strong>" +
-                        escapeHtml(order.orderNo || order.id) +
-                        "</strong>. " +
-                        '<a href="cart.html">주문서 보기</a>에서 확인할 수 있습니다.',
-                    "ok"
-                );
+                renderOrderSuccess(order);
+                Cart.clearCart();
+                window.dispatchEvent(new CustomEvent("thejhon-orders-updated"));
 
                 setTimeout(function () {
                     close();
-                }, 2200);
+                }, 2800);
             })
             .catch(function (err) {
                 if (submitBtn) submitBtn.disabled = false;
@@ -476,8 +470,30 @@
         });
     }
 
+    function renderOrderSuccess(order) {
+        if (!bodyEl) return;
+        orderSuccessPending = true;
+        var orderNo = escapeHtml((order && (order.orderNo || order.id)) || "");
+        bodyEl.innerHTML =
+            '<div class="vendor-order-modal__scroll">' +
+            '<p class="cart-msg cart-msg--ok" role="status">' +
+            "주문이 접수되었습니다. 주문번호: <strong>" +
+            orderNo +
+            "</strong>.<br>" +
+            '<a href="cart.html">주문서 보기</a>에서 확인할 수 있습니다.' +
+            "</p></div>" +
+            '<div class="vendor-order-modal__footer">' +
+            '<div class="cart-actions-row">' +
+            '<a href="cart.html" class="btn btn-primary">주문서 보기</a>' +
+            '<button type="button" class="btn" id="vomSuccessClose">닫기</button>' +
+            "</div></div>";
+        var closeBtn = document.getElementById("vomSuccessClose");
+        if (closeBtn) closeBtn.addEventListener("click", close);
+    }
+
     function close() {
         if (!modalEl) return;
+        orderSuccessPending = false;
         modalEl.hidden = true;
         document.body.style.overflow = "";
     }
@@ -492,14 +508,14 @@
         close: close,
         toggle: toggle,
         refresh: function () {
-            if (modalEl && !modalEl.hidden) {
+            if (modalEl && !modalEl.hidden && !orderSuccessPending) {
                 loadVendorContactThen(renderBody);
             }
         }
     };
 
     window.addEventListener("thejhon-cart-updated", function () {
-        if (modalEl && !modalEl.hidden) {
+        if (modalEl && !modalEl.hidden && !orderSuccessPending) {
             loadVendorContactThen(renderBody);
         }
     });

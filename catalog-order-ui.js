@@ -54,6 +54,20 @@
             openBtn.addEventListener("click", function (e) {
                 e.preventDefault();
                 e.stopPropagation();
+                var info = unitInfo();
+                var res = global.THEJHON_VENDOR_CART.ensureItem({
+                    productId: it.id,
+                    productName: it.pd_name,
+                    pd_dept: it.pd_dept,
+                    pd_size: it.pd_size,
+                    unitPrice: info.unitPrice,
+                    priceLabel: info.priceLabel,
+                    quantity: 1
+                });
+                if (!res.ok && res.error) {
+                    window.alert(res.error);
+                    return;
+                }
                 openOrderModal();
             });
         }

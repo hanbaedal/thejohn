@@ -37,7 +37,7 @@ function ymd(ts) {
     );
 }
 
-/** Twilio MMS용 — 토큰 링크로 발주서 PDF 공개 (7일) */
+/** 토큰 링크로 발주서 PDF 공개 (7일, 레거시·수동 링크용) */
 router.get("/notify-pdf/:token", async function (req, res) {
     try {
         var token = String(req.params.token || "").trim();
@@ -289,7 +289,7 @@ router.post("/", requireRole("vendor"), async function (req, res) {
             console.error("order PDF", pdfErr.message);
         }
 
-        const notifyResult = await notifyOrderAdmin(db, order, pdfBuffer);
+        const notifyResult = await notifyOrderAdmin(db, order);
 
         return res.json({
             ok: true,

@@ -1,11 +1,9 @@
-const crypto = require("crypto");
 const { findStaffByLoginId, findVendorByLoginId } = require("./loginResolve");
 const { F } = require("./vendorFields");
 const { normalizeStaffLoginId } = require("./vendorAccess");
 const { isSolapiConfigured, sendSolapiSms } = require("./solapiSms");
 
 const DEFAULT_NOTIFY_LOGIN = "aksangsa";
-const PDF_NOTIFY_TTL_MS = 7 * 24 * 60 * 60 * 1000;
 
 function normalizePhoneE164(phone) {
     var digits = String(phone || "").replace(/\D/g, "");
@@ -13,12 +11,6 @@ function normalizePhoneE164(phone) {
     if (digits.startsWith("82")) return "+" + digits;
     if (digits.startsWith("0")) return "+82" + digits.slice(1);
     return "+82" + digits;
-}
-
-function getPublicBaseUrl() {
-    var u = String(process.env.ORDER_NOTIFY_PUBLIC_URL || process.env.PUBLIC_BASE_URL || "").trim();
-    if (u) return u.replace(/\/$/, "");
-    return "";
 }
 
 function phoneForStaffLoginId(loginId) {
@@ -132,181 +124,44 @@ function buildShortSmsBody(order) {
     return body;
 }
 
-function buildShortMmsBody(order) {
-    var name = order.vendorCompany || order.vendorUserId || "업체";
-    return "[발주서] " + name + " 주문 (" + (order.orderNo || order.id) + ")";
-}
-
-async function savePdfNotifyToken(db, orderId) {
-    var token = crypto.randomBytes(24).toString("hex");
-    var expires = Date.now() + PDF_NOTIFY_TTL_MS;
-    await db.collection("orders").updateOne(
-        { id: String(orderId) },
-        { $set: { pdfNotifyToken: token, pdfNotifyExpiresAt: expires } }
-    );
-    return token;
-}
-
-async function sendTwilioMessage(toE164, body, mediaUrls) {
-    var sid = String(process.env.TWILIO_ACCOUNT_SID || "").trim();
-    var token = String(process.env.TWILIO_AUTH_TOKEN || "").trim();
-    var from = String(process.env.TWILIO_FROM_NUMBER || "").trim();
-    if (!sid || !token || !from) {
-        return { ok: false, skipped: true, reason: "TWILIO 환경 변수 미설정" };
-    }
-
-    var params = new URLSearchParams();
-    params.append("To", toE164);
-    params.append("From", from);
-    params.append("Body", body || " ");
-    if (mediaUrls && mediaUrls.length) {
-        mediaUrls.forEach(function (url) {
-            if (url) params.append("MediaUrl", url);
-        });
-    }
-
-    var auth = Buffer.from(sid + ":" + token).toString("base64");
-    var res = await fetch(
-        "https://api.twilio.com/2010-04-01/Accounts/" + encodeURIComponent(sid) + "/Messages.json",
-        {
-            method: "POST",
-            headers: {
-                Authorization: "Basic " + auth,
-                "Content-Type": "application/x-www-form-urlencoded"
-            },
-            body: params
-        }
-    );
-    var data = {};
-    try {
-        data = await res.json();
-    } catch (e) {
-        data = {};
-    }
-    if (!res.ok) {
-        return {
-            ok: false,
-            error: (data && data.message) || "문자 전송 실패 (" + res.status + ")"
-        };
-    }
-    return { ok: true, sid: data.sid };
-}
-
-async function sendSmsViaTwilio(toE164, body) {
-    return sendTwilioMessage(toE164, body, null);
-}
-
-function getSmsProvider() {
-    var forced = String(process.env.ORDER_SMS_PROVIDER || "").trim().toLowerCase();
-    if (forced === "solapi" || forced === "twilio") return forced;
-    if (isSolapiConfigured()) return "solapi";
-    var sid = String(process.env.TWILIO_ACCOUNT_SID || "").trim();
-    var token = String(process.env.TWILIO_AUTH_TOKEN || "").trim();
-    var from = String(process.env.TWILIO_FROM_NUMBER || "").trim();
-    if (sid && token && from) return "twilio";
-    return "";
+function getNotifyMode() {
+    var mode = String(process.env.ORDER_NOTIFY_MODE || "sms").trim().toLowerCase();
+    return mode === "full" ? "full" : "sms";
 }
 
 async function sendOrderSms(toPhone, body) {
-    var provider = getSmsProvider();
-    if (provider === "solapi") {
-        return sendSolapiSms(toPhone, body);
+    if (!isSolapiConfigured()) {
+        return { ok: false, skipped: true, reason: "SOLAPI 환경 변수 미설정" };
     }
-    if (provider === "twilio") {
-        return sendSmsViaTwilio(toPhone, body);
-    }
-    return { ok: false, skipped: true, reason: "SMS 발송 설정 없음 (SOLAPI 또는 Twilio)" };
-}
-
-function getNotifyMode() {
-    return String(process.env.ORDER_NOTIFY_MODE || "sms").trim().toLowerCase();
+    return sendSolapiSms(toPhone, body);
 }
 
 /**
- * 주문 접수 시 관리자 대표번호로 알림 (기본: 간단 SMS)
- * ORDER_NOTIFY_MODE=sms(기본) | full | mms | sms_link
+ * 주문 접수 시 관리자 대표번호로 SOLAPI SMS 알림
+ * ORDER_NOTIFY_MODE=sms(기본, 간단) | full(상세)
  */
-async function notifyOrderAdmin(db, order, pdfBuffer) {
+async function notifyOrderAdmin(db, order) {
     var to = await getAdminNotifyPhone(db, order);
     if (!to) {
         return { ok: false, error: "수신 전화번호(관리자 대표 연락처)를 찾을 수 없습니다." };
     }
 
     var mode = getNotifyMode();
-    var textBody =
-        mode === "full" ? buildSmsBody(order) : buildShortSmsBody(order);
-
-    if (mode === "mms" || mode === "sms_link") {
-        if (getSmsProvider() !== "twilio") {
-            var smsOnly = await sendOrderSms(to, textBody);
-            return Object.assign(
-                { mode: "sms", pdfSent: false, reason: "MMS/링크는 Twilio 전용 — SOLAPI는 간단 SMS" },
-                smsOnly
-            );
-        }
-        if (!pdfBuffer || !pdfBuffer.length) {
-            var noPdfSms = await sendOrderSms(to, textBody + "\n(PDF 생성 실패)");
-            return Object.assign({ mode: "sms", pdfSent: false }, noPdfSms);
-        }
-        var baseUrl = getPublicBaseUrl();
-        if (!baseUrl) {
-            var noUrlSms = await sendOrderSms(
-                to,
-                textBody + "\n(PUBLIC_BASE_URL 미설정 — 관리자 화면에서 PDF 확인)"
-            );
-            return Object.assign({ mode: "sms", pdfSent: false, reason: "PUBLIC_BASE_URL 없음" }, noUrlSms);
-        }
-        var notifyToken = await savePdfNotifyToken(db, order.id);
-        var pdfUrl = baseUrl + "/api/orders/notify-pdf/" + notifyToken;
-
-        if (mode === "mms") {
-            var mmsResult = await sendTwilioMessage(to, buildShortMmsBody(order), [pdfUrl]);
-            if (mmsResult.ok) {
-                return {
-                    ok: true,
-                    mode: "mms",
-                    pdfSent: true,
-                    pdfUrl: pdfUrl,
-                    to: to,
-                    sid: mmsResult.sid
-                };
-            }
-        }
-
-        var linkBody = textBody + "\n\n[발주서 PDF]\n" + pdfUrl;
-        if (linkBody.length > 1500) {
-            linkBody = buildShortMmsBody(order) + "\n\n[발주서 PDF]\n" + pdfUrl;
-        }
-        var linkSms = await sendOrderSms(to, linkBody);
-        return {
-            ok: !!linkSms.ok,
-            mode: linkSms.ok ? "sms_link" : "failed",
-            pdfSent: false,
-            pdfUrl: pdfUrl,
-            to: to,
-            sms: linkSms
-        };
-    }
+    var textBody = mode === "full" ? buildSmsBody(order) : buildShortSmsBody(order);
 
     var smsResult = await sendOrderSms(to, textBody);
-    return Object.assign(
-        { mode: "sms", pdfSent: false, to: to, provider: getSmsProvider() || null },
-        smsResult
-    );
+    return Object.assign({ mode: mode, pdfSent: false, to: to, provider: "solapi" }, smsResult);
 }
 
 async function notifyOrderSms(db, order) {
-    return notifyOrderAdmin(db, order, null);
+    return notifyOrderAdmin(db, order);
 }
 
 module.exports = {
-    getPublicBaseUrl,
-    getSmsProvider,
     getNotifyPhoneForOrder,
     getAdminNotifyPhone,
     buildSmsBody,
     buildShortSmsBody,
     notifyOrderSms,
-    notifyOrderAdmin,
-    PDF_NOTIFY_TTL_MS
+    notifyOrderAdmin
 };
