@@ -150,6 +150,28 @@ router.get("/:id", requireRole("admin", "vendor"), async function (req, res) {
     }
 });
 
+router.delete("/:id", requireRole("admin", "vendor"), async function (req, res) {
+    try {
+        const id = String(req.params.id || "").trim();
+        if (!id) {
+            return res.status(400).json({ ok: false, error: "주문 ID가 없습니다." });
+        }
+        const col = getDb().collection("orders");
+        const order = await col.findOne({ id: id });
+        if (!order) {
+            return res.status(404).json({ ok: false, error: "주문을 찾을 수 없습니다." });
+        }
+        if (!staffCanReadOrder(req.auth, order)) {
+            return res.status(403).json({ ok: false, error: "권한이 없습니다." });
+        }
+        await col.deleteOne({ id: id });
+        return res.json({ ok: true });
+    } catch (e) {
+        console.error("DELETE /api/orders/:id", e);
+        return res.status(500).json({ ok: false, error: "주문 삭제에 실패했습니다." });
+    }
+});
+
 router.post("/", requireRole("vendor"), async function (req, res) {
     try {
         const db = getDb();

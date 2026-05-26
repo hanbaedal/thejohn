@@ -217,6 +217,11 @@
                 return d.order;
             });
         },
+        deleteOrder: function (orderId) {
+            return request("DELETE", "/api/orders/" + encodeURIComponent(orderId)).then(function (d) {
+                return d;
+            });
+        },
         orderPdfUrl: function (orderId) {
             return apiUrl("/api/orders/" + encodeURIComponent(orderId) + "/pdf");
         },

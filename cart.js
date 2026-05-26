@@ -60,6 +60,7 @@
             OrderUI.renderOrderDetailHtml(order, { showVendor: false }) +
             '<div class="cart-actions-row">' +
             '<button type="button" class="btn btn-primary" id="cart-history-pdf">PDF 저장</button>' +
+            '<button type="button" class="btn" id="cart-history-delete">삭제</button>' +
             "</div>";
         var pdfBtn = document.getElementById("cart-history-pdf");
         if (pdfBtn) {
@@ -71,6 +72,30 @@
                     })
                     .finally(function () {
                         pdfBtn.disabled = false;
+                    });
+            });
+        }
+        var delBtn = document.getElementById("cart-history-delete");
+        if (delBtn) {
+            delBtn.addEventListener("click", function () {
+                if (!Api || !Api.deleteOrder) {
+                    alert("삭제 API를 사용할 수 없습니다.");
+                    return;
+                }
+                var ok = confirm("이 주문서를 삭제할까요? 삭제 후 복구할 수 없습니다.");
+                if (!ok) return;
+                delBtn.disabled = true;
+                Api.deleteOrder(order.id)
+                    .then(function () {
+                        selectedHistoryId = "";
+                        showHistoryDetail(null);
+                        renderOrderHistory();
+                    })
+                    .catch(function (err) {
+                        alert((err && err.message) || "주문서 삭제에 실패했습니다.");
+                    })
+                    .finally(function () {
+                        delBtn.disabled = false;
                     });
             });
         }
