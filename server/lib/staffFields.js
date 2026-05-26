@@ -3,6 +3,8 @@ const { buildLoginFields, getStoredPassword } = require("./loginAccount");
 /** staff 컬렉션 — vendors와 같은 개념의 로그인·업체 정보 */
 const F = {
     company: "st_company",
+    phone: "st_phone",
+    fax: "st_fax",
     ceo: "st_ceo",
     ceoTel: "st_ceo_tel",
     email: "st_email",
@@ -23,6 +25,8 @@ const DEFAULT_STAFF_ACCOUNTS = [
         loginId: "thejohn",
         password: "leesb0129!",
         st_company: "(주) 더존",
+        st_phone: "032-666-5255",
+        st_fax: "032-662-5246",
         st_ceo: "이상범",
         st_ceo_tel: "01029288196",
         role: "admin"
@@ -72,6 +76,8 @@ function fromLegacyDoc(doc) {
         else if (doc.name) d[F.ceo] = str(doc.name);
         else if (doc.role === "supervisor") d[F.ceo] = "슈퍼바이저";
     }
+    if (!d[F.phone] && doc.st_phone) d[F.phone] = str(doc.st_phone);
+    if (!d[F.fax] && doc.st_fax) d[F.fax] = str(doc.st_fax);
     if (!d[F.ceoTel] && doc.st_ceo_tel) d[F.ceoTel] = str(doc.st_ceo_tel);
     if (!d[F.email] && doc.st_email) d[F.email] = str(doc.st_email);
     if (!d[F.web] && doc.st_web) d[F.web] = str(doc.st_web);
@@ -89,6 +95,8 @@ function toPublic(doc) {
         id: d.id,
         loginId: d.loginId || "",
         st_company: str(d[F.company]),
+        st_phone: str(d[F.phone]),
+        st_fax: str(d[F.fax]),
         st_ceo: str(d[F.ceo]),
         st_ceo_tel: str(d[F.ceoTel]),
         st_email: str(d[F.email]),
@@ -124,6 +132,8 @@ function buildFromBody(body, existing, loginId, password) {
         loginId: loginFields.loginId,
         loginIdNorm: loginFields.loginIdNorm,
         st_company: str(body.st_company != null ? body.st_company : body.companyName || prev[F.company]),
+        st_phone: str(body.st_phone != null ? body.st_phone : prev[F.phone]),
+        st_fax: str(body.st_fax != null ? body.st_fax : prev[F.fax]),
         st_ceo: str(body.st_ceo != null ? body.st_ceo : body.name || prev[F.ceo]),
         st_ceo_tel: str(body.st_ceo_tel != null ? body.st_ceo_tel : body.ceoPhone || prev[F.ceoTel]),
         st_email: str(body.st_email != null ? body.st_email : prev[F.email]),
@@ -142,6 +152,8 @@ function toDbDoc(id, built, existing) {
         loginId: built.loginId,
         loginIdNorm: built.loginIdNorm,
         [F.company]: built.st_company,
+        [F.phone]: built.st_phone,
+        [F.fax]: built.st_fax,
         [F.ceo]: built.st_ceo,
         [F.ceoTel]: built.st_ceo_tel,
         [F.email]: built.st_email,
@@ -197,6 +209,8 @@ async function ensureDefaultStaffSeeds(db) {
         const built = buildFromBody(
             {
                 st_company: seed.st_company,
+                st_phone: seed.st_phone,
+                st_fax: seed.st_fax,
                 st_ceo: seed.st_ceo,
                 st_ceo_tel: seed.st_ceo_tel,
                 role: seed.role
@@ -230,6 +244,8 @@ async function migrateStaffCollection(db) {
         const built = buildFromBody(
             {
                 st_company: doc[F.company] || doc.companyName,
+                st_phone: doc[F.phone] || doc.st_phone,
+                st_fax: doc[F.fax] || doc.st_fax,
                 st_ceo: doc[F.ceo] || doc.name || doc.ceo,
                 st_ceo_tel: doc[F.ceoTel] || doc.ceoPhone,
                 st_email: doc[F.email] || doc.st_email,

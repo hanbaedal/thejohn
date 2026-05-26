@@ -1,6 +1,6 @@
 const express = require("express");
 const { requireRole } = require("../middleware/auth");
-const { createStaffAccount, updateStaffAccount, findStaffById } = require("../lib/staff");
+const { createStaffAccount, updateStaffAccount, deleteStaffAccount, findStaffById } = require("../lib/staff");
 const { getDb } = require("../db");
 const { sensitiveLoginProjection } = require("../lib/loginAccount");
 const { toPublic } = require("../lib/staffFields");
@@ -57,6 +57,18 @@ router.put("/:id", requireRole("supervisor"), async (req, res) => {
     } catch (e) {
         const msg = e.message || "수정에 실패했습니다.";
         const code = msg.includes("찾을") ? 404 : msg.includes("권한") ? 403 : 400;
+        res.status(code).json({ ok: false, error: msg });
+    }
+});
+
+/** 슈퍼바이저 — 관리자 삭제(비활성화) */
+router.delete("/:id", requireRole("supervisor"), async (req, res) => {
+    try {
+        const result = await deleteStaffAccount(req.params.id, req.auth.role);
+        res.json({ ok: true, ...result });
+    } catch (e) {
+        const msg = e.message || "삭제에 실패했습니다.";
+        const code = msg.includes("찾을") ? 404 : msg.includes("권한") || msg.includes("삭제할 수 없") ? 403 : 400;
         res.status(code).json({ ok: false, error: msg });
     }
 });

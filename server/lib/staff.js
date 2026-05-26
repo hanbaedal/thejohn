@@ -53,6 +53,8 @@ function isReservedStaffLoginId(loginId) {
 function pickStaffBody(body) {
     return {
         st_company: body.st_company,
+        st_phone: body.st_phone,
+        st_fax: body.st_fax,
         st_ceo: body.st_ceo,
         st_ceo_tel: body.st_ceo_tel,
         st_email: body.st_email,
@@ -85,7 +87,7 @@ async function createStaffAccount(body, creatorRole) {
     if (!password || String(password).length < 4) {
         throw new Error("비밀번호는 4자 이상으로 입력해 주세요.");
     }
-    if (!str(st_company)) throw new Error("업체이름을 입력해 주세요.");
+    if (!str(body.st_company)) throw new Error("회사명을 입력해 주세요.");
 
     const vendors = getDb().collection("vendors");
     if (await vendors.findOne(loginLookupFilter(loginId))) {
@@ -100,6 +102,8 @@ async function createStaffAccount(body, creatorRole) {
     const built = buildFromBody(
         {
             st_company: picked.st_company || picked.name,
+            st_phone: picked.st_phone,
+            st_fax: picked.st_fax,
             st_ceo: picked.st_ceo || picked.name,
             st_ceo_tel: picked.st_ceo_tel,
             st_email: picked.st_email,
@@ -144,6 +148,8 @@ async function updateStaffAccount(id, body, creatorRole) {
     const built = buildFromBody(
         {
             st_company: picked.st_company,
+            st_phone: picked.st_phone,
+            st_fax: picked.st_fax,
             st_ceo: picked.st_ceo,
             st_ceo_tel: picked.st_ceo_tel,
             st_email: picked.st_email,
@@ -163,6 +169,30 @@ async function updateStaffAccount(id, body, creatorRole) {
     return toPublic(doc);
 }
 
+async function deleteStaffAccount(id, creatorRole) {
+    if (creatorRole !== "supervisor") {
+        throw new Error("슈퍼바이저만 관리자를 삭제할 수 있습니다.");
+    }
+    const staffId = String(id || "").trim();
+    if (!staffId) throw new Error("계정 ID가 없습니다.");
+    if (DEFAULT_STAFF_IDS.includes(staffId)) {
+        throw new Error("기본 관리자·슈퍼바이저 계정은 삭제할 수 없습니다.");
+    }
+
+    const staffCol = getDb().collection("staff");
+    const existing = await staffCol.findOne({ id: staffId, active: { $ne: false } });
+    if (!existing) throw new Error("계정을 찾을 수 없습니다.");
+    if (existing.role === "supervisor") {
+        throw new Error("슈퍼바이저 계정은 삭제할 수 없습니다.");
+    }
+
+    await staffCol.updateOne(
+        { id: staffId },
+        { $set: { active: false, updatedAt: Date.now() } }
+    );
+    return { id: staffId, deleted: true };
+}
+
 module.exports = {
     ensureStaffIndexes,
     findStaffByLogin,
@@ -172,6 +202,7 @@ module.exports = {
     isReservedStaffLoginId,
     createStaffAccount,
     updateStaffAccount,
+    deleteStaffAccount,
     getCompanyName,
     getCeoName,
     normalizeLoginId,

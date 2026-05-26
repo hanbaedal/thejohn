@@ -62,6 +62,21 @@
     flex-wrap: wrap;
     gap: 0.5rem;
 }
+.sm-btn--danger {
+    margin-left: auto;
+    border-color: #a12c2c;
+    color: #a12c2c;
+    background: #fff;
+}
+.sm-btn--danger:hover {
+    background: #fdeaea;
+    color: #8a2424;
+    border-color: #8a2424;
+}
+.sm-btn--danger:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+}
 .sm-status {
     margin: 0 0 0.75rem;
     font-size: 0.85rem;

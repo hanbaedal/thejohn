@@ -164,6 +164,11 @@
                 return d.staff;
             });
         },
+        deleteStaff: function (id) {
+            return request("DELETE", "/api/staff/" + encodeURIComponent(id)).then(function (d) {
+                return d;
+            });
+        },
         getVendor: function (id) {
             return request("GET", "/api/vendors/" + encodeURIComponent(id)).then(function (d) {
                 return d.item;

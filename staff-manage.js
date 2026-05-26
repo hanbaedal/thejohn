@@ -9,6 +9,7 @@
     var modal = document.getElementById("sm-edit-modal");
     var editForm = document.getElementById("sm-edit-form");
     var editMsg = document.getElementById("sm-edit-msg");
+    var editDeleteBtn = document.getElementById("sm-edit-delete");
 
     function escapeHtml(s) {
         return String(s)
@@ -52,6 +53,8 @@
             loginId: String(fd.get("loginId") || "").trim(),
             password: String(fd.get("password") || ""),
             st_company: String(fd.get("st_company") || "").trim(),
+            st_phone: String(fd.get("st_phone") || "").trim(),
+            st_fax: String(fd.get("st_fax") || "").trim(),
             st_email: String(fd.get("st_email") || "").trim(),
             st_web: String(fd.get("st_web") || "").trim(),
             st_ceo: String(fd.get("st_ceo") || "").trim(),
@@ -140,9 +143,11 @@
                 document.getElementById("sm-edit-loginId").value = st.loginId || "";
                 document.getElementById("sm-edit-password").value = "";
                 document.getElementById("sm-edit-st_company").value = st.st_company || "";
+                document.getElementById("sm-edit-st_phone").value = st.st_phone || "";
+                document.getElementById("sm-edit-st_fax").value = st.st_fax || "";
+                document.getElementById("sm-edit-st_ceo").value = st.st_ceo || "";
                 document.getElementById("sm-edit-st_email").value = st.st_email || "";
                 document.getElementById("sm-edit-st_web").value = st.st_web || "";
-                document.getElementById("sm-edit-st_ceo").value = st.st_ceo || "";
                 document.getElementById("sm-edit-st_ceo_tel").value = st.st_ceo_tel || "";
                 document.getElementById("sm-edit-st_biz_no").value = st.st_biz_no || "";
                 document.getElementById("sm-edit-st_biz_type").value = st.st_biz_type || "";
@@ -152,6 +157,14 @@
                 if (title) {
                     title.textContent =
                         (st.role === "supervisor" ? "슈퍼바이저" : "관리자") + " 수정 — " + (st.loginId || "");
+                }
+                if (editDeleteBtn) {
+                    var canDelete = st.role === "admin";
+                    editDeleteBtn.hidden = false;
+                    editDeleteBtn.disabled = !canDelete;
+                    editDeleteBtn.title = canDelete
+                        ? "이 관리자 계정을 삭제합니다"
+                        : "슈퍼바이저·기본 계정은 삭제할 수 없습니다";
                 }
                 if (modal) {
                     modal.hidden = false;
@@ -167,6 +180,10 @@
         if (modal) modal.hidden = true;
         document.body.style.overflow = "";
         setEditMsg("");
+        if (editDeleteBtn) {
+            editDeleteBtn.hidden = true;
+            editDeleteBtn.disabled = false;
+        }
     }
 
     if (regForm) {
@@ -219,6 +236,35 @@
                 })
                 .catch(function (err) {
                     setEditMsg((err && err.message) || "저장에 실패했습니다.", "err");
+                });
+        });
+    }
+
+    if (editDeleteBtn) {
+        editDeleteBtn.addEventListener("click", function () {
+            var id = document.getElementById("sm-edit-id").value;
+            var loginId = document.getElementById("sm-edit-loginId").value || "";
+            if (!id || !api.deleteStaff) return;
+            if (editDeleteBtn.disabled) return;
+            var label = loginId ? "아이디 " + loginId : "이 관리자";
+            if (
+                !window.confirm(
+                    label +
+                        " 계정을 삭제할까요?\n\n로그인이 차단되며 목록에서 사라집니다. (DB에는 비활성 기록으로 남습니다.)"
+                )
+            ) {
+                return;
+            }
+            setEditMsg("삭제 중…");
+            api
+                .deleteStaff(id)
+                .then(function () {
+                    closeEdit();
+                    setStatus("관리자 계정을 삭제했습니다.", "ok");
+                    loadList();
+                })
+                .catch(function (err) {
+                    setEditMsg((err && err.message) || "삭제에 실패했습니다.", "err");
                 });
         });
     }

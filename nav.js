@@ -304,6 +304,8 @@
             setDdTextByLabel(grid, "대표", st.st_ceo || "");
             setTelByLabel(grid, "휴대폰", st.st_ceo_tel || "");
             setMailByLabel(grid, "이메일", st.st_email || "");
+            setTelByLabel(grid, "전화", st.st_phone || "");
+            setDdTextByLabel(grid, "팩스", st.st_fax || "");
             setDdTextByLabel(grid, "사업자등록번호", st.st_biz_no || "");
             setDdTextByLabel(grid, "주소", st.st_address || "");
         }

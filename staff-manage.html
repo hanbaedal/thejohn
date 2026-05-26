@@ -55,17 +55,25 @@
                     <label for="sm-reg-password">비밀번호</label>
                     <input type="password" id="sm-reg-password" name="password" autocomplete="new-password" required minlength="4">
                 </div>
-                <div class="sm-field">
+                <div class="sm-field sm-field--full">
                     <label for="sm-reg-st_company">회사명</label>
                     <input type="text" id="sm-reg-st_company" name="st_company" required>
                 </div>
                 <div class="sm-field">
-                    <label for="sm-reg-st_email">이메일</label>
-                    <input type="email" id="sm-reg-st_email" name="st_email" autocomplete="email">
+                    <label for="sm-reg-st_phone">회사전화</label>
+                    <input type="tel" id="sm-reg-st_phone" name="st_phone" autocomplete="tel">
+                </div>
+                <div class="sm-field">
+                    <label for="sm-reg-st_fax">회사팩스</label>
+                    <input type="tel" id="sm-reg-st_fax" name="st_fax" inputmode="tel">
                 </div>
                 <div class="sm-field">
                     <label for="sm-reg-st_ceo">대표자명</label>
                     <input type="text" id="sm-reg-st_ceo" name="st_ceo">
+                </div>
+                <div class="sm-field">
+                    <label for="sm-reg-st_email">이메일</label>
+                    <input type="email" id="sm-reg-st_email" name="st_email" autocomplete="email">
                 </div>
                 <div class="sm-field">
                     <label for="sm-reg-st_ceo_tel">대표 연락처</label>
@@ -119,17 +127,25 @@
                     <label for="sm-edit-password">비밀번호 <small>(변경 시에만 입력)</small></label>
                     <input type="password" id="sm-edit-password" name="password" autocomplete="new-password" placeholder="비워 두면 유지">
                 </div>
-                <div class="sm-field">
+                <div class="sm-field sm-field--full">
                     <label for="sm-edit-st_company">회사명</label>
                     <input type="text" id="sm-edit-st_company" name="st_company" required>
                 </div>
                 <div class="sm-field">
-                    <label for="sm-edit-st_email">이메일</label>
-                    <input type="email" id="sm-edit-st_email" name="st_email" autocomplete="email">
+                    <label for="sm-edit-st_phone">회사전화</label>
+                    <input type="tel" id="sm-edit-st_phone" name="st_phone" autocomplete="tel">
+                </div>
+                <div class="sm-field">
+                    <label for="sm-edit-st_fax">회사팩스</label>
+                    <input type="tel" id="sm-edit-st_fax" name="st_fax" inputmode="tel">
                 </div>
                 <div class="sm-field">
                     <label for="sm-edit-st_ceo">대표자명</label>
                     <input type="text" id="sm-edit-st_ceo" name="st_ceo">
+                </div>
+                <div class="sm-field">
+                    <label for="sm-edit-st_email">이메일</label>
+                    <input type="email" id="sm-edit-st_email" name="st_email" autocomplete="email">
                 </div>
                 <div class="sm-field">
                     <label for="sm-edit-st_ceo_tel">대표 연락처</label>
@@ -158,6 +174,7 @@
                 <div class="sm-field sm-field--full sm-actions">
                     <button type="submit" class="btn btn-primary">저장</button>
                     <button type="button" class="btn" id="sm-edit-cancel">취소</button>
+                    <button type="button" class="btn sm-btn--danger" id="sm-edit-delete" hidden>삭제</button>
                 </div>
             </form>
             <p id="sm-edit-msg" class="sm-status" hidden></p>
