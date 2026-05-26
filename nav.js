@@ -659,4 +659,19 @@
             inqEl.classList.remove("is-current");
         }
     })();
+
+    (function loadFooterSocial() {
+        if (!document.querySelector(".site-footer-inner")) return;
+        if (document.getElementById("script-footer-social")) {
+            if (window.THEJHON_FOOTER_SOCIAL) THEJHON_FOOTER_SOCIAL.mount();
+            return;
+        }
+        var s = document.createElement("script");
+        s.id = "script-footer-social";
+        s.src = "footer-social.js";
+        s.onload = function () {
+            if (window.THEJHON_FOOTER_SOCIAL) THEJHON_FOOTER_SOCIAL.mount();
+        };
+        document.body.appendChild(s);
+    })();
 })();
