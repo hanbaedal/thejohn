@@ -90,11 +90,8 @@
         var priceBlock = catalogPriceHtml(it);
         var useOrderCard =
             window.THEJHON_CATALOG_ORDER &&
-            THEJHON_CATALOG_ORDER.renderSection &&
-            ((THEJHON_CATALOG_ORDER.canShow && THEJHON_CATALOG_ORDER.canShow()) ||
-                (window.THEJHON_AUTH &&
-                    THEJHON_AUTH.getRole &&
-                    THEJHON_AUTH.getRole() === "vendor"));
+            THEJHON_CATALOG_ORDER.canShow &&
+            THEJHON_CATALOG_ORDER.canShow();
         var orderBlock = useOrderCard ? THEJHON_CATALOG_ORDER.renderSection(it) : "";
 
         if (useOrderCard) {
@@ -119,9 +116,6 @@
                 "</div></a>" +
                 '<div class="ps-card-body ps-card-body--meta">' +
                 priceBlock +
-                '<p class="ps-card-detail-hint"><a href="' +
-                escapeHtml(href) +
-                '">상세 설명 보기</a></p>' +
                 orderBlock +
                 "</div></article></li>"
             );
