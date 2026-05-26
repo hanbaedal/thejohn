@@ -56,7 +56,7 @@
         if (pdfBtn) {
             pdfBtn.addEventListener("click", function () {
                 pdfBtn.disabled = true;
-                OrderUI.downloadOrderPdfWithAuth(api, order.id, order.orderNo)
+                OrderUI.downloadOrderPdfWithAuth(api, order.id, order.orderNo, order)
                     .catch(function (err) {
                         alert((err && err.message) || "PDF 저장에 실패했습니다.");
                     })
@@ -108,7 +108,7 @@
                     var row = items.find(function (it) {
                         return it.id === id;
                     });
-                    OrderUI.downloadOrderPdfWithAuth(api, id, row && row.orderNo).catch(function (err) {
+                    OrderUI.downloadOrderPdfWithAuth(api, id, row && row.orderNo, row).catch(function (err) {
                         alert((err && err.message) || "PDF 저장에 실패했습니다.");
                     });
                 });

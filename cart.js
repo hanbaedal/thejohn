@@ -65,7 +65,7 @@
         if (pdfBtn) {
             pdfBtn.addEventListener("click", function () {
                 pdfBtn.disabled = true;
-                OrderUI.downloadOrderPdfWithAuth(Api, order.id, order.orderNo)
+                OrderUI.downloadOrderPdfWithAuth(Api, order.id, order.orderNo, order)
                     .catch(function (err) {
                         alert((err && err.message) || "PDF 저장에 실패했습니다.");
                     })

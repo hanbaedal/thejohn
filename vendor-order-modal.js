@@ -406,6 +406,8 @@
                     THEJHON_ORDER_UI.downloadOrderPdfWithAuth &&
                     global.THEJHON_API
                 ) {
+                    // PDF 저장 파일명(주문회사_주문일자.pdf) 생성에 사용
+                    THEJHON_ORDER_UI._lastOrderForPdf = fullOrder;
                     THEJHON_ORDER_UI.downloadOrderPdfWithAuth(
                         THEJHON_API,
                         savedId,

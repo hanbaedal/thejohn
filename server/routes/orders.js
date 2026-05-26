@@ -247,10 +247,27 @@ router.get("/:id/pdf", requireRole("vendor", "admin"), async function (req, res)
         }
         const pdfOrder = await prepareOrderForPdf(getDb(), order);
         const buf = await buildOrderPdfBuffer(pdfOrder);
+        function safeFilePart(s) {
+            return String(s || "")
+                .trim()
+                .replace(/[\\/:*?"<>|]/g, "_")
+                .replace(/\s+/g, " ")
+                .slice(0, 60);
+        }
+        function ymd(ts) {
+            const d = new Date(ts || Date.now());
+            const y = d.getFullYear();
+            const m = String(d.getMonth() + 1).padStart(2, "0");
+            const day = String(d.getDate()).padStart(2, "0");
+            return "" + y + m + day;
+        }
+        const company = safeFilePart(pdfOrder.vendorCompany || "주문서");
+        const date = ymd(pdfOrder.createdAt);
+        const fname = company + "_" + date + ".pdf";
         res.setHeader("Content-Type", "application/pdf");
         res.setHeader(
             "Content-Disposition",
-            'attachment; filename="order-' + (order.orderNo || order.id) + '.pdf"'
+            'attachment; filename="' + encodeURIComponent(fname) + '"; filename*=UTF-8\'\'' + encodeURIComponent(fname)
         );
         res.send(buf);
     } catch (e) {
