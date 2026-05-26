@@ -260,7 +260,6 @@
         "vendor-new-list.html"
     ];
     var ORDER_MANAGE_PAGES = ["order-list-admin.html"];
-    var DATA_MIGRATE_PAGES = ["data-migrate-admin.html"];
     var STAFF_MANAGE_PAGES = ["staff-manage.html"];
     var ADMIN_REGISTER_PAGES = PRODUCT_ADMIN_PAGES.concat(VENDOR_ADMIN_PAGES);
 
@@ -607,12 +606,6 @@
 
     function enforceRegisterPages() {
         var page = currentPageFile();
-        if (DATA_MIGRATE_PAGES.indexOf(page) >= 0) {
-            if (!canManageRegisters()) {
-                redirectFromProtectedPage(isLoggedIn());
-            }
-            return;
-        }
         if (ORDER_MANAGE_PAGES.indexOf(page) >= 0) {
             if (!canShowOrderManageMenu()) {
                 redirectFromProtectedPage(isLoggedIn());

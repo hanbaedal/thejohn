@@ -24,7 +24,6 @@ const staffRoutes = require("./routes/staff");
 const productRoutes = require("./routes/products");
 const vendorRoutes = require("./routes/vendors");
 const orderRoutes = require("./routes/orders");
-const adminRoutes = require("./routes/admin");
 const { requireRole } = require("./middleware/auth");
 
 const app = express();
@@ -164,7 +163,6 @@ app.get("/api/env-check", (req, res) => {
 app.post("/api/admin/reconnect-db", requireDb, requireRole("supervisor", "admin"), async function (req, res) {
     try {
         await connectDb();
-        const { runFullDataMigration } = require("./lib/dataMigrate");
         const { ensureDefaultStaffSeeds, findExpectedStaffInDb, EXPECTED_STAFF_LOGIN_IDS } =
             require("./lib/staffFields");
         await ensureDefaultStaffSeeds(getDb());
@@ -174,13 +172,11 @@ app.post("/api/admin/reconnect-db", requireDb, requireRole("supervisor", "admin"
                 return d.loginId === id;
             });
         });
-        const migration = await runFullDataMigration(getDb());
         res.json({
             ok: true,
             db: true,
             staffOk,
-            staffInDb,
-            migration: migration
+            staffInDb
         });
     } catch (err) {
         res.status(503).json({ ok: false, db: false, error: err.message });
@@ -192,7 +188,6 @@ app.use("/api/staff", requireDb, staffRoutes);
 app.use("/api/products", requireDb, productRoutes);
 app.use("/api/vendors", requireDb, vendorRoutes);
 app.use("/api/orders", requireDb, orderRoutes);
-app.use("/api/admin", requireDb, adminRoutes);
 
 app.use(express.static(staticRoot, { index: "index.html", extensions: ["html"] }));
 
