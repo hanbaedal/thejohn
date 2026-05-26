@@ -38,4 +38,4 @@
 - **업체(vendor)** 로그인 후 **사업부문 목록**에서 **주문 목록에 담기**·**주문하기** (상세 페이지는 설명만)
 - **관리자**: 업체관리 → **주문 리스트** (`order-list-admin.html`), 본인 등록 업체 주문(총괄은 전체)
 - 주문 저장 후 브라우저 PDF 다운로드(jsPDF), 서버 PDF: `GET /api/orders/:id/pdf`
-- SMS: Twilio 환경 변수 설정 시 `aksangsa` 담당 휴대폰(기본 `01047212333`)으로 주문 요약 문자 전송
+- SMS: Twilio 설정 시 **aksangsa** `st_ceo_tel`로 **간단 주문 알림** (`ORDER_NOTIFY_MODE=sms` 기본). PDF는 관리자 **주문 리스트**에서 확인

@@ -107,6 +107,30 @@ function buildSmsBody(order) {
     return body;
 }
 
+function buildShortSmsBody(order) {
+    var name = order.vendorCompany || order.vendorUserId || "업체";
+    var itemCount = Array.isArray(order.items) ? order.items.length : 0;
+    var total = (Number(order.totalAmount) || 0).toLocaleString("ko-KR");
+    var lines = [
+        "[발주서] " + name + " 주문 접수",
+        (order.orderNo || order.id || "") + " · " + itemCount + "품목 · " + total + "원"
+    ];
+    if (order.vendorMgrName) {
+        var mgr = order.vendorMgrName;
+        if (order.vendorMgrTel) mgr += " " + order.vendorMgrTel;
+        lines.push("업체담당: " + mgr);
+    }
+    if (order.note) {
+        var note = String(order.note).trim();
+        if (note.length > 40) note = note.slice(0, 37) + "...";
+        lines.push("비고: " + note);
+    }
+    lines.push("관리자 주문리스트에서 PDF 확인");
+    var body = lines.join("\n");
+    if (body.length > 1500) body = body.slice(0, 1497) + "...";
+    return body;
+}
+
 function buildShortMmsBody(order) {
     var name = order.vendorCompany || order.vendorUserId || "업체";
     return "[발주서] " + name + " 주문 (" + (order.orderNo || order.id) + ")";
@@ -171,8 +195,13 @@ async function sendSmsViaTwilio(toE164, body) {
     return sendTwilioMessage(toE164, body, null);
 }
 
+function getNotifyMode() {
+    return String(process.env.ORDER_NOTIFY_MODE || "sms").trim().toLowerCase();
+}
+
 /**
- * 주문 접수 시 관리자 대표번호로 발주서 PDF 전송 (Twilio MMS, 실패 시 링크 SMS)
+ * 주문 접수 시 관리자 대표번호로 알림 (기본: 간단 SMS)
+ * ORDER_NOTIFY_MODE=sms(기본) | full | mms | sms_link
  */
 async function notifyOrderAdmin(db, order, pdfBuffer) {
     var to = await getAdminNotifyPhone(db, order);
@@ -180,52 +209,57 @@ async function notifyOrderAdmin(db, order, pdfBuffer) {
         return { ok: false, error: "수신 전화번호(관리자 대표 연락처)를 찾을 수 없습니다." };
     }
 
-    var textBody = buildSmsBody(order);
+    var mode = getNotifyMode();
+    var textBody =
+        mode === "full" ? buildSmsBody(order) : buildShortSmsBody(order);
 
-    if (!pdfBuffer || !pdfBuffer.length) {
-        var noPdf = await sendSmsViaTwilio(to, textBody + "\n(발주서 PDF 생성 실패)");
-        return Object.assign({ mode: "sms_only", pdfSent: false }, noPdf);
-    }
+    if (mode === "mms" || mode === "sms_link") {
+        if (!pdfBuffer || !pdfBuffer.length) {
+            var noPdfSms = await sendSmsViaTwilio(to, textBody + "\n(PDF 생성 실패)");
+            return Object.assign({ mode: "sms", pdfSent: false }, noPdfSms);
+        }
+        var baseUrl = getPublicBaseUrl();
+        if (!baseUrl) {
+            var noUrlSms = await sendSmsViaTwilio(
+                to,
+                textBody + "\n(PUBLIC_BASE_URL 미설정 — 관리자 화면에서 PDF 확인)"
+            );
+            return Object.assign({ mode: "sms", pdfSent: false, reason: "PUBLIC_BASE_URL 없음" }, noUrlSms);
+        }
+        var notifyToken = await savePdfNotifyToken(db, order.id);
+        var pdfUrl = baseUrl + "/api/orders/notify-pdf/" + notifyToken;
 
-    var baseUrl = getPublicBaseUrl();
-    if (!baseUrl) {
-        var noUrl = await sendSmsViaTwilio(
-            to,
-            textBody + "\n(발주서: PUBLIC_BASE_URL 미설정 — 관리자 화면에서 PDF 저장)"
-        );
-        return Object.assign({ mode: "sms_only", pdfSent: false, reason: "PUBLIC_BASE_URL 없음" }, noUrl);
-    }
+        if (mode === "mms") {
+            var mmsResult = await sendTwilioMessage(to, buildShortMmsBody(order), [pdfUrl]);
+            if (mmsResult.ok) {
+                return {
+                    ok: true,
+                    mode: "mms",
+                    pdfSent: true,
+                    pdfUrl: pdfUrl,
+                    to: to,
+                    sid: mmsResult.sid
+                };
+            }
+        }
 
-    var notifyToken = await savePdfNotifyToken(db, order.id);
-    var pdfUrl = baseUrl + "/api/orders/notify-pdf/" + notifyToken;
-    var shortBody = buildShortMmsBody(order);
-
-    var mmsResult = await sendTwilioMessage(to, shortBody, [pdfUrl]);
-    if (mmsResult.ok) {
+        var linkBody = textBody + "\n\n[발주서 PDF]\n" + pdfUrl;
+        if (linkBody.length > 1500) {
+            linkBody = buildShortMmsBody(order) + "\n\n[발주서 PDF]\n" + pdfUrl;
+        }
+        var linkSms = await sendSmsViaTwilio(to, linkBody);
         return {
-            ok: true,
-            mode: "mms",
-            pdfSent: true,
+            ok: !!linkSms.ok,
+            mode: linkSms.ok ? "sms_link" : "failed",
+            pdfSent: false,
             pdfUrl: pdfUrl,
             to: to,
-            sid: mmsResult.sid
+            sms: linkSms
         };
     }
 
-    var linkBody = textBody + "\n\n[발주서 PDF]\n" + pdfUrl;
-    if (linkBody.length > 1500) {
-        linkBody = shortBody + "\n\n[발주서 PDF]\n" + pdfUrl;
-    }
-    var smsResult = await sendSmsViaTwilio(to, linkBody);
-    return {
-        ok: !!smsResult.ok,
-        mode: smsResult.ok ? "sms_link" : "failed",
-        pdfSent: false,
-        pdfUrl: pdfUrl,
-        to: to,
-        mmsError: mmsResult.error || mmsResult.reason,
-        sms: smsResult
-    };
+    var smsResult = await sendSmsViaTwilio(to, textBody);
+    return Object.assign({ mode: "sms", pdfSent: false, to: to }, smsResult);
 }
 
 async function notifyOrderSms(db, order) {
@@ -237,6 +271,7 @@ module.exports = {
     getNotifyPhoneForOrder,
     getAdminNotifyPhone,
     buildSmsBody,
+    buildShortSmsBody,
     notifyOrderSms,
     notifyOrderAdmin,
     PDF_NOTIFY_TTL_MS
