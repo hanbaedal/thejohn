@@ -298,16 +298,39 @@
         }
 
         function applyFromStaff(st) {
+            if (!st) return;
             var grid = document.querySelector(".site-footer .site-footer-grid");
-            if (!grid || !st) return;
-            setDdTextByLabel(grid, "상호", st.st_company || "");
-            setDdTextByLabel(grid, "대표", st.st_ceo || "");
-            setTelByLabel(grid, "휴대폰", st.st_ceo_tel || "");
-            setMailByLabel(grid, "이메일", st.st_email || "");
-            setTelByLabel(grid, "전화", st.st_phone || "");
-            setDdTextByLabel(grid, "팩스", st.st_fax || "");
-            setDdTextByLabel(grid, "사업자등록번호", st.st_biz_no || "");
-            setDdTextByLabel(grid, "주소", st.st_address || "");
+            if (grid) {
+                setDdTextByLabel(grid, "상호", st.st_company || "");
+                setDdTextByLabel(grid, "대표", st.st_ceo || "");
+                setTelByLabel(grid, "휴대폰", st.st_ceo_tel || "");
+                setMailByLabel(grid, "이메일", st.st_email || "");
+                setTelByLabel(grid, "전화", st.st_phone || "");
+                setDdTextByLabel(grid, "팩스", st.st_fax || "");
+                setDdTextByLabel(grid, "사업자등록번호", st.st_biz_no || "");
+                setDdTextByLabel(grid, "주소", st.st_address || "");
+            }
+            var sign = document.querySelector(".company-greeting-sign");
+            if (sign && st.st_ceo) {
+                sign.textContent = "대표 " + st.st_ceo;
+            }
+            var orgRoot = document.querySelector(".company-org-root");
+            if (orgRoot && st.st_company) {
+                orgRoot.textContent = st.st_company;
+            }
+            var greetingBody = document.querySelector(".company-greeting-body");
+            if (greetingBody && st.st_company) {
+                var defaultCo = "(주)더존";
+                var company = String(st.st_company);
+                var paras = greetingBody.querySelectorAll("p");
+                for (var g = 0; g < paras.length; g++) {
+                    var gp = paras[g];
+                    if (!gp.dataset.companyGreetingTpl) {
+                        gp.dataset.companyGreetingTpl = gp.innerHTML;
+                    }
+                    gp.innerHTML = gp.dataset.companyGreetingTpl.split(defaultCo).join(company);
+                }
+            }
         }
 
         function run() {
