@@ -33,6 +33,24 @@ function resolveFontPath() {
     return "";
 }
 
+function resolveBoldFontPath() {
+    var fromEnv = String(process.env.PDF_FONT_BOLD_PATH || "").trim();
+    if (fromEnv && fs.existsSync(fromEnv)) return fromEnv;
+    var candidates = [
+        path.join(__dirname, "..", "fonts", "NotoSansKR-Bold.ttf"),
+        path.join(__dirname, "..", "fonts", "NanumGothicBold.ttf"),
+        "C:\\Windows\\Fonts\\malgunbd.ttf",
+        "C:\\Windows\\Fonts\\malgunbd.ttc",
+        "/usr/share/fonts/truetype/nanum/NanumGothicBold.ttf"
+    ];
+    for (var i = 0; i < candidates.length; i++) {
+        if (fs.existsSync(candidates[i])) return candidates[i];
+    }
+    return "";
+}
+
+const BELOW_ITEMS_NOTE = "-이하공백-";
+
 function formatNum(n) {
     var num = Number(n);
     if (!isFinite(num)) return "0";
@@ -56,9 +74,36 @@ function formatOrderDate(ts) {
 }
 
 function formatConfirmTime(ts) {
-    return new Date(ts || Date.now()).toLocaleString("ko-KR", {
-        timeZone: "Asia/Seoul"
-    });
+    var d = new Date(ts || Date.now());
+    var parts = new Intl.DateTimeFormat("en-US", {
+        timeZone: "Asia/Seoul",
+        year: "numeric",
+        month: "numeric",
+        day: "numeric",
+        hour: "numeric",
+        minute: "2-digit",
+        second: "2-digit",
+        hour12: true
+    }).formatToParts(d);
+    var p = {};
+    for (var i = 0; i < parts.length; i++) {
+        if (parts[i].type !== "literal") p[parts[i].type] = parts[i].value;
+    }
+    return (
+        p.year +
+        ". " +
+        p.month +
+        ". " +
+        p.day +
+        ". " +
+        p.dayPeriod +
+        " " +
+        p.hour +
+        ":" +
+        p.minute +
+        ":" +
+        p.second
+    );
 }
 
 function str(v) {
@@ -165,7 +210,7 @@ function itemRemark(it) {
     return parts.join(" ");
 }
 
-function drawItemsTable(doc, order, x, y, tableW, pageItems, rowOffset) {
+function drawItemsTable(doc, order, x, y, tableW, pageItems, rowOffset, isLastPage) {
     var colW = {
         no: 28,
         name: 118,
@@ -200,10 +245,29 @@ function drawItemsTable(doc, order, x, y, tableW, pageItems, rowOffset) {
     }
     cy += ROW_H;
 
+    var lastItemRow = -1;
+    for (var ri = 0; ri < MAX_ITEM_ROWS; ri++) {
+        if (pageItems[ri]) lastItemRow = ri;
+    }
+    var belowBlankRow = -1;
+    var belowBlankOnTotal = false;
+    var totalItems = (order.items || []).length;
+    if (isLastPage) {
+        if (totalItems === 0) {
+            belowBlankRow = 0;
+        } else if (lastItemRow >= 0) {
+            if (lastItemRow + 1 < MAX_ITEM_ROWS) {
+                belowBlankRow = lastItemRow + 1;
+            } else {
+                belowBlankOnTotal = true;
+            }
+        }
+    }
+
     for (var r = 0; r < MAX_ITEM_ROWS; r++) {
         var it = pageItems[r];
         var no = rowOffset + r + 1;
-        drawValueCell(doc, cellX(0), cy, cols[0], ROW_H, it ? String(no) : String(no), "center");
+        drawValueCell(doc, cellX(0), cy, cols[0], ROW_H, it ? String(no) : "", "center");
         if (it) {
             drawValueCell(doc, cellX(1), cy, cols[1], ROW_H, it.productName || "");
             drawValueCell(doc, cellX(2), cy, cols[2], ROW_H, it.pd_size || "");
@@ -212,6 +276,17 @@ function drawItemsTable(doc, order, x, y, tableW, pageItems, rowOffset) {
             drawValueCell(doc, cellX(5), cy, cols[5], ROW_H, formatNum(it.unitPrice), "right");
             drawValueCell(doc, cellX(6), cy, cols[6], ROW_H, formatNum(it.lineTotal), "right");
             drawValueCell(doc, cellX(7), cy, cols[7], ROW_H, itemRemark(it));
+        } else if (r === belowBlankRow) {
+            for (var c = 1; c < cols.length; c++) {
+                drawValueCell(
+                    doc,
+                    cellX(c),
+                    cy,
+                    cols[c],
+                    ROW_H,
+                    c === 7 ? BELOW_ITEMS_NOTE : ""
+                );
+            }
         } else {
             for (var c = 1; c < cols.length; c++) {
                 drawValueCell(doc, cellX(c), cy, cols[c], ROW_H, "");
@@ -237,7 +312,14 @@ function drawItemsTable(doc, order, x, y, tableW, pageItems, rowOffset) {
         rowOffset === 0 ? formatNum(order.totalAmount) : "",
         "right"
     );
-    drawValueCell(doc, cellX(7), cy, cols[7], ROW_H, "");
+    drawValueCell(
+        doc,
+        cellX(7),
+        cy,
+        cols[7],
+        ROW_H,
+        belowBlankOnTotal ? BELOW_ITEMS_NOTE : ""
+    );
     cy += ROW_H;
 
     var footerRows = [
@@ -255,42 +337,57 @@ function drawItemsTable(doc, order, x, y, tableW, pageItems, rowOffset) {
 }
 
 function drawConfirmBlock(doc, order, pageW) {
-    var lines = ["주문 담당자(본인 확인)"];
-    if (order.vendorMgrName) lines.push("담당자 : " + order.vendorMgrName);
-    if (order.vendorMgrTel) lines.push("연락처 : " + order.vendorMgrTel);
-    if (order.orderContactConfirmed) {
-        lines.push("확 인 : 주문 담당자 본인 확인 완료");
-        lines.push(
-            "(" +
-                formatConfirmTime(
-                    order.orderContactConfirmedAt || order.createdAt
-                ) +
-                ")"
-        );
+    var indentSub = 32;
+    var indentConfirm = 36;
+    var indentTime = 88;
+    var lines = [{ text: "주문 담당자(본인 확인)", xOff: 0 }];
+    if (order.vendorMgrName) {
+        lines.push({ text: "담당자 : " + order.vendorMgrName, xOff: indentSub });
     }
-    var blockW = 260;
+    if (order.vendorMgrTel) {
+        lines.push({ text: "연락처 : " + order.vendorMgrTel, xOff: indentSub });
+    }
+    if (order.orderContactConfirmed) {
+        lines.push({
+            text: "확   인 : 주문 담당자 본인 확인 완료",
+            xOff: indentConfirm
+        });
+        lines.push({
+            text:
+                "(" +
+                formatConfirmTime(order.orderContactConfirmedAt || order.createdAt) +
+                ")",
+            xOff: indentTime
+        });
+    }
+    var blockW = 280;
     var blockH = lines.length * CONFIRM_LINE_H + 10;
     var bx = pageW - PAGE_MARGIN - blockW;
     var by = doc.page.height - PAGE_MARGIN - blockH - 8;
     doc.fontSize(FONT_CONFIRM).fillColor("#000000");
     for (var i = 0; i < lines.length; i++) {
-        doc.text(lines[i], bx, by + i * CONFIRM_LINE_H, { width: blockW, align: "left" });
+        var line = lines[i];
+        doc.text(line.text, bx + line.xOff, by + i * CONFIRM_LINE_H, {
+            width: blockW - line.xOff,
+            align: "left"
+        });
     }
 }
 
-function renderOrderPage(doc, order, pageItems, rowOffset, isFirstPage) {
+function renderOrderPage(doc, order, pageItems, rowOffset, isFirstPage, isLastPage, titleFont) {
     var pageW = doc.page.width;
     var contentW = pageW - PAGE_MARGIN * 2;
     var y = PAGE_MARGIN;
+    var bodyFont = "KR";
 
     if (isFirstPage) {
-        doc.fontSize(FONT_TITLE).fillColor("#000000");
+        doc.font(titleFont || bodyFont).fontSize(FONT_TITLE).fillColor("#000000");
         doc.text("발  주  서", PAGE_MARGIN, y, { width: contentW, align: "center" });
         y += 30;
         y += TITLE_BLANK_LINES * TITLE_BLANK_LINE_H;
 
         y = drawHeaderTable(doc, order, PAGE_MARGIN, y, contentW) + 10;
-        doc.fontSize(FONT_BODY);
+        doc.font(bodyFont).fontSize(FONT_BODY);
         doc.text(
             "다음과 같이 상품을 주문하오니 기일 내 납품하여 주시기 바랍니다.",
             PAGE_MARGIN,
@@ -301,14 +398,15 @@ function renderOrderPage(doc, order, pageItems, rowOffset, isFirstPage) {
         doc.text("내    용", PAGE_MARGIN, y);
         y += 14;
     } else {
-        doc.fontSize(12).text("발  주  서 (계속)", PAGE_MARGIN, y, {
+        doc.font(titleFont || bodyFont).fontSize(12).text("발  주  서 (계속)", PAGE_MARGIN, y, {
             width: contentW,
             align: "center"
         });
         y += 28;
+        doc.font(bodyFont);
     }
 
-    drawItemsTable(doc, order, PAGE_MARGIN, y, contentW, pageItems, rowOffset);
+    drawItemsTable(doc, order, PAGE_MARGIN, y, contentW, pageItems, rowOffset, isLastPage);
     if (isFirstPage) {
         drawConfirmBlock(doc, order, pageW);
     }
@@ -317,6 +415,7 @@ function renderOrderPage(doc, order, pageItems, rowOffset, isFirstPage) {
 function buildOrderPdfBuffer(order) {
     return new Promise(function (resolve, reject) {
         var fontPath = resolveFontPath();
+        var boldPath = resolveBoldFontPath();
         var doc = new PDFDocument({ margin: 0, size: "A4", autoFirstPage: false });
         var chunks = [];
         doc.on("data", function (c) {
@@ -334,9 +433,14 @@ function buildOrderPdfBuffer(order) {
                 )
             );
         }
+        var titleFont = "KR";
         try {
             doc.registerFont("KR", fontPath);
             doc.font("KR");
+            if (boldPath) {
+                doc.registerFont("KR-Bold", boldPath);
+                titleFont = "KR-Bold";
+            }
         } catch (e) {
             return reject(new Error("PDF 한글 폰트 등록 실패: " + e.message));
         }
@@ -350,11 +454,20 @@ function buildOrderPdfBuffer(order) {
 
         pages.forEach(function (pageItems, pageIdx) {
             doc.addPage({ margin: 0, size: "A4" });
-            renderOrderPage(doc, order, pageItems, pageIdx * MAX_ITEM_ROWS, pageIdx === 0);
+            var isLastPage = pageIdx === pages.length - 1;
+            renderOrderPage(
+                doc,
+                order,
+                pageItems,
+                pageIdx * MAX_ITEM_ROWS,
+                pageIdx === 0,
+                isLastPage,
+                titleFont
+            );
         });
 
         doc.end();
     });
 }
 
-module.exports = { buildOrderPdfBuffer, resolveFontPath };
+module.exports = { buildOrderPdfBuffer, resolveFontPath, resolveBoldFontPath };

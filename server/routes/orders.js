@@ -2,7 +2,7 @@ const express = require("express");
 const { getDb } = require("../db");
 const { requireRole } = require("../middleware/auth");
 const { buildOrderPdfBuffer } = require("../lib/orderPdf");
-const { notifyOrderSms } = require("../lib/orderNotify");
+const { notifyOrderAdmin } = require("../lib/orderNotify");
 const { findVendorByLoginId } = require("../lib/loginResolve");
 const { resolveVendorUnitPrice } = require("../lib/vendorPricing");
 const { buildEnrichedOrder, prepareOrderForPdf } = require("../lib/orderEnrich");
@@ -18,6 +18,50 @@ const {
 } = require("../lib/orderAccess");
 
 const router = express.Router();
+
+function safeFilePart(s) {
+    return String(s || "")
+        .replace(/[<>:"/\\|?*\u0000-\u001f]/g, "")
+        .replace(/\s+/g, "_")
+        .trim()
+        .slice(0, 80);
+}
+
+function ymd(ts) {
+    var d = new Date(ts || Date.now());
+    return (
+        String(d.getFullYear()) +
+        String(d.getMonth() + 1).padStart(2, "0") +
+        String(d.getDate()).padStart(2, "0")
+    );
+}
+
+/** Twilio MMS용 — 토큰 링크로 발주서 PDF 공개 (7일) */
+router.get("/notify-pdf/:token", async function (req, res) {
+    try {
+        var token = String(req.params.token || "").trim();
+        if (!token) {
+            return res.status(400).send("잘못된 링크입니다.");
+        }
+        var order = await getDb().collection("orders").findOne({ pdfNotifyToken: token });
+        if (!order) {
+            return res.status(404).send("발주서를 찾을 수 없습니다.");
+        }
+        if (order.pdfNotifyExpiresAt && Date.now() > order.pdfNotifyExpiresAt) {
+            return res.status(410).send("다운로드 링크가 만료되었습니다.");
+        }
+        var pdfOrder = await prepareOrderForPdf(getDb(), order);
+        var buf = await buildOrderPdfBuffer(pdfOrder);
+        var fname = safeFilePart(pdfOrder.vendorCompany || "주문서") + "_" + ymd(pdfOrder.createdAt) + ".pdf";
+        res.setHeader("Content-Type", "application/pdf");
+        res.setHeader("Content-Disposition", 'inline; filename="' + fname + '"');
+        res.setHeader("Content-Length", String(buf.length));
+        return res.send(buf);
+    } catch (e) {
+        console.error("GET /api/orders/notify-pdf/:token", e);
+        return res.status(500).send("PDF를 생성하지 못했습니다.");
+    }
+});
 
 function toOrderListItem(order) {
     return {
@@ -236,7 +280,7 @@ router.post("/", requireRole("vendor"), async function (req, res) {
             console.error("order PDF", pdfErr.message);
         }
 
-        const smsResult = await notifyOrderSms(db, order);
+        const notifyResult = await notifyOrderAdmin(db, order, pdfBuffer);
 
         return res.json({
             ok: true,
@@ -249,7 +293,7 @@ router.post("/", requireRole("vendor"), async function (req, res) {
             orderDetail: order,
             pdfReady: !!pdfBuffer,
             pdfUrl: "/api/orders/" + encodeURIComponent(order.id) + "/pdf",
-            sms: smsResult
+            notify: notifyResult
         });
     } catch (e) {
         console.error("POST /api/orders", e);
@@ -269,20 +313,6 @@ router.get("/:id/pdf", requireRole("vendor", "admin"), async function (req, res)
         }
         const pdfOrder = await prepareOrderForPdf(getDb(), order);
         const buf = await buildOrderPdfBuffer(pdfOrder);
-        function safeFilePart(s) {
-            return String(s || "")
-                .trim()
-                .replace(/[\\/:*?"<>|]/g, "_")
-                .replace(/\s+/g, " ")
-                .slice(0, 60);
-        }
-        function ymd(ts) {
-            const d = new Date(ts || Date.now());
-            const y = d.getFullYear();
-            const m = String(d.getMonth() + 1).padStart(2, "0");
-            const day = String(d.getDate()).padStart(2, "0");
-            return "" + y + m + day;
-        }
         const company = safeFilePart(pdfOrder.vendorCompany || "주문서");
         const date = ymd(pdfOrder.createdAt);
         const fname = company + "_" + date + ".pdf";

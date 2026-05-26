@@ -7,9 +7,14 @@ const path = require("path");
 
 const fontsDir = path.join(__dirname, "..", "fonts");
 const dest = path.join(fontsDir, "NotoSansKR-Regular.ttf");
+const destBold = path.join(fontsDir, "NotoSansKR-Bold.ttf");
 const SOURCES = [
     "https://raw.githubusercontent.com/google/fonts/main/ofl/notosanskr/NotoSansKR%5Bwght%5D.ttf",
     "https://cdn.jsdelivr.net/gh/googlefonts/noto-cjk@Sans2.004/Sans/OTF/Korean/NotoSansCJKkr-Regular.otf"
+];
+const BOLD_SOURCES = [
+    "https://raw.githubusercontent.com/google/fonts/main/ofl/notosanskr/static/NotoSansKR-Bold.ttf",
+    "https://github.com/google/fonts/raw/main/ofl/notosanskr/static/NotoSansKR-Bold.ttf"
 ];
 
 function download(url) {
@@ -47,6 +52,33 @@ function download(url) {
     });
 }
 
+async function ensureBoldFont() {
+    if (fs.existsSync(destBold) && fs.statSync(destBold).size > 200000) {
+        console.log("[ensure-pdf-font] bold OK (exists)", destBold);
+        return;
+    }
+    var lastErr = null;
+    for (var i = 0; i < BOLD_SOURCES.length; i++) {
+        try {
+            console.log("[ensure-pdf-font] downloading bold…", BOLD_SOURCES[i]);
+            var buf = await download(BOLD_SOURCES[i]);
+            if (!buf || buf.length < 200000) {
+                throw new Error("bold file too small");
+            }
+            fs.writeFileSync(destBold, buf);
+            console.log("[ensure-pdf-font] saved bold", destBold);
+            return;
+        } catch (e) {
+            lastErr = e;
+            console.warn("[ensure-pdf-font] bold failed:", BOLD_SOURCES[i], e.message);
+        }
+    }
+    console.warn(
+        "[ensure-pdf-font] Bold font unavailable; PDF title may use regular weight.",
+        lastErr ? lastErr.message : ""
+    );
+}
+
 async function main() {
     var alt = path.join(fontsDir, "NanumGothic.ttf");
     if (
@@ -54,6 +86,7 @@ async function main() {
         (fs.existsSync(alt) && fs.statSync(alt).size > 500000)
     ) {
         console.log("[ensure-pdf-font] OK (exists)", fs.existsSync(dest) ? dest : alt);
+        await ensureBoldFont();
         return;
     }
     var fromEnv = String(process.env.PDF_FONT_PATH || "").trim();
@@ -77,6 +110,7 @@ async function main() {
             }
             fs.writeFileSync(out, buf);
             console.log("[ensure-pdf-font] saved", out, "(" + buf.length + " bytes)");
+            await ensureBoldFont();
             return;
         } catch (e) {
             lastErr = e;
