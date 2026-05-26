@@ -10,6 +10,7 @@
     var editForm = document.getElementById("sm-edit-form");
     var editMsg = document.getElementById("sm-edit-msg");
     var editDeleteBtn = document.getElementById("sm-edit-delete");
+    var staffByKey = {};
 
     function escapeHtml(s) {
         return String(s)
@@ -68,8 +69,55 @@
         return body;
     }
 
+    function staffKey(it) {
+        return String((it && (it.id || it.loginId)) || "").trim();
+    }
+
+    function fillEditForm(st) {
+        if (!st) return;
+        document.getElementById("sm-edit-id").value = st.id || st.loginId || "";
+        document.getElementById("sm-edit-loginId").value = st.loginId || "";
+        document.getElementById("sm-edit-password").value = "";
+        document.getElementById("sm-edit-st_company").value = st.st_company || "";
+        document.getElementById("sm-edit-st_phone").value = st.st_phone || "";
+        document.getElementById("sm-edit-st_fax").value = st.st_fax || "";
+        document.getElementById("sm-edit-st_ceo").value = st.st_ceo || "";
+        document.getElementById("sm-edit-st_email").value = st.st_email || "";
+        document.getElementById("sm-edit-st_web").value = st.st_web || "";
+        document.getElementById("sm-edit-st_ceo_tel").value = st.st_ceo_tel || "";
+        document.getElementById("sm-edit-st_biz_no").value = st.st_biz_no || "";
+        document.getElementById("sm-edit-st_biz_type").value = st.st_biz_type || "";
+        document.getElementById("sm-edit-st_biz_item").value = st.st_biz_item || "";
+        document.getElementById("sm-edit-st_address").value = st.st_address || "";
+        var title = document.getElementById("sm-edit-title");
+        if (title) {
+            title.textContent =
+                (st.role === "supervisor" ? "슈퍼바이저" : "관리자") + " 수정 — " + (st.loginId || "");
+        }
+        if (editDeleteBtn) {
+            var canDelete = st.role === "admin";
+            editDeleteBtn.hidden = false;
+            editDeleteBtn.disabled = !canDelete;
+            editDeleteBtn.title = canDelete
+                ? "이 관리자 계정을 삭제합니다"
+                : "슈퍼바이저·기본 계정은 삭제할 수 없습니다";
+        }
+    }
+
+    function showEditModal() {
+        if (modal) {
+            modal.hidden = false;
+            document.body.style.overflow = "hidden";
+        }
+    }
+
     function renderList(items) {
         if (!listEl) return;
+        staffByKey = {};
+        (items || []).forEach(function (it) {
+            var key = staffKey(it);
+            if (key) staffByKey[key] = it;
+        });
         var rows = (items || []).slice().sort(function (a, b) {
             var ra = a.role === "supervisor" ? 0 : 1;
             var rb = b.role === "supervisor" ? 0 : 1;
@@ -91,9 +139,10 @@
                     ]
                         .filter(Boolean)
                         .join(" · ");
+                    var key = staffKey(it);
                     return (
                         '<li><button type="button" class="sm-list-item" data-staff-id="' +
-                        escapeHtml(it.id) +
+                        escapeHtml(key) +
                         '"><span class="sm-list-name">' +
                         escapeHtml(it.st_company || it.loginId || "(이름 없음)") +
                         '<span class="' +
@@ -133,46 +182,33 @@
     }
 
     function openEdit(id) {
-        if (!id || !api.getStaff) return;
+        var key = String(id || "").trim();
+        if (!key || !api.getStaff) return;
         setEditMsg("");
+        var cached = staffByKey[key];
+        if (cached) {
+            fillEditForm(cached);
+            showEditModal();
+        }
         api
-            .getStaff(id)
+            .getStaff(key)
             .then(function (st) {
-                if (!st) throw new Error("계정을 찾을 수 없습니다.");
-                document.getElementById("sm-edit-id").value = st.id || "";
-                document.getElementById("sm-edit-loginId").value = st.loginId || "";
-                document.getElementById("sm-edit-password").value = "";
-                document.getElementById("sm-edit-st_company").value = st.st_company || "";
-                document.getElementById("sm-edit-st_phone").value = st.st_phone || "";
-                document.getElementById("sm-edit-st_fax").value = st.st_fax || "";
-                document.getElementById("sm-edit-st_ceo").value = st.st_ceo || "";
-                document.getElementById("sm-edit-st_email").value = st.st_email || "";
-                document.getElementById("sm-edit-st_web").value = st.st_web || "";
-                document.getElementById("sm-edit-st_ceo_tel").value = st.st_ceo_tel || "";
-                document.getElementById("sm-edit-st_biz_no").value = st.st_biz_no || "";
-                document.getElementById("sm-edit-st_biz_type").value = st.st_biz_type || "";
-                document.getElementById("sm-edit-st_biz_item").value = st.st_biz_item || "";
-                document.getElementById("sm-edit-st_address").value = st.st_address || "";
-                var title = document.getElementById("sm-edit-title");
-                if (title) {
-                    title.textContent =
-                        (st.role === "supervisor" ? "슈퍼바이저" : "관리자") + " 수정 — " + (st.loginId || "");
+                if (!st) {
+                    if (cached) return;
+                    throw new Error("계정을 찾을 수 없습니다.");
                 }
-                if (editDeleteBtn) {
-                    var canDelete = st.role === "admin";
-                    editDeleteBtn.hidden = false;
-                    editDeleteBtn.disabled = !canDelete;
-                    editDeleteBtn.title = canDelete
-                        ? "이 관리자 계정을 삭제합니다"
-                        : "슈퍼바이저·기본 계정은 삭제할 수 없습니다";
-                }
-                if (modal) {
-                    modal.hidden = false;
-                    document.body.style.overflow = "hidden";
-                }
+                var cacheKey = staffKey(st);
+                if (cacheKey) staffByKey[cacheKey] = st;
+                fillEditForm(st);
+                setEditMsg("");
+                showEditModal();
             })
             .catch(function (err) {
-                setStatus((err && err.message) || "불러오기 실패", "err");
+                if (cached) {
+                    setEditMsg("서버에서 최신 정보를 불러오지 못했습니다. 목록 데이터를 표시합니다.", "err");
+                    return;
+                }
+                setEditMsg((err && err.message) || "불러오기 실패", "err");
             });
     }
 

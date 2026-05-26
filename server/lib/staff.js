@@ -67,8 +67,18 @@ function pickStaffBody(body) {
     };
 }
 
-async function findStaffById(id) {
-    return getDb().collection("staff").findOne({ id: String(id || "").trim() });
+async function findStaffById(idOrLogin) {
+    const key = String(idOrLogin || "").trim();
+    if (!key) return null;
+    const col = getDb().collection("staff");
+    const active = { active: { $ne: false } };
+    let doc = await col.findOne({ id: key, ...active });
+    if (!doc) doc = await col.findOne({ loginId: key, ...active });
+    if (!doc) {
+        const lf = loginLookupFilter(key);
+        doc = await col.findOne({ ...active, ...lf });
+    }
+    return doc;
 }
 
 async function createStaffAccount(body, creatorRole) {
@@ -127,12 +137,13 @@ async function updateStaffAccount(id, body, creatorRole) {
     if (creatorRole !== "supervisor") {
         throw new Error("슈퍼바이저만 관리자 정보를 수정할 수 있습니다.");
     }
-    const staffId = String(id || "").trim();
-    if (!staffId) throw new Error("계정 ID가 없습니다.");
+    const staffKey = String(id || "").trim();
+    if (!staffKey) throw new Error("계정 ID가 없습니다.");
 
     const staffCol = getDb().collection("staff");
-    const existing = await staffCol.findOne({ id: staffId, active: { $ne: false } });
+    const existing = await findStaffById(staffKey);
     if (!existing) throw new Error("계정을 찾을 수 없습니다.");
+    const staffId = existing.id;
 
     const picked = pickStaffBody(body);
     if (!str(picked.st_company) && !getCompanyName(existing)) {
@@ -173,15 +184,17 @@ async function deleteStaffAccount(id, creatorRole) {
     if (creatorRole !== "supervisor") {
         throw new Error("슈퍼바이저만 관리자를 삭제할 수 있습니다.");
     }
-    const staffId = String(id || "").trim();
-    if (!staffId) throw new Error("계정 ID가 없습니다.");
+    const staffKey = String(id || "").trim();
+    if (!staffKey) throw new Error("계정 ID가 없습니다.");
+
+    const staffCol = getDb().collection("staff");
+    const existing = await findStaffById(staffKey);
+    if (!existing) throw new Error("계정을 찾을 수 없습니다.");
+    const staffId = existing.id;
+    if (!staffId) throw new Error("계정 ID가 올바르지 않습니다.");
     if (DEFAULT_STAFF_IDS.includes(staffId)) {
         throw new Error("기본 관리자·슈퍼바이저 계정은 삭제할 수 없습니다.");
     }
-
-    const staffCol = getDb().collection("staff");
-    const existing = await staffCol.findOne({ id: staffId, active: { $ne: false } });
-    if (!existing) throw new Error("계정을 찾을 수 없습니다.");
     if (existing.role === "supervisor") {
         throw new Error("슈퍼바이저 계정은 삭제할 수 없습니다.");
     }

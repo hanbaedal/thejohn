@@ -151,7 +151,7 @@
         },
         getStaff: function (id) {
             return request("GET", "/api/staff/" + encodeURIComponent(id)).then(function (d) {
-                return d.staff;
+                return d.staff || d.item || null;
             });
         },
         createStaff: function (body) {

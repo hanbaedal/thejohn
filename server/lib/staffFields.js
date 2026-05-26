@@ -66,25 +66,30 @@ function str(v) {
 function fromLegacyDoc(doc) {
     if (!doc) return null;
     const d = Object.assign({}, doc);
-    if (!d[F.company]) {
-        if (doc.st_company) d[F.company] = str(doc.st_company);
-        else if (doc.companyName) d[F.company] = str(doc.companyName);
+    if (doc.st_company != null && str(doc.st_company)) d[F.company] = str(doc.st_company);
+    else if (!str(d[F.company])) {
+        if (doc.companyName) d[F.company] = str(doc.companyName);
         else if (doc.role === "supervisor") d[F.company] = "(주)더존";
     }
-    if (!d[F.ceo]) {
-        if (doc.st_ceo) d[F.ceo] = str(doc.st_ceo);
-        else if (doc.name) d[F.ceo] = str(doc.name);
+    if (doc.st_ceo != null && str(doc.st_ceo)) d[F.ceo] = str(doc.st_ceo);
+    else if (!str(d[F.ceo])) {
+        if (doc.name) d[F.ceo] = str(doc.name);
+        else if (doc.ceo) d[F.ceo] = str(doc.ceo);
         else if (doc.role === "supervisor") d[F.ceo] = "슈퍼바이저";
     }
-    if (!d[F.phone] && doc.st_phone) d[F.phone] = str(doc.st_phone);
-    if (!d[F.fax] && doc.st_fax) d[F.fax] = str(doc.st_fax);
-    if (!d[F.ceoTel] && doc.st_ceo_tel) d[F.ceoTel] = str(doc.st_ceo_tel);
-    if (!d[F.email] && doc.st_email) d[F.email] = str(doc.st_email);
-    if (!d[F.web] && doc.st_web) d[F.web] = str(doc.st_web);
-    if (!d[F.bizNo] && doc.st_biz_no) d[F.bizNo] = str(doc.st_biz_no);
-    if (!d[F.bizType] && doc.st_biz_type) d[F.bizType] = str(doc.st_biz_type);
-    if (!d[F.bizItem] && doc.st_biz_item) d[F.bizItem] = str(doc.st_biz_item);
-    if (!d[F.address] && doc.st_address) d[F.address] = str(doc.st_address);
+    if (doc.st_phone != null) d[F.phone] = str(doc.st_phone);
+    else if (!d[F.phone] && doc.phone) d[F.phone] = str(doc.phone);
+    if (doc.st_fax != null) d[F.fax] = str(doc.st_fax);
+    if (doc.st_ceo_tel != null) d[F.ceoTel] = str(doc.st_ceo_tel);
+    else if (!d[F.ceoTel] && doc.ceoPhone) d[F.ceoTel] = str(doc.ceoPhone);
+    if (doc.st_email != null) d[F.email] = str(doc.st_email);
+    else if (!d[F.email] && doc.email) d[F.email] = str(doc.email);
+    if (doc.st_web != null) d[F.web] = str(doc.st_web);
+    if (doc.st_biz_no != null) d[F.bizNo] = str(doc.st_biz_no);
+    if (doc.st_biz_type != null) d[F.bizType] = str(doc.st_biz_type);
+    if (doc.st_biz_item != null) d[F.bizItem] = str(doc.st_biz_item);
+    if (doc.st_address != null) d[F.address] = str(doc.st_address);
+    else if (!d[F.address] && doc.address) d[F.address] = str(doc.address);
     return d;
 }
 
@@ -92,7 +97,7 @@ function toPublic(doc) {
     const d = fromLegacyDoc(doc);
     if (!d) return null;
     return {
-        id: d.id,
+        id: str(d.id) || str(d.loginId) || "",
         loginId: d.loginId || "",
         st_company: str(d[F.company]),
         st_phone: str(d[F.phone]),
@@ -168,6 +173,11 @@ function toDbDoc(id, built, existing) {
     };
     if (existing?.createdAt) doc.createdAt = existing.createdAt;
     else doc.createdAt = Date.now();
+    if (existing) {
+        if (existing.passwordHash) doc.passwordHash = existing.passwordHash;
+        if (existing.password) doc.password = existing.password;
+        if (existing.passwordAscii) doc.passwordAscii = existing.passwordAscii;
+    }
     return doc;
 }
 
