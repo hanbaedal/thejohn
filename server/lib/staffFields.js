@@ -16,8 +16,9 @@ const F = {
 };
 
 /**
- * 기본 관리자 계정 — 서버 기동 시 MongoDB staff 컬렉션에만 기록(upsert).
- * 로그인 검증은 소스가 아니라 DB staff·vendors 조회(loginResolve.js)만 사용합니다.
+ * 기본 staff 시드 — 서버 기동 시 MongoDB에만 반영·비어 있는 필드만 보강합니다.
+ * 로그인은 항상 DB 조회(loginResolve.js). 슈퍼바이저는 hanbaedal 하나,
+ * 관리자(admin)는 staff 컬렉션의 모든 해당 행이며 시드 외 추가는 POST /api/staff(슈퍼바이저) 등으로 확장합니다.
  */
 const DEFAULT_STAFF_ACCOUNTS = [
     {
