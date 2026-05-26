@@ -434,14 +434,45 @@
             });
     }
 
+    function ensureQtyStepper(cb) {
+        if (global.THEJHON_QTY_STEPPER && global.THEJHON_QTY_STEPPER.html) {
+            cb();
+            return;
+        }
+        var existing = document.getElementById("script-qty-stepper");
+        if (existing) {
+            var n = 0;
+            var wait = setInterval(function () {
+                n++;
+                if ((global.THEJHON_QTY_STEPPER && global.THEJHON_QTY_STEPPER.html) || n > 80) {
+                    clearInterval(wait);
+                    cb();
+                }
+            }, 50);
+            return;
+        }
+        var s = document.createElement("script");
+        s.id = "script-qty-stepper";
+        s.src = "qty-stepper.js";
+        s.onload = function () {
+            cb();
+        };
+        s.onerror = function () {
+            cb();
+        };
+        document.body.appendChild(s);
+    }
+
     function open() {
         ensureShell();
         contactReady = false;
         modalEl.hidden = false;
         document.body.style.overflow = "hidden";
         bodyEl.innerHTML = '<p class="cart-empty">불러오는 중…</p>';
-        loadVendorContactThen(function () {
-            renderBody();
+        ensureQtyStepper(function () {
+            loadVendorContactThen(function () {
+                renderBody();
+            });
         });
     }
 
