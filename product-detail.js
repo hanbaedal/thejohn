@@ -61,7 +61,7 @@
         return (
             '<p class="pd-vendor-list-hint">주문은 <a href="' +
             escapeHtml(listHref) +
-            '">사업부문 목록</a>에서 수량을 입력한 뒤 <strong>주문 목록에 담기</strong>·<strong>주문하기</strong>를 이용해 주세요.</p>'
+            '">사업부문 목록</a>에서 <strong>주문 목록에 담기</strong>·<strong>주문하기</strong>를 이용해 주세요.</p>'
         );
     }
 

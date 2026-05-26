@@ -190,54 +190,19 @@
         .ps-card-detail-hint a:hover { text-decoration: underline; }
         .ps-order {
             margin: 0.35rem 0 0;
-            padding: 0.45rem 0.4rem 0.5rem;
-            text-align: left;
-            background: #f4f8fc;
-            border: 1px solid #d4e2f0;
-            border-radius: 8px;
+            padding: 0.4rem;
         }
-        .ps-order-hint {
-            margin: 0 0 0.4rem;
-            font-size: 0.65rem;
-            line-height: 1.35;
-            color: #3d556d;
-        }
-        .ps-order-row {
+        .ps-order-actions {
             display: flex;
             flex-wrap: wrap;
             gap: 0.35rem;
-            align-items: center;
         }
-        .ps-order-row label {
-            font-size: 0.72rem;
-            font-weight: 600;
-            color: #2a4a5e;
-            width: 100%;
-        }
-        .ps-order-row .btn {
-            font-size: 0.68rem;
-            padding: 0.28rem 0.45rem;
+        .ps-order-actions .btn {
             flex: 1 1 calc(50% - 0.2rem);
-            min-width: 4.5rem;
+            min-width: 0;
+            font-size: 0.68rem;
+            padding: 0.35rem 0.4rem;
         }
-        .ps-order-row .ps-qty-stepper,
-        .ps-order-row .ps-qty-input {
-            flex: 1 1 100%;
-        }
-        .ps-order-price {
-            margin: 0.35rem 0 0;
-            font-size: 0.72rem;
-            font-weight: 700;
-            color: var(--dz-blue);
-            line-height: 1.3;
-        }
-        .ps-order-msg {
-            margin: 0.3rem 0 0;
-            font-size: 0.65rem;
-            line-height: 1.3;
-        }
-        .ps-order-msg--ok { color: #1b5e20; }
-        .ps-order-msg--err { color: #b71c1c; }
         .ps-order-browse-only {
             margin: 0.35rem 0 0;
             padding: 0.4rem;
@@ -250,15 +215,13 @@
         }
         @media (min-width: 640px) {
             .ps-card-wrap--order .ps-card-visual { height: 8.5rem; }
-            .ps-order-hint { font-size: 0.72rem; }
-            .ps-order-row .btn { font-size: 0.72rem; }
+            .ps-order-actions .btn { font-size: 0.72rem; }
         }
     </style>
     <script src="api-config.js"></script>
     <script src="thejhon-api.js"></script>
     <script src="auth.js"></script>
     <script src="vendor-cart.js"></script>
-    <script src="qty-stepper.js"></script>
     <script src="catalog-order-ui.js"></script>
     <link rel="stylesheet" href="vendor-order-modal.css">
     <script src="vendor-order-modal.js"></script>
