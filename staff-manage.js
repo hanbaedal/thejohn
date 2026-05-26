@@ -11,6 +11,7 @@
     var editMsg = document.getElementById("sm-edit-msg");
     var editDeleteBtn = document.getElementById("sm-edit-delete");
     var staffByKey = {};
+    var editLoadedFromServer = false;
 
     function escapeHtml(s) {
         return String(s)
@@ -185,6 +186,7 @@
         var key = String(id || "").trim();
         if (!key || !api.getStaff) return;
         setEditMsg("");
+        editLoadedFromServer = false;
         var cached = staffByKey[key];
         if (cached) {
             fillEditForm(cached);
@@ -200,12 +202,14 @@
                 var cacheKey = staffKey(st);
                 if (cacheKey) staffByKey[cacheKey] = st;
                 fillEditForm(st);
+                editLoadedFromServer = true;
                 setEditMsg("");
                 showEditModal();
             })
             .catch(function (err) {
                 if (cached) {
-                    setEditMsg("서버에서 최신 정보를 불러오지 못했습니다. 목록 데이터를 표시합니다.", "err");
+                    setEditMsg("서버에서 최신 정보를 불러오지 못했습니다. 저장은 할 수 없습니다.", "err");
+                    editLoadedFromServer = false;
                     return;
                 }
                 setEditMsg((err && err.message) || "불러오기 실패", "err");
@@ -215,6 +219,7 @@
     function closeEdit() {
         if (modal) modal.hidden = true;
         document.body.style.overflow = "";
+        editLoadedFromServer = false;
         setEditMsg("");
         if (editDeleteBtn) {
             editDeleteBtn.hidden = true;
@@ -255,6 +260,10 @@
     if (editForm) {
         editForm.addEventListener("submit", function (e) {
             e.preventDefault();
+            if (!editLoadedFromServer) {
+                setEditMsg("계정 정보를 서버에서 불러온 뒤에 저장해 주세요.", "err");
+                return;
+            }
             var id = document.getElementById("sm-edit-id").value;
             var body = readForm(editForm);
             delete body.loginId;

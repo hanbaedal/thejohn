@@ -204,9 +204,44 @@ async function removeStaffLoginIdConflicts(col, seed) {
     });
 }
 
+/** 기존 staff 행이 있으면 시드로 덮어쓰지 않고, 비어 있는 필드만 채움 */
+function seedProfileBody(seed, existing) {
+    if (!existing) {
+        return {
+            st_company: seed.st_company || "",
+            st_phone: seed.st_phone || "",
+            st_fax: seed.st_fax || "",
+            st_ceo: seed.st_ceo || "",
+            st_ceo_tel: seed.st_ceo_tel || "",
+            role: seed.role
+        };
+    }
+    const prev = fromLegacyDoc(existing) || {};
+    function pick(field, seedVal) {
+        var cur = str(prev[field]);
+        if (cur) return cur;
+        return str(seedVal);
+    }
+    return {
+        st_company: pick(F.company, seed.st_company),
+        st_phone: pick(F.phone, seed.st_phone),
+        st_fax: pick(F.fax, seed.st_fax),
+        st_ceo: pick(F.ceo, seed.st_ceo),
+        st_ceo_tel: pick(F.ceoTel, seed.st_ceo_tel),
+        st_email: pick(F.email, ""),
+        st_web: pick(F.web, ""),
+        st_biz_no: pick(F.bizNo, ""),
+        st_biz_type: pick(F.bizType, ""),
+        st_biz_item: pick(F.bizItem, ""),
+        st_address: pick(F.address, ""),
+        role: existing.role || seed.role
+    };
+}
+
 async function ensureDefaultStaffSeeds(db) {
     const col = db.collection("staff");
     const pwFromEnv = String(process.env.THEJHON_SEED_SUPERVISOR_PASSWORD || "").trim();
+    const { setLoginPassword } = require("./loginAccount");
 
     await col.deleteOne({ id: "st_supervisor_thejohn" });
     await col.deleteOne({ id: "st_supervisor_thejhon" });
@@ -214,26 +249,43 @@ async function ensureDefaultStaffSeeds(db) {
     for (const seed of DEFAULT_STAFF_ACCOUNTS) {
         await removeStaffLoginIdConflicts(col, seed);
 
-        const password =
-            seed.loginId === "thejohn" && pwFromEnv ? pwFromEnv : seed.password;
-        const built = buildFromBody(
-            {
-                st_company: seed.st_company,
-                st_phone: seed.st_phone,
-                st_fax: seed.st_fax,
-                st_ceo: seed.st_ceo,
-                st_ceo_tel: seed.st_ceo_tel,
-                role: seed.role
-            },
-            null,
-            seed.loginId,
-            password
-        );
         const existing = await col.findOne({ id: seed.id });
-        const doc = toDbDoc(seed.id, built, existing);
+        const seedPassword =
+            seed.loginId === "thejohn" && pwFromEnv ? pwFromEnv : seed.password;
 
-        await col.replaceOne({ id: seed.id }, doc, { upsert: true });
-        console.log("[staff] synced:", doc.loginId, doc.role, doc.id);
+        if (existing) {
+            var storedPw = getStoredPassword(existing);
+            if (!storedPw) {
+                await setLoginPassword(col, { id: seed.id }, seed.loginId, seedPassword);
+            } else if (seed.loginId === "thejohn" && pwFromEnv) {
+                await setLoginPassword(col, { id: seed.id }, seed.loginId, pwFromEnv);
+            }
+
+            var patch = {};
+            if (!str(existing.loginId)) patch.loginId = seed.loginId;
+            if (!existing.role) patch.role = seed.role;
+            if (existing.active === false) patch.active = true;
+
+            var profile = seedProfileBody(seed, existing);
+            var prev = fromLegacyDoc(existing) || {};
+            if (!str(prev[F.company]) && profile.st_company) patch[F.company] = profile.st_company;
+            if (!str(prev[F.phone]) && profile.st_phone) patch[F.phone] = profile.st_phone;
+            if (!str(prev[F.fax]) && profile.st_fax) patch[F.fax] = profile.st_fax;
+            if (!str(prev[F.ceo]) && profile.st_ceo) patch[F.ceo] = profile.st_ceo;
+            if (!str(prev[F.ceoTel]) && profile.st_ceo_tel) patch[F.ceoTel] = profile.st_ceo_tel;
+
+            if (Object.keys(patch).length) {
+                patch.updatedAt = Date.now();
+                await col.updateOne({ id: seed.id }, { $set: patch });
+            }
+            console.log("[staff] seed kept (no overwrite):", seed.loginId, seed.id);
+            continue;
+        }
+
+        const built = buildFromBody(seedProfileBody(seed, null), null, seed.loginId, seedPassword);
+        const doc = toDbDoc(seed.id, built, null);
+        await col.insertOne(doc);
+        console.log("[staff] seed created:", doc.loginId, doc.role, doc.id);
     }
 
     await col.deleteMany({
