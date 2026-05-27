@@ -267,7 +267,10 @@
     }
 
     function deptLabel(catalog, deptId) {
-        if (!catalog || !deptId) return "";
+        if (!deptId) return "";
+        var norm = String(deptId).trim().toLowerCase();
+        if (norm === "uncontracted") return "미계약";
+        if (!catalog) return deptId;
         var d = catalog.getDept(deptId);
         return d ? d.label : deptId;
     }

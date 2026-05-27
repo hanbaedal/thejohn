@@ -31,11 +31,17 @@
         statusEl.hidden = !text;
     }
 
+    function normalizeVendorDeptId(id) {
+        var n = String(id || "").trim().toLowerCase();
+        if (n === "uncontracted" || n === "미계약") return "uncontracted";
+        return catalog ? catalog.normalizeDept(id) : n;
+    }
+
     function vendorDeptIds(it) {
         var raw = it.vn_depts;
         if (!Array.isArray(raw)) return [];
         return raw.map(function (id) {
-            return catalog ? catalog.normalizeDept(id) : String(id || "").trim().toLowerCase();
+            return normalizeVendorDeptId(id);
         });
     }
 

@@ -8,7 +8,21 @@ const {
 } = require("./loginAccount");
 
 /** vendors 컬렉션 필드 */
-const VALID_DEPT_IDS = ["jeongyuk", "driedfish", "frozen", "seafood", "grocery", "drink"];
+/** 상품 카탈로그 6부문 + 신규업체용 미계약 */
+const VALID_DEPT_IDS = [
+    "jeongyuk",
+    "driedfish",
+    "frozen",
+    "seafood",
+    "grocery",
+    "drink",
+    "uncontracted"
+];
+
+const VENDOR_DEPT_LABEL_TO_ID = {
+    미계약: "uncontracted",
+    uncontracted: "uncontracted"
+};
 
 const LEGACY_DEPT_MAP = {
     livestock: "jeongyuk",
@@ -67,10 +81,12 @@ function gradeDisplayLabel(v) {
 }
 
 function normalizeDeptId(v) {
-    var id = String(v || "")
-        .trim()
-        .toLowerCase();
+    var raw = String(v || "").trim();
+    if (!raw) return "";
+    if (VENDOR_DEPT_LABEL_TO_ID[raw]) return VENDOR_DEPT_LABEL_TO_ID[raw];
+    var id = raw.toLowerCase();
     if (LEGACY_DEPT_MAP[id]) return LEGACY_DEPT_MAP[id];
+    if (VENDOR_DEPT_LABEL_TO_ID[id]) return VENDOR_DEPT_LABEL_TO_ID[id];
     return id;
 }
 

@@ -66,6 +66,22 @@
         return queryParam("from") === "new" ? "vendor-new-list.html" : "vendor-list-admin.html";
     }
 
+    function isFromNewVendorFlow() {
+        return queryParam("from") === "new";
+    }
+
+    function syncNewVendorDeptCheckbox(depts) {
+        if (!deptCheckboxesRoot) return;
+        var el = deptCheckboxesRoot.querySelector("[data-vr-dept-new-only]");
+        if (!el) return;
+        var show =
+            isFromNewVendorFlow() ||
+            (depts || []).some(function (id) {
+                return String(id || "").trim().toLowerCase() === "uncontracted";
+            });
+        el.hidden = !show;
+    }
+
     var pendingLogoData = "";
     var cachedItems = [];
     var idDupCheck = null;
@@ -203,6 +219,7 @@
         ceoTelInput.value = it.vn_ceo_tel || "";
         setGrade(it.vn_grade || "1");
         setSelectedDepts(it.vn_depts || []);
+        syncNewVendorDeptCheckbox(it.vn_depts || []);
         webInput.value = it.vn_web || "";
         emailInput.value = it.vn_email || "";
         phoneInput.value = it.vn_phone || "";
@@ -344,6 +361,7 @@
     }
 
     if (backListLink) backListLink.href = listReturnUrl();
+    syncNewVendorDeptCheckbox();
 
     var editId = queryParam("id").trim();
     if (!editId) {
