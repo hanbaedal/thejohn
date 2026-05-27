@@ -14,6 +14,7 @@
     <title>신규업체 등록 — 더존</title>
     <link rel="stylesheet" href="common.css">
     <link rel="stylesheet" href="admin-manage.css">
+    <link rel="stylesheet" href="vendor-prospect-picker.css">
     <style>
         .vr-form { max-width: min(100%, 56rem); margin: 0 auto 1.5rem; padding: 0.85rem 0.75rem; background: #fff; border: 1px solid #e0e6ed; border-radius: 8px; box-shadow: 0 1px 8px rgba(10, 77, 156, 0.05); }
         .vr-slot > label,
@@ -198,6 +199,8 @@
     <script src="admin-header.js"></script>
     <script src="vendor-form-shared.js"></script>
     <script src="product-form-shared.js"></script>
+    <script src="product-catalog.js"></script>
+    <script src="vendor-prospect-picker.js"></script>
     <script src="nav.js" defer></script>
 </head>
 <body>
@@ -232,6 +235,17 @@
         <p id="vr-status" class="vr-status" role="status" aria-live="polite"></p>
         <form id="vr-form" class="vr-form" novalidate>
             <input type="hidden" id="vr-edit-id" value="">
+            <input type="hidden" id="vr-prospect-id" name="prospectId" value="">
+            <div class="vr-field vr-company-row">
+                <label for="vr-company">업체이름</label>
+                <div class="vr-company-input-row">
+                    <input type="text" id="vr-company" name="vn_company" required maxlength="200" autocomplete="organization" placeholder="업체이름 직접 입력">
+                    <button type="button" class="btn btn-secondary vr-prospect-btn" id="vr-prospect-open">예비거래처 선택</button>
+                    <button type="button" class="btn btn-secondary vr-prospect-clear-btn" id="vr-prospect-clear" hidden>선택 해제</button>
+                </div>
+                <p class="vr-hint">직접 입력하거나 예비거래처 목록에서 선택할 수 있습니다.</p>
+                <span id="vr-prospect-badge" class="vr-prospect-badge" hidden>예비거래처에서 불러옴</span>
+            </div>
             <div class="vr-field vr-dept-row vr-dept-wrap">
                 <span class="vr-dept-caption" id="vr-dept-label">사업부문</span>
                 <div id="vr-dept-checkboxes" class="vr-dept-checkboxes" role="group" aria-labelledby="vr-dept-label">
@@ -278,10 +292,6 @@
                 </div>
             </div>
             <div class="vr-row vr-row--3">
-                <div class="vr-slot">
-                    <label for="vr-company">업체이름</label>
-                    <input type="text" id="vr-company" name="vn_company" required maxlength="200" autocomplete="organization" placeholder="업체이름">
-                </div>
                 <div class="vr-slot">
                     <label for="vr-ceo">대표자 이름</label>
                     <input type="text" id="vr-ceo" name="vn_ceo" maxlength="80" autocomplete="name" placeholder="대표자 이름">
@@ -343,6 +353,21 @@
                 <button type="button" class="btn btn-secondary" id="vr-cancel-edit" hidden>편집 취소</button>
             </div>
         </form>
+        <div id="vp-modal" class="vp-modal" hidden role="dialog" aria-modal="true" aria-labelledby="vp-modal-title">
+            <div class="vp-modal__panel">
+                <div class="vp-modal__head">
+                    <h2 id="vp-modal-title" class="vp-modal__title">예비거래처 선택</h2>
+                    <button type="button" class="vp-modal__close" id="vp-modal-close" aria-label="닫기">×</button>
+                </div>
+                <div class="vp-modal__search">
+                    <input type="search" id="vp-search" placeholder="업체명 검색" autocomplete="off" aria-label="업체명 검색">
+                </div>
+                <p id="vp-status" class="vp-status" role="status"></p>
+                <div class="vp-list-wrap">
+                    <ul id="vp-list" class="vp-list"></ul>
+                </div>
+            </div>
+        </div>
     </main>
         <footer class="site-footer">
         <div class="site-footer-inner">

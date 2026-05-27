@@ -223,6 +223,8 @@ async function connectDbOnce() {
             await migrateStaffCollection(database);
             const { migrateVendorsCollection } = require("./lib/vendorFields");
             await migrateVendorsCollection(database);
+            const { ensureProspectIndexes } = require("./lib/vendorProspects");
+            await ensureProspectIndexes(database);
             try {
                 const { ensureLoginFieldsMigrated } = require("./lib/loginResolve");
                 await ensureLoginFieldsMigrated(database);

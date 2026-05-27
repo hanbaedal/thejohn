@@ -179,6 +179,12 @@
             if (excludeId) q += "&excludeId=" + encodeURIComponent(String(excludeId));
             return request("GET", "/api/vendors/check-login-id" + q);
         },
+        listVendorProspects: function (q) {
+            var query = q ? "?q=" + encodeURIComponent(String(q)) : "";
+            return request("GET", "/api/vendor-prospects" + query).then(function (d) {
+                return d.items || [];
+            });
+        },
         createVendor: function (body) {
             return request("POST", "/api/vendors", body).then(function (d) {
                 return d.item;

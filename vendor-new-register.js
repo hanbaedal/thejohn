@@ -27,10 +27,12 @@
     var noteInput = document.getElementById("vr-note");
     var submitBtn = document.getElementById("vr-submit");
 
+    var prospectIdInput = document.getElementById("vr-prospect-id");
     var pendingLogoData = "";
     var logoPicker = null;
     var idDupCheck = null;
     var pwConfirmCheck = null;
+    var prospectPicker = null;
 
     function setStatus(msg, isError) {
         if (!statusEl) return;
@@ -46,6 +48,43 @@
 
     function clearSelectedDepts() {
         if (VF && VF.clearDeptCheckboxValues) VF.clearDeptCheckboxValues(deptCheckboxesRoot);
+    }
+
+    function setSelectedDepts(ids) {
+        if (VF && VF.writeDeptCheckboxValues) VF.writeDeptCheckboxValues(deptCheckboxesRoot, ids);
+    }
+
+    function setGrade(value) {
+        if (!gradeSelect) return;
+        var g = String(value || "1");
+        if (g === "4") g = "3";
+        if (g !== "1" && g !== "2" && g !== "3") g = "1";
+        gradeSelect.value = g;
+    }
+
+    function fillFromProspect(it) {
+        if (!it) return;
+        companyInput.value = it.vn_company || "";
+        ceoInput.value = it.vn_ceo || "";
+        ceoTelInput.value = it.vn_ceo_tel || "";
+        setGrade(it.vn_grade || "1");
+        setSelectedDepts(it.vn_depts || []);
+        webInput.value = it.vn_web || "";
+        emailInput.value = it.vn_email || "";
+        phoneInput.value = it.vn_phone || "";
+        addrInput.value = it.vn_addr || "";
+        mgrNameInput.value = it.vn_mgr_name || "";
+        mgrTelInput.value = it.vn_mgr_tel || "";
+        mgrEmailInput.value = it.vn_mgr_email || "";
+        noteInput.value = it.vn_note || "";
+        pendingLogoData = it.vn_logo || "";
+        updateLogoPreview(pendingLogoData);
+        if (logoPicker && !pendingLogoData) logoPicker.clear();
+        setStatus(
+            "예비거래처 「" +
+                (it.vn_company || "") +
+                "」 정보를 불러왔습니다. 로그인 아이디·비밀번호는 새로 입력해 주세요."
+        );
     }
 
     function updateLogoPreview(src) {
@@ -107,6 +146,27 @@
 
     if (gradeSelect) gradeSelect.value = "1";
 
+    var VPP = window.THEJHON_VENDOR_PROSPECT_PICKER;
+    if (VPP && VPP.init && api && api.listVendorProspects) {
+        prospectPicker = VPP.init({
+            modal: document.getElementById("vp-modal"),
+            openBtn: document.getElementById("vr-prospect-open"),
+            clearBtn: document.getElementById("vr-prospect-clear"),
+            closeBtn: document.getElementById("vp-modal-close"),
+            prospectIdInput: prospectIdInput,
+            companyInput: companyInput,
+            badgeEl: document.getElementById("vr-prospect-badge"),
+            searchInput: document.getElementById("vp-search"),
+            listEl: document.getElementById("vp-list"),
+            statusEl: document.getElementById("vp-status"),
+            listProspects: function (q) {
+                return api.listVendorProspects(q);
+            },
+            onSelect: fillFromProspect,
+            onClear: function () {}
+        });
+    }
+
     form.addEventListener("submit", function (e) {
         e.preventDefault();
 
@@ -156,6 +216,7 @@
                     updateLogoPreview("");
                     clearSelectedDepts();
                     if (gradeSelect) gradeSelect.value = "1";
+                    if (prospectPicker) prospectPicker.clear();
                     setStatus("신규업체를 저장했습니다. 신규업체 리스트에서 확인·수정할 수 있습니다.");
                 })
                 .catch(function (err2) {
@@ -194,6 +255,8 @@
             var fields = form.querySelectorAll("input, textarea, button, select");
             for (var i = 0; i < fields.length; i++) fields[i].disabled = true;
         }
+        var prospectOpen = document.getElementById("vr-prospect-open");
+        if (prospectOpen) prospectOpen.disabled = true;
     } else {
         var hintEl = document.getElementById("vr-registrar-hint");
         if (hintEl && window.THEJHON_AUTH) {
