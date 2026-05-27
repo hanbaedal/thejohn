@@ -1,0 +1,19 @@
+{
+    "name": "더존",
+    "short_name": "더존",
+    "description": "더존",
+    "start_url": "/",
+    "scope": "/",
+    "display": "standalone",
+    "background_color": "#f4f6f9",
+    "theme_color": "#0a4d9c",
+    "lang": "ko",
+    "icons": [
+        {
+            "src": "img/logo.png",
+            "sizes": "72x72",
+            "type": "image/png",
+            "purpose": "any"
+        }
+    ]
+}
