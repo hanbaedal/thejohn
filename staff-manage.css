@@ -191,3 +191,9 @@
     min-width: 44px;
     min-height: 44px;
 }
+.sm-section-label {
+    margin: 0.35rem 0 0;
+    font-size: 0.88rem;
+    font-weight: 600;
+    color: #1a4a6e;
+}

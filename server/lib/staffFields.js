@@ -12,7 +12,11 @@ const F = {
     bizNo: "st_biz_no",
     bizType: "st_biz_type",
     bizItem: "st_biz_item",
-    address: "st_address"
+    address: "st_address",
+    facebook: "st_facebook",
+    instagram: "st_instagram",
+    naverCafe: "st_naver_cafe",
+    youtube: "st_youtube"
 };
 
 /**
@@ -91,6 +95,10 @@ function fromLegacyDoc(doc) {
     if (doc.st_biz_item != null) d[F.bizItem] = str(doc.st_biz_item);
     if (doc.st_address != null) d[F.address] = str(doc.st_address);
     else if (!d[F.address] && doc.address) d[F.address] = str(doc.address);
+    if (doc.st_facebook != null) d[F.facebook] = str(doc.st_facebook);
+    if (doc.st_instagram != null) d[F.instagram] = str(doc.st_instagram);
+    if (doc.st_naver_cafe != null) d[F.naverCafe] = str(doc.st_naver_cafe);
+    if (doc.st_youtube != null) d[F.youtube] = str(doc.st_youtube);
     return d;
 }
 
@@ -111,6 +119,10 @@ function toPublic(doc) {
         st_biz_type: str(d[F.bizType]),
         st_biz_item: str(d[F.bizItem]),
         st_address: str(d[F.address]),
+        st_facebook: str(d[F.facebook]),
+        st_instagram: str(d[F.instagram]),
+        st_naver_cafe: str(d[F.naverCafe]),
+        st_youtube: str(d[F.youtube]),
         role: d.role || "admin",
         active: d.active !== false,
         updatedAt: d.updatedAt || 0
@@ -148,6 +160,10 @@ function buildFromBody(body, existing, loginId, password) {
         st_biz_type: str(body.st_biz_type != null ? body.st_biz_type : prev[F.bizType]),
         st_biz_item: str(body.st_biz_item != null ? body.st_biz_item : prev[F.bizItem]),
         st_address: str(body.st_address != null ? body.st_address : prev[F.address]),
+        st_facebook: str(body.st_facebook != null ? body.st_facebook : prev[F.facebook]),
+        st_instagram: str(body.st_instagram != null ? body.st_instagram : prev[F.instagram]),
+        st_naver_cafe: str(body.st_naver_cafe != null ? body.st_naver_cafe : prev[F.naverCafe]),
+        st_youtube: str(body.st_youtube != null ? body.st_youtube : prev[F.youtube]),
         role: body.role || prev.role || "admin"
     };
 }
@@ -168,6 +184,10 @@ function toDbDoc(id, built, existing) {
         [F.bizType]: built.st_biz_type,
         [F.bizItem]: built.st_biz_item,
         [F.address]: built.st_address,
+        [F.facebook]: built.st_facebook,
+        [F.instagram]: built.st_instagram,
+        [F.naverCafe]: built.st_naver_cafe,
+        [F.youtube]: built.st_youtube,
         role: built.role,
         active: true,
         updatedAt: Date.now()
@@ -317,6 +337,10 @@ async function migrateStaffCollection(db) {
                 st_biz_type: doc[F.bizType] || doc.st_biz_type,
                 st_biz_item: doc[F.bizItem] || doc.st_biz_item,
                 st_address: doc[F.address] || doc.st_address,
+                st_facebook: doc[F.facebook] || doc.st_facebook,
+                st_instagram: doc[F.instagram] || doc.st_instagram,
+                st_naver_cafe: doc[F.naverCafe] || doc.st_naver_cafe,
+                st_youtube: doc[F.youtube] || doc.st_youtube,
                 role: doc.role
             },
             doc,

@@ -64,7 +64,11 @@
             st_biz_no: String(fd.get("st_biz_no") || "").trim(),
             st_biz_type: String(fd.get("st_biz_type") || "").trim(),
             st_biz_item: String(fd.get("st_biz_item") || "").trim(),
-            st_address: String(fd.get("st_address") || "").trim()
+            st_address: String(fd.get("st_address") || "").trim(),
+            st_facebook: String(fd.get("st_facebook") || "").trim(),
+            st_instagram: String(fd.get("st_instagram") || "").trim(),
+            st_naver_cafe: String(fd.get("st_naver_cafe") || "").trim(),
+            st_youtube: String(fd.get("st_youtube") || "").trim()
         };
         if (!body.password) delete body.password;
         return body;
@@ -90,6 +94,10 @@
         document.getElementById("sm-edit-st_biz_type").value = st.st_biz_type || "";
         document.getElementById("sm-edit-st_biz_item").value = st.st_biz_item || "";
         document.getElementById("sm-edit-st_address").value = st.st_address || "";
+        document.getElementById("sm-edit-st_facebook").value = st.st_facebook || "";
+        document.getElementById("sm-edit-st_instagram").value = st.st_instagram || "";
+        document.getElementById("sm-edit-st_naver_cafe").value = st.st_naver_cafe || "";
+        document.getElementById("sm-edit-st_youtube").value = st.st_youtube || "";
         var title = document.getElementById("sm-edit-title");
         if (title) {
             title.textContent =

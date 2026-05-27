@@ -63,6 +63,10 @@ function pickStaffBody(body) {
         st_biz_type: body.st_biz_type,
         st_biz_item: body.st_biz_item,
         st_address: body.st_address,
+        st_facebook: body.st_facebook,
+        st_instagram: body.st_instagram,
+        st_naver_cafe: body.st_naver_cafe,
+        st_youtube: body.st_youtube,
         name: body.name
     };
 }
@@ -122,6 +126,10 @@ async function createStaffAccount(body, creatorRole) {
             st_biz_type: picked.st_biz_type,
             st_biz_item: picked.st_biz_item,
             st_address: picked.st_address,
+            st_facebook: picked.st_facebook,
+            st_instagram: picked.st_instagram,
+            st_naver_cafe: picked.st_naver_cafe,
+            st_youtube: picked.st_youtube,
             role: "admin"
         },
         null,
@@ -169,6 +177,10 @@ async function updateStaffAccount(id, body, creatorRole) {
             st_biz_type: picked.st_biz_type,
             st_biz_item: picked.st_biz_item,
             st_address: picked.st_address,
+            st_facebook: picked.st_facebook,
+            st_instagram: picked.st_instagram,
+            st_naver_cafe: picked.st_naver_cafe,
+            st_youtube: picked.st_youtube,
             role: existing.role || "admin"
         },
         existing,

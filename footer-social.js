@@ -1,14 +1,15 @@
 /**
  * 푸터 — 저작권 문구 + 소셜 아이콘(페이스북·인스타·네이버카페·유튜브·카카오)
- * URL은 아래 변수에 채우면 활성화됩니다. 빈 문자열이면 준비 중(비클릭)으로 표시됩니다.
+ * - 페이스북·인스타·네이버카페·유튜브: 로그인(관리자·슈퍼바이저·업체) 시 staff-profile SNS, 비로그인 시 아래 공용 URL
+ * - 카카오: 항상 공용 URL
  */
 (function (global) {
     var KAKAO_CHAT_URL = "https://pf.kakao.com/_xavxlxjX/chat";
-    /** 비우면 해당 아이콘만 비활성 */
-    var FACEBOOK_URL = "";
-    var INSTAGRAM_URL = "";
-    var NAVER_CAFE_URL = "";
-    var YOUTUBE_URL = "";
+    /** 비로그인 방문자용 공용 SNS (카카오와 동일하게 코드에 고정) */
+    var PUBLIC_FACEBOOK_URL = "";
+    var PUBLIC_INSTAGRAM_URL = "";
+    var PUBLIC_NAVER_CAFE_URL = "";
+    var PUBLIC_YOUTUBE_URL = "";
 
     function iconFacebook() {
         return (
@@ -24,7 +25,6 @@
         );
     }
 
-    /** 네이버 카페 — 머그 + 테이블 실루엣 */
     function iconNaverCafe() {
         return (
             '<svg class="site-footer-social__icon" width="22" height="22" viewBox="0 0 24 24" aria-hidden="true">' +
@@ -63,7 +63,7 @@
         a.target = "_blank";
         a.rel = "noopener noreferrer";
         a.title = title;
-        a.setAttribute("aria-label", title);
+        a.setAttribute("aria-label", aria);
         a.innerHTML = innerHtml;
         return a;
     }
@@ -80,11 +80,76 @@
         return a;
     }
 
+    function replaceSocialBtn(nav, classMod, url, title) {
+        if (!nav) return;
+        var sel = ".site-footer-social__btn--" + classMod;
+        var old = nav.querySelector(sel);
+        if (!old) return;
+        var inner =
+            classMod === "facebook"
+                ? iconFacebook()
+                : classMod === "instagram"
+                  ? iconInstagram()
+                  : classMod === "navercafe"
+                    ? iconNaverCafe()
+                    : iconYoutube();
+        var neu = btnLink(classMod, url, title, title, inner);
+        nav.replaceChild(neu, old);
+    }
+
+    function applyLinks(urls) {
+        var nav = document.querySelector(".site-footer-social");
+        if (!nav) return;
+        var u = urls || {};
+        replaceSocialBtn(nav, "facebook", u.facebook, "페이스북");
+        replaceSocialBtn(nav, "instagram", u.instagram, "인스타그램");
+        replaceSocialBtn(nav, "navercafe", u.naverCafe, "네이버 카페");
+        replaceSocialBtn(nav, "youtube", u.youtube, "유튜브");
+    }
+
+    function getPublicUrls() {
+        return {
+            facebook: PUBLIC_FACEBOOK_URL,
+            instagram: PUBLIC_INSTAGRAM_URL,
+            naverCafe: PUBLIC_NAVER_CAFE_URL,
+            youtube: PUBLIC_YOUTUBE_URL
+        };
+    }
+
+    function socialFromStaff(st) {
+        if (!st) return getPublicUrls();
+        return {
+            facebook: st.st_facebook || "",
+            instagram: st.st_instagram || "",
+            naverCafe: st.st_naver_cafe || "",
+            youtube: st.st_youtube || ""
+        };
+    }
+
+    function syncSocialLinks() {
+        mount();
+        var Auth = global.THEJHON_AUTH;
+        var Api = global.THEJHON_API;
+        if (Auth && Auth.isLoggedIn && Auth.isLoggedIn() && Api && Api.getStaffProfile) {
+            var role = Auth.getRole ? Auth.getRole() : "";
+            if (role === "admin" || role === "supervisor" || role === "vendor") {
+                return Api.getStaffProfile()
+                    .then(function (st) {
+                        applyLinks(socialFromStaff(st));
+                    })
+                    .catch(function () {
+                        applyLinks(getPublicUrls());
+                    });
+            }
+        }
+        applyLinks(getPublicUrls());
+        return Promise.resolve();
+    }
+
     function mount() {
         var inner = document.querySelector(".site-footer-inner");
         if (!inner) return;
         if (inner.querySelector(".site-footer-head")) return;
-        /** 이전 버전: 래퍼 없이 바로 들어간 소셜 nav 제거 */
         var legacySocial = inner.querySelector(":scope > .site-footer-social");
         if (legacySocial) legacySocial.remove();
 
@@ -99,18 +164,17 @@
         nav.className = "site-footer-social";
         nav.setAttribute("aria-label", "소셜 미디어");
 
+        var pub = getPublicUrls();
         nav.appendChild(
-            btnLink("facebook", FACEBOOK_URL, "페이스북", "페이스북", iconFacebook())
+            btnLink("facebook", pub.facebook, "페이스북", "페이스북", iconFacebook())
         );
         nav.appendChild(
-            btnLink("instagram", INSTAGRAM_URL, "인스타그램", "인스타그램", iconInstagram())
+            btnLink("instagram", pub.instagram, "인스타그램", "인스타그램", iconInstagram())
         );
         nav.appendChild(
-            btnLink("navercafe", NAVER_CAFE_URL, "네이버 카페", "네이버 카페", iconNaverCafe())
+            btnLink("navercafe", pub.naverCafe, "네이버 카페", "네이버 카페", iconNaverCafe())
         );
-        nav.appendChild(
-            btnLink("youtube", YOUTUBE_URL, "유튜브", "유튜브", iconYoutube())
-        );
+        nav.appendChild(btnLink("youtube", pub.youtube, "유튜브", "유튜브", iconYoutube()));
         nav.appendChild(btnKakao());
 
         wrap.appendChild(copy);
@@ -118,11 +182,23 @@
         inner.insertBefore(wrap, inner.firstChild);
     }
 
-    global.THEJHON_FOOTER_SOCIAL = { mount: mount };
+    global.THEJHON_FOOTER_SOCIAL = {
+        mount: mount,
+        applyLinks: applyLinks,
+        syncSocialLinks: syncSocialLinks,
+        getPublicUrls: getPublicUrls
+    };
+    global.__thejhonRefreshFooterSocial = syncSocialLinks;
+
+    function boot() {
+        mount();
+        syncSocialLinks();
+    }
 
     if (document.readyState === "loading") {
-        document.addEventListener("DOMContentLoaded", mount);
+        document.addEventListener("DOMContentLoaded", boot);
     } else {
-        mount();
+        boot();
     }
+    global.addEventListener("pageshow", syncSocialLinks);
 })(typeof window !== "undefined" ? window : this);

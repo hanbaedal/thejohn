@@ -218,6 +218,11 @@
                 global.__thejhonRefreshFooterCompany();
             } catch (e) {}
         }
+        if (typeof global.__thejhonRefreshFooterSocial === "function") {
+            try {
+                global.__thejhonRefreshFooterSocial();
+            } catch (e) {}
+        }
     }
 
     function setOAuthSession(provider) {
