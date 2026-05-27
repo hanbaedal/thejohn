@@ -5,16 +5,19 @@ const LEGACY_DEPT_MAP = {
     banchan: "grocery"
 };
 
-/** 예전 DB·UI 에 한글·영문 혼용 저장된 경우 */
+/**
+ * 예전 DB·UI 한글 표기 (표시는 6부문 분리; 결합 문자열은 normalizeDept에서 기본값 지정 후
+ * deptQuery에서 해당 쌍 부문 조회 시 함께 매칭)
+ */
 const DEPT_LABEL_TO_ID = {
-    정육/건어물: "jeongyuk",
+    정육: "jeongyuk",
+    건어물: "driedfish",
+    냉동식품: "frozen",
+    냉동수산물: "seafood",
+    공산품: "grocery",
+    음료수: "drink",
     "정육/건어물관련": "jeongyuk",
-    정육/건어물: "driedfish",
-    냉동식품/음료수: "frozen",
     냉동: "frozen",
-    냉동수산물/공산품: "seafood",
-    냉동수산물/공산품: "grocery",
-    냉동식품/음료수: "drink",
     음료: "drink"
 };
 
@@ -28,14 +31,16 @@ const VALID_DEPT_IDS = new Set([
 ]);
 
 function normalizeDept(v) {
-    let id = String(v ?? "")
-        .trim()
-        .toLowerCase();
-    if (!id) return "";
-    if (DEPT_LABEL_TO_ID[id]) return DEPT_LABEL_TO_ID[id];
-    const raw = String(v).trim();
+    const raw = String(v ?? "").trim();
+    if (!raw) return "";
+    /* 구 결합 라벨 → 기본 부문 ID (역조회는 deptQuery에서 쌍으로 확장) */
+    if (raw === "정육/건어물") return "jeongyuk";
+    if (raw === "냉동식품/음료수") return "frozen";
+    if (raw === "냉동수산물/공산품") return "seafood";
     if (DEPT_LABEL_TO_ID[raw]) return DEPT_LABEL_TO_ID[raw];
+    let id = raw.toLowerCase();
     if (LEGACY_DEPT_MAP[id]) id = LEGACY_DEPT_MAP[id];
+    if (DEPT_LABEL_TO_ID[id]) return DEPT_LABEL_TO_ID[id];
     return VALID_DEPT_IDS.has(id) ? id : "";
 }
 
@@ -55,6 +60,9 @@ function deptQuery(deptId) {
     Object.keys(DEPT_LABEL_TO_ID).forEach(function (label) {
         if (DEPT_LABEL_TO_ID[label] === norm) ids.add(label);
     });
+    if (norm === "jeongyuk" || norm === "driedfish") ids.add("정육/건어물");
+    if (norm === "frozen" || norm === "drink") ids.add("냉동식품/음료수");
+    if (norm === "seafood" || norm === "grocery") ids.add("냉동수산물/공산품");
     return { pd_dept: { $in: Array.from(ids) } };
 }
 

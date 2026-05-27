@@ -13,7 +13,7 @@
     var DEPARTMENTS = [
         {
             id: "jeongyuk",
-            label: "정육/건어물",
+            label: "정육",
             icon: "🥩",
             groups: [
                 { id: "hanwoo", label: "한우·육우", desc: "한우·육우 부위별 상품" },
@@ -24,57 +24,57 @@
         },
         {
             id: "driedfish",
-            label: "정육/건어물",
+            label: "건어물",
             icon: "🐟",
             groups: [
-                { id: "anchovy-broth", label: "멸치·다시", desc: "멸치·다시용 정육/건어물" },
+                { id: "anchovy-broth", label: "멸치·다시", desc: "멸치·다시용 건어물" },
                 { id: "dried-shrimp", label: "건새우·건오징어", desc: "건새우·건오징어류" },
-                { id: "dried-sea", label: "기타 정육/건어물", desc: "건조 냉동수산물/공산품" },
-                { id: "dried-gift", label: "선물·세트", desc: "정육/건어물 세트" }
+                { id: "dried-sea", label: "기타 건어물", desc: "건조 수산 건어물" },
+                { id: "dried-gift", label: "선물·세트", desc: "건어물 세트" }
             ]
         },
         {
             id: "frozen",
-            label: "냉동식품/음료수",
+            label: "냉동식품",
             icon: "🧊",
             groups: [
                 { id: "frozen-meat", label: "냉동육", desc: "냉동 육류" },
-                { id: "frozen-sea", label: "냉동수산", desc: "냉동 냉동수산물/공산품" },
+                { id: "frozen-sea", label: "냉동수산", desc: "냉동 수산" },
                 { id: "frozen-meal", label: "냉동간편식", desc: "냉동 간편식" },
-                { id: "frozen-other", label: "기타 냉동", desc: "기타 냉동식품/음료수" }
+                { id: "frozen-other", label: "기타 냉동", desc: "기타 냉동식품" }
             ]
         },
         {
             id: "seafood",
-            label: "냉동수산물/공산품",
+            label: "냉동수산물",
             icon: "🦐",
             groups: [
                 { id: "fish", label: "생선", desc: "생선·회용어류" },
                 { id: "shellfish", label: "조개·굴", desc: "조개류·갑각류" },
                 { id: "processed-sea", label: "수산가공", desc: "어묵·젓갈 등" },
-                { id: "sea-other", label: "기타 수산", desc: "기타 냉동수산물/공산품" }
+                { id: "sea-other", label: "기타 수산", desc: "기타 냉동수산물" }
             ]
         },
         {
             id: "grocery",
-            label: "냉동수산물/공산품",
+            label: "공산품",
             icon: "🛒",
             groups: [
                 { id: "seasoning", label: "조미료·양념", desc: "조미료·양념류" },
                 { id: "grain-noodle", label: "면·곡물", desc: "면·쌀·곡물" },
-                { id: "daily", label: "일용·주방", desc: "일용·주방 냉동수산물/공산품" },
-                { id: "grocery-other", label: "기타 공산", desc: "기타 냉동수산물/공산품" }
+                { id: "daily", label: "일용·주방", desc: "일용·주방 공산품" },
+                { id: "grocery-other", label: "기타 공산", desc: "기타 공산품" }
             ]
         },
         {
             id: "drink",
-            label: "냉동식품/음료수",
+            label: "음료수",
             icon: "🥤",
             groups: [
                 { id: "water-soda", label: "생수·탄산", desc: "생수·탄산음료" },
                 { id: "juice", label: "주스", desc: "과일·야채 주스" },
                 { id: "tea-coffee", label: "차·커피", desc: "차·커피·음료" },
-                { id: "drink-other", label: "기타 음료", desc: "기타 냉동식품/음료수" }
+                { id: "drink-other", label: "기타 음료", desc: "기타 음료수" }
             ]
         }
     ];
@@ -91,19 +91,23 @@
     });
 
     var DEPT_LABEL_TO_ID = {
-        정육/건어물: "jeongyuk",
-        정육/건어물: "driedfish",
-        냉동식품/음료수: "frozen",
+        정육: "jeongyuk",
+        건어물: "driedfish",
+        냉동식품: "frozen",
+        냉동수산물: "seafood",
+        공산품: "grocery",
+        음료수: "drink",
+        "정육/건어물관련": "jeongyuk",
         냉동: "frozen",
-        냉동수산물/공산품: "seafood",
-        냉동수산물/공산품: "grocery",
-        냉동식품/음료수: "drink",
         음료: "drink"
     };
 
     function normalizeDept(v) {
         var raw = String(v || "").trim();
         if (!raw) return "";
+        if (raw === "정육/건어물") return "jeongyuk";
+        if (raw === "냉동식품/음료수") return "frozen";
+        if (raw === "냉동수산물/공산품") return "seafood";
         if (DEPT_LABEL_TO_ID[raw]) return DEPT_LABEL_TO_ID[raw];
         var id = raw.toLowerCase();
         if (LEGACY_DEPT_MAP[id]) id = LEGACY_DEPT_MAP[id];

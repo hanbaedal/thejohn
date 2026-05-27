@@ -5,12 +5,12 @@ const LEGACY_DEPT_MAP = {
 };
 
 const DEPT_LABELS = {
-    jeongyuk: "정육/건어물",
-    driedfish: "정육/건어물",
-    frozen: "냉동식품/음료수",
-    seafood: "냉동수산물/공산품",
-    grocery: "냉동수산물/공산품",
-    drink: "냉동식품/음료수"
+    jeongyuk: "정육",
+    driedfish: "건어물",
+    frozen: "냉동식품",
+    seafood: "냉동수산물",
+    grocery: "공산품",
+    drink: "음료수"
 };
 
 function normalizeDeptId(deptId) {
