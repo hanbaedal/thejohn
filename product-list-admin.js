@@ -85,6 +85,44 @@
         setStatus((filterDept ? deptLabel(filterDept) + " · " : "전체 · ") + items.length + scope);
     }
 
+    function editHref(it) {
+        return (
+            "product-edit.html?id=" + encodeURIComponent(it.id) + "&from=catalog"
+        );
+    }
+
+    function bindDeleteButtons() {
+        if (!listEl || !api || !api.deleteProduct) return;
+        listEl.querySelectorAll("[data-pl-delete]").forEach(function (btn) {
+            btn.addEventListener("click", function () {
+                var id = btn.getAttribute("data-pl-delete");
+                if (!id) return;
+                var name = btn.getAttribute("data-pl-name") || "이 상품";
+                if (
+                    !window.confirm(
+                        "「" + name + "」을(를) 삭제할까요?\n\n삭제 후에는 복구할 수 없습니다."
+                    )
+                ) {
+                    return;
+                }
+                btn.disabled = true;
+                api.deleteProduct(id)
+                    .then(function () {
+                        cachedItems = (cachedItems || []).filter(function (row) {
+                            return row.id !== id;
+                        });
+                        renderList();
+                    })
+                    .catch(function (err) {
+                        btn.disabled = false;
+                        window.alert(
+                            (err && err.message) || "상품을 삭제하지 못했습니다."
+                        );
+                    });
+            });
+        });
+    }
+
     function renderList() {
         if (!listEl) return;
         var items = filteredItems().sort(function (a, b) {
@@ -100,25 +138,35 @@
             '<ul class="vl-admin-list">' +
             items
                 .map(function (it) {
-                    var href =
-                        "product-edit.html?id=" +
-                        encodeURIComponent(it.id) +
-                        "&from=catalog";
+                    var href = editHref(it);
                     var deptTxt = deptLabel(itemDept(it)) || "미지정";
+                    var namePlain = String(it.pd_name || "(이름 없음)");
                     return (
-                        '<li><a class="vl-admin-item" href="' +
+                        '<li class="pl-admin-row">' +
+                        '<a class="pl-admin-row__main" href="' +
                         escapeHtml(href) +
                         '"><span class="vl-admin-name">' +
-                        escapeHtml(it.pd_name || "(이름 없음)") +
+                        escapeHtml(namePlain) +
                         '</span><span class="vl-admin-meta">' +
                         escapeHtml(deptTxt) +
                         (it.pd_size ? " · " + escapeHtml(String(it.pd_size)) : "") +
                         escapeHtml(registrarSuffix(it)) +
-                        "</span></a></li>"
+                        "</span></a>" +
+                        '<div class="pl-admin-row__actions">' +
+                        '<a class="btn" href="' +
+                        escapeHtml(href) +
+                        '">수정</a>' +
+                        '<button type="button" class="btn pl-admin-del" data-pl-delete="' +
+                        escapeHtml(it.id) +
+                        '" data-pl-name="' +
+                        escapeHtml(namePlain) +
+                        '">삭제</button>' +
+                        "</div></li>"
                     );
                 })
                 .join("") +
             "</ul>";
+        bindDeleteButtons();
         updateStatusLine();
     }
 

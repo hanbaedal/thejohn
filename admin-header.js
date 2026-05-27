@@ -19,8 +19,6 @@
             '<div id="productManageSubmenu" class="nav-dropdown-panel" role="menu" aria-label="상품관리 하위 메뉴">' +
             '<a href="product-register.html" class="nav-dropdown-item" role="menuitem">상품 등록</a>' +
             '<a href="product-list-admin.html" class="nav-dropdown-item" role="menuitem">상품 리스트</a>' +
-            '<a href="product-new-register.html" class="nav-dropdown-item" role="menuitem">신규상품 등록</a>' +
-            '<a href="product-new-list.html" class="nav-dropdown-item" role="menuitem">신규상품 리스트</a>' +
             "</div></div>"
         );
     }

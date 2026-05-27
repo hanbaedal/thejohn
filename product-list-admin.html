@@ -16,20 +16,62 @@
     <link rel="stylesheet" href="admin-manage.css">
     <style>
         .vl-admin-list { list-style: none; margin: 0; padding: 0; }
-        .vl-admin-item {
-            display: block;
-            padding: 0.85rem 1rem;
+        .pl-admin-row {
+            display: flex;
+            align-items: center;
+            gap: 0.65rem;
+            padding: 0.75rem 0.85rem;
             border: 1px solid #e0e6ed;
             border-radius: 8px;
             margin-bottom: 0.5rem;
-            text-decoration: none;
-            color: inherit;
             background: #fff;
         }
-        .vl-admin-item:hover { border-color: var(--dz-blue); background: #f8fbff; }
+        .pl-admin-row:hover { border-color: #b8c8dc; background: #f8fbff; }
+        .pl-admin-row__main {
+            flex: 1;
+            min-width: 0;
+            text-decoration: none;
+            color: inherit;
+        }
+        .pl-admin-row__main:hover .vl-admin-name { color: var(--dz-blue); }
         .vl-admin-name { display: block; font-weight: 700; color: #052a4d; margin-bottom: 0.2rem; }
         .vl-admin-meta { font-size: 0.85rem; color: #5a6d7e; }
+        .pl-admin-row__actions {
+            flex: 0 0 auto;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.35rem;
+            justify-content: flex-end;
+        }
+        .pl-admin-row__actions .btn {
+            font-size: 0.82rem;
+            padding: 0.4rem 0.7rem;
+            min-height: 2.25rem;
+            white-space: nowrap;
+        }
+        .pl-admin-del {
+            border-color: #e8b4b4;
+            color: #a12c2c;
+            background: #fff;
+        }
+        .pl-admin-del:hover {
+            background: #fef5f5;
+            border-color: #c44;
+        }
         .vl-status { margin: 0 0 1rem; font-size: 0.85rem; color: #3d5166; min-height: 1.25rem; }
+        @media (max-width: 520px) {
+            .pl-admin-row {
+                flex-wrap: wrap;
+                align-items: flex-start;
+            }
+            .pl-admin-row__actions {
+                width: 100%;
+                justify-content: stretch;
+            }
+            .pl-admin-row__actions .btn {
+                flex: 1 1 calc(50% - 0.2rem);
+            }
+        }
     </style>
     <script src="api-config.js"></script>
     <script src="thejhon-api.js"></script>
