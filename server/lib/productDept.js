@@ -7,14 +7,14 @@ const LEGACY_DEPT_MAP = {
 
 /** 예전 DB·UI 에 한글·영문 혼용 저장된 경우 */
 const DEPT_LABEL_TO_ID = {
-    정육: "jeongyuk",
-    "정육관련": "jeongyuk",
-    건어물: "driedfish",
-    냉동식품: "frozen",
+    정육/건어물: "jeongyuk",
+    "정육/건어물관련": "jeongyuk",
+    정육/건어물: "driedfish",
+    냉동식품/음료수: "frozen",
     냉동: "frozen",
-    수산물: "seafood",
-    공산품: "grocery",
-    음료수: "drink",
+    냉동수산물/공산품: "seafood",
+    냉동수산물/공산품: "grocery",
+    냉동식품/음료수: "drink",
     음료: "drink"
 };
 
