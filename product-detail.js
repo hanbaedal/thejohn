@@ -1,6 +1,5 @@
 (function () {
     var api = window.THEJHON_API;
-    var catalog = window.THEJHON_PRODUCT_CATALOG;
     var root = document.getElementById("pd-root");
 
     function escapeHtml(s) {
@@ -100,12 +99,17 @@
         return "products.html?dept=" + encodeURIComponent(dept);
     }
 
-    function deptLabel(deptId) {
-        if (catalog && catalog.getDept) {
-            var d = catalog.getDept(deptId);
-            if (d && d.label) return d.label;
-        }
-        return deptId || "사업부문";
+    function backLinkHtml(listHref) {
+        return (
+            '<a class="pd-back-link" href="' +
+            escapeHtml(listHref) +
+            '" aria-label="사업부문 목록으로 돌아가기">' +
+            '<span class="pd-back-link__icon" aria-hidden="true">' +
+            '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round">' +
+            "<path d=\"M15 6l-6 6 6 6\"/>" +
+            "</svg></span>" +
+            '<span class="pd-back-link__text">사업부문</span></a>'
+        );
     }
 
     function heroHtml(it) {
@@ -201,7 +205,7 @@
         }
     }
 
-    function renderFeed(items, focusId, listHref, deptName) {
+    function renderFeed(items, focusId, listHref) {
         var focus = items.find(function (it) {
             return it.id === focusId;
         });
@@ -211,21 +215,10 @@
                 ? titlePlain.slice(0, 57) + "… — 더존"
                 : titlePlain + " — 더존";
 
-        var hint =
-            items.length > 1
-                ? deptName +
-                  " 상품 " +
-                  items.length +
-                  "건 · 위·아래로 스크롤해 다른 상품을 볼 수 있습니다."
-                : "";
-
         root.innerHTML =
             '<div class="pd-feed">' +
             '<div class="pd-feed-toolbar">' +
-            '<a class="pd-back-link" href="' +
-            escapeHtml(listHref) +
-            '">← 사업부문 목록</a>' +
-            (hint ? '<p class="pd-feed-hint">' + escapeHtml(hint) + "</p>" : "") +
+            backLinkHtml(listHref) +
             "</div>" +
             '<div class="pd-feed-list" role="feed">' +
             items
@@ -243,7 +236,7 @@
     }
 
     function renderSingle(it) {
-        renderFeed([it], it.id, productsListHref(it), deptLabel(it.pd_dept));
+        renderFeed([it], it.id, productsListHref(it));
     }
 
     function render() {
@@ -293,7 +286,7 @@
                                 it.pd_registered_by_name || row.pd_registered_by_name
                         });
                     });
-                    renderFeed(list, it.id, listHref, deptLabel(dept));
+                    renderFeed(list, it.id, listHref);
                 });
             })
             .catch(function (err) {

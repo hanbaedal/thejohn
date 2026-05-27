@@ -28,17 +28,10 @@
             position: sticky;
             top: 0;
             z-index: 5;
-            padding: 0.5rem 0.65rem;
-            margin-bottom: 0.65rem;
+            padding: 0.35rem 0.5rem 0.5rem;
+            margin-bottom: 0.5rem;
             background: rgba(245, 247, 250, 0.96);
-            border-bottom: 1px solid #e0e6ed;
             backdrop-filter: blur(6px);
-        }
-        .pd-feed-hint {
-            margin: 0.35rem 0 0;
-            font-size: 0.8rem;
-            color: #5a6d7e;
-            line-height: 1.35;
         }
         .pd-feed-list {
             display: flex;
@@ -68,14 +61,34 @@
         .pd-back-link {
             display: inline-flex;
             align-items: center;
-            gap: 0.2rem;
-            color: var(--dz-blue);
-            font-size: 0.9rem;
+            gap: 0.3rem;
+            padding: 0.38rem 0.85rem 0.38rem 0.5rem;
+            border-radius: 999px;
+            border: 1px solid #d4e0ed;
+            background: #fff;
+            color: #1a4a6e;
+            font-size: 0.88rem;
             font-weight: 600;
             text-decoration: none;
-            line-height: 1.35;
+            line-height: 1;
+            box-shadow: 0 1px 4px rgba(10, 77, 156, 0.07);
+            transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
         }
-        .pd-back-link:hover { text-decoration: underline; }
+        .pd-back-link:hover {
+            background: #eef4fc;
+            border-color: var(--dz-blue);
+            color: var(--dz-blue);
+            text-decoration: none;
+        }
+        .pd-back-link__icon {
+            display: flex;
+            flex-shrink: 0;
+            line-height: 0;
+            opacity: 0.85;
+        }
+        .pd-back-link__text {
+            letter-spacing: -0.02em;
+        }
         .pd-main {
             display: flex;
             flex-direction: column;
@@ -226,10 +239,11 @@
                 padding: 0.45rem 0.55rem;
             }
             .pd-back-link {
-                font-size: 0.84rem;
+                font-size: 0.82rem;
+                padding: 0.34rem 0.7rem 0.34rem 0.45rem;
             }
             .pd-feed-toolbar {
-                padding: 0.45rem 0.5rem;
+                padding: 0.3rem 0.4rem 0.45rem;
             }
             .pd-main {
                 gap: 0.55rem;
