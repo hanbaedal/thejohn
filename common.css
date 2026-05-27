@@ -201,9 +201,9 @@ a.site-footer-social__btn:hover {
     align-items: center;
     justify-content: center;
     flex-shrink: 0;
-    width: 2rem;
-    height: 2rem;
-    margin: 0 0.35rem 0 0;
+    width: 2.5rem;
+    height: 2.5rem;
+    margin: 0 0.45rem 0 0;
     padding: 0;
     border: none;
     background: transparent;
