@@ -15,7 +15,7 @@ const SKIP = new Set([
     ".vscode",
     "public"
 ]);
-const EXT = new Set([".html", ".js", ".css"]);
+const EXT = new Set([".html", ".js", ".css", ".json"]);
 const ASSET_EXT = new Set([
     ".png",
     ".jpg",
