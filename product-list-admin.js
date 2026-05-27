@@ -29,8 +29,10 @@
 
     function setStatus(msg, isError) {
         if (!statusEl) return;
-        statusEl.textContent = msg || "";
+        var text = msg || "";
+        statusEl.textContent = text;
         statusEl.style.color = isError ? "#a12c2c" : "#3d5166";
+        statusEl.hidden = !text;
     }
 
     function itemDept(it) {
@@ -72,17 +74,6 @@
     function deptLabel(deptId) {
         if (PF && catalog) return PF.deptLabel(catalog, deptId);
         return deptId || "";
-    }
-
-    function updateStatusLine() {
-        var items = filteredItems();
-        var scope =
-            VA && VA.isSupervisorView && VA.isSupervisorView()
-                ? filterStaff && filterStaff !== "all"
-                    ? "건 (담당 필터)"
-                    : "건 (전체 상품)"
-                : "건 (내 등록 + 담당 미지정)";
-        setStatus((filterDept ? deptLabel(filterDept) + " · " : "전체 · ") + items.length + scope);
     }
 
     function editHref(it) {
@@ -131,7 +122,7 @@
         if (!items.length) {
             listEl.innerHTML =
                 '<p class="am-list-empty">표시할 상품이 없습니다. 사업부문을 바꾸거나 <a href="product-register.html">상품 내용 등록</a>에서 추가해 주세요.</p>';
-            updateStatusLine();
+            setStatus("");
             return;
         }
         listEl.innerHTML =
@@ -167,7 +158,7 @@
                 .join("") +
             "</ul>";
         bindDeleteButtons();
-        updateStatusLine();
+        setStatus("");
     }
 
     function loadErrorHtml(msg) {
