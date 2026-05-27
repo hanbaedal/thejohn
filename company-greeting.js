@@ -8,6 +8,15 @@
   /** 이 문자열을 포함하면 조사를 무조건 '는'으로 (예: 우일푸드) */
   var SUBJECT_FORCE_NEUN = ["우일푸드"];
 
+  /** 상호명 끝에 붙은 조사(은/는) 제거 */
+  function stripTrailingTopicParticle(str) {
+    if (!str || str.length === 0) return "";
+    if (str.endsWith("은") || str.endsWith("는")) {
+      return str.slice(0, -1);
+    }
+    return str;
+  }
+
   /** 마지막 한글 글자의 받침 유무로 '은' / '는' (+ SUBJECT_FORCE_NEUN 예외) */
   function josaEunNeun(str) {
     if (!str || str.length === 0) return "는";
@@ -22,7 +31,7 @@
   }
 
   function run() {
-    var name = COMPANY_GREETING_SUBJECT;
+    var name = stripTrailingTopicParticle(COMPANY_GREETING_SUBJECT);
     var eu = josaEunNeun(name);
 
     var p2 = document.getElementById("companyGreetingPara2");
