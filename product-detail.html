@@ -227,6 +227,21 @@
             color: #5a4a2e;
             line-height: 1.5;
         }
+        .pd-summary .ps-order {
+            margin: 0.5rem 0 0;
+            padding: 0;
+        }
+        .pd-summary .ps-order-actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.4rem;
+        }
+        .pd-summary .ps-order-actions .btn {
+            flex: 1 1 calc(50% - 0.25rem);
+            min-width: 0;
+            font-size: 0.88rem;
+            padding: 0.5rem 0.65rem;
+        }
         @media (max-width: 720px) {
             .page-main--product-detail {
                 padding: 0.45rem 0.55rem 0.85rem;
@@ -318,7 +333,10 @@
     <script src="thejhon-api.js"></script>
     <script src="auth.js"></script>
     <script src="vendor-cart.js"></script>
+    <script src="catalog-order-ui.js"></script>
     <script src="order-ui.js"></script>
+    <link rel="stylesheet" href="vendor-order-modal.css">
+    <script src="vendor-order-modal.js"></script>
     <script src="admin-header.js"></script>
     <script src="nav.js" defer></script>
     <script src="product-detail.js" defer></script>

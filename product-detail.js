@@ -112,6 +112,22 @@
         );
     }
 
+    function orderSectionHtml(it) {
+        var cat = window.THEJHON_CATALOG_ORDER;
+        if (!cat || !cat.renderSection) return "";
+        return cat.renderSection(it);
+    }
+
+    function bindDetailOrders(items) {
+        var cat = window.THEJHON_CATALOG_ORDER;
+        if (!root || !cat || !cat.bind) return;
+        (items || []).forEach(function (it) {
+            if (!it || !it.id) return;
+            var el = document.getElementById("pd-item-" + it.id);
+            if (el) cat.bind(el, it);
+        });
+    }
+
     function heroHtml(it) {
         if (it.pd_image) {
             return (
@@ -160,6 +176,7 @@
             "</div>" +
             specHtml +
             contactBlock(it) +
+            orderSectionHtml(it) +
             '<div class="pd-content">' +
             escapeHtml(it.pd_explain || "") +
             "</div>" +
@@ -229,6 +246,7 @@
             "</div></div>";
 
         loadCoverImages(root);
+        bindDetailOrders(items);
 
         requestAnimationFrame(function () {
             scrollToProduct(focusId);
@@ -283,7 +301,8 @@
                             "per-number": it["per-number"] || row["per-number"],
                             "per-email": it["per-email"] || row["per-email"],
                             pd_registered_by_name:
-                                it.pd_registered_by_name || row.pd_registered_by_name
+                                it.pd_registered_by_name || row.pd_registered_by_name,
+                            pd_registered_by: it.pd_registered_by || row.pd_registered_by
                         });
                     });
                     renderFeed(list, it.id, listHref);
