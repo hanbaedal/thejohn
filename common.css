@@ -836,9 +836,9 @@ a.company-division-card p {
     max-width: 100%;
 }
 .company-org-rail--6 {
-    grid-template-columns: repeat(6, minmax(min-content, 1fr));
+    grid-template-columns: repeat(6, minmax(7rem, 1fr));
     max-width: 100%;
-    min-width: min(100%, 52rem);
+    min-width: 0;
 }
 .company-org-rail--6::before {
     left: 8%;
@@ -880,9 +880,10 @@ a.company-org-node {
     justify-content: center;
     box-sizing: border-box;
     min-height: 3.25rem;
-    width: max-content;
+    width: 100%;
+    min-width: 0;
     max-width: 100%;
-    padding: 0.55rem 0.65rem;
+    padding: 0.55rem 0.5rem;
     text-align: center;
     text-decoration: none;
     white-space: nowrap;
@@ -907,11 +908,57 @@ a.company-org-node:focus-visible {
     outline: 2px solid var(--dz-blue);
     outline-offset: 2px;
 }
+
+/* 회사소개 조직도: 태블릿·스마트폰 — 2열, 가독성·터치 여유 */
+@media (max-width: 768px) {
+    .company-org .company-org-chart {
+        align-items: stretch;
+        width: 100%;
+        max-width: 100%;
+        padding: 0 0.65rem 1rem;
+        overflow-x: visible;
+    }
+    .company-org .company-org-root {
+        font-size: 1.05rem;
+        padding: 0.72rem 1.4rem;
+        border-radius: 9px;
+    }
+    .company-org .company-org-stem {
+        height: 1rem;
+    }
+    .company-org .company-org-rail.company-org-rail--6 {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 0.75rem 0.65rem;
+        width: 100%;
+        max-width: 100%;
+        min-width: 0;
+    }
+    .company-org .company-org-rail::before {
+        display: none;
+    }
+    .company-org .company-org-rail > li::before {
+        display: none;
+    }
+    .company-org .company-org-rail > li {
+        padding-top: 0;
+        min-width: 0;
+    }
+    .company-org a.company-org-node {
+        font-size: clamp(0.9rem, 3.9vw, 1.05rem);
+        font-weight: 700;
+        min-height: 3.55rem;
+        padding: 0.75rem 0.4rem;
+        line-height: 1.35;
+        border-radius: 10px;
+        border-width: 2px;
+    }
+}
+
 @media (max-width: 900px) {
     .company-org-rail--6 {
-        grid-template-columns: repeat(3, minmax(min-content, 1fr));
+        grid-template-columns: repeat(3, minmax(7rem, 1fr));
         max-width: 100%;
-        min-width: min(100%, 28rem);
+        min-width: 0;
     }
 }
 @media (max-width: 640px) {
@@ -922,12 +969,11 @@ a.company-org-node:focus-visible {
 }
 @media (max-width: 520px) {
     .company-org-rail,
-    .company-org-rail--5,
-    .company-org-rail--6 {
-        grid-template-columns: repeat(2, minmax(min-content, 1fr));
+    .company-org-rail--5 {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
         gap: 0.65rem 0.5rem;
         max-width: 100%;
-        min-width: min(100%, 20rem);
+        min-width: 0;
     }
     .company-org-rail::before {
         display: none;
@@ -940,10 +986,6 @@ a.company-org-node:focus-visible {
     }
     .company-org-stem {
         height: 0.85rem;
-    }
-    a.company-org-node {
-        font-size: clamp(0.62rem, 3.1vw, 0.8rem);
-        padding: 0.5rem 0.45rem;
     }
 }
 
