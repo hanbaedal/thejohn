@@ -152,6 +152,22 @@
             color: #3d556d;
             line-height: 1.45;
         }
+        .pd-contact {
+            margin: 0.35rem 0 0;
+            padding: 0.55rem 0.65rem;
+            background: #f4f8fc;
+            border: 1px solid #e0e8f2;
+            border-radius: 8px;
+            display: grid;
+            grid-template-columns: 4.25rem minmax(0, 1fr);
+            gap: 0.3rem 0.55rem;
+            font-size: 0.92rem;
+        }
+        .pd-contact dt { margin: 0; font-weight: 700; color: #2a4a5e; }
+        .pd-contact dd { margin: 0; color: #3d5166; }
+        .pd-contact a { color: var(--dz-blue); text-decoration: none; font-weight: 600; }
+        .pd-contact a:hover { text-decoration: underline; }
+        .pd-contact-empty { color: #8a9bab; }
         .pd-content {
             margin: 0;
             font-size: 0.95rem;
@@ -164,19 +180,6 @@
             padding: 0 1rem 1.2rem;
             border-top: 1px solid #e8edf2;
         }
-        .pd-contact {
-            margin: 0.85rem 0 0;
-            padding-top: 0.75rem;
-            border-top: 1px solid #e8edf2;
-            display: grid;
-            grid-template-columns: 5.5rem minmax(0, 1fr);
-            gap: 0.35rem 0.75rem;
-            font-size: 0.92rem;
-        }
-        .pd-contact dt { margin: 0; font-weight: 700; color: #2a4a5e; }
-        .pd-contact dd { margin: 0; color: #3d5166; }
-        .pd-contact a { color: var(--dz-blue); text-decoration: none; }
-        .pd-contact a:hover { text-decoration: underline; }
         .pd-price-masked {
             font-size: 1rem;
             font-weight: 600;
@@ -257,6 +260,11 @@
             .pd-spec {
                 font-size: 0.84rem;
                 line-height: 1.4;
+            }
+            .pd-contact {
+                font-size: 0.84rem;
+                padding: 0.45rem 0.55rem;
+                grid-template-columns: 3.6rem minmax(0, 1fr);
             }
             .pd-content {
                 font-size: 0.86rem;

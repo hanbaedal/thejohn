@@ -8,8 +8,10 @@ const {
     toDbDoc,
     validateBuilt,
     findDuplicateProductByName,
+    applyStaffContactFallback,
     F
 } = require("../lib/productFields");
+const { findStaffByLoginId } = require("../lib/loginResolve");
 const {
     canWriteProduct,
     buildProductListQuery,
@@ -67,6 +69,33 @@ async function resolveVendorForAuth(auth) {
     return findVendorByLoginId(auth.userId || "");
 }
 
+function contactNeedsStaffFallback(item) {
+    if (!item) return false;
+    const reg = String(item.pd_registered_by || "").trim();
+    if (!reg) return false;
+    return (
+        !String(item.per_name || "").trim() ||
+        !String(item["per-number"] || "").trim()
+    );
+}
+
+async function enrichProductsContact(rows) {
+    const staffCache = Object.create(null);
+    const out = [];
+    for (const row of rows || []) {
+        if (!contactNeedsStaffFallback(row)) {
+            out.push(row);
+            continue;
+        }
+        const key = String(row.pd_registered_by || "").trim();
+        if (!staffCache[key]) {
+            staffCache[key] = await findStaffByLoginId(key);
+        }
+        out.push(applyStaffContactFallback(row, staffCache[key]));
+    }
+    return out;
+}
+
 router.get("/", async (req, res) => {
     try {
         if (!isDbReady()) {
@@ -97,9 +126,10 @@ router.get("/", async (req, res) => {
                 console.error("GET /api/products map", doc && doc.id, mapErr.message);
             }
         }
+        const enriched = await enrichProductsContact(rows);
         const payload = {
             ok: true,
-            items: rows,
+            items: enriched,
             dept: req.query.dept ? normalizeDept(req.query.dept) : "",
             scope:
                 auth && auth.role === "vendor"
@@ -189,13 +219,17 @@ router.get("/:id", async (req, res) => {
         if (auth && auth.role === "vendor" && !vendorCanAccessProduct(vendorDoc, doc, auth)) {
             return res.status(404).json({ ok: false, error: "상품을 찾을 수 없습니다." });
         }
-        const item = toPublic(doc);
+        let item = toPublic(doc);
         const img = String(item.pd_image || "");
         if (img.length > 400 || /^data:/i.test(img)) {
             item.pd_has_image = true;
             item.pd_image = "";
         } else {
             item.pd_has_image = !!img;
+        }
+        if (contactNeedsStaffFallback(item)) {
+            const staff = await findStaffByLoginId(String(item.pd_registered_by || "").trim());
+            item = applyStaffContactFallback(item, staff);
         }
         res.json({ ok: true, item: item });
     } catch (e) {

@@ -141,9 +141,34 @@ function toPublicListItem(doc) {
         pd_registered_by: str(d[F.registeredBy] || d.pd_registered_by),
         pd_registered_by_name: str(d[F.registeredByName] || d.pd_registered_by_name),
         pd_registered_at: toNum(d[F.registeredAt] || d.pd_registered_at),
+        per_name: str(d[F.personName] || d.per_name),
+        "per-number": str(d[F.personPhone] || d["per-number"]),
+        "per-email": str(d[F.personEmail] || d["per-email"]),
         createdAt: toNum(d.createdAt),
         updatedAt: toNum(d.updatedAt)
     };
+}
+
+/** 상품 담당자 비어 있을 때 등록 관리자(staff) 연락처로 보강 */
+function applyStaffContactFallback(item, staffDoc) {
+    if (!item) return item;
+    const out = Object.assign({}, item);
+    if (!staffDoc) return out;
+    const d = staffDoc;
+    const ceo = str(d.st_ceo || d.name || d.ceo);
+    const ceoTel = str(d.st_ceo_tel || d.ceoPhone);
+    const phone = str(d.st_phone || d.phone);
+    const email = str(d.st_email || d.email);
+    if (!str(out.per_name)) {
+        out.per_name = ceo || str(out.pd_registered_by_name);
+    }
+    if (!str(out["per-number"])) {
+        out["per-number"] = ceoTel || phone;
+    }
+    if (!str(out["per-email"])) {
+        out["per-email"] = email;
+    }
+    return out;
 }
 
 function toPublic(doc) {
@@ -386,5 +411,6 @@ module.exports = {
     findDuplicateProductByName,
     migrateProductsCollection,
     fromLegacyDoc,
-    readPricesFromDoc
+    readPricesFromDoc,
+    applyStaffContactFallback
 };

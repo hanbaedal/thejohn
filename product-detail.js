@@ -28,29 +28,54 @@
         return '<p class="pd-price pd-price-masked">가격: 전화 문의</p>';
     }
 
+    function strField(v) {
+        return String(v || "").trim();
+    }
+
+    function contactName(it) {
+        return strField(it.per_name) || strField(it.pd_registered_by_name);
+    }
+
+    function contactPhone(it) {
+        return strField(it["per-number"]);
+    }
+
     function contactBlock(it) {
-        var rows = [];
-        if (it.per_name) rows.push("<dt>담당자</dt><dd>" + escapeHtml(it.per_name) + "</dd>");
-        if (it["per-number"]) {
-            rows.push(
-                '<dt>전화</dt><dd><a class="footer-tel" href="tel:' +
-                    escapeHtml(String(it["per-number"]).replace(/\s/g, "")) +
-                    '">' +
-                    escapeHtml(it["per-number"]) +
-                    "</a></dd>"
-            );
+        var name = contactName(it);
+        var phone = contactPhone(it);
+        var email = strField(it["per-email"]);
+        var nameDd = name ? escapeHtml(name) : '<span class="pd-contact-empty">—</span>';
+        var phoneDd;
+        if (phone) {
+            phoneDd =
+                '<a class="footer-tel" href="tel:' +
+                escapeHtml(phone.replace(/\s/g, "")) +
+                '">' +
+                escapeHtml(phone) +
+                "</a>";
+        } else {
+            phoneDd = '<span class="pd-contact-empty">—</span>';
         }
-        if (it["per-email"]) {
-            rows.push(
-                '<dt>이메일</dt><dd><a href="mailto:' +
-                    escapeHtml(it["per-email"]) +
-                    '">' +
-                    escapeHtml(it["per-email"]) +
-                    "</a></dd>"
-            );
+        var emailRow = "";
+        if (email) {
+            emailRow =
+                "<dt>이메일</dt><dd><a href=\"mailto:" +
+                escapeHtml(email) +
+                '">' +
+                escapeHtml(email) +
+                "</a></dd>";
         }
-        if (!rows.length) return "";
-        return '<dl class="pd-contact">' + rows.join("") + "</dl>";
+        return (
+            '<dl class="pd-contact">' +
+            "<dt>담당자</dt><dd>" +
+            nameDd +
+            "</dd>" +
+            "<dt>연락처</dt><dd>" +
+            phoneDd +
+            "</dd>" +
+            emailRow +
+            "</dl>"
+        );
     }
 
     function getIdFromQuery() {
@@ -130,13 +155,11 @@
             priceBlock(it) +
             "</div>" +
             specHtml +
+            contactBlock(it) +
             '<div class="pd-content">' +
             escapeHtml(it.pd_explain || "") +
             "</div>" +
-            "</div></div>" +
-            '<div class="pd-below">' +
-            contactBlock(it) +
-            "</div></article>"
+            "</div></div></article>"
         );
     }
 
@@ -260,6 +283,16 @@
                         return row.id === it.id;
                     });
                     if (!found) list.unshift(it);
+                    list = list.map(function (row) {
+                        if (row.id !== it.id) return row;
+                        return Object.assign({}, row, {
+                            per_name: it.per_name || row.per_name,
+                            "per-number": it["per-number"] || row["per-number"],
+                            "per-email": it["per-email"] || row["per-email"],
+                            pd_registered_by_name:
+                                it.pd_registered_by_name || row.pd_registered_by_name
+                        });
+                    });
                     renderFeed(list, it.id, listHref, deptLabel(dept));
                 });
             })
