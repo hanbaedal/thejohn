@@ -46,6 +46,45 @@ function stripHtml(s) {
         .trim();
 }
 
+function headers() {
+    return {
+        "X-Naver-Client-Id": String(process.env.NAVER_SEARCH_CLIENT_ID || "").trim(),
+        "X-Naver-Client-Secret": String(process.env.NAVER_SEARCH_CLIENT_SECRET || "").trim()
+    };
+}
+
+async function fetchNaverSearch(endpoint, query, display) {
+    var url =
+        "https://openapi.naver.com/v1/search/" +
+        endpoint +
+        ".json?display=" +
+        String(display || 10) +
+        "&query=" +
+        encodeURIComponent(String(query || ""));
+    var controller = new AbortController();
+    var timer = setTimeout(function () {
+        controller.abort();
+    }, 7000);
+    try {
+        var res = await fetch(url, {
+            method: "GET",
+            headers: headers(),
+            signal: controller.signal
+        });
+        if (!res.ok) {
+            var body = "";
+            try {
+                body = await res.text();
+            } catch (e) {}
+            throw new Error("NAVER_" + endpoint.toUpperCase() + "_" + res.status + (body ? ": " + body : ""));
+        }
+        var json = await res.json();
+        return Array.isArray(json && json.items) ? json.items : [];
+    } finally {
+        clearTimeout(timer);
+    }
+}
+
 async function fetchNaverLocal(built) {
     if (!canUseNaver()) return null;
     var company = String(built.vn_company || "").trim();
@@ -53,25 +92,8 @@ async function fetchNaverLocal(built) {
 
     var query = company;
     if (built.vn_addr) query += " " + String(built.vn_addr || "").trim();
-    var url =
-        "https://openapi.naver.com/v1/search/local.json?display=5&query=" +
-        encodeURIComponent(query);
-    var controller = new AbortController();
-    var timer = setTimeout(function () {
-        controller.abort();
-    }, 5000);
     try {
-        var res = await fetch(url, {
-            method: "GET",
-            headers: {
-                "X-Naver-Client-Id": String(process.env.NAVER_SEARCH_CLIENT_ID || "").trim(),
-                "X-Naver-Client-Secret": String(process.env.NAVER_SEARCH_CLIENT_SECRET || "").trim()
-            },
-            signal: controller.signal
-        });
-        if (!res.ok) return null;
-        var json = await res.json();
-        var items = Array.isArray(json && json.items) ? json.items : [];
+        var items = await fetchNaverSearch("local", query, 5);
         if (!items.length) return null;
         var best = null;
         var bestScore = -1;
@@ -97,8 +119,6 @@ async function fetchNaverLocal(built) {
         return out;
     } catch (e) {
         return null;
-    } finally {
-        clearTimeout(timer);
     }
 }
 
@@ -112,48 +132,63 @@ async function searchFuneralHallsByCity(city) {
     if (!canUseNaver()) return { items: [], configured: false };
     var c = String(city || "").trim();
     if (!c) return { items: [], configured: true };
-    var query = c + " 장례식장";
-    var url =
-        "https://openapi.naver.com/v1/search/local.json?display=30&query=" +
-        encodeURIComponent(query);
-    var controller = new AbortController();
-    var timer = setTimeout(function () {
-        controller.abort();
-    }, 7000);
-    try {
-        var res = await fetch(url, {
-            method: "GET",
-            headers: {
-                "X-Naver-Client-Id": String(process.env.NAVER_SEARCH_CLIENT_ID || "").trim(),
-                "X-Naver-Client-Secret": String(process.env.NAVER_SEARCH_CLIENT_SECRET || "").trim()
-            },
-            signal: controller.signal
+    var queries = [c + " 장례식장", c + " 장례", c + " 장례문화원"];
+    var out = [];
+    var seen = new Set();
+    var lastErr = "";
+
+    function pushLocalItem(it) {
+        var name = stripHtml(it.title || "");
+        if (!name) return;
+        var key = normText(name);
+        if (seen.has(key)) return;
+        seen.add(key);
+        out.push({
+            vn_company: name,
+            vn_phone: String(it.telephone || "").trim(),
+            vn_addr: String(it.roadAddress || it.address || "").trim(),
+            vn_web: String(it.link || "").trim(),
+            vn_record_type: "new",
+            source: "naver_local"
         });
-        if (!res.ok) return { items: [], configured: true };
-        var json = await res.json();
-        var rawItems = Array.isArray(json && json.items) ? json.items : [];
-        var out = [];
-        var seen = new Set();
-        for (var i = 0; i < rawItems.length; i++) {
-            var it = rawItems[i] || {};
-            var name = stripHtml(it.title || "");
-            if (!name) continue;
-            var key = normText(name);
-            if (seen.has(key)) continue;
-            seen.add(key);
-            out.push({
-                vn_company: name,
-                vn_phone: String(it.telephone || "").trim(),
-                vn_addr: String(it.roadAddress || it.address || "").trim(),
-                vn_web: String(it.link || "").trim(),
-                vn_record_type: "new"
-            });
+    }
+
+    function pushWebItem(it) {
+        var title = stripHtml(it.title || "");
+        if (!title || title.indexOf("장례") < 0) return;
+        var name = title
+            .replace(/\s*\|\s*.*$/, "")
+            .replace(/\s*-\s*.*$/, "")
+            .trim();
+        if (!name) return;
+        var key = normText(name);
+        if (seen.has(key)) return;
+        seen.add(key);
+        out.push({
+            vn_company: name,
+            vn_phone: "",
+            vn_addr: "",
+            vn_web: String(it.link || "").trim(),
+            vn_record_type: "new",
+            source: "naver_web"
+        });
+    }
+
+    try {
+        for (var q = 0; q < queries.length; q++) {
+            var rawLocal = await fetchNaverSearch("local", queries[q], 30);
+            for (var i = 0; i < rawLocal.length; i++) {
+                pushLocalItem(rawLocal[i] || {});
+            }
+            var rawWeb = await fetchNaverSearch("webkr", queries[q], 30);
+            for (var w = 0; w < rawWeb.length; w++) {
+                pushWebItem(rawWeb[w] || {});
+            }
         }
-        return { items: out, configured: true };
+        return { items: out, configured: true, lastErr: "" };
     } catch (e) {
-        return { items: [], configured: true };
-    } finally {
-        clearTimeout(timer);
+        lastErr = String((e && e.message) || "NAVER_LOCAL_UNKNOWN");
+        return { items: [], configured: true, lastErr: lastErr };
     }
 }
 

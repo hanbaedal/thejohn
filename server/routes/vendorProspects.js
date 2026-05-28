@@ -131,6 +131,14 @@ router.get("/search-funeral-halls", requireRole("admin"), async function (req, r
                 error: "네이버 조회 키가 설정되지 않았습니다."
             });
         }
+        if (!Array.isArray(found.items) || !found.items.length) {
+            return res.status(404).json({
+                ok: false,
+                error:
+                    "조회 결과가 없습니다. 도시명을 줄여서 입력하거나(예: 서울, 창원), 네이버 API 권한/쿼터를 확인해 주세요.",
+                hint: found.lastErr ? "debug: " + found.lastErr : ""
+            });
+        }
         res.json({ ok: true, items: found.items || [], city: city });
     } catch (e) {
         console.error("GET /api/vendor-prospects/search-funeral-halls", e);
