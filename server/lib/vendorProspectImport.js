@@ -2,17 +2,17 @@ const { F, buildFromBody, parseGrade } = require("./vendorFields");
 
 const MAX_IMPORT_ROWS = 500;
 
-/** 엑셀 1행 헤더 → 필드 키 (공백·대소문자 무시) */
+/** 엑셀 1행 헤더 → 필드 키 (긴 이름 우선 — 대표자연락처 ≠ 대표자) */
 const HEADER_ALIASES = [
     { field: "vn_company", keys: ["업체명", "업체이름", "업체명칭", "상호", "회사명", "company", "vn_company", "companyname"] },
-    { field: "vn_ceo", keys: ["대표자", "대표자명", "대표", "ceo", "vn_ceo", "대표자이름"] },
     { field: "vn_ceo_tel", keys: ["대표자연락처", "대표연락처", "대표자전화", "대표자휴대폰", "대표전화", "ceotel", "vn_ceo_tel", "ceo_phone", "대표자연락"] },
+    { field: "vn_ceo", keys: ["대표자", "대표자명", "대표", "ceo", "vn_ceo", "대표자이름"] },
     { field: "vn_web", keys: ["홈페이지", "웹사이트", "website", "web", "vn_web", "url", "홈페이지주소"] },
     { field: "vn_email", keys: ["이메일", "회사이메일", "email", "vn_email", "메일", "e-mail"] },
-    { field: "vn_phone", keys: ["회사전화", "전화", "전화번호", "phone", "vn_phone", "회사전화번호", "대표전화"] },
+    { field: "vn_phone", keys: ["회사전화", "전화번호", "phone", "vn_phone", "회사전화번호"] },
     { field: "vn_addr", keys: ["회사주소", "주소", "address", "addr", "vn_addr", "소재지"] },
-    { field: "vn_mgr_name", keys: ["담당자", "담당자명", "담당자이름", "manager", "vn_mgr_name", "mgr_name"] },
     { field: "vn_mgr_tel", keys: ["담당자연락처", "담당자전화", "담당자휴대폰", "managerphone", "vn_mgr_tel", "mgr_tel", "담당자연락"] },
+    { field: "vn_mgr_name", keys: ["담당자", "담당자명", "담당자이름", "manager", "vn_mgr_name", "mgr_name"] },
     { field: "vn_mgr_email", keys: ["담당자이메일", "담당자메일", "mgr_email", "vn_mgr_email", "manageremail"] },
     { field: "vn_note", keys: ["회사상황", "비고", "메모", "note", "vn_note", "설명", "특이사항"] },
     { field: "vn_grade", keys: ["업체등급", "등급", "grade", "vn_grade"] },
@@ -30,16 +30,56 @@ function normalizeHeaderLabel(h) {
 function matchHeaderToField(label) {
     const norm = normalizeHeaderLabel(label);
     if (!norm) return "";
+    let bestField = "";
+    let bestLen = 0;
     for (let i = 0; i < HEADER_ALIASES.length; i++) {
         const entry = HEADER_ALIASES[i];
         for (let j = 0; j < entry.keys.length; j++) {
             const keyNorm = normalizeHeaderLabel(entry.keys[j]);
-            if (norm === keyNorm || norm.indexOf(keyNorm) >= 0 || keyNorm.indexOf(norm) >= 0) {
-                return entry.field;
+            if (!keyNorm) continue;
+            let matched = false;
+            if (norm === keyNorm) matched = true;
+            else if (keyNorm.length >= 2 && norm.indexOf(keyNorm) >= 0) matched = true;
+            else if (norm.length >= 2 && keyNorm.indexOf(norm) >= 0) matched = true;
+            if (matched && keyNorm.length > bestLen) {
+                bestLen = keyNorm.length;
+                bestField = entry.field;
             }
         }
     }
-    return "";
+    return bestField;
+}
+
+function looksLikePhone(s) {
+    const t = String(s || "").replace(/\s/g, "");
+    if (!t || /@/.test(t)) return false;
+    const digits = t.replace(/\D/g, "");
+    return digits.length >= 8 && /^[\d\-().+]+$/.test(t);
+}
+
+function looksLikeEmail(s) {
+    return /@/.test(String(s || ""));
+}
+
+function normalizeImportRow(obj) {
+    if (!obj) return obj;
+    if (obj.vn_ceo && looksLikePhone(obj.vn_ceo) && !obj.vn_ceo_tel) {
+        obj.vn_ceo_tel = obj.vn_ceo;
+        obj.vn_ceo = "";
+    }
+    if (obj.vn_ceo && looksLikeEmail(obj.vn_ceo) && !obj.vn_email) {
+        obj.vn_email = obj.vn_ceo;
+        obj.vn_ceo = "";
+    }
+    if (obj.vn_mgr_name && looksLikePhone(obj.vn_mgr_name) && !obj.vn_mgr_tel) {
+        obj.vn_mgr_tel = obj.vn_mgr_name;
+        obj.vn_mgr_name = "";
+    }
+    if (obj.vn_mgr_name && looksLikeEmail(obj.vn_mgr_name) && !obj.vn_mgr_email) {
+        obj.vn_mgr_email = obj.vn_mgr_name;
+        obj.vn_mgr_name = "";
+    }
+    return obj;
 }
 
 function mapHeaders(headerRow) {
@@ -103,7 +143,7 @@ function rowsFromSheetMatrix(matrix) {
                 }
             }
         });
-        if (any && obj.vn_company) rows.push(obj);
+        if (any && obj.vn_company) rows.push(normalizeImportRow(obj));
     }
     if (!rows.length) {
         return { rows: [], error: "저장할 업체 행이 없습니다. 업체명이 비어 있지 않은지 확인해 주세요." };
@@ -165,5 +205,6 @@ module.exports = {
     validateImportRow,
     toImportDbDoc,
     normalizeHeaderLabel,
-    matchHeaderToField
+    matchHeaderToField,
+    normalizeImportRow
 };

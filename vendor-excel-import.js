@@ -3,6 +3,7 @@
  */
 (function () {
     var api = window.THEJHON_API;
+    var MAP = window.THEJHON_EXCEL_IMPORT_MAP;
     var fileInput = document.getElementById("vei-file");
     var statusEl = document.getElementById("vei-status");
     var previewWrap = document.getElementById("vei-preview-wrap");
@@ -25,10 +26,7 @@
         vn_addr: "회사주소",
         vn_mgr_name: "담당자",
         vn_mgr_tel: "담당자연락처",
-        vn_mgr_email: "담당자이메일",
-        vn_note: "비고",
-        vn_grade: "등급",
-        vn_depts: "사업부문"
+        vn_mgr_email: "담당자이메일"
     };
 
     var PREVIEW_FIELDS = [
@@ -57,45 +55,6 @@
         if (resultEl) resultEl.innerHTML = "";
     }
 
-    function normalizeHeaderLabel(h) {
-        return String(h || "")
-            .trim()
-            .replace(/\s+/g, "")
-            .toLowerCase()
-            .replace(/[^a-z0-9가-힣_]/g, "");
-    }
-
-    var HEADER_ALIASES = [
-        { field: "vn_company", keys: ["업체명", "업체이름", "업체명칭", "상호", "회사명", "company"] },
-        { field: "vn_ceo", keys: ["대표자", "대표자명", "대표", "ceo"] },
-        { field: "vn_ceo_tel", keys: ["대표자연락처", "대표연락처", "대표자전화", "대표전화"] },
-        { field: "vn_web", keys: ["홈페이지", "웹사이트", "website", "web"] },
-        { field: "vn_email", keys: ["이메일", "회사이메일", "email"] },
-        { field: "vn_phone", keys: ["회사전화", "전화", "전화번호", "phone"] },
-        { field: "vn_addr", keys: ["회사주소", "주소", "address"] },
-        { field: "vn_mgr_name", keys: ["담당자", "담당자명", "manager"] },
-        { field: "vn_mgr_tel", keys: ["담당자연락처", "담당자전화"] },
-        { field: "vn_mgr_email", keys: ["담당자이메일", "담당자메일"] },
-        { field: "vn_note", keys: ["회사상황", "비고", "메모", "note"] },
-        { field: "vn_grade", keys: ["업체등급", "등급", "grade"] },
-        { field: "vn_depts", keys: ["사업부문", "부문"] }
-    ];
-
-    function matchHeaderToField(label) {
-        var norm = normalizeHeaderLabel(label);
-        if (!norm) return "";
-        for (var i = 0; i < HEADER_ALIASES.length; i++) {
-            var entry = HEADER_ALIASES[i];
-            for (var j = 0; j < entry.keys.length; j++) {
-                var keyNorm = normalizeHeaderLabel(entry.keys[j]);
-                if (norm === keyNorm || norm.indexOf(keyNorm) >= 0 || keyNorm.indexOf(norm) >= 0) {
-                    return entry.field;
-                }
-            }
-        }
-        return "";
-    }
-
     function cellStr(v) {
         if (v == null) return "";
         if (typeof v === "number" && isFinite(v)) return String(v);
@@ -108,6 +67,14 @@
         return s.split(/[,，、/|]/).map(function (p) {
             return p.trim();
         }).filter(Boolean);
+    }
+
+    function matchHeaderToField(label) {
+        return MAP && MAP.matchHeaderToField ? MAP.matchHeaderToField(label) : "";
+    }
+
+    function normalizeImportRow(obj) {
+        return MAP && MAP.normalizeImportRow ? MAP.normalizeImportRow(obj) : obj;
     }
 
     function matrixToRows(matrix) {
@@ -127,7 +94,7 @@
         if (!hasCompany) {
             return {
                 rows: [],
-                error: "「업체명」 또는 「업체이름」 열을 찾을 수 없습니다. 첫 줄에 헤더를 넣어 주세요."
+                error: "「업체명」 열을 찾을 수 없습니다. 첫 줄에 헤더를 넣어 주세요."
             };
         }
 
@@ -151,7 +118,7 @@
                     }
                 }
             }
-            if (any && obj.vn_company) rows.push(obj);
+            if (any && obj.vn_company) rows.push(normalizeImportRow(obj));
         }
         if (!rows.length) {
             return { rows: [], error: "저장할 업체 행이 없습니다. 업체명이 비어 있지 않은지 확인해 주세요." };
@@ -162,9 +129,37 @@
         return { rows: rows, error: "" };
     }
 
+    function escapeHtml(s) {
+        return String(s || "")
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;");
+    }
+
+    function escapeAttr(s) {
+        return escapeHtml(s).replace(/'/g, "&#39;");
+    }
+
+    function syncRowFromTr(tr, rowIndex) {
+        if (!parsedRows[rowIndex] || !tr) return;
+        PREVIEW_FIELDS.forEach(function (f) {
+            var inp = tr.querySelector('input[data-field="' + f + '"]');
+            if (inp) parsedRows[rowIndex][f] = inp.value.trim();
+        });
+        parsedRows[rowIndex] = normalizeImportRow(parsedRows[rowIndex]);
+    }
+
+    function syncAllRowsFromPreview() {
+        if (!previewBody) return;
+        var trs = previewBody.querySelectorAll("tr");
+        for (var i = 0; i < trs.length; i++) syncRowFromTr(trs[i], i);
+    }
+
     function renderPreview(rows) {
         if (!previewWrap || !previewHead || !previewBody) return;
-        if (!rows.length) {
+        parsedRows = rows || [];
+        if (!parsedRows.length) {
             previewWrap.hidden = true;
             if (previewCount) previewCount.textContent = "";
             return;
@@ -173,39 +168,46 @@
         previewHead.innerHTML =
             "<tr>" +
             PREVIEW_FIELDS.map(function (f) {
-                return "<th>" + (COL_LABELS[f] || f) + "</th>";
+                return "<th>" + escapeHtml(COL_LABELS[f] || f) + "</th>";
             }).join("") +
             "</tr>";
-        var show = rows.slice(0, 30);
-        previewBody.innerHTML = show
+        previewBody.innerHTML = parsedRows
             .map(function (row, i) {
                 return (
-                    "<tr>" +
+                    "<tr data-row-index=\"" +
+                    i +
+                    "\">" +
                     PREVIEW_FIELDS.map(function (f) {
-                        var v = row[f];
-                        if (f === "vn_depts" && Array.isArray(v)) v = v.join(", ");
-                        return "<td>" + escapeHtml(v || "") + "</td>";
+                        var v = row[f] || "";
+                        return (
+                            '<td><input type="text" class="vei-cell-input" data-field="' +
+                            escapeAttr(f) +
+                            '" value="' +
+                            escapeAttr(v) +
+                            '" aria-label="' +
+                            escapeAttr(COL_LABELS[f] || f) +
+                            '"></td>'
+                        );
                     }).join("") +
                     "</tr>"
                 );
             })
             .join("");
+
+        previewBody.querySelectorAll(".vei-cell-input").forEach(function (inp) {
+            inp.addEventListener("change", function () {
+                var tr = inp.closest("tr");
+                var idx = tr ? parseInt(tr.getAttribute("data-row-index"), 10) : -1;
+                if (idx >= 0) syncRowFromTr(tr, idx);
+            });
+        });
+
         if (previewCount) {
             previewCount.textContent =
                 "총 " +
-                rows.length +
-                "건" +
-                (rows.length > 30 ? " (앞 30건만 미리보기)" : "") +
-                " — 저장 시 vendor_prospects(신규업체)에 등록됩니다.";
+                parsedRows.length +
+                "건 — 아래 표에서 직접 수정한 뒤 저장할 수 있습니다.";
         }
-    }
-
-    function escapeHtml(s) {
-        return String(s || "")
-            .replace(/&/g, "&amp;")
-            .replace(/</g, "&lt;")
-            .replace(/>/g, "&gt;")
-            .replace(/"/g, "&quot;");
     }
 
     function resetPreview() {
@@ -247,10 +249,9 @@
                     if (importBtn) importBtn.disabled = true;
                     return;
                 }
-                parsedRows = parsed.rows;
-                renderPreview(parsedRows);
+                renderPreview(parsed.rows);
                 if (importBtn) importBtn.disabled = false;
-                setStatus("파일을 읽었습니다. 내용을 확인한 뒤 저장을 눌러 주세요.", "ok");
+                setStatus("열 매핑을 확인해 주세요. 필요하면 표에서 수정한 뒤 저장하세요.", "ok");
             } catch (err) {
                 parsedRows = [];
                 renderPreview([]);
@@ -291,6 +292,7 @@
 
     if (importBtn) {
         importBtn.addEventListener("click", function () {
+            syncAllRowsFromPreview();
             if (!parsedRows.length) {
                 setStatus("먼저 엑셀 파일을 선택해 주세요.", "error");
                 return;
@@ -299,10 +301,17 @@
                 setStatus("API를 사용할 수 없습니다.", "error");
                 return;
             }
+            var payload = parsedRows.filter(function (r) {
+                return r && String(r.vn_company || "").trim();
+            });
+            if (!payload.length) {
+                setStatus("업체명이 있는 행이 없습니다.", "error");
+                return;
+            }
             importBtn.disabled = true;
-            setStatus("저장 중… (" + parsedRows.length + "건)");
+            setStatus("저장 중… (" + payload.length + "건)");
             clearResult();
-            api.importVendorProspects(parsedRows)
+            api.importVendorProspects(payload)
                 .then(function (res) {
                     var inserted = (res && res.inserted) || 0;
                     var failed = (res && res.failed) || 0;
@@ -332,9 +341,7 @@
                         resultEl.innerHTML = html;
                     }
                     if (inserted > 0) {
-                        parsedRows = [];
-                        if (fileInput) fileInput.value = "";
-                        renderPreview([]);
+                        resetPreview();
                     }
                 })
                 .catch(function (err) {

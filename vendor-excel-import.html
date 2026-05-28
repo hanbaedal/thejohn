@@ -15,6 +15,7 @@
     <script src="auth.js"></script>
     <script src="admin-header.js"></script>
     <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
+    <script src="vendor-excel-import-map.js"></script>
     <script src="nav.js" defer></script>
 </head>
 <body>
@@ -42,7 +43,7 @@
             <button type="button" class="btn btn-auth-icon btn-logout" id="btnLogout" hidden aria-label="로그아웃" title="로그아웃"></button>
         </nav>
     </header>
-    <main class="page-main vei-main">
+    <main class="page-main vei-main page-main--hide-scrollbar">
         <p class="am-subnav"><a href="vendor-manage.html">← 업체관리</a></p>
         <h1>엑셀에서 데이터 불러오기</h1>
         <p id="vei-status" class="vei-status" role="status" aria-live="polite"></p>
@@ -68,10 +69,12 @@
             <h2 id="vei-preview-title">2. 미리보기</h2>
             <p id="vei-preview-count" class="vei-hint"></p>
             <div id="vei-preview-wrap" class="vei-preview-wrap" hidden>
-                <table class="vei-preview-table">
-                    <thead id="vei-preview-head"></thead>
-                    <tbody id="vei-preview-body"></tbody>
-                </table>
+                <div class="vei-preview-outer">
+                    <table class="vei-preview-table">
+                        <thead id="vei-preview-head"></thead>
+                        <tbody id="vei-preview-body"></tbody>
+                    </table>
+                </div>
             </div>
             <div class="vei-actions">
                 <button type="button" class="btn btn-primary" id="vei-import-btn" disabled>신규업체 DB에 저장</button>

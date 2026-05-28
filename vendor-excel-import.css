@@ -1,7 +1,8 @@
 .vei-main {
-    max-width: min(100%, 56rem);
+    max-width: 100%;
     margin: 0 auto;
-    padding: 0 0.75rem 2rem;
+    padding: 0 0.5rem 2rem;
+    box-sizing: border-box;
 }
 .vei-panel {
     background: #fff;
@@ -50,29 +51,59 @@
     color: #6a7d8f;
     line-height: 1.5;
 }
-.vei-preview-wrap {
-    overflow: auto;
-    max-height: min(50vh, 24rem);
+.vei-preview-outer {
+    width: 100%;
+    overflow-x: auto;
+    overflow-y: visible;
     border: 1px solid #e8edf2;
     border-radius: 6px;
+    -webkit-overflow-scrolling: touch;
+}
+.vei-preview-wrap {
+    display: block;
 }
 .vei-preview-table {
-    width: 100%;
+    width: max-content;
+    min-width: 100%;
     border-collapse: collapse;
-    font-size: 0.75rem;
+    font-size: 0.68rem;
+    table-layout: auto;
 }
 .vei-preview-table th,
 .vei-preview-table td {
-    border-bottom: 1px solid #eef2f6;
-    padding: 0.35rem 0.45rem;
+    border: 1px solid #eef2f6;
+    padding: 0.2rem 0.3rem;
     text-align: left;
     white-space: nowrap;
+    vertical-align: middle;
 }
 .vei-preview-table th {
     background: #f4f8fc;
-    position: sticky;
-    top: 0;
-    z-index: 1;
+    font-weight: 600;
+    color: #052a4d;
+}
+.vei-preview-table tbody tr:nth-child(even) {
+    background: #fafbfd;
+}
+.vei-cell-input {
+    display: block;
+    min-width: 5.5rem;
+    max-width: 14rem;
+    width: 100%;
+    padding: 0.2rem 0.35rem;
+    font-size: inherit;
+    font-family: inherit;
+    border: 1px solid #c5d0dc;
+    border-radius: 3px;
+    box-sizing: border-box;
+    background: #fff;
+}
+.vei-cell-input:focus {
+    outline: 2px solid #0a4d9c;
+    border-color: #0a4d9c;
+}
+.vei-preview-table td:first-child .vei-cell-input {
+    min-width: 7rem;
 }
 .vei-actions {
     display: flex;
