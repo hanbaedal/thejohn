@@ -34,6 +34,57 @@
     var pwConfirmCheck = null;
     var prospectPicker = null;
 
+    var LOGIN_REQUIRED_MSG = "아이디와 비밀번호를 입력하세요";
+    var loginAlertModal = document.getElementById("vr-login-alert-modal");
+    var loginAlertOk = document.getElementById("vr-login-alert-ok");
+
+    function speakAlert(text) {
+        if (!text || !window.speechSynthesis) return;
+        try {
+            window.speechSynthesis.cancel();
+            var utter = new SpeechSynthesisUtterance(text);
+            utter.lang = "ko-KR";
+            utter.rate = 0.95;
+            window.speechSynthesis.speak(utter);
+        } catch (e) {}
+    }
+
+    function closeLoginAlertModal() {
+        if (loginAlertModal) loginAlertModal.hidden = true;
+    }
+
+    function showLoginRequiredAlert() {
+        setStatus(LOGIN_REQUIRED_MSG, true);
+        if (loginAlertModal) loginAlertModal.hidden = false;
+        speakAlert(LOGIN_REQUIRED_MSG);
+        var focusTarget = loginIdInput;
+        if (loginIdInput && !loginIdInput.value.trim()) focusTarget = loginIdInput;
+        else if (passwordInput && !String(passwordInput.value || "").trim()) focusTarget = passwordInput;
+        if (focusTarget) {
+            setTimeout(function () {
+                focusTarget.focus();
+            }, 100);
+        }
+    }
+
+    if (loginAlertOk) {
+        loginAlertOk.addEventListener("click", closeLoginAlertModal);
+    }
+    if (loginAlertModal) {
+        loginAlertModal.addEventListener("click", function (e) {
+            if (e.target === loginAlertModal) closeLoginAlertModal();
+        });
+    }
+    document.addEventListener("keydown", function (e) {
+        if (e.key === "Escape" && loginAlertModal && !loginAlertModal.hidden) closeLoginAlertModal();
+    });
+
+    function hasLoginCredentials() {
+        var id = loginIdInput ? loginIdInput.value.trim() : "";
+        var pw = passwordInput ? String(passwordInput.value || "").trim() : "";
+        return !!(id && pw);
+    }
+
     function setStatus(msg, isError) {
         if (!statusEl) return;
         statusEl.textContent = msg || "";
@@ -176,6 +227,11 @@
     form.addEventListener("submit", function (e) {
         e.preventDefault();
 
+        if (!hasLoginCredentials()) {
+            showLoginRequiredAlert();
+            return;
+        }
+
         if (pwConfirmCheck) {
             var pwMatchErr = pwConfirmCheck.validate(true);
             if (pwMatchErr) {
@@ -206,9 +262,7 @@
         };
 
         var existingProspectId = prospectIdInput ? prospectIdInput.value.trim() : "";
-        var err = VF
-            ? VF.validateVendorFields(body, { requirePassword: !existingProspectId })
-            : "";
+        var err = VF ? VF.validateVendorFields(body, { requirePassword: true }) : "";
         if (err) {
             setStatus(err, true);
             return;

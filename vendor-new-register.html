@@ -192,6 +192,46 @@
                 height: 1rem;
             }
         }
+        .vr-alert-modal {
+            position: fixed;
+            inset: 0;
+            z-index: 10001;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 1rem;
+            background: rgba(5, 42, 77, 0.45);
+        }
+        .vr-alert-modal[hidden] {
+            display: none !important;
+        }
+        .vr-alert-modal__panel {
+            width: min(100%, 20rem);
+            background: #fff;
+            border-radius: 12px;
+            padding: 1.25rem 1.1rem 1rem;
+            box-shadow: 0 12px 40px rgba(10, 77, 156, 0.25);
+            text-align: center;
+        }
+        .vr-alert-modal__msg {
+            margin: 0 0 1rem;
+            font-size: 1rem;
+            font-weight: 600;
+            color: #052a4d;
+            line-height: 1.45;
+        }
+        .vr-alert-modal__btn {
+            min-width: 5rem;
+            padding: 0.45rem 1.1rem;
+            font-size: 0.875rem;
+            font-weight: 600;
+            font-family: inherit;
+            border: none;
+            border-radius: 6px;
+            background: var(--dz-blue);
+            color: #fff;
+            cursor: pointer;
+        }
     </style>
     <script src="api-config.js"></script>
     <script src="thejhon-api.js"></script>
@@ -366,6 +406,12 @@
                 <div class="vp-list-wrap">
                     <ul id="vp-list" class="vp-list"></ul>
                 </div>
+            </div>
+        </div>
+        <div id="vr-login-alert-modal" class="vr-alert-modal" hidden role="alertdialog" aria-modal="true" aria-labelledby="vr-login-alert-msg">
+            <div class="vr-alert-modal__panel">
+                <p id="vr-login-alert-msg" class="vr-alert-modal__msg">아이디와 비밀번호를 입력하세요</p>
+                <button type="button" class="vr-alert-modal__btn" id="vr-login-alert-ok">확인</button>
             </div>
         </div>
     </main>
