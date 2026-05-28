@@ -267,7 +267,8 @@
         "vendor-list-admin.html",
         "vendor-detail.html",
         "vendor-new-register.html",
-        "vendor-new-list.html"
+        "vendor-new-list.html",
+        "vendor-excel-import.html"
     ];
     var ORDER_MANAGE_PAGES = ["order-list-admin.html"];
     var STAFF_MANAGE_PAGES = ["staff-manage.html"];
@@ -378,6 +379,24 @@
     /** 업체(vendor)만 상품 주문·장바구니 */
     function isSupervisorStaff() {
         return isLoggedIn() && getRole() === "supervisor";
+    }
+
+    /** 슈퍼바이저 — 엑셀 → vendor_prospects 일괄 등록 */
+    function getSupervisorExcelImportAccess() {
+        normalizeLegacySession();
+        if (!global.THEJHON_API || !THEJHON_API.getToken || !THEJHON_API.getToken()) {
+            return { allowed: false, reason: "로그인이 필요합니다. 슈퍼바이저로 로그인해 주세요." };
+        }
+        if (!isLoggedIn()) {
+            return { allowed: false, reason: "로그인이 필요합니다." };
+        }
+        if (!isSupervisorStaff()) {
+            return {
+                allowed: false,
+                reason: "엑셀 불러오기는 슈퍼바이저만 사용할 수 있습니다."
+            };
+        }
+        return { allowed: true, reason: "" };
     }
 
     /** 슈퍼바이저 — 관리자(staff) 등록·목록·수정 */
@@ -639,6 +658,12 @@
             }
             return;
         }
+        if (page === "vendor-excel-import.html") {
+            if (!getSupervisorExcelImportAccess().allowed) {
+                redirectFromProtectedPage(isLoggedIn());
+            }
+            return;
+        }
         if (ADMIN_REGISTER_PAGES.indexOf(page) < 0) return;
         if (!isLoggedIn()) {
             redirectFromProtectedPage(false);
@@ -713,6 +738,14 @@
             }
             var orderLinks = nav.querySelectorAll('a[href="order-list-admin.html"]');
             var showOrder = canShowOrderManageMenu();
+            var excelLinks = nav.querySelectorAll(
+                'a[href="vendor-excel-import.html"], [data-nav-excel-import]'
+            );
+            var showExcel = isSupervisorStaff();
+            for (var x = 0; x < excelLinks.length; x++) {
+                excelLinks[x].hidden = !showExcel;
+                excelLinks[x].setAttribute("aria-hidden", showExcel ? "false" : "true");
+            }
             for (var o = 0; o < orderLinks.length; o++) {
                 if (showOrder) {
                     orderLinks[o].classList.remove("header-nav-link--register-hidden");
@@ -773,6 +806,7 @@
         isVendorOrderEnabled: isVendorOrderEnabled,
         ORDER_VENDOR_STAFF_ID: ORDER_VENDOR_STAFF_ID,
         isSupervisorStaff: isSupervisorStaff,
+        getSupervisorExcelImportAccess: getSupervisorExcelImportAccess,
         canManageStaffAccounts: canManageStaffAccounts,
         getStaffManageAccess: getStaffManageAccess,
         VENDOR_ORDER_ENABLED_KEY: VENDOR_ORDER_ENABLED_KEY,

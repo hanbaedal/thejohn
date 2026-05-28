@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" href="img/icon-192.png" sizes="192x192" type="image/png">
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#0a4d9c">
+    <title>엑셀에서 데이터 불러오기 — 더존</title>
+    <link rel="stylesheet" href="common.css">
+    <link rel="stylesheet" href="admin-manage.css">
+    <link rel="stylesheet" href="vendor-excel-import.css">
+    <script src="api-config.js"></script>
+    <script src="thejhon-api.js"></script>
+    <script src="auth.js"></script>
+    <script src="admin-header.js"></script>
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
+    <script src="nav.js" defer></script>
+</head>
+<body>
+    <header class="site-header">
+        <div class="site-header-start">
+            <a href="index.html" class="dz-logo dz-logo--compact" aria-label="더존 홈"><img src="img/logo.png" alt="" width="72" height="72" class="dz-logo-img"></a>
+            <nav class="site-header-nav" aria-label="주요 메뉴">
+                <a href="company.html" class="header-nav-link">회사소개</a>
+                <a href="products.html" class="header-nav-link">사업부문</a>
+                <a href="product-register.html" class="header-nav-link">상품등록</a>
+                <a href="vendor-register.html" class="header-nav-link">업체등록</a>
+                <div class="nav-dropdown" data-nav-dropdown="support">
+                    <a href="support.html" class="header-nav-link nav-dropdown-trigger" aria-haspopup="true" aria-expanded="false">고객센터</a>
+                    <div class="nav-dropdown-panel" role="menu">
+                        <a href="support-partners.html" class="nav-dropdown-item" role="menuitem">파트너회사 소개</a>
+                        <a href="support-library.html" class="nav-dropdown-item" role="menuitem">최근소식</a>
+                        <a href="support-qna.html" class="nav-dropdown-item" role="menuitem">자유게시판</a>
+                        <a href="support-inquiry.html" class="nav-dropdown-item" role="menuitem">문의사항</a>
+                    </div>
+                </div>
+            </nav>
+        </div>
+        <nav class="site-header-actions" aria-label="계정">
+            <time class="header-date" id="headerToday" datetime=""></time>
+            <button type="button" class="btn btn-auth-icon btn-logout" id="btnLogout" hidden aria-label="로그아웃" title="로그아웃"></button>
+        </nav>
+    </header>
+    <main class="page-main vei-main">
+        <p class="am-subnav"><a href="vendor-manage.html">← 업체관리</a></p>
+        <h1>엑셀에서 데이터 불러오기</h1>
+        <p id="vei-status" class="vei-status" role="status" aria-live="polite"></p>
+
+        <section class="vei-panel" aria-labelledby="vei-upload-title">
+            <h2 id="vei-upload-title">1. 엑셀 파일 선택</h2>
+            <p class="vei-hint">
+                첫 번째 시트의 <strong>첫 줄은 열 이름(헤더)</strong>으로 넣어 주세요.
+                업체명은 필수이며, 로그인 아이디·비밀번호 없이 <code>vendor_prospects</code>(신규업체) 컬렉션에 저장됩니다.
+            </p>
+            <div class="vei-file-row">
+                <input type="file" id="vei-file" accept=".xlsx,.xls,.csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel,text/csv">
+                <button type="button" class="btn btn-secondary" id="vei-clear-btn">선택 취소</button>
+            </div>
+            <p class="vei-hint">지원 형식: .xlsx, .xls, .csv (최대 500건)</p>
+            <ul class="vei-cols">
+                <li>인식 가능한 열 예: 업체명, 대표자명, 대표자연락처, 홈페이지, 이메일, 회사전화, 회사주소, 담당자명, 담당자연락처, 담당자이메일, 비고, 등급, 사업부문</li>
+                <li>영문 열: company, ceo, email, phone, address, manager 등도 일부 인식됩니다.</li>
+            </ul>
+        </section>
+
+        <section class="vei-panel" aria-labelledby="vei-preview-title">
+            <h2 id="vei-preview-title">2. 미리보기</h2>
+            <p id="vei-preview-count" class="vei-hint"></p>
+            <div id="vei-preview-wrap" class="vei-preview-wrap" hidden>
+                <table class="vei-preview-table">
+                    <thead id="vei-preview-head"></thead>
+                    <tbody id="vei-preview-body"></tbody>
+                </table>
+            </div>
+            <div class="vei-actions">
+                <button type="button" class="btn btn-primary" id="vei-import-btn" disabled>신규업체 DB에 저장</button>
+            </div>
+            <div id="vei-result" class="vei-result" hidden></div>
+        </section>
+    </main>
+    <footer class="site-footer">
+        <div class="site-footer-inner">
+            <dl class="site-footer-grid" id="siteFooterCompanyGrid" aria-live="polite"></dl>
+            <p class="site-footer-company-msg" id="siteFooterCompanyMsg" hidden></p>
+        </div>
+    </footer>
+    <script>
+        (function () {
+            var todayEl = document.getElementById("headerToday");
+            if (todayEl) {
+                var now = new Date();
+                todayEl.dateTime = now.toISOString().slice(0, 10);
+                todayEl.textContent = now.toLocaleDateString("ko-KR", {
+                    year: "numeric",
+                    month: "long",
+                    day: "numeric",
+                    weekday: "long"
+                });
+            }
+            var logoutBtn = document.getElementById("btnLogout");
+            if (logoutBtn) {
+                logoutBtn.hidden = !(window.THEJHON_AUTH && THEJHON_AUTH.isLoggedIn());
+                logoutBtn.addEventListener("click", function () {
+                    if (window.THEJHON_AUTH) THEJHON_AUTH.clearSession();
+                    location.reload();
+                });
+            }
+        })();
+    </script>
+    <script src="vendor-excel-import.js"></script>
+</body>
+</html>

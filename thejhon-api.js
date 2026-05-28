@@ -200,6 +200,9 @@
                 return d.item;
             });
         },
+        importVendorProspects: function (rows) {
+            return request("POST", "/api/vendor-prospects/import", { rows: rows || [] });
+        },
         updateVendorProspect: function (id, body) {
             return request("PUT", "/api/vendor-prospects/" + encodeURIComponent(id), body).then(function (d) {
                 return d.item;

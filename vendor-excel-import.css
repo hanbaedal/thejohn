@@ -1,0 +1,95 @@
+.vei-main {
+    max-width: min(100%, 56rem);
+    margin: 0 auto;
+    padding: 0 0.75rem 2rem;
+}
+.vei-panel {
+    background: #fff;
+    border: 1px solid #e0e6ed;
+    border-radius: 8px;
+    padding: 1rem 1.1rem;
+    margin-bottom: 1rem;
+    box-shadow: 0 1px 8px rgba(10, 77, 156, 0.05);
+}
+.vei-panel h2 {
+    margin: 0 0 0.5rem;
+    font-size: 1.05rem;
+    color: #052a4d;
+}
+.vei-hint {
+    margin: 0 0 0.75rem;
+    font-size: 0.8rem;
+    color: #5a6b7d;
+    line-height: 1.45;
+}
+.vei-status {
+    margin: 0.5rem 0;
+    font-size: 0.85rem;
+    color: #3d5166;
+}
+.vei-status--error {
+    color: #a12c2c;
+}
+.vei-status--ok {
+    color: #0a6640;
+}
+.vei-file-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    align-items: center;
+}
+.vei-file-row input[type="file"] {
+    font-size: 0.8rem;
+    max-width: 100%;
+}
+.vei-cols {
+    margin: 0.5rem 0 0;
+    padding-left: 1.1rem;
+    font-size: 0.75rem;
+    color: #6a7d8f;
+    line-height: 1.5;
+}
+.vei-preview-wrap {
+    overflow: auto;
+    max-height: min(50vh, 24rem);
+    border: 1px solid #e8edf2;
+    border-radius: 6px;
+}
+.vei-preview-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.75rem;
+}
+.vei-preview-table th,
+.vei-preview-table td {
+    border-bottom: 1px solid #eef2f6;
+    padding: 0.35rem 0.45rem;
+    text-align: left;
+    white-space: nowrap;
+}
+.vei-preview-table th {
+    background: #f4f8fc;
+    position: sticky;
+    top: 0;
+    z-index: 1;
+}
+.vei-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-top: 0.85rem;
+}
+.vei-result {
+    margin-top: 0.75rem;
+    padding: 0.65rem 0.75rem;
+    background: #f0f6fc;
+    border-radius: 6px;
+    font-size: 0.85rem;
+}
+.vei-result ul {
+    margin: 0.35rem 0 0;
+    padding-left: 1.2rem;
+    font-size: 0.8rem;
+    color: #a12c2c;
+}

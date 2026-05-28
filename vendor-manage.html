@@ -62,6 +62,10 @@
                 <h2>신규업체 리스트</h2>
                 <p>신규 업체 목록에서 선택해 수정합니다.</p>
             </a>
+            <a href="vendor-excel-import.html" class="company-division-card" id="vm-excel-import" hidden>
+                <h2>엑셀에서 데이터 불러오기</h2>
+                <p>엑셀 파일의 업체 정보를 신규업체 DB(vendor_prospects)에 일괄 등록합니다.</p>
+            </a>
             <a href="order-list-admin.html" class="company-division-card" id="vm-order-manage" hidden>
                 <h2>주문서관리</h2>
                 <p>업체 주문 접수 내역·PDF 다운로드</p>
@@ -107,6 +111,7 @@
                 var hubInq = document.getElementById("support-hub-inquiry-reply");
                 var orderCard = document.getElementById("vm-order-manage");
                 var migrateCard = document.getElementById("vm-data-migrate");
+                var excelCard = document.getElementById("vm-excel-import");
                 var admin =
                     window.THEJHON_AUTH &&
                     THEJHON_AUTH.canManageRegisters &&
@@ -130,6 +135,14 @@
                 if (migrateCard) {
                     migrateCard.hidden = !admin;
                     migrateCard.setAttribute("aria-hidden", admin ? "false" : "true");
+                }
+                var supervisor =
+                    window.THEJHON_AUTH &&
+                    THEJHON_AUTH.isSupervisorStaff &&
+                    THEJHON_AUTH.isSupervisorStaff();
+                if (excelCard) {
+                    excelCard.hidden = !supervisor;
+                    excelCard.setAttribute("aria-hidden", supervisor ? "false" : "true");
                 }
             }
             syncSupportHubAdminCards();

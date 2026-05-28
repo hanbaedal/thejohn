@@ -24,6 +24,11 @@ const {
     findProspectByLoginId,
     findVendorByLoginId
 } = require("../lib/vendorProspects");
+const {
+    MAX_IMPORT_ROWS,
+    validateImportRow,
+    toImportDbDoc
+} = require("../lib/vendorProspectImport");
 
 const router = express.Router();
 
@@ -135,6 +140,70 @@ router.get("/:id", requireRole("supervisor", "admin"), async function (req, res)
     } catch (e) {
         console.error("GET /api/vendor-prospects/:id", e);
         res.status(500).json({ ok: false, error: "신규업체를 불러오지 못했습니다." });
+    }
+});
+
+/** 슈퍼바이저 — 엑셀 등에서 일괄 등록 (로그인 아이디 없음) */
+router.post("/import", requireRole("supervisor"), async function (req, res) {
+    try {
+        const rows = req.body && Array.isArray(req.body.rows) ? req.body.rows : [];
+        if (!rows.length) {
+            return res.status(400).json({ ok: false, error: "불러올 데이터가 없습니다." });
+        }
+        if (rows.length > MAX_IMPORT_ROWS) {
+            return res.status(400).json({
+                ok: false,
+                error: "한 번에 최대 " + MAX_IMPORT_ROWS + "건까지 등록할 수 있습니다."
+            });
+        }
+
+        const col = getDb().collection(COLLECTION);
+        const docs = [];
+        const errors = [];
+        let registration = null;
+
+        for (let i = 0; i < rows.length; i++) {
+            const check = validateImportRow(rows[i], i + 2);
+            if (!check.ok) {
+                errors.push({ row: i + 2, error: check.error });
+                continue;
+            }
+            let doc = toImportDbDoc(newProspectId(), check.built, null);
+            if (!registration) {
+                doc = await stampNewVendorRegistration(doc, req.auth);
+                registration = {
+                    registeredBy: doc[F.registeredBy],
+                    registeredByName: doc[F.registeredByName],
+                    registeredAt: doc[F.registeredAt]
+                };
+            } else {
+                doc[F.registeredBy] = registration.registeredBy;
+                doc[F.registeredByName] = registration.registeredByName;
+                doc[F.registeredAt] = registration.registeredAt;
+            }
+            docs.push(doc);
+        }
+
+        if (!docs.length) {
+            return res.status(400).json({
+                ok: false,
+                error: "저장할 수 있는 행이 없습니다.",
+                errors: errors
+            });
+        }
+
+        await col.insertMany(docs, { ordered: false });
+        console.log("[vendor_prospects] import:", docs.length, "rows by", registration && registration.registeredBy);
+
+        res.status(201).json({
+            ok: true,
+            inserted: docs.length,
+            failed: errors.length,
+            errors: errors.slice(0, 50)
+        });
+    } catch (e) {
+        console.error("POST /api/vendor-prospects/import", e);
+        res.status(500).json({ ok: false, error: "엑셀 데이터 저장에 실패했습니다." });
     }
 });
 

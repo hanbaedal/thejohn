@@ -41,6 +41,7 @@
             '<a href="vendor-list-admin.html" class="nav-dropdown-item" role="menuitem">업체 리스트</a>' +
             '<a href="vendor-new-register.html" class="nav-dropdown-item" role="menuitem">신규업체 등록</a>' +
             '<a href="vendor-new-list.html" class="nav-dropdown-item" role="menuitem">신규업체 리스트</a>' +
+            '<a href="vendor-excel-import.html" class="nav-dropdown-item" data-nav-excel-import role="menuitem" hidden>엑셀에서 데이터 불러오기</a>' +
             orderItem +
             "</div></div>"
         );
@@ -64,6 +65,7 @@
             "vendor-detail.html": true,
             "vendor-new-register.html": true,
             "vendor-new-list.html": true,
+            "vendor-excel-import.html": true,
             "order-list-admin.html": true
         };
         var productDrop = nav.querySelector('[data-nav-dropdown="product-manage"]');
