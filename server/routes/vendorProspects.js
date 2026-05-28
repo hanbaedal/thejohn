@@ -119,6 +119,22 @@ router.get("/", requireRole("supervisor", "admin"), async function (req, res) {
     }
 });
 
+/** 관리자/슈퍼바이저 — 예비거래처 삭제 */
+router.delete("/:id", requireRole("supervisor", "admin"), async function (req, res) {
+    try {
+        const id = String(req.params.id || "").trim();
+        if (!id) return res.status(400).json({ ok: false, error: "삭제할 ID가 없습니다." });
+        const ret = await getDb().collection(COLLECTION).deleteOne({ id: id });
+        if (!ret || !ret.deletedCount) {
+            return res.status(404).json({ ok: false, error: "삭제할 예비거래처를 찾지 못했습니다." });
+        }
+        res.json({ ok: true, deleted: 1, id: id });
+    } catch (e) {
+        console.error("DELETE /api/vendor-prospects/:id", e);
+        res.status(500).json({ ok: false, error: "예비거래처 삭제에 실패했습니다." });
+    }
+});
+
 /** 관리자 — 도시명/장례식장명으로 장례식장 조회 (외부 웹) */
 router.get("/search-funeral-halls", requireRole("admin"), async function (req, res) {
     try {

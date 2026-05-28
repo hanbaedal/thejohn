@@ -268,6 +268,7 @@
         "vendor-detail.html",
         "vendor-new-register.html",
         "vendor-new-list.html",
+        "vendor-prospect-list.html",
         "vendor-excel-import.html",
         "vendor-prospect-finder.html"
     ];

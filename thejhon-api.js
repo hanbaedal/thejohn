@@ -185,6 +185,9 @@
                 return d.items || [];
             });
         },
+        deleteVendorProspect: function (id) {
+            return request("DELETE", "/api/vendor-prospects/" + encodeURIComponent(id));
+        },
         searchFuneralHalls: function (keyword, mode) {
             var q = "?q=" + encodeURIComponent(String(keyword || ""));
             if (mode) q += "&mode=" + encodeURIComponent(String(mode));
