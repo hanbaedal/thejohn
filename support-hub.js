@@ -1,6 +1,7 @@
 (function () {
     var api = window.THEJHON_API;
     var track = document.getElementById("support-vendors-track");
+    var marquee = document.getElementById("support-vendors-marquee");
     var modal = document.getElementById("support-vendor-modal");
     var modalBody = document.getElementById("support-vendor-modal-body");
     if (!track) return;
@@ -27,6 +28,32 @@
     function displayOrDash(v) {
         var t = String(v || "").trim();
         return t || "—";
+    }
+
+    function digitsOnly(tel) {
+        return String(tel || "").replace(/\D/g, "");
+    }
+
+    function telHref(tel) {
+        var d = digitsOnly(tel);
+        if (!d) return "";
+        if (d.indexOf("82") === 0) return "tel:+" + d;
+        if (d.charAt(0) === "0") return "tel:+82" + d.slice(1);
+        return "tel:+" + d;
+    }
+
+    function phoneModalHtml(phone) {
+        var t = String(phone || "").trim();
+        if (!t) return "—";
+        var href = telHref(t);
+        if (!href) return escapeHtml(t);
+        return (
+            '<a class="support-vendor-modal__tel" href="' +
+            escapeHtml(href) +
+            '">' +
+            escapeHtml(t) +
+            "</a>"
+        );
     }
 
     function logoBlock(logo, name, classPrefix) {
@@ -100,7 +127,7 @@
             logoBlock(it.vn_logo, name, "support-vendor-modal") +
             '<dl class="support-vendor-modal__dl">' +
             "<dt>전화</dt><dd>" +
-            escapeHtml(displayOrDash(it.vn_phone)) +
+            phoneModalHtml(it.vn_phone) +
             "</dd>" +
             "<dt>이메일</dt><dd>" +
             escapeHtml(displayOrDash(it.vn_email)) +
@@ -123,7 +150,8 @@
     }
 
     function bindTrackClicks() {
-        track.addEventListener("click", function (e) {
+        var clickRoot = marquee || track;
+        clickRoot.addEventListener("click", function (e) {
             var btn = e.target.closest("[data-vendor-index]");
             if (!btn) return;
             var idx = parseInt(btn.getAttribute("data-vendor-index"), 10);
@@ -132,7 +160,29 @@
         });
     }
 
+    function clearAutoScroll() {
+        if (!marquee) return;
+        marquee.classList.remove("is-auto-scroll");
+        marquee.style.removeProperty("--support-vendors-scroll-duration");
+        var clone = marquee.querySelector(".support-vendors-track--clone");
+        if (clone) clone.remove();
+    }
+
+    function setupAutoScroll() {
+        if (!marquee || !vendors.length) return;
+        clearAutoScroll();
+        var clone = track.cloneNode(true);
+        clone.classList.add("support-vendors-track--clone");
+        clone.removeAttribute("id");
+        clone.setAttribute("aria-hidden", "true");
+        marquee.appendChild(clone);
+        var seconds = Math.max(24, Math.min(96, vendors.length * 3.5));
+        marquee.style.setProperty("--support-vendors-scroll-duration", seconds + "s");
+        marquee.classList.add("is-auto-scroll");
+    }
+
     function render(items) {
+        clearAutoScroll();
         vendors = (items || []).slice().sort(function (a, b) {
             var na = String(a.vn_company || "").trim();
             var nb = String(b.vn_company || "").trim();
@@ -144,9 +194,11 @@
             return;
         }
         track.innerHTML = vendors.map(renderCard).join("");
+        setupAutoScroll();
     }
 
     function load() {
+        clearAutoScroll();
         if (!api) {
             track.innerHTML =
                 '<li style="list-style:none"><p class="support-vendors-empty">업체 목록을 불러올 수 없습니다.</p></li>';
