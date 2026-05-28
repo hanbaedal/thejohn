@@ -137,6 +137,7 @@
                         VA && VA.vendorGradeLabel
                             ? VA.vendorGradeLabel(it.vn_grade)
                             : String(it.vn_grade || "1") + "등급";
+                    var roomTxt = it.vn_room_count ? String(it.vn_room_count) + "빈소" : "빈소 미입력";
                     var namePlain = String(it.vn_company || "(이름 없음)");
                     return (
                         '<li class="vl-admin-row">' +
@@ -148,6 +149,8 @@
                         PF.escapeHtml(deptTxt) +
                         " · " +
                         PF.escapeHtml(gradeTxt) +
+                        " · " +
+                        PF.escapeHtml(roomTxt) +
                         (it.loginId ? " · " + PF.escapeHtml(String(it.loginId)) : "") +
                         PF.escapeHtml(registrarSuffix(it)) +
                         "</span></a>" +

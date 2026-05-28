@@ -5,12 +5,13 @@ const MAX_IMPORT_ROWS = 500;
 
 /** 엑셀 1행 헤더 → 필드 키 (긴 이름 우선 — 대표자연락처 ≠ 대표자) */
 const HEADER_ALIASES = [
-    { field: "vn_company", keys: ["업체명", "업체이름", "업체명칭", "상호", "회사명", "company", "vn_company", "companyname"] },
+    { field: "vn_company", keys: ["업체명", "업체이름", "업체명칭", "상호", "회사명", "장례식장명", "company", "vn_company", "companyname"] },
     { field: "vn_ceo_tel", keys: ["대표자연락처", "대표연락처", "대표자전화", "대표자휴대폰", "대표전화", "ceotel", "vn_ceo_tel", "ceo_phone", "대표자연락"] },
     { field: "vn_ceo", keys: ["대표자", "대표자명", "대표", "ceo", "vn_ceo", "대표자이름"] },
     { field: "vn_web", keys: ["홈페이지", "웹사이트", "website", "web", "vn_web", "url", "홈페이지주소"] },
     { field: "vn_email", keys: ["이메일", "회사이메일", "email", "vn_email", "메일", "e-mail"] },
     { field: "vn_phone", keys: ["회사전화", "전화번호", "phone", "vn_phone", "회사전화번호"] },
+    { field: "vn_room_count", keys: ["빈소수", "빈소 수", "roomcount", "rooms", "vn_room_count"] },
     { field: "vn_addr", keys: ["회사주소", "주소", "address", "addr", "vn_addr", "소재지"] },
     { field: "vn_mgr_tel", keys: ["담당자연락처", "담당자전화", "담당자휴대폰", "managerphone", "vn_mgr_tel", "mgr_tel", "담당자연락"] },
     { field: "vn_mgr_name", keys: ["담당자", "담당자명", "담당자이름", "manager", "vn_mgr_name", "mgr_name"] },
@@ -178,6 +179,7 @@ function toImportDbDoc(id, built, registration) {
         [F.ceo]: built.vn_ceo || "",
         [F.ceoTel]: built.vn_ceo_tel || "",
         [F.grade]: parseGrade(built.vn_grade) || "1",
+        [F.roomCount]: built.vn_room_count || "",
         [F.web]: built.vn_web || "",
         [F.email]: built.vn_email || "",
         [F.phone]: built.vn_phone || "",

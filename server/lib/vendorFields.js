@@ -30,6 +30,7 @@ const F = {
     ceo: "vn_ceo",
     ceoTel: "vn_ceo_tel",
     grade: "vn_grade",
+    roomCount: "vn_room_count",
     web: "vn_web",
     email: "vn_email",
     phone: "vn_phone",
@@ -58,6 +59,14 @@ function normalizeRecordType(v) {
 
 function str(v) {
     return String(v ?? "").trim();
+}
+
+function parseRoomCount(v) {
+    const s = str(v);
+    if (!s) return "";
+    const n = parseInt(s.replace(/[^\d-]/g, ""), 10);
+    if (!Number.isFinite(n) || n < 0) return "";
+    return String(n);
 }
 
 const VENDOR_GRADE_MAX = 3;
@@ -130,6 +139,9 @@ function fromLegacyDoc(doc) {
     if (!d[F.ceo] && doc.ceo) d[F.ceo] = String(doc.ceo).trim();
     if (!d[F.ceoTel] && doc.ceoPhone) d[F.ceoTel] = String(doc.ceoPhone).trim();
     if (!d[F.grade] && doc.vn_grade) d[F.grade] = parseGrade(doc.vn_grade);
+    if (!d[F.roomCount] && (doc.vn_room_count != null || doc.roomCount != null)) {
+        d[F.roomCount] = parseRoomCount(doc.vn_room_count != null ? doc.vn_room_count : doc.roomCount);
+    }
     if (!d[F.web] && doc.website) d[F.web] = String(doc.website).trim();
     if (!d[F.email] && doc.email) d[F.email] = String(doc.email).trim();
     if (!d[F.phone] && doc.phone) d[F.phone] = String(doc.phone).trim();
@@ -170,6 +182,7 @@ function toPublic(doc) {
         vn_ceo: str(d[F.ceo]),
         vn_ceo_tel: str(d[F.ceoTel]),
         vn_grade: parseGrade(d[F.grade]) || "1",
+        vn_room_count: parseRoomCount(d[F.roomCount]),
         vn_web: str(d[F.web]),
         vn_email: str(d[F.email]),
         vn_phone: str(d[F.phone]),
@@ -210,6 +223,9 @@ function buildFromBody(body, existing, loginId, password) {
         vn_ceo: str(body.vn_ceo != null ? body.vn_ceo : body.ceo),
         vn_ceo_tel: str(body.vn_ceo_tel != null ? body.vn_ceo_tel : body.ceoPhone),
         vn_grade: parseGrade(body.vn_grade != null ? body.vn_grade : prev[F.grade]) || "1",
+        vn_room_count: parseRoomCount(
+            body.vn_room_count != null ? body.vn_room_count : prev[F.roomCount]
+        ),
         vn_web: str(body.vn_web != null ? body.vn_web : body.website),
         vn_email: str(body.vn_email != null ? body.vn_email : body.email),
         vn_phone: str(body.vn_phone != null ? body.vn_phone : body.phone),
@@ -245,6 +261,7 @@ function toDbDoc(id, built, existing) {
         [F.ceo]: built.vn_ceo,
         [F.ceoTel]: built.vn_ceo_tel,
         [F.grade]: built.vn_grade,
+        [F.roomCount]: built.vn_room_count || "",
         [F.web]: built.vn_web,
         [F.email]: built.vn_email,
         [F.phone]: built.vn_phone,
@@ -370,6 +387,7 @@ async function migrateVendorsCollection(db) {
                 vn_ceo: doc[F.ceo] || doc.ceo,
                 vn_ceo_tel: doc[F.ceoTel] || doc.ceoPhone,
                 vn_grade: doc[F.grade] || "1",
+                vn_room_count: doc[F.roomCount] || doc.vn_room_count || "",
                 vn_web: doc[F.web] || doc.website,
                 vn_email: doc[F.email] || doc.email,
                 vn_phone: doc[F.phone] || doc.phone,
@@ -436,6 +454,7 @@ module.exports = {
     migrateVendorsCollection,
     getCompanyName,
     parseGrade,
+    parseRoomCount,
     gradeDisplayLabel,
     VENDOR_GRADE_MAX,
     legacyVendorUnset

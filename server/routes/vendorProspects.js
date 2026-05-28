@@ -18,6 +18,61 @@ const {
 
 const router = express.Router();
 
+function normText(v) {
+    return String(v || "")
+        .trim()
+        .replace(/\s+/g, " ")
+        .toLowerCase();
+}
+
+function normPhone(v) {
+    return String(v || "").replace(/[^\d]/g, "");
+}
+
+function pickFirstValue(doc, keys) {
+    for (let i = 0; i < keys.length; i++) {
+        const k = keys[i];
+        const v = String((doc && doc[k]) || "").trim();
+        if (v) return v;
+    }
+    return "";
+}
+
+async function findMatchedVendorInfo(db, built) {
+    const company = normText(built.vn_company);
+    const phone = normPhone(built.vn_phone);
+    const addr = normText(built.vn_addr);
+    if (!company && !phone && !addr) return null;
+    const collections = ["vendors", "vendor_new", "vendor_prospects"];
+    for (let c = 0; c < collections.length; c++) {
+        const col = db.collection(collections[c]);
+        const docs = await col
+            .find({
+                $or: [{ vn_company: { $exists: true } }, { companyName: { $exists: true } }]
+            })
+            .limit(2000)
+            .toArray();
+        for (let i = 0; i < docs.length; i++) {
+            const d = docs[i];
+            const dc = normText(d.vn_company || d.companyName);
+            const dp = normPhone(d.vn_phone || d.phone);
+            const da = normText(d.vn_addr || d.address);
+            const companyMatch = company && dc && dc === company;
+            const phoneMatch = phone && dp && dp === phone;
+            const addrMatch = addr && da && da === addr;
+            if (!companyMatch && !phoneMatch && !addrMatch) continue;
+            return {
+                vn_ceo: pickFirstValue(d, ["vn_ceo", "ceo"]),
+                vn_ceo_tel: pickFirstValue(d, ["vn_ceo_tel", "ceoPhone"]),
+                vn_web: pickFirstValue(d, ["vn_web", "website"]),
+                vn_email: pickFirstValue(d, ["vn_email", "email"]),
+                source: collections[c]
+            };
+        }
+    }
+    return null;
+}
+
 function escapeRegex(s) {
     return String(s || "").replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
@@ -97,6 +152,14 @@ router.post("/import", requireRole("supervisor"), async function (req, res) {
                 continue;
             }
             seenInBatch.add(norm);
+
+            const matched = await findMatchedVendorInfo(db, check.built);
+            if (matched) {
+                if (!check.built.vn_ceo && matched.vn_ceo) check.built.vn_ceo = matched.vn_ceo;
+                if (!check.built.vn_ceo_tel && matched.vn_ceo_tel) check.built.vn_ceo_tel = matched.vn_ceo_tel;
+                if (!check.built.vn_web && matched.vn_web) check.built.vn_web = matched.vn_web;
+                if (!check.built.vn_email && matched.vn_email) check.built.vn_email = matched.vn_email;
+            }
 
             let doc = toImportDbDoc(newProspectId(), check.built, null);
             if (!registration) {

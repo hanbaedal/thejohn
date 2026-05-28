@@ -16,6 +16,7 @@
     var ceoInput = document.getElementById("vr-ceo");
     var ceoTelInput = document.getElementById("vr-ceo-tel");
     var gradeSelect = document.getElementById("vr-grade");
+    var roomCountInput = document.getElementById("vr-room-count");
     var webInput = document.getElementById("vr-web");
     var emailInput = document.getElementById("vr-email");
     var phoneInput = document.getElementById("vr-phone");
@@ -127,6 +128,7 @@
             vn_ceo: ceoInput.value.trim(),
             vn_ceo_tel: ceoTelInput.value.trim(),
             vn_grade: gradeSelect && gradeSelect.value ? gradeSelect.value : "1",
+            vn_room_count: roomCountInput ? roomCountInput.value.trim() : "",
             vn_web: webInput.value.trim(),
             vn_email: emailInput.value.trim(),
             vn_phone: phoneInput.value.trim(),

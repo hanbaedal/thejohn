@@ -17,13 +17,14 @@
     var parsedRows = [];
 
     var COL_LABELS = {
-        vn_company: "업체명",
+        vn_company: "장례식장명",
+        vn_room_count: "빈소 수",
         vn_ceo: "대표자",
         vn_ceo_tel: "대표자연락처",
         vn_web: "홈페이지",
         vn_email: "이메일",
-        vn_phone: "회사전화",
-        vn_addr: "회사주소",
+        vn_phone: "전화번호",
+        vn_addr: "주소",
         vn_mgr_name: "담당자",
         vn_mgr_tel: "담당자연락처",
         vn_mgr_email: "담당자이메일"
@@ -31,6 +32,7 @@
 
     var PREVIEW_FIELDS = [
         "vn_company",
+        "vn_room_count",
         "vn_ceo",
         "vn_ceo_tel",
         "vn_web",

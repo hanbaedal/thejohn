@@ -42,7 +42,7 @@
             orderItem +
             '<a href="vendor-new-register.html" class="nav-dropdown-item" role="menuitem">신규업체 등록</a>' +
             '<a href="vendor-new-list.html" class="nav-dropdown-item" role="menuitem">신규업체 리스트</a>' +
-            '<a href="vendor-excel-import.html" class="nav-dropdown-item" data-nav-excel-import role="menuitem" hidden>엑셀에서 데이터 불러오기</a>' +
+            '<a href="vendor-excel-import.html" class="nav-dropdown-item" data-nav-excel-import role="menuitem" hidden>자료찾기</a>' +
             "</div></div>"
         );
     }
