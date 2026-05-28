@@ -93,15 +93,17 @@ async function collectRecipients(db, opts, senderId) {
     const toList = [];
     const counts = { vendors: 0, vendorNew: 0 };
     const registerFilter = senderId ? { vn_registered_by: senderId } : {};
+    const useManager = String(opts.recipientMode || "company") === "manager";
 
     if (opts.includeVendors) {
         const docs = await db
             .collection("vendors")
-            .find(registerFilter, { projection: { vn_email: 1 } })
+            .find(registerFilter, { projection: { vn_email: 1, vn_mgr_email: 1 } })
             .limit(5000)
             .toArray();
         for (let i = 0; i < docs.length; i++) {
-            const email = cleanEmail(docs[i] && docs[i].vn_email);
+            const src = docs[i] || {};
+            const email = cleanEmail(useManager ? src.vn_mgr_email : src.vn_email);
             if (!email || set.has(email)) continue;
             set.add(email);
             toList.push(email);
@@ -113,11 +115,12 @@ async function collectRecipients(db, opts, senderId) {
         const before = toList.length;
         const docs = await db
             .collection("vendor_new")
-            .find(registerFilter, { projection: { vn_email: 1 } })
+            .find(registerFilter, { projection: { vn_email: 1, vn_mgr_email: 1 } })
             .limit(5000)
             .toArray();
         for (let i = 0; i < docs.length; i++) {
-            const email = cleanEmail(docs[i] && docs[i].vn_email);
+            const src = docs[i] || {};
+            const email = cleanEmail(useManager ? src.vn_mgr_email : src.vn_email);
             if (!email || set.has(email)) continue;
             set.add(email);
             toList.push(email);
@@ -236,6 +239,7 @@ router.post("/broadcast", requireRole("admin"), async function (req, res) {
         const includeVendors = !!body.includeVendors;
         const includeVendorNew = !!body.includeVendorNew;
         const onlyMine = body.onlyMine !== false;
+        const recipientMode = String(body.recipientMode || "company") === "manager" ? "manager" : "company";
         if (!subject) return res.status(400).json({ ok: false, error: "메일 제목을 입력해 주세요." });
         if (!greeting) return res.status(400).json({ ok: false, error: "인사말(본문)을 입력해 주세요." });
         if (!includeVendors && !includeVendorNew) {
@@ -243,7 +247,11 @@ router.post("/broadcast", requireRole("admin"), async function (req, res) {
         }
         const senderId = onlyMine && req.auth && req.auth.userId ? String(req.auth.userId) : "";
         const db = getDb();
-        const { recipients, counts } = await collectRecipients(db, { includeVendors, includeVendorNew }, senderId);
+        const { recipients, counts } = await collectRecipients(
+            db,
+            { includeVendors, includeVendorNew, recipientMode },
+            senderId
+        );
         if (!recipients.length) {
             return res.status(400).json({
                 ok: false,
@@ -264,6 +272,7 @@ router.post("/broadcast", requireRole("admin"), async function (req, res) {
             includeVendors: includeVendors,
             includeVendorNew: includeVendorNew,
             onlyMine: onlyMine,
+            recipientMode: recipientMode,
             requestedCount: recipients.length,
             sentCount: sentResult.ok.length,
             failedCount: sentResult.failed.length,
@@ -290,9 +299,21 @@ router.post("/broadcast", requireRole("admin"), async function (req, res) {
 router.get("/history", requireRole("admin"), async function (req, res) {
     try {
         const limit = Math.min(Math.max(parseInt(req.query.limit || "20", 10) || 20, 1), 100);
+        const dateText = trim(req.query.date);
+        const filter = {};
+        if (dateText) {
+            const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(dateText);
+            if (!m) return res.status(400).json({ ok: false, error: "날짜 형식이 올바르지 않습니다." });
+            const y = parseInt(m[1], 10);
+            const mo = parseInt(m[2], 10) - 1;
+            const d = parseInt(m[3], 10);
+            const from = new Date(y, mo, d).getTime();
+            const to = new Date(y, mo, d + 1).getTime();
+            filter.createdAt = { $gte: from, $lt: to };
+        }
         const items = await getDb()
             .collection(HISTORY_COLLECTION)
-            .find({}, { projection: { _id: 0 } })
+            .find(filter, { projection: { _id: 0 } })
             .sort({ createdAt: -1 })
             .limit(limit)
             .toArray();

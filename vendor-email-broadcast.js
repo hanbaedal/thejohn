@@ -4,6 +4,8 @@
     var includeVendorsEl = document.getElementById("veb-include-vendors");
     var includeVendorNewEl = document.getElementById("veb-include-vendor-new");
     var onlyMineEl = document.getElementById("veb-only-mine");
+    var recipientCompanyEl = document.getElementById("veb-recipient-company");
+    var recipientManagerEl = document.getElementById("veb-recipient-manager");
     var subjectEl = document.getElementById("veb-subject");
     var greetingEl = document.getElementById("veb-greeting");
     var filesEl = document.getElementById("veb-files");
@@ -11,6 +13,8 @@
     var testBtn = document.getElementById("veb-test-btn");
     var sendBtn = document.getElementById("veb-send-btn");
     var historyBtn = document.getElementById("veb-history-refresh-btn");
+    var historyDateEl = document.getElementById("veb-history-date");
+    var historyDateBtn = document.getElementById("veb-history-date-btn");
     var historyListEl = document.getElementById("veb-history-list");
     var failedWrap = document.getElementById("veb-failed-wrap");
     var failedListEl = document.getElementById("veb-failed-list");
@@ -91,6 +95,7 @@
             includeVendors: !!(includeVendorsEl && includeVendorsEl.checked),
             includeVendorNew: !!(includeVendorNewEl && includeVendorNewEl.checked),
             onlyMine: !!(onlyMineEl && onlyMineEl.checked),
+            recipientMode: recipientManagerEl && recipientManagerEl.checked ? "manager" : "company",
             senderName: senderName
         };
     }
@@ -146,9 +151,9 @@
             .join("");
     }
 
-    function loadHistory() {
+    function loadHistory(dateText) {
         if (!api || !api.listVendorEmailHistory) return;
-        api.listVendorEmailHistory(20)
+        api.listVendorEmailHistory(20, dateText || "")
             .then(renderHistory)
             .catch(function () {
                 if (historyListEl) historyListEl.innerHTML = "<li>이력을 불러오지 못했습니다.</li>";
@@ -179,6 +184,7 @@
                     includeVendors: payload.includeVendors,
                     includeVendorNew: payload.includeVendorNew,
                     onlyMine: payload.onlyMine,
+                    recipientMode: payload.recipientMode,
                     senderName: payload.senderName,
                     attachments: attachments
                 });
@@ -220,6 +226,7 @@
                     subject: payload.subject,
                     greeting: payload.greeting,
                     testEmail: testEmail,
+                    recipientMode: payload.recipientMode,
                     senderName: payload.senderName,
                     attachments: attachments
                 });
@@ -235,6 +242,17 @@
     if (historyBtn) {
         historyBtn.addEventListener("click", function () {
             loadHistory();
+        });
+    }
+
+    if (historyDateBtn) {
+        historyDateBtn.addEventListener("click", function () {
+            var dateText = String((historyDateEl && historyDateEl.value) || "").trim();
+            if (!dateText) {
+                setStatus("날짜를 선택해 주세요.", true);
+                return;
+            }
+            loadHistory(dateText);
         });
     }
 })();

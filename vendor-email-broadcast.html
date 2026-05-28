@@ -26,6 +26,9 @@
             list-style: none;
             margin: 0;
             padding: 0;
+            max-height: 19rem;
+            overflow-y: auto;
+            padding-right: 0.2rem;
         }
         .veb-history-list li {
             border: 1px solid #e7edf4;
@@ -37,6 +40,7 @@
             color: #3b4f62;
         }
         .veb-history-title { margin: 0; }
+        .veb-date-input { min-width: 10rem; }
     </style>
     <script src="api-config.js"></script>
     <script src="thejhon-api.js"></script>
@@ -71,6 +75,11 @@
                 <label><input type="checkbox" id="veb-only-mine" checked> 내가 등록한 업체만</label>
             </div>
             <div class="vei-file-row veb-row">
+                <span>수신 이메일 선택</span>
+                <label><input type="radio" name="veb-recipient-mode" id="veb-recipient-company" value="company" checked> 회사 이메일</label>
+                <label><input type="radio" name="veb-recipient-mode" id="veb-recipient-manager" value="manager"> 담당자 이메일</label>
+            </div>
+            <div class="vei-file-row veb-row">
                 <label for="veb-subject">제목</label>
                 <input type="text" id="veb-subject" class="veb-subject" placeholder="안녕하세요. 공지드립니다.">
             </div>
@@ -95,6 +104,9 @@
             <div class="veb-history">
                 <div class="vei-actions">
                     <h3 class="veb-history-title">발송 이력</h3>
+                    <label for="veb-history-date" class="sr-only">발송이력 날짜</label>
+                    <input type="date" id="veb-history-date" class="veb-date-input">
+                    <button type="button" class="btn" id="veb-history-date-btn">날짜지정</button>
                     <button type="button" class="btn" id="veb-history-refresh-btn">새로고침</button>
                 </div>
                 <ul id="veb-history-list" class="veb-history-list"></ul>
