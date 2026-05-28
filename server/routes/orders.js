@@ -152,6 +152,25 @@ async function buildOrderItemsFromDb(db, clientItems, vendorDoc) {
 
 router.get("/", requireRole("admin", "vendor"), async function (req, res) {
     try {
+        function parseYmdToMs(s, endOfDay) {
+            var m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(s || "").trim());
+            if (!m) return 0;
+            var y = parseInt(m[1], 10);
+            var mo = parseInt(m[2], 10) - 1;
+            var d = parseInt(m[3], 10) + (endOfDay ? 1 : 0);
+            return new Date(y, mo, d).getTime();
+        }
+
+        var fromMs = parseYmdToMs(req.query.dateFrom, false);
+        var toMs = parseYmdToMs(req.query.dateTo, true);
+        var vendorName = String(req.query.vendorName || "").trim();
+        if ((req.query.dateFrom && !fromMs) || (req.query.dateTo && !toMs)) {
+            return res.status(400).json({ ok: false, error: "기간 날짜 형식이 올바르지 않습니다." });
+        }
+        if (fromMs && toMs && fromMs >= toMs) {
+            return res.status(400).json({ ok: false, error: "기간 선택이 올바르지 않습니다." });
+        }
+
         let query;
         if (req.auth.role === "vendor") {
             const vendor = await findVendorByLoginId(req.auth.userId || "");
@@ -170,6 +189,14 @@ router.get("/", requireRole("admin", "vendor"), async function (req, res) {
                 });
             }
             query = buildOrderListQuery(req.auth);
+        }
+        if (fromMs || toMs) {
+            query.createdAt = {};
+            if (fromMs) query.createdAt.$gte = fromMs;
+            if (toMs) query.createdAt.$lt = toMs;
+        }
+        if (vendorName) {
+            query.vendorCompany = { $regex: vendorName.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), $options: "i" };
         }
         const items = await getDb()
             .collection("orders")

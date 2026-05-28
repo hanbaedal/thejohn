@@ -16,6 +16,11 @@
     <link rel="stylesheet" href="admin-manage.css">
     <style>
         .ol-admin-list { list-style: none; margin: 0; padding: 0; }
+        .ol-list-scroll {
+            max-height: 19rem;
+            overflow-y: auto;
+            padding-right: 0.2rem;
+        }
         .ol-admin-item {
             display: flex;
             flex-wrap: wrap;
@@ -84,6 +89,50 @@
         .order-detail-table th { background: #f4f7fb; }
         .order-detail-total { margin: 0.75rem 0 0; text-align: right; font-size: 1rem; }
         .order-detail-empty { margin: 0; color: #5a6d7e; }
+        .ol-date-input { min-width: 10rem; }
+        .ol-vendor-input { min-width: 14rem; cursor: pointer; background: #fff; }
+        .ol-picker-modal {
+            position: fixed;
+            inset: 0;
+            z-index: 10020;
+            background: rgba(5, 42, 77, 0.45);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 1rem;
+        }
+        .ol-picker-modal[hidden] { display: none !important; }
+        .ol-picker-panel {
+            width: min(100%, 34rem);
+            max-height: min(80vh, 44rem);
+            background: #fff;
+            border-radius: 12px;
+            padding: 0.95rem;
+            box-shadow: 0 16px 38px rgba(0, 0, 0, 0.18);
+            display: flex;
+            flex-direction: column;
+            gap: 0.6rem;
+        }
+        .ol-picker-list {
+            margin: 0;
+            padding: 0;
+            list-style: none;
+            overflow-y: auto;
+            max-height: 45vh;
+            border: 1px solid #e5ebf2;
+            border-radius: 8px;
+        }
+        .ol-picker-item-btn {
+            width: 100%;
+            border: none;
+            background: #fff;
+            text-align: left;
+            padding: 0.55rem 0.7rem;
+            border-bottom: 1px solid #edf2f7;
+            cursor: pointer;
+            font: inherit;
+        }
+        .ol-picker-item-btn:hover { background: #f7fbff; }
     </style>
     <script src="api-config.js"></script>
     <script src="thejhon-api.js"></script>
@@ -122,8 +171,29 @@
         <h1>주문서관리</h1>
         <p id="ol-hint" class="ol-hint" hidden></p>
         <p id="ol-status" class="ol-status" role="status" aria-live="polite"></p>
-        <div id="ol-list"></div>
+        <div class="vei-actions">
+            <label for="ol-vendor-name" class="sr-only">업체명 선택</label>
+            <input type="text" id="ol-vendor-name" class="ol-vendor-input" placeholder="업체 선택" readonly>
+            <button type="button" class="btn" id="ol-vendor-clear-btn">업체해제</button>
+            <label for="ol-date-from" class="sr-only">주문이력 시작일</label>
+            <input type="date" id="ol-date-from" class="ol-date-input">
+            <span>~</span>
+            <label for="ol-date-to" class="sr-only">주문이력 종료일</label>
+            <input type="date" id="ol-date-to" class="ol-date-input">
+        </div>
+        <div id="ol-list" class="ol-list-scroll"></div>
         <div id="ol-detail" hidden aria-live="polite"></div>
+        <div id="ol-vendor-modal" class="ol-picker-modal" hidden role="dialog" aria-modal="true" aria-labelledby="ol-vendor-modal-title">
+            <div class="ol-picker-panel">
+                <h2 id="ol-vendor-modal-title" class="ol-detail-title">업체 선택</h2>
+                <label for="ol-vendor-search" class="sr-only">업체 검색</label>
+                <input type="text" id="ol-vendor-search" placeholder="업체명 검색">
+                <ul id="ol-vendor-list" class="ol-picker-list"></ul>
+                <div class="vei-actions">
+                    <button type="button" class="btn" id="ol-vendor-modal-close">닫기</button>
+                </div>
+            </div>
+        </div>
     </main>
         <footer class="site-footer">
         <div class="site-footer-inner">

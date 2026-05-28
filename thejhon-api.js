@@ -304,8 +304,14 @@
         submitOrder: function (body) {
             return request("POST", "/api/orders", body);
         },
-        listOrders: function () {
-            return request("GET", "/api/orders").then(function (d) {
+        listOrders: function (opts) {
+            opts = opts || {};
+            var qs = [];
+            if (opts.dateFrom) qs.push("dateFrom=" + encodeURIComponent(String(opts.dateFrom)));
+            if (opts.dateTo) qs.push("dateTo=" + encodeURIComponent(String(opts.dateTo)));
+            if (opts.vendorName) qs.push("vendorName=" + encodeURIComponent(String(opts.vendorName)));
+            var q = qs.length ? "?" + qs.join("&") : "";
+            return request("GET", "/api/orders" + q).then(function (d) {
                 return d.items || [];
             });
         },
