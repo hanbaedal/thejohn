@@ -299,17 +299,28 @@ router.post("/broadcast", requireRole("admin"), async function (req, res) {
 router.get("/history", requireRole("admin"), async function (req, res) {
     try {
         const limit = Math.min(Math.max(parseInt(req.query.limit || "20", 10) || 20, 1), 100);
-        const dateText = trim(req.query.date);
+        const dateFrom = trim(req.query.dateFrom);
+        const dateTo = trim(req.query.dateTo);
         const filter = {};
-        if (dateText) {
-            const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(dateText);
-            if (!m) return res.status(400).json({ ok: false, error: "날짜 형식이 올바르지 않습니다." });
-            const y = parseInt(m[1], 10);
-            const mo = parseInt(m[2], 10) - 1;
-            const d = parseInt(m[3], 10);
-            const from = new Date(y, mo, d).getTime();
-            const to = new Date(y, mo, d + 1).getTime();
-            filter.createdAt = { $gte: from, $lt: to };
+        if (dateFrom || dateTo) {
+            let fromMs = 0;
+            let toMs = 0;
+            if (dateFrom) {
+                const m1 = /^(\d{4})-(\d{2})-(\d{2})$/.exec(dateFrom);
+                if (!m1) return res.status(400).json({ ok: false, error: "시작일 형식이 올바르지 않습니다." });
+                fromMs = new Date(parseInt(m1[1], 10), parseInt(m1[2], 10) - 1, parseInt(m1[3], 10)).getTime();
+            }
+            if (dateTo) {
+                const m2 = /^(\d{4})-(\d{2})-(\d{2})$/.exec(dateTo);
+                if (!m2) return res.status(400).json({ ok: false, error: "종료일 형식이 올바르지 않습니다." });
+                toMs = new Date(parseInt(m2[1], 10), parseInt(m2[2], 10) - 1, parseInt(m2[3], 10) + 1).getTime();
+            }
+            if (fromMs && toMs && fromMs >= toMs) {
+                return res.status(400).json({ ok: false, error: "기간 선택이 올바르지 않습니다." });
+            }
+            filter.createdAt = {};
+            if (fromMs) filter.createdAt.$gte = fromMs;
+            if (toMs) filter.createdAt.$lt = toMs;
         }
         const items = await getDb()
             .collection(HISTORY_COLLECTION)

@@ -12,9 +12,8 @@
     var testEmailEl = document.getElementById("veb-test-email");
     var testBtn = document.getElementById("veb-test-btn");
     var sendBtn = document.getElementById("veb-send-btn");
-    var historyBtn = document.getElementById("veb-history-refresh-btn");
-    var historyDateEl = document.getElementById("veb-history-date");
-    var historyDateBtn = document.getElementById("veb-history-date-btn");
+    var historyFromEl = document.getElementById("veb-history-date-from");
+    var historyToEl = document.getElementById("veb-history-date-to");
     var historyListEl = document.getElementById("veb-history-list");
     var failedWrap = document.getElementById("veb-failed-wrap");
     var failedListEl = document.getElementById("veb-failed-list");
@@ -151,13 +150,23 @@
             .join("");
     }
 
-    function loadHistory(dateText) {
+    function loadHistory(fromText, toText) {
         if (!api || !api.listVendorEmailHistory) return;
-        api.listVendorEmailHistory(20, dateText || "")
+        api.listVendorEmailHistory(20, fromText || "", toText || "")
             .then(renderHistory)
             .catch(function () {
                 if (historyListEl) historyListEl.innerHTML = "<li>이력을 불러오지 못했습니다.</li>";
             });
+    }
+
+    function applyHistoryRange() {
+        var fromText = String((historyFromEl && historyFromEl.value) || "").trim();
+        var toText = String((historyToEl && historyToEl.value) || "").trim();
+        if (fromText && toText && fromText > toText) {
+            setStatus("기간 선택이 올바르지 않습니다. (시작일 <= 종료일)", true);
+            return;
+        }
+        loadHistory(fromText, toText);
     }
 
     if (!validateAccess()) return;
@@ -189,7 +198,7 @@
                     attachments: attachments
                 });
                 renderFailed(result.failedItems || []);
-                loadHistory();
+                applyHistoryRange();
                 setStatus(
                     "발송 완료: " +
                         (result.sent || 0) +
@@ -239,20 +248,10 @@
         });
     }
 
-    if (historyBtn) {
-        historyBtn.addEventListener("click", function () {
-            loadHistory();
-        });
+    if (historyFromEl) {
+        historyFromEl.addEventListener("change", applyHistoryRange);
     }
-
-    if (historyDateBtn) {
-        historyDateBtn.addEventListener("click", function () {
-            var dateText = String((historyDateEl && historyDateEl.value) || "").trim();
-            if (!dateText) {
-                setStatus("날짜를 선택해 주세요.", true);
-                return;
-            }
-            loadHistory(dateText);
-        });
+    if (historyToEl) {
+        historyToEl.addEventListener("change", applyHistoryRange);
     }
 })();

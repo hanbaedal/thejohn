@@ -104,10 +104,11 @@
             <div class="veb-history">
                 <div class="vei-actions">
                     <h3 class="veb-history-title">발송 이력</h3>
-                    <label for="veb-history-date" class="sr-only">발송이력 날짜</label>
-                    <input type="date" id="veb-history-date" class="veb-date-input">
-                    <button type="button" class="btn" id="veb-history-date-btn">날짜지정</button>
-                    <button type="button" class="btn" id="veb-history-refresh-btn">새로고침</button>
+                    <label for="veb-history-date-from" class="sr-only">발송이력 시작일</label>
+                    <input type="date" id="veb-history-date-from" class="veb-date-input">
+                    <span>~</span>
+                    <label for="veb-history-date-to" class="sr-only">발송이력 종료일</label>
+                    <input type="date" id="veb-history-date-to" class="veb-date-input">
                 </div>
                 <ul id="veb-history-list" class="veb-history-list"></ul>
             </div>

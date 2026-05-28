@@ -204,10 +204,11 @@
         sendVendorBroadcastTestEmail: function (payload) {
             return request("POST", "/api/vendor-email/broadcast-test", payload || {});
         },
-        listVendorEmailHistory: function (limit, dateText) {
+        listVendorEmailHistory: function (limit, fromDateText, toDateText) {
             var qs = [];
             if (limit) qs.push("limit=" + encodeURIComponent(String(limit)));
-            if (dateText) qs.push("date=" + encodeURIComponent(String(dateText)));
+            if (fromDateText) qs.push("dateFrom=" + encodeURIComponent(String(fromDateText)));
+            if (toDateText) qs.push("dateTo=" + encodeURIComponent(String(toDateText)));
             var q = qs.length ? "?" + qs.join("&") : "";
             return request("GET", "/api/vendor-email/history" + q).then(function (d) {
                 return d.items || [];
