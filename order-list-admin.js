@@ -9,7 +9,6 @@
     var dateFromEl = document.getElementById("ol-date-from");
     var dateToEl = document.getElementById("ol-date-to");
     var vendorNameEl = document.getElementById("ol-vendor-name");
-    var vendorPickBtn = document.getElementById("ol-vendor-pick-btn");
     var vendorClearBtn = document.getElementById("ol-vendor-clear-btn");
     var vendorModal = document.getElementById("ol-vendor-modal");
     var vendorModalCloseBtn = document.getElementById("ol-vendor-modal-close");
@@ -95,6 +94,17 @@
             .catch(function () {
                 renderVendorList("");
             });
+    }
+
+    function bindDatePickerOpen(el) {
+        if (!el) return;
+        function openPicker() {
+            try {
+                if (typeof el.showPicker === "function") el.showPicker();
+            } catch (e) {}
+        }
+        el.addEventListener("click", openPicker);
+        el.addEventListener("focus", openPicker);
     }
 
     function showDetail(order) {
@@ -261,8 +271,9 @@
 
     if (dateFromEl) dateFromEl.addEventListener("change", loadOrders);
     if (dateToEl) dateToEl.addEventListener("change", loadOrders);
+    bindDatePickerOpen(dateFromEl);
+    bindDatePickerOpen(dateToEl);
     if (vendorNameEl) vendorNameEl.addEventListener("click", openVendorModal);
-    if (vendorPickBtn) vendorPickBtn.addEventListener("click", openVendorModal);
     if (vendorClearBtn) {
         vendorClearBtn.addEventListener("click", function () {
             selectedVendorName = "";
