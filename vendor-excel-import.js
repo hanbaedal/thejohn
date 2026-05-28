@@ -11,6 +11,7 @@
     var previewBody = document.getElementById("vei-preview-body");
     var previewCount = document.getElementById("vei-preview-count");
     var importBtn = document.getElementById("vei-import-btn");
+    var enrichBtn = document.getElementById("vei-enrich-btn");
     var clearBtn = document.getElementById("vei-clear-btn");
     var resultEl = document.getElementById("vei-result");
 
@@ -215,6 +216,7 @@
     function resetPreview() {
         parsedRows = [];
         if (importBtn) importBtn.disabled = true;
+        if (enrichBtn) enrichBtn.disabled = true;
         if (previewWrap) previewWrap.hidden = true;
         if (previewCount) previewCount.textContent = "";
         if (fileInput) fileInput.value = "";
@@ -249,16 +251,19 @@
                     renderPreview([]);
                     setStatus(parsed.error, "error");
                     if (importBtn) importBtn.disabled = true;
+                    if (enrichBtn) enrichBtn.disabled = true;
                     return;
                 }
                 renderPreview(parsed.rows);
                 if (importBtn) importBtn.disabled = false;
+                if (enrichBtn) enrichBtn.disabled = false;
                 setStatus("열 매핑을 확인해 주세요. 필요하면 표에서 수정한 뒤 저장하세요.", "ok");
             } catch (err) {
                 parsedRows = [];
                 renderPreview([]);
                 setStatus((err && err.message) || "엑셀 파일을 읽지 못했습니다.", "error");
                 if (importBtn) importBtn.disabled = true;
+                if (enrichBtn) enrichBtn.disabled = true;
             }
         };
         reader.onerror = function () {
@@ -369,6 +374,37 @@
         });
     }
 
+    if (enrichBtn) {
+        enrichBtn.addEventListener("click", function () {
+            syncAllRowsFromPreview();
+            if (!parsedRows.length) {
+                setStatus("먼저 엑셀 파일을 선택해 주세요.", "error");
+                return;
+            }
+            if (!api || !api.enrichVendorProspectsPreview) {
+                setStatus("조회 보강 API를 사용할 수 없습니다.", "error");
+                return;
+            }
+            enrichBtn.disabled = true;
+            if (importBtn) importBtn.disabled = true;
+            setStatus("기존 데이터 조회로 빈 항목을 채우는 중…");
+            api.enrichVendorProspectsPreview(parsedRows)
+                .then(function (res) {
+                    parsedRows = (res && res.items) || [];
+                    renderPreview(parsedRows);
+                    var n = (res && res.enriched) || 0;
+                    setStatus("조회 보강 완료: " + n + "건 업데이트", "ok");
+                })
+                .catch(function (err) {
+                    setStatus(err.message || "조회 보강에 실패했습니다.", "error");
+                })
+                .finally(function () {
+                    enrichBtn.disabled = !parsedRows.length;
+                    if (importBtn) importBtn.disabled = !parsedRows.length;
+                });
+        });
+    }
+
     var access =
         window.THEJHON_AUTH && THEJHON_AUTH.getSupervisorExcelImportAccess
             ? THEJHON_AUTH.getSupervisorExcelImportAccess()
@@ -377,6 +413,7 @@
         setStatus(access.reason, "error");
         if (fileInput) fileInput.disabled = true;
         if (importBtn) importBtn.disabled = true;
+        if (enrichBtn) enrichBtn.disabled = true;
         if (clearBtn) clearBtn.disabled = true;
     }
 })();

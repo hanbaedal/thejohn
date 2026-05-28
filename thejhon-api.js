@@ -188,6 +188,16 @@
         importVendorProspects: function (rows) {
             return request("POST", "/api/vendor-prospects/import", { rows: rows || [] });
         },
+        enrichVendorProspectsPreview: function (rows) {
+            return request("POST", "/api/vendor-prospects/enrich-preview", {
+                rows: rows || []
+            }).then(function (d) {
+                return {
+                    items: d.items || [],
+                    enriched: d.enriched || 0
+                };
+            });
+        },
         listVendorNew: function (q) {
             var query = q ? "?q=" + encodeURIComponent(String(q)) : "";
             return request("GET", "/api/vendor-new" + query).then(function (d) {

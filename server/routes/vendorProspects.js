@@ -38,6 +38,15 @@ function pickFirstValue(doc, keys) {
     return "";
 }
 
+function applyMatchedFields(target, matched) {
+    if (!target || !matched) return target;
+    if (!target.vn_ceo && matched.vn_ceo) target.vn_ceo = matched.vn_ceo;
+    if (!target.vn_ceo_tel && matched.vn_ceo_tel) target.vn_ceo_tel = matched.vn_ceo_tel;
+    if (!target.vn_web && matched.vn_web) target.vn_web = matched.vn_web;
+    if (!target.vn_email && matched.vn_email) target.vn_email = matched.vn_email;
+    return target;
+}
+
 async function findMatchedVendorInfo(db, built) {
     const company = normText(built.vn_company);
     const phone = normPhone(built.vn_phone);
@@ -103,6 +112,40 @@ router.get("/", requireRole("supervisor", "admin"), async function (req, res) {
     }
 });
 
+/** 슈퍼바이저 — 미리보기 데이터 빈 항목 조회 채우기 */
+router.post("/enrich-preview", requireRole("supervisor"), async function (req, res) {
+    try {
+        const rows = req.body && Array.isArray(req.body.rows) ? req.body.rows : [];
+        if (!rows.length) return res.json({ ok: true, items: [], enriched: 0 });
+        if (rows.length > MAX_IMPORT_ROWS) {
+            return res.status(400).json({
+                ok: false,
+                error: "한 번에 최대 " + MAX_IMPORT_ROWS + "건까지 조회할 수 있습니다."
+            });
+        }
+        const db = getDb();
+        const items = [];
+        let enriched = 0;
+        for (let i = 0; i < rows.length; i++) {
+            const src = Object.assign({}, rows[i] || {});
+            const check = validateImportRow(src, i + 2);
+            if (!check.ok) {
+                items.push(src);
+                continue;
+            }
+            const matched = await findMatchedVendorInfo(db, check.built);
+            const before = JSON.stringify(check.built);
+            applyMatchedFields(check.built, matched);
+            if (JSON.stringify(check.built) !== before) enriched++;
+            items.push(check.built);
+        }
+        return res.json({ ok: true, items: items, enriched: enriched });
+    } catch (e) {
+        console.error("POST /api/vendor-prospects/enrich-preview", e);
+        return res.status(500).json({ ok: false, error: "미리보기 조회 보강에 실패했습니다." });
+    }
+});
+
 /** 슈퍼바이저 — 엑셀 일괄 등록 → vendor_prospects */
 router.post("/import", requireRole("supervisor"), async function (req, res) {
     try {
@@ -154,12 +197,7 @@ router.post("/import", requireRole("supervisor"), async function (req, res) {
             seenInBatch.add(norm);
 
             const matched = await findMatchedVendorInfo(db, check.built);
-            if (matched) {
-                if (!check.built.vn_ceo && matched.vn_ceo) check.built.vn_ceo = matched.vn_ceo;
-                if (!check.built.vn_ceo_tel && matched.vn_ceo_tel) check.built.vn_ceo_tel = matched.vn_ceo_tel;
-                if (!check.built.vn_web && matched.vn_web) check.built.vn_web = matched.vn_web;
-                if (!check.built.vn_email && matched.vn_email) check.built.vn_email = matched.vn_email;
-            }
+            applyMatchedFields(check.built, matched);
 
             let doc = toImportDbDoc(newProspectId(), check.built, null);
             if (!registration) {
