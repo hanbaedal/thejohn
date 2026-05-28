@@ -39,6 +39,13 @@ function canUseNaver() {
     );
 }
 
+function stripHtml(s) {
+    return String(s || "")
+        .replace(/<[^>]+>/g, " ")
+        .replace(/\s+/g, " ")
+        .trim();
+}
+
 async function fetchNaverLocal(built) {
     if (!canUseNaver()) return null;
     var company = String(built.vn_company || "").trim();
@@ -101,8 +108,58 @@ async function findExternalVendorInfo(built) {
     return null;
 }
 
+async function searchFuneralHallsByCity(city) {
+    if (!canUseNaver()) return { items: [], configured: false };
+    var c = String(city || "").trim();
+    if (!c) return { items: [], configured: true };
+    var query = c + " 장례식장";
+    var url =
+        "https://openapi.naver.com/v1/search/local.json?display=30&query=" +
+        encodeURIComponent(query);
+    var controller = new AbortController();
+    var timer = setTimeout(function () {
+        controller.abort();
+    }, 7000);
+    try {
+        var res = await fetch(url, {
+            method: "GET",
+            headers: {
+                "X-Naver-Client-Id": String(process.env.NAVER_SEARCH_CLIENT_ID || "").trim(),
+                "X-Naver-Client-Secret": String(process.env.NAVER_SEARCH_CLIENT_SECRET || "").trim()
+            },
+            signal: controller.signal
+        });
+        if (!res.ok) return { items: [], configured: true };
+        var json = await res.json();
+        var rawItems = Array.isArray(json && json.items) ? json.items : [];
+        var out = [];
+        var seen = new Set();
+        for (var i = 0; i < rawItems.length; i++) {
+            var it = rawItems[i] || {};
+            var name = stripHtml(it.title || "");
+            if (!name) continue;
+            var key = normText(name);
+            if (seen.has(key)) continue;
+            seen.add(key);
+            out.push({
+                vn_company: name,
+                vn_phone: String(it.telephone || "").trim(),
+                vn_addr: String(it.roadAddress || it.address || "").trim(),
+                vn_web: String(it.link || "").trim(),
+                vn_record_type: "new"
+            });
+        }
+        return { items: out, configured: true };
+    } catch (e) {
+        return { items: [], configured: true };
+    } finally {
+        clearTimeout(timer);
+    }
+}
+
 module.exports = {
     findExternalVendorInfo,
-    canUseNaver
+    canUseNaver,
+    searchFuneralHallsByCity
 };
 

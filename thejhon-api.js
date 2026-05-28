@@ -185,6 +185,12 @@
                 return d.items || [];
             });
         },
+        searchFuneralHalls: function (city) {
+            var q = "?city=" + encodeURIComponent(String(city || ""));
+            return request("GET", "/api/vendor-prospects/search-funeral-halls" + q).then(function (d) {
+                return d.items || [];
+            });
+        },
         importVendorProspects: function (rows) {
             return request("POST", "/api/vendor-prospects/import", { rows: rows || [] });
         },

@@ -66,6 +66,10 @@
                 <h2>신규업체 리스트</h2>
                 <p>신규 업체 목록에서 선택해 수정합니다.</p>
             </a>
+            <a href="vendor-prospect-finder.html" class="company-division-card" id="vm-prospect-finder" hidden>
+                <h2>예비 업체 찾기</h2>
+                <p>도시명을 입력해 장례식장을 조회하고 예비거래처 미리보기·저장을 진행합니다.</p>
+            </a>
             <a href="vendor-excel-import.html" class="company-division-card" id="vm-excel-import" hidden>
                 <h2>자료찾기</h2>
                 <p>엑셀(장례식장명·전화번호·주소·빈소수) 업로드 후 기존 DB 조회값을 보강해 예비거래처에 저장합니다.</p>
@@ -112,6 +116,7 @@
                 var orderCard = document.getElementById("vm-order-manage");
                 var migrateCard = document.getElementById("vm-data-migrate");
                 var excelCard = document.getElementById("vm-excel-import");
+                var finderCard = document.getElementById("vm-prospect-finder");
                 var admin =
                     window.THEJHON_AUTH &&
                     THEJHON_AUTH.canManageRegisters &&
@@ -135,6 +140,10 @@
                 if (migrateCard) {
                     migrateCard.hidden = !admin;
                     migrateCard.setAttribute("aria-hidden", admin ? "false" : "true");
+                }
+                if (finderCard) {
+                    finderCard.hidden = !admin;
+                    finderCard.setAttribute("aria-hidden", admin ? "false" : "true");
                 }
                 var supervisor =
                     window.THEJHON_AUTH &&

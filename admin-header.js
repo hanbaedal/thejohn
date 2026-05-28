@@ -42,6 +42,7 @@
             orderItem +
             '<a href="vendor-new-register.html" class="nav-dropdown-item" role="menuitem">신규업체 등록</a>' +
             '<a href="vendor-new-list.html" class="nav-dropdown-item" role="menuitem">신규업체 리스트</a>' +
+            '<a href="vendor-prospect-finder.html" class="nav-dropdown-item" data-nav-prospect-finder role="menuitem" hidden>예비 업체 찾기</a>' +
             '<a href="vendor-excel-import.html" class="nav-dropdown-item" data-nav-excel-import role="menuitem" hidden>자료찾기</a>' +
             "</div></div>"
         );
@@ -65,6 +66,7 @@
             "vendor-detail.html": true,
             "vendor-new-register.html": true,
             "vendor-new-list.html": true,
+            "vendor-prospect-finder.html": true,
             "vendor-excel-import.html": true,
             "order-list-admin.html": true
         };

@@ -268,7 +268,8 @@
         "vendor-detail.html",
         "vendor-new-register.html",
         "vendor-new-list.html",
-        "vendor-excel-import.html"
+        "vendor-excel-import.html",
+        "vendor-prospect-finder.html"
     ];
     var ORDER_MANAGE_PAGES = ["order-list-admin.html"];
     var STAFF_MANAGE_PAGES = ["staff-manage.html"];
@@ -395,6 +396,18 @@
                 allowed: false,
                 reason: "엑셀 불러오기는 슈퍼바이저만 사용할 수 있습니다."
             };
+        }
+        return { allowed: true, reason: "" };
+    }
+
+    function getProspectFinderAccess() {
+        normalizeLegacySession();
+        if (!global.THEJHON_API || !THEJHON_API.getToken || !THEJHON_API.getToken()) {
+            return { allowed: false, reason: "로그인이 필요합니다. 관리자 로그인 후 이용해 주세요." };
+        }
+        if (!isLoggedIn()) return { allowed: false, reason: "로그인이 필요합니다." };
+        if (getRole() !== "admin") {
+            return { allowed: false, reason: "예비 업체 찾기는 관리자만 사용할 수 있습니다." };
         }
         return { allowed: true, reason: "" };
     }
@@ -664,6 +677,12 @@
             }
             return;
         }
+        if (page === "vendor-prospect-finder.html") {
+            if (!getProspectFinderAccess().allowed) {
+                redirectFromProtectedPage(isLoggedIn());
+            }
+            return;
+        }
         if (ADMIN_REGISTER_PAGES.indexOf(page) < 0) return;
         if (!isLoggedIn()) {
             redirectFromProtectedPage(false);
@@ -742,9 +761,17 @@
                 'a[href="vendor-excel-import.html"], [data-nav-excel-import]'
             );
             var showExcel = isSupervisorStaff();
+            var finderLinks = nav.querySelectorAll(
+                'a[href="vendor-prospect-finder.html"], [data-nav-prospect-finder]'
+            );
+            var showFinder = getRole() === "admin";
             for (var x = 0; x < excelLinks.length; x++) {
                 excelLinks[x].hidden = !showExcel;
                 excelLinks[x].setAttribute("aria-hidden", showExcel ? "false" : "true");
+            }
+            for (var f = 0; f < finderLinks.length; f++) {
+                finderLinks[f].hidden = !showFinder;
+                finderLinks[f].setAttribute("aria-hidden", showFinder ? "false" : "true");
             }
             for (var o = 0; o < orderLinks.length; o++) {
                 if (showOrder) {
@@ -807,6 +834,7 @@
         ORDER_VENDOR_STAFF_ID: ORDER_VENDOR_STAFF_ID,
         isSupervisorStaff: isSupervisorStaff,
         getSupervisorExcelImportAccess: getSupervisorExcelImportAccess,
+        getProspectFinderAccess: getProspectFinderAccess,
         canManageStaffAccounts: canManageStaffAccounts,
         getStaffManageAccess: getStaffManageAccess,
         VENDOR_ORDER_ENABLED_KEY: VENDOR_ORDER_ENABLED_KEY,

@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" href="img/icon-192.png" sizes="192x192" type="image/png">
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#0a4d9c">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-title" content="더존">
+    <link rel="apple-touch-icon" sizes="192x192" href="img/icon-192.png">
+    <title>예비 업체 찾기 — 더존</title>
+    <link rel="stylesheet" href="common.css">
+    <link rel="stylesheet" href="admin-manage.css">
+    <link rel="stylesheet" href="vendor-excel-import.css">
+    <script src="api-config.js"></script>
+    <script src="thejhon-api.js"></script>
+    <script src="auth.js"></script>
+    <script src="admin-header.js"></script>
+    <script src="vendor-excel-import-map.js"></script>
+    <script src="nav.js" defer></script>
+</head>
+<body>
+    <header class="site-header">
+        <div class="site-header-start">
+            <a href="index.html" class="dz-logo dz-logo--compact" aria-label="더존 홈"><img src="img/logo.png" alt="" width="72" height="72" class="dz-logo-img"></a>
+            <nav class="site-header-nav" aria-label="주요 메뉴">
+                <a href="company.html" class="header-nav-link">회사소개</a>
+                <a href="products.html" class="header-nav-link">사업부문</a>
+                <a href="product-register.html" class="header-nav-link">상품등록</a>
+                <a href="vendor-register.html" class="header-nav-link">업체등록</a>
+            </nav>
+        </div>
+        <nav class="site-header-actions" aria-label="계정">
+            <time class="header-date" id="headerToday" datetime=""></time>
+            <button type="button" class="btn btn-auth-icon btn-logout" id="btnLogout" hidden aria-label="로그아웃" title="로그아웃"></button>
+        </nav>
+    </header>
+    <main class="page-main vei-main page-main--hide-scrollbar">
+        <p class="am-subnav"><a href="vendor-manage.html">← 업체관리</a></p>
+        <h1>예비 업체 찾기</h1>
+        <p id="vpf-status" class="vei-status" role="status" aria-live="polite"></p>
+
+        <section class="vei-panel" aria-labelledby="vpf-search-title">
+            <h2 id="vpf-search-title">1. 도시명 조회</h2>
+            <p class="vei-hint">예: 서울, 부산, 대구, 인천, 광주, 대전, 울산, 세종, 수원, 고양, 용인, 성남, 부천, 제주, 전주, 청주, 창원</p>
+            <div class="vei-file-row">
+                <label for="vpf-city" class="sr-only">도시명</label>
+                <input type="text" id="vpf-city" placeholder="도시명을 입력하세요">
+                <button type="button" class="btn btn-secondary" id="vpf-search-btn">장례식장 조회</button>
+                <button type="button" class="btn btn-secondary" id="vpf-clear-btn">초기화</button>
+            </div>
+        </section>
+
+        <section class="vei-panel" aria-labelledby="vpf-preview-title">
+            <h2 id="vpf-preview-title">2. 미리보기</h2>
+            <p id="vpf-preview-count" class="vei-hint"></p>
+            <div id="vpf-preview-wrap" class="vei-preview-wrap" hidden>
+                <div class="vei-preview-outer">
+                    <table class="vei-preview-table">
+                        <thead id="vpf-preview-head"></thead>
+                        <tbody id="vpf-preview-body"></tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="vei-actions">
+                <button type="button" class="btn btn-secondary" id="vpf-enrich-btn" disabled>빈 항목 채우기</button>
+                <button type="button" class="btn btn-primary" id="vpf-import-btn" disabled>예비거래처 DB에 저장</button>
+            </div>
+            <div id="vpf-result" class="vei-result" hidden></div>
+        </section>
+    </main>
+    <footer class="site-footer">
+        <div class="site-footer-inner">
+            <dl class="site-footer-grid" id="siteFooterCompanyGrid" aria-live="polite"></dl>
+            <p class="site-footer-company-msg" id="siteFooterCompanyMsg" hidden></p>
+        </div>
+    </footer>
+    <script src="vendor-prospect-finder.js"></script>
+</body>
+</html>
+

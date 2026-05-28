@@ -15,7 +15,11 @@ const {
     validateImportRow,
     toImportDbDoc
 } = require("../lib/vendorProspectImport");
-const { findExternalVendorInfo, canUseNaver } = require("../lib/vendorExternalLookup");
+const {
+    findExternalVendorInfo,
+    canUseNaver,
+    searchFuneralHallsByCity
+} = require("../lib/vendorExternalLookup");
 
 const router = express.Router();
 
@@ -112,6 +116,25 @@ router.get("/", requireRole("supervisor", "admin"), async function (req, res) {
     } catch (e) {
         console.error("GET /api/vendor-prospects", e);
         res.status(500).json({ ok: false, error: "예비거래처 목록을 불러오지 못했습니다." });
+    }
+});
+
+/** 관리자 — 도시명으로 장례식장 조회 (외부 웹) */
+router.get("/search-funeral-halls", requireRole("admin"), async function (req, res) {
+    try {
+        const city = String(req.query.city || "").trim();
+        if (!city) return res.status(400).json({ ok: false, error: "도시명을 입력해 주세요." });
+        const found = await searchFuneralHallsByCity(city);
+        if (!found.configured) {
+            return res.status(400).json({
+                ok: false,
+                error: "네이버 조회 키가 설정되지 않았습니다."
+            });
+        }
+        res.json({ ok: true, items: found.items || [], city: city });
+    } catch (e) {
+        console.error("GET /api/vendor-prospects/search-funeral-halls", e);
+        res.status(500).json({ ok: false, error: "장례식장 조회에 실패했습니다." });
     }
 });
 
