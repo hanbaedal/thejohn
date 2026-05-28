@@ -15,6 +15,7 @@ const {
     validateImportRow,
     toImportDbDoc
 } = require("../lib/vendorProspectImport");
+const { findExternalVendorInfo, canUseNaver } = require("../lib/vendorExternalLookup");
 
 const router = express.Router();
 
@@ -44,8 +45,12 @@ function applyMatchedFields(target, matched) {
     if (!target.vn_ceo_tel && matched.vn_ceo_tel) target.vn_ceo_tel = matched.vn_ceo_tel;
     if (!target.vn_web && matched.vn_web) target.vn_web = matched.vn_web;
     if (!target.vn_email && matched.vn_email) target.vn_email = matched.vn_email;
+    if (!target.vn_phone && matched.vn_phone) target.vn_phone = matched.vn_phone;
+    if (!target.vn_addr && matched.vn_addr) target.vn_addr = matched.vn_addr;
     return target;
 }
+
+const ENRICH_FIELDS = ["vn_ceo", "vn_ceo_tel", "vn_web", "vn_email", "vn_phone", "vn_addr"];
 
 async function findMatchedVendorInfo(db, built) {
     const company = normText(built.vn_company);
@@ -116,6 +121,7 @@ router.get("/", requireRole("supervisor", "admin"), async function (req, res) {
 router.post("/enrich-preview", requireRole("supervisor"), async function (req, res) {
     try {
         const rows = req.body && Array.isArray(req.body.rows) ? req.body.rows : [];
+        const useExternal = !!(req.body && req.body.useExternal);
         if (!rows.length) return res.json({ ok: true, items: [], enriched: 0 });
         if (rows.length > MAX_IMPORT_ROWS) {
             return res.status(400).json({
@@ -126,6 +132,7 @@ router.post("/enrich-preview", requireRole("supervisor"), async function (req, r
         const db = getDb();
         const items = [];
         let enriched = 0;
+        const diffs = [];
         for (let i = 0; i < rows.length; i++) {
             const src = Object.assign({}, rows[i] || {});
             const check = validateImportRow(src, i + 2);
@@ -134,12 +141,52 @@ router.post("/enrich-preview", requireRole("supervisor"), async function (req, r
                 continue;
             }
             const matched = await findMatchedVendorInfo(db, check.built);
-            const before = JSON.stringify(check.built);
+            const before = {};
+            for (let f = 0; f < ENRICH_FIELDS.length; f++) {
+                const key = ENRICH_FIELDS[f];
+                before[key] = String(check.built[key] || "");
+            }
+            let usedSource = matched && matched.source ? matched.source : "";
             applyMatchedFields(check.built, matched);
-            if (JSON.stringify(check.built) !== before) enriched++;
+            if (useExternal) {
+                const ext = await findExternalVendorInfo(check.built);
+                if (ext) {
+                    applyMatchedFields(check.built, ext);
+                    if (!usedSource) usedSource = ext.source || "external";
+                    else usedSource += "+" + (ext.source || "external");
+                }
+            }
+            const changes = [];
+            for (let f = 0; f < ENRICH_FIELDS.length; f++) {
+                const key = ENRICH_FIELDS[f];
+                const afterVal = String(check.built[key] || "");
+                if (before[key] !== afterVal) {
+                    changes.push({
+                        field: key,
+                        before: before[key],
+                        after: afterVal
+                    });
+                }
+            }
+            if (changes.length) {
+                enriched++;
+                diffs.push({
+                    row: i + 2,
+                    company: String(check.built.vn_company || ""),
+                    source: usedSource,
+                    changes: changes
+                });
+            }
             items.push(check.built);
         }
-        return res.json({ ok: true, items: items, enriched: enriched });
+        return res.json({
+            ok: true,
+            items: items,
+            enriched: enriched,
+            diffs: diffs,
+            externalEnabled: useExternal,
+            naverConfigured: canUseNaver()
+        });
     } catch (e) {
         console.error("POST /api/vendor-prospects/enrich-preview", e);
         return res.status(500).json({ ok: false, error: "미리보기 조회 보강에 실패했습니다." });

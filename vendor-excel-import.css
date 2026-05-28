@@ -111,6 +111,20 @@
     gap: 0.5rem;
     margin-top: 0.85rem;
 }
+.vei-external-check {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.35rem 0.6rem;
+    border: 1px solid #d8e1ea;
+    border-radius: 6px;
+    background: #f8fbff;
+    font-size: 0.78rem;
+    color: #38506a;
+}
+.vei-external-check input[type="checkbox"] {
+    accent-color: #0a4d9c;
+}
 .vei-result {
     margin-top: 0.75rem;
     padding: 0.65rem 0.75rem;
@@ -123,4 +137,14 @@
     padding-left: 1.2rem;
     font-size: 0.8rem;
     color: #a12c2c;
+}
+.vei-enrich-diff-list {
+    margin: 0.35rem 0 0;
+    padding-left: 1.2rem;
+    font-size: 0.78rem;
+    color: #334;
+    line-height: 1.5;
+}
+.vei-enrich-diff-list li {
+    margin-bottom: 0.3rem;
 }

@@ -12,6 +12,7 @@
     var previewCount = document.getElementById("vei-preview-count");
     var importBtn = document.getElementById("vei-import-btn");
     var enrichBtn = document.getElementById("vei-enrich-btn");
+    var useExternalInput = document.getElementById("vei-use-external");
     var clearBtn = document.getElementById("vei-clear-btn");
     var resultEl = document.getElementById("vei-result");
 
@@ -44,6 +45,12 @@
         "vn_mgr_tel",
         "vn_mgr_email"
     ];
+    var FIELD_LABELS = {
+        vn_ceo: "대표자",
+        vn_ceo_tel: "대표자연락처",
+        vn_web: "홈페이지",
+        vn_email: "이메일"
+    };
 
     function setStatus(msg, kind) {
         if (!statusEl) return;
@@ -142,6 +149,51 @@
 
     function escapeAttr(s) {
         return escapeHtml(s).replace(/'/g, "&#39;");
+    }
+
+    function renderEnrichDiffs(diffs) {
+        if (!resultEl) return;
+        var list = Array.isArray(diffs) ? diffs : [];
+        if (!list.length) {
+            resultEl.hidden = false;
+            resultEl.innerHTML =
+                "<strong>조회 비교</strong> 변경된 항목이 없습니다. (이미 값이 있거나 일치 데이터 없음)";
+            return;
+        }
+        var html =
+            "<strong>조회 비교</strong> 빈 항목 채움 " +
+            list.length +
+            "건" +
+            '<ul class="vei-enrich-diff-list">' +
+            list
+                .map(function (d) {
+                    var source = d.source ? " / source: " + d.source : "";
+                    var changes = (d.changes || [])
+                        .map(function (c) {
+                            var label = FIELD_LABELS[c.field] || c.field;
+                            return (
+                                label +
+                                ": " +
+                                (c.before || "(빈값)") +
+                                " → " +
+                                (c.after || "(빈값)")
+                            );
+                        })
+                        .join(" · ");
+                    return (
+                        "<li><strong>" +
+                        escapeHtml((d.row || "?") + "행 " + (d.company || "")) +
+                        "</strong>" +
+                        escapeHtml(source) +
+                        "<br>" +
+                        escapeHtml(changes) +
+                        "</li>"
+                    );
+                })
+                .join("") +
+            "</ul>";
+        resultEl.hidden = false;
+        resultEl.innerHTML = html;
     }
 
     function syncRowFromTr(tr, rowIndex) {
@@ -388,12 +440,29 @@
             enrichBtn.disabled = true;
             if (importBtn) importBtn.disabled = true;
             setStatus("기존 데이터 조회로 빈 항목을 채우는 중…");
-            api.enrichVendorProspectsPreview(parsedRows)
+            api.enrichVendorProspectsPreview(parsedRows, {
+                useExternal: !!(useExternalInput && useExternalInput.checked)
+            })
                 .then(function (res) {
                     parsedRows = (res && res.items) || [];
                     renderPreview(parsedRows);
                     var n = (res && res.enriched) || 0;
                     setStatus("조회 보강 완료: " + n + "건 업데이트", "ok");
+                    renderEnrichDiffs((res && res.diffs) || []);
+                    if (
+                        useExternalInput &&
+                        useExternalInput.checked &&
+                        res &&
+                        res.externalEnabled &&
+                        !res.naverConfigured
+                    ) {
+                        setStatus(
+                            "조회 보강 완료: " +
+                                n +
+                                "건 업데이트 (인터넷 조회 키 미설정으로 DB 조회만 사용)",
+                            "ok"
+                        );
+                    }
                 })
                 .catch(function (err) {
                     setStatus(err.message || "조회 보강에 실패했습니다.", "error");
@@ -415,5 +484,6 @@
         if (importBtn) importBtn.disabled = true;
         if (enrichBtn) enrichBtn.disabled = true;
         if (clearBtn) clearBtn.disabled = true;
+        if (useExternalInput) useExternalInput.disabled = true;
     }
 })();

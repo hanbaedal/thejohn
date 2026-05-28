@@ -188,13 +188,18 @@
         importVendorProspects: function (rows) {
             return request("POST", "/api/vendor-prospects/import", { rows: rows || [] });
         },
-        enrichVendorProspectsPreview: function (rows) {
+        enrichVendorProspectsPreview: function (rows, options) {
+            options = options || {};
             return request("POST", "/api/vendor-prospects/enrich-preview", {
-                rows: rows || []
+                rows: rows || [],
+                useExternal: !!options.useExternal
             }).then(function (d) {
                 return {
                     items: d.items || [],
-                    enriched: d.enriched || 0
+                    enriched: d.enriched || 0,
+                    diffs: d.diffs || [],
+                    externalEnabled: !!d.externalEnabled,
+                    naverConfigured: !!d.naverConfigured
                 };
             });
         },
