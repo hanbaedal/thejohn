@@ -717,7 +717,7 @@ a.company-division-card p {
     gap: clamp(0.42rem, 1.5vh, 0.62rem);
     width: 100%;
     max-width: 36rem;
-    margin: 0.25rem auto 0;
+    margin: 0.15rem auto 0;
     padding: 0 max(0.75rem, env(safe-area-inset-left, 0)) 0.4rem max(0.75rem, env(safe-area-inset-right, 0));
     box-sizing: border-box;
 }
