@@ -431,6 +431,7 @@
             seg === "vendor-detail.html" ||
             seg === "vendor-new-register.html" ||
             seg === "vendor-new-list.html" ||
+            seg === "vendor-email-broadcast.html" ||
             seg === "vendor-prospect-list.html" ||
             seg === "vendor-prospect-finder.html" ||
             seg === "vendor-excel-import.html" ||

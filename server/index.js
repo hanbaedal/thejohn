@@ -26,6 +26,7 @@ const vendorRoutes = require("./routes/vendors");
 const vendorProspectRoutes = require("./routes/vendorProspects");
 const vendorNewRoutes = require("./routes/vendorNew");
 const orderRoutes = require("./routes/orders");
+const vendorEmailRoutes = require("./routes/vendorEmail");
 const { requireRole } = require("./middleware/auth");
 
 const app = express();
@@ -156,6 +157,11 @@ app.get("/api/env-check", (req, res) => {
             THEJHON_SEED_SUPERVISOR_PASSWORD: !!process.env.THEJHON_SEED_SUPERVISOR_PASSWORD,
             NAVER_SEARCH_CLIENT_ID: !!envTrim("NAVER_SEARCH_CLIENT_ID"),
             NAVER_SEARCH_CLIENT_SECRET: !!envTrim("NAVER_SEARCH_CLIENT_SECRET"),
+            SMTP_HOST: !!envTrim("SMTP_HOST"),
+            SMTP_PORT: !!envTrim("SMTP_PORT"),
+            SMTP_USER: !!envTrim("SMTP_USER"),
+            SMTP_PASS: !!envTrim("SMTP_PASS"),
+            MAIL_FROM: !!envTrim("MAIL_FROM"),
             ALLOWED_ORIGINS: !!process.env.ALLOWED_ORIGINS,
             PORT_set: !!process.env.PORT
         },
@@ -194,6 +200,7 @@ app.use("/api/vendors", requireDb, vendorRoutes);
 app.use("/api/vendor-prospects", requireDb, vendorProspectRoutes);
 app.use("/api/vendor-new", requireDb, vendorNewRoutes);
 app.use("/api/orders", requireDb, orderRoutes);
+app.use("/api/vendor-email", requireDb, vendorEmailRoutes);
 
 app.use(express.static(staticRoot, { index: "index.html", extensions: ["html"] }));
 

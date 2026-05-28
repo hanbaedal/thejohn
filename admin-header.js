@@ -40,10 +40,11 @@
             '<a href="vendor-register.html" class="nav-dropdown-item" role="menuitem">업체 등록</a>' +
             '<a href="vendor-list-admin.html" class="nav-dropdown-item" role="menuitem">업체 리스트</a>' +
             orderItem +
+            '<a href="vendor-email-broadcast.html" class="nav-dropdown-item" role="menuitem">이메일 보내기</a>' +
             '<a href="vendor-new-register.html" class="nav-dropdown-item" role="menuitem">신규업체 등록</a>' +
             '<a href="vendor-new-list.html" class="nav-dropdown-item" role="menuitem">신규업체 리스트</a>' +
-            '<a href="vendor-prospect-list.html" class="nav-dropdown-item" role="menuitem">예비업체 리스트</a>' +
             '<a href="vendor-prospect-finder.html" class="nav-dropdown-item" data-nav-prospect-finder role="menuitem" hidden>예비 업체 찾기</a>' +
+            '<a href="vendor-prospect-list.html" class="nav-dropdown-item" role="menuitem">예비업체 리스트</a>' +
             "</div></div>"
         );
     }
@@ -66,6 +67,7 @@
             "vendor-detail.html": true,
             "vendor-new-register.html": true,
             "vendor-new-list.html": true,
+            "vendor-email-broadcast.html": true,
             "vendor-prospect-list.html": true,
             "vendor-prospect-finder.html": true,
             "vendor-excel-import.html": true,

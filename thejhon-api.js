@@ -198,6 +198,18 @@
         importVendorProspects: function (rows) {
             return request("POST", "/api/vendor-prospects/import", { rows: rows || [] });
         },
+        sendVendorBroadcastEmail: function (payload) {
+            return request("POST", "/api/vendor-email/broadcast", payload || {});
+        },
+        sendVendorBroadcastTestEmail: function (payload) {
+            return request("POST", "/api/vendor-email/broadcast-test", payload || {});
+        },
+        listVendorEmailHistory: function (limit) {
+            var q = limit ? "?limit=" + encodeURIComponent(String(limit)) : "";
+            return request("GET", "/api/vendor-email/history" + q).then(function (d) {
+                return d.items || [];
+            });
+        },
         enrichVendorProspectsPreview: function (rows, options) {
             options = options || {};
             return request("POST", "/api/vendor-prospects/enrich-preview", {

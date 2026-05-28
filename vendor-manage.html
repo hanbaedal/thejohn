@@ -13,6 +13,25 @@
 
     <title>업체관리 — 더존</title>
     <link rel="stylesheet" href="common.css">
+    <style>
+        .vm-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 0.95rem;
+        }
+        .vm-break {
+            grid-column: 1 / -1;
+            height: 0.8rem;
+        }
+        @media (max-width: 720px) {
+            .vm-grid {
+                grid-template-columns: 1fr;
+            }
+            .vm-break {
+                height: 0;
+            }
+        }
+    </style>
     <script src="api-config.js"></script>
     <script src="thejhon-api.js"></script>
     <script src="auth.js"></script>
@@ -45,7 +64,7 @@
         </nav>
     </header>
     <main class="company-main company-main--support-hub">
-        <div class="company-divisions">
+        <div class="company-divisions vm-grid">
             <a href="vendor-register.html" class="company-division-card">
                 <h2>업체 등록</h2>
                 <p>협력 업체를 등록합니다.</p>
@@ -54,10 +73,16 @@
                 <h2>업체 리스트</h2>
                 <p>목록에서 업체를 선택해 내용을 수정합니다.</p>
             </a>
+            <div class="vm-break" aria-hidden="true"></div>
             <a href="order-list-admin.html" class="company-division-card" id="vm-order-manage" hidden>
                 <h2>주문서관리</h2>
                 <p>업체 주문 접수 내역·PDF 다운로드</p>
             </a>
+            <a href="vendor-email-broadcast.html" class="company-division-card">
+                <h2>이메일 보내기</h2>
+                <p>등록된 업체/신규업체 대상 단체 메일을 발송합니다.</p>
+            </a>
+            <div class="vm-break" aria-hidden="true"></div>
             <a href="vendor-new-register.html" class="company-division-card">
                 <h2>신규업체 등록</h2>
                 <p>신규 업체 정보를 등록합니다.</p>
@@ -66,17 +91,13 @@
                 <h2>신규업체 리스트</h2>
                 <p>신규 업체 목록에서 선택해 수정합니다.</p>
             </a>
-            <a href="vendor-prospect-list.html" class="company-division-card">
-                <h2>예비업체 리스트</h2>
-                <p>예비거래처 목록을 확인하고 삭제합니다.</p>
-            </a>
             <a href="vendor-prospect-finder.html" class="company-division-card" id="vm-prospect-finder" hidden>
                 <h2>예비 업체 찾기</h2>
                 <p>도시명을 입력해 장례식장을 조회하고 예비거래처 미리보기·저장을 진행합니다.</p>
             </a>
-            <a href="vendor-excel-import.html" class="company-division-card" id="vm-excel-import" hidden>
-                <h2>자료찾기</h2>
-                <p>엑셀(장례식장명·전화번호·주소·빈소수) 업로드 후 기존 DB 조회값을 보강해 예비거래처에 저장합니다.</p>
+            <a href="vendor-prospect-list.html" class="company-division-card">
+                <h2>예비업체 리스트</h2>
+                <p>예비거래처 목록을 확인하고 삭제합니다.</p>
             </a>
         </div>
     </main>
@@ -119,7 +140,6 @@
                 var hubInq = document.getElementById("support-hub-inquiry-reply");
                 var orderCard = document.getElementById("vm-order-manage");
                 var migrateCard = document.getElementById("vm-data-migrate");
-                var excelCard = document.getElementById("vm-excel-import");
                 var finderCard = document.getElementById("vm-prospect-finder");
                 var admin =
                     window.THEJHON_AUTH &&
@@ -148,14 +168,6 @@
                 if (finderCard) {
                     finderCard.hidden = !admin;
                     finderCard.setAttribute("aria-hidden", admin ? "false" : "true");
-                }
-                var supervisor =
-                    window.THEJHON_AUTH &&
-                    THEJHON_AUTH.isSupervisorStaff &&
-                    THEJHON_AUTH.isSupervisorStaff();
-                if (excelCard) {
-                    excelCard.hidden = !supervisor;
-                    excelCard.setAttribute("aria-hidden", supervisor ? "false" : "true");
                 }
             }
             syncSupportHubAdminCards();
