@@ -217,6 +217,15 @@
         deleteVendorNew: function (id) {
             return request("DELETE", "/api/vendor-new/" + encodeURIComponent(id));
         },
+        promoteVendorNewToVendor: function (id, body) {
+            return request(
+                "POST",
+                "/api/vendor-new/" + encodeURIComponent(id) + "/promote-to-vendor",
+                body
+            ).then(function (d) {
+                return d.item;
+            });
+        },
         createVendor: function (body) {
             return request("POST", "/api/vendors", body).then(function (d) {
                 return d.item;

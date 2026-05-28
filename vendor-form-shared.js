@@ -7,6 +7,8 @@
     var PASSWORD_MIN = 8;
     var PASSWORD_MAX = 16;
     var RESERVED_VENDOR_LOGIN_IDS = ["thejohn", "thejhon", "aksangsa"];
+    var PARTNER_DEPT_IDS = ["jeongyuk", "driedfish", "frozen", "seafood", "grocery", "drink"];
+    var DEPT_ALERT_MSG = "사업부문을 한개이상 선택하세요!";
 
     function isReservedVendorLoginId(loginId) {
         var id = String(loginId || "")
@@ -16,6 +18,36 @@
     }
 
     /** 상품 validateProductFields 와 동일 패턴 */
+    function normalizePartnerDeptId(id) {
+        var n = String(id || "").trim().toLowerCase();
+        if (n === "livestock") return "jeongyuk";
+        if (n === "meals") return "frozen";
+        if (n === "banchan") return "grocery";
+        return n;
+    }
+
+    function filterPartnerDepts(depts) {
+        var list = depts || [];
+        var out = [];
+        for (var i = 0; i < list.length; i++) {
+            var id = normalizePartnerDeptId(list[i]);
+            if (PARTNER_DEPT_IDS.indexOf(id) < 0) continue;
+            if (out.indexOf(id) < 0) out.push(id);
+        }
+        return out;
+    }
+
+    function validatePartnerDeptsSelection(depts) {
+        if (!filterPartnerDepts(depts).length) return DEPT_ALERT_MSG;
+        return "";
+    }
+
+    function uncheckUncontractedDept(root) {
+        if (!root) return;
+        var box = root.querySelector('input[type="checkbox"][data-dept="uncontracted"]');
+        if (box) box.checked = false;
+    }
+
     function validateVendorFields(data, options) {
         options = options || {};
         var requirePassword = options.requirePassword !== false;
@@ -386,7 +418,12 @@
         PASSWORD_MIN: PASSWORD_MIN,
         PASSWORD_MAX: PASSWORD_MAX,
         RESERVED_VENDOR_LOGIN_IDS: RESERVED_VENDOR_LOGIN_IDS,
+        PARTNER_DEPT_IDS: PARTNER_DEPT_IDS,
+        DEPT_ALERT_MSG: DEPT_ALERT_MSG,
         isReservedVendorLoginId: isReservedVendorLoginId,
+        filterPartnerDepts: filterPartnerDepts,
+        validatePartnerDeptsSelection: validatePartnerDeptsSelection,
+        uncheckUncontractedDept: uncheckUncontractedDept,
         validateVendorFields: validateVendorFields,
         validateLoginIdFormat: validateLoginIdFormat,
         validatePasswordFormat: validatePasswordFormat,

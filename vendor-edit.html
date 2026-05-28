@@ -118,6 +118,54 @@
             font-size: 0.68rem;
             line-height: 1.35;
         }
+        .vr-alert-modal {
+            position: fixed;
+            inset: 0;
+            z-index: 10001;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 1rem;
+            background: rgba(5, 42, 77, 0.45);
+        }
+        .vr-alert-modal[hidden] {
+            display: none !important;
+        }
+        .vr-alert-modal__panel {
+            width: min(100%, 20rem);
+            background: #fff;
+            border-radius: 12px;
+            padding: 1.25rem 1.1rem 1rem;
+            box-shadow: 0 12px 40px rgba(10, 77, 156, 0.25);
+            text-align: center;
+        }
+        .vr-alert-modal__msg {
+            margin: 0 0 1rem;
+            font-size: 1rem;
+            font-weight: 600;
+            color: #052a4d;
+            line-height: 1.45;
+        }
+        .vr-alert-modal__btn {
+            min-width: 5rem;
+            padding: 0.45rem 1.1rem;
+            font-size: 0.875rem;
+            font-weight: 600;
+            font-family: inherit;
+            border: none;
+            border-radius: 6px;
+            background: var(--dz-blue);
+            color: #fff;
+            cursor: pointer;
+        }
+        .vr-actions .btn-promote {
+            border-color: #0d7a3a;
+            color: #0d7a3a;
+            background: #f0faf4;
+        }
+        .vr-actions .btn-promote:hover {
+            background: #e2f5ea;
+        }
         .vr-id-dup-hint[hidden], .vr-pw-match-hint[hidden] { display: none !important; }
         .vr-id-dup-hint--ok, .vr-pw-match-hint--ok { color: #2d6a4f; font-weight: 600; }
         .vr-id-dup-hint--dup, .vr-id-dup-hint--bad, .vr-pw-match-hint--bad { color: #a12c2c; font-weight: 600; }
@@ -341,8 +389,15 @@
             <div class="vr-actions">
                 <button type="submit" class="btn btn-primary" id="vr-submit">수정 저장</button>
                 <button type="button" class="btn btn-secondary" id="vr-cancel-edit">취소</button>
+                <button type="button" class="btn btn-promote" id="vr-promote-vendor" hidden>업체등록</button>
             </div>
         </form>
+        <div id="vr-dept-alert-modal" class="vr-alert-modal" hidden role="alertdialog" aria-modal="true" aria-labelledby="vr-dept-alert-msg">
+            <div class="vr-alert-modal__panel">
+                <p id="vr-dept-alert-msg" class="vr-alert-modal__msg">사업부문을 한개이상 선택하세요!</p>
+                <button type="button" class="vr-alert-modal__btn" id="vr-dept-alert-ok">확인</button>
+            </div>
+        </div>
     </main>
         <footer class="site-footer">
         <div class="site-footer-inner">

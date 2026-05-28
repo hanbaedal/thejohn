@@ -52,7 +52,15 @@
     var noteInput = document.getElementById("vr-note");
     var cancelBtn = document.getElementById("vr-cancel-edit");
     var submitBtn = document.getElementById("vr-submit");
+    var promoteBtn = document.getElementById("vr-promote-vendor");
     var backListLink = document.getElementById("ve-back-list");
+    var deptAlertModal = document.getElementById("vr-dept-alert-modal");
+    var deptAlertOk = document.getElementById("vr-dept-alert-ok");
+    var deptAlertMsgEl = document.getElementById("vr-dept-alert-msg");
+
+    var DEPT_ALERT_MSG =
+        VF && VF.DEPT_ALERT_MSG ? VF.DEPT_ALERT_MSG : "사업부문을 한개이상 선택하세요!";
+    var loadedItem = null;
 
     function queryParam(name) {
         try {
@@ -91,6 +99,84 @@
         if (!statusEl) return;
         statusEl.textContent = msg || "";
         statusEl.style.color = isError ? "#a12c2c" : "#3d5166";
+    }
+
+    function speakAlert(text) {
+        if (!text || !window.speechSynthesis) return;
+        try {
+            window.speechSynthesis.cancel();
+            var utter = new SpeechSynthesisUtterance(text);
+            utter.lang = "ko-KR";
+            utter.rate = 0.95;
+            window.speechSynthesis.speak(utter);
+        } catch (e) {}
+    }
+
+    function closeDeptAlertModal() {
+        if (deptAlertModal) deptAlertModal.hidden = true;
+    }
+
+    function showDeptAlertModal() {
+        if (deptAlertMsgEl) deptAlertMsgEl.textContent = DEPT_ALERT_MSG;
+        if (deptAlertModal) deptAlertModal.hidden = false;
+        speakAlert(DEPT_ALERT_MSG);
+    }
+
+    if (deptAlertOk) {
+        deptAlertOk.addEventListener("click", closeDeptAlertModal);
+    }
+    if (deptAlertModal) {
+        deptAlertModal.addEventListener("click", function (e) {
+            if (e.target === deptAlertModal) closeDeptAlertModal();
+        });
+    }
+    document.addEventListener("keydown", function (e) {
+        if (e.key === "Escape" && deptAlertModal && !deptAlertModal.hidden) {
+            closeDeptAlertModal();
+        }
+    });
+
+    function syncPromoteButton() {
+        if (!promoteBtn) return;
+        if (!isFromNewVendorFlow()) {
+            promoteBtn.hidden = true;
+            return;
+        }
+        promoteBtn.hidden = false;
+        var promotedId =
+            loadedItem && loadedItem.vn_promoted_vendor_id
+                ? String(loadedItem.vn_promoted_vendor_id).trim()
+                : "";
+        promoteBtn.disabled = !!promotedId;
+        if (promotedId) {
+            promoteBtn.title = "이미 거래처로 등록됨 (" + promotedId + ")";
+        } else {
+            promoteBtn.removeAttribute("title");
+        }
+    }
+
+    function collectFormBody() {
+        var loginId = loginIdInput.value.trim();
+        var pwdIn = passwordInput ? String(passwordInput.value || "").trim() : "";
+        var body = {
+            loginId: loginId,
+            vn_company: companyInput.value.trim(),
+            vn_depts: getSelectedDepts(),
+            vn_ceo: ceoInput.value.trim(),
+            vn_ceo_tel: ceoTelInput.value.trim(),
+            vn_grade: gradeSelect && gradeSelect.value ? gradeSelect.value : "1",
+            vn_web: webInput.value.trim(),
+            vn_email: emailInput.value.trim(),
+            vn_phone: phoneInput.value.trim(),
+            vn_addr: addrInput.value.trim(),
+            vn_mgr_name: mgrNameInput.value.trim(),
+            vn_mgr_tel: mgrTelInput.value.trim(),
+            vn_mgr_email: mgrEmailInput.value.trim(),
+            vn_logo: "",
+            vn_note: noteInput.value.trim()
+        };
+        if (pwdIn) body.password = pwdIn;
+        return body;
     }
 
     function escapeHtml(s) {
@@ -237,6 +323,17 @@
         cancelBtn.hidden = false;
         submitBtn.textContent = "수정 저장";
         setStatus("수정 중: " + (it.vn_company || ""));
+        loadedItem = it;
+        syncPromoteButton();
+        if (it.vn_promoted_vendor_id) {
+            setStatus(
+                "수정 중: " +
+                    (it.vn_company || "") +
+                    " · 이미 업체등록됨 (거래처 ID: " +
+                    it.vn_promoted_vendor_id +
+                    ")"
+            );
+        }
     }
 
     function handleLogoFile(dataUrl) {
@@ -264,13 +361,111 @@
         location.href = listReturnUrl();
     });
 
+    if (promoteBtn) {
+        promoteBtn.addEventListener("click", function () {
+            if (!isFromNewVendorFlow() || !api.promoteVendorNewToVendor) return;
+            var editingId = editIdInput.value.trim();
+            if (!editingId) {
+                setStatus("업체를 찾을 수 없습니다.", true);
+                return;
+            }
+            if (loadedItem && loadedItem.vn_promoted_vendor_id) {
+                setStatus("이미 업체등록(거래처)으로 등록된 신규업체입니다.", true);
+                return;
+            }
+
+            if (VF && VF.uncheckUncontractedDept) {
+                VF.uncheckUncontractedDept(deptCheckboxesRoot);
+            }
+            var partnerDepts = VF ? VF.filterPartnerDepts(getSelectedDepts()) : getSelectedDepts();
+            var deptErr = VF ? VF.validatePartnerDeptsSelection(partnerDepts) : "";
+            if (deptErr) {
+                setStatus(deptErr, true);
+                showDeptAlertModal();
+                return;
+            }
+
+            var body = collectFormBody();
+            body.vn_depts = partnerDepts;
+
+            if (VF && pwConfirmCheck) {
+                var pwErrPromote = pwConfirmCheck.validate(false);
+                if (pwErrPromote) {
+                    setStatus(pwErrPromote, true);
+                    passwordInput.focus();
+                    return;
+                }
+            }
+            var fieldErrPromote = VF
+                ? VF.validateVendorFields(body, { requirePassword: false })
+                : "";
+            if (fieldErrPromote) {
+                setStatus(fieldErrPromote, true);
+                return;
+            }
+
+            if (
+                !window.confirm(
+                    "이 신규업체를 거래처(업체등록)으로 등록할까요?\n\n미계약은 제외되며, 선택한 6개 사업부문 중 하나 이상이 반영됩니다."
+                )
+            ) {
+                return;
+            }
+
+            function doPromote(logoData) {
+                body.vn_logo = prepareLogoForSave(logoData);
+                promoteBtn.disabled = true;
+                submitBtn.disabled = true;
+                setStatus("업체등록(거래처) 처리 중…");
+                api.promoteVendorNewToVendor(editingId, body)
+                    .then(function (item) {
+                        if (!item || !item.id) {
+                            throw new Error("업체등록에 실패했습니다.");
+                        }
+                        setStatus("업체등록했습니다. 거래처 수정 화면으로 이동합니다…");
+                        setTimeout(function () {
+                            location.href =
+                                "vendor-edit.html?id=" +
+                                encodeURIComponent(item.id) +
+                                "&from=partner";
+                        }, 400);
+                    })
+                    .catch(function (err) {
+                        setStatus(apiErrorMessage(err, "업체등록에 실패했습니다."), true);
+                        syncPromoteButton();
+                        submitBtn.disabled = false;
+                    });
+            }
+
+            function startPromote() {
+                doPromote(pendingLogoData);
+            }
+
+            function afterLoginCheck() {
+                startPromote();
+            }
+
+            if (api.checkVendorLoginId) {
+                api.checkVendorLoginId(body.loginId).then(function (res) {
+                    if (res && res.duplicate) {
+                        setStatus(
+                            (res && res.error) || "거래처에 이미 사용 중인 아이디입니다.",
+                            true
+                        );
+                        loginIdInput.focus();
+                        return;
+                    }
+                    afterLoginCheck();
+                });
+            } else {
+                afterLoginCheck();
+            }
+        });
+    }
+
     form.addEventListener("submit", function (e) {
         e.preventDefault();
-        var loginId = loginIdInput.value.trim();
-        var vn_company = companyInput.value.trim();
         var editingId = editIdInput.value.trim();
-        var pwdIn = passwordInput ? String(passwordInput.value || "").trim() : "";
-        var vn_depts = getSelectedDepts();
 
         if (!editingId) {
             setStatus("업체를 찾을 수 없습니다. 리스트에서 다시 선택해 주세요.", true);
@@ -285,24 +480,7 @@
             }
         }
 
-        var body = {
-            loginId: loginId,
-            vn_company: vn_company,
-            vn_depts: vn_depts,
-            vn_ceo: ceoInput.value.trim(),
-            vn_ceo_tel: ceoTelInput.value.trim(),
-            vn_grade: gradeSelect && gradeSelect.value ? gradeSelect.value : "1",
-            vn_web: webInput.value.trim(),
-            vn_email: emailInput.value.trim(),
-            vn_phone: phoneInput.value.trim(),
-            vn_addr: addrInput.value.trim(),
-            vn_mgr_name: mgrNameInput.value.trim(),
-            vn_mgr_tel: mgrTelInput.value.trim(),
-            vn_mgr_email: mgrEmailInput.value.trim(),
-            vn_logo: "",
-            vn_note: noteInput.value.trim()
-        };
-        if (pwdIn) body.password = pwdIn;
+        var body = collectFormBody();
 
         var fieldErr = VF ? VF.validateVendorFields(body, { requirePassword: false }) : "";
         if (fieldErr) {
@@ -369,6 +547,7 @@
 
     if (backListLink) backListLink.href = listReturnUrl();
     syncNewVendorDeptCheckbox();
+    syncPromoteButton();
 
     var editId = queryParam("id").trim();
     if (!editId) {

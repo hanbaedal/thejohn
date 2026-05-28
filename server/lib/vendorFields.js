@@ -9,15 +9,9 @@ const {
 
 /** vendors 컬렉션 필드 */
 /** 상품 카탈로그 6부문 + 신규업체용 미계약 */
-const VALID_DEPT_IDS = [
-    "jeongyuk",
-    "driedfish",
-    "frozen",
-    "seafood",
-    "grocery",
-    "drink",
-    "uncontracted"
-];
+const PARTNER_DEPT_IDS = ["jeongyuk", "driedfish", "frozen", "seafood", "grocery", "drink"];
+
+const VALID_DEPT_IDS = PARTNER_DEPT_IDS.concat(["uncontracted"]);
 
 const VENDOR_DEPT_LABEL_TO_ID = {
     미계약: "uncontracted",
@@ -88,6 +82,26 @@ function normalizeDeptId(v) {
     if (LEGACY_DEPT_MAP[id]) return LEGACY_DEPT_MAP[id];
     if (VENDOR_DEPT_LABEL_TO_ID[id]) return VENDOR_DEPT_LABEL_TO_ID[id];
     return id;
+}
+
+function filterPartnerDepts(depts) {
+    const list = Array.isArray(depts) ? depts : [];
+    const out = [];
+    const seen = new Set();
+    for (const item of list) {
+        const id = normalizeDeptId(item);
+        if (!id || !PARTNER_DEPT_IDS.includes(id) || seen.has(id)) continue;
+        seen.add(id);
+        out.push(id);
+    }
+    return out;
+}
+
+function validatePartnerDeptsForRegister(depts) {
+    if (!filterPartnerDepts(depts).length) {
+        return "사업부문을 한개이상 선택하세요!";
+    }
+    return "";
 }
 
 function parseDeptsList(body, prev) {
@@ -169,7 +183,9 @@ function toPublic(doc) {
         vn_registered_by: str(d[F.registeredBy]),
         vn_registered_by_name: str(d[F.registeredByName]),
         vn_registered_at: d[F.registeredAt] || 0,
-        updatedAt: d.updatedAt || 0
+        updatedAt: d.updatedAt || 0,
+        vn_promoted_vendor_id: str(doc.vn_promoted_vendor_id || ""),
+        vn_promoted_at: doc.vn_promoted_at || 0
     };
 }
 
@@ -414,6 +430,9 @@ module.exports = {
     validatePasswordLength,
     parseDeptsList,
     VALID_DEPT_IDS,
+    PARTNER_DEPT_IDS,
+    filterPartnerDepts,
+    validatePartnerDeptsForRegister,
     migrateVendorsCollection,
     getCompanyName,
     parseGrade,
