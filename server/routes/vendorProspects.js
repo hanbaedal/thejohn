@@ -55,8 +55,7 @@ const ENRICH_FIELDS = ["vn_ceo", "vn_ceo_tel", "vn_web", "vn_email", "vn_phone",
 async function findMatchedVendorInfo(db, built) {
     const company = normText(built.vn_company);
     const phone = normPhone(built.vn_phone);
-    const addr = normText(built.vn_addr);
-    if (!company && !phone && !addr) return null;
+    if (!company || !phone) return null;
     const collections = ["vendors", "vendor_new", "vendor_prospects"];
     for (let c = 0; c < collections.length; c++) {
         const col = db.collection(collections[c]);
@@ -70,11 +69,10 @@ async function findMatchedVendorInfo(db, built) {
             const d = docs[i];
             const dc = normText(d.vn_company || d.companyName);
             const dp = normPhone(d.vn_phone || d.phone);
-            const da = normText(d.vn_addr || d.address);
-            const companyMatch = company && dc && dc === company;
-            const phoneMatch = phone && dp && dp === phone;
-            const addrMatch = addr && da && da === addr;
-            if (!companyMatch && !phoneMatch && !addrMatch) continue;
+            const companyMatch = dc && (dc === company || dc.indexOf(company) >= 0 || company.indexOf(dc) >= 0);
+            if (!companyMatch) continue;
+            const phoneMatch = dp && dp === phone;
+            if (!phoneMatch) continue;
             return {
                 vn_ceo: pickFirstValue(d, ["vn_ceo", "ceo"]),
                 vn_ceo_tel: pickFirstValue(d, ["vn_ceo_tel", "ceoPhone"]),
