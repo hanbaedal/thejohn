@@ -128,6 +128,22 @@ async function collectRecipients(db, opts, senderId) {
     return { recipients: toList, counts };
 }
 
+async function resolveSenderName(db, auth, requestedName) {
+    const direct = trim(requestedName);
+    if (direct) return direct;
+    const userId = auth && auth.userId ? String(auth.userId) : "";
+    if (!userId) return "더존";
+    try {
+        const staff = await db
+            .collection("staff")
+            .findOne({ loginId: userId }, { projection: { st_company: 1, companyName: 1 } });
+        const company = trim((staff && (staff.st_company || staff.companyName)) || "");
+        return company || "더존";
+    } catch (e) {
+        return "더존";
+    }
+}
+
 async function sendBulkEmails(transporter, from, recipients, subject, greeting, files) {
     const ok = [];
     const failed = [];
@@ -185,7 +201,7 @@ router.post("/broadcast-test", requireRole("admin"), async function (req, res) {
         if (!greeting) return res.status(400).json({ ok: false, error: "인사말(본문)을 입력해 주세요." });
         if (!testEmail) return res.status(400).json({ ok: false, error: "테스트 수신 이메일을 입력해 주세요." });
         const files = validateAndBuildAttachments(body.attachments);
-        const senderName = trim(body.senderName) || "더존";
+        const senderName = await resolveSenderName(getDb(), req.auth, body.senderName);
         const from = `"${senderName}" <${trim(process.env.MAIL_FROM)}>`;
         const transporter = createTransporter();
         await transporter.sendMail({
@@ -236,7 +252,7 @@ router.post("/broadcast", requireRole("admin"), async function (req, res) {
         }
         const files = validateAndBuildAttachments(body.attachments);
         const transporter = createTransporter();
-        const senderName = trim(body.senderName) || "더존";
+        const senderName = await resolveSenderName(db, req.auth, body.senderName);
         const from = `"${senderName}" <${trim(process.env.MAIL_FROM)}>`;
         const sentResult = await sendBulkEmails(transporter, from, recipients, subject, greeting, files);
         const history = {

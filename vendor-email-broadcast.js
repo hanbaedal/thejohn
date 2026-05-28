@@ -78,12 +78,20 @@
     }
 
     function getPayload() {
+        var senderName = "";
+        if (
+            window.THEJHON_AUTH &&
+            typeof THEJHON_AUTH.getLoggedInCompanyDisplayName === "function"
+        ) {
+            senderName = String(THEJHON_AUTH.getLoggedInCompanyDisplayName() || "").trim();
+        }
         return {
             subject: String((subjectEl && subjectEl.value) || "").trim(),
             greeting: String((greetingEl && greetingEl.value) || "").trim(),
             includeVendors: !!(includeVendorsEl && includeVendorsEl.checked),
             includeVendorNew: !!(includeVendorNewEl && includeVendorNewEl.checked),
-            onlyMine: !!(onlyMineEl && onlyMineEl.checked)
+            onlyMine: !!(onlyMineEl && onlyMineEl.checked),
+            senderName: senderName
         };
     }
 
@@ -171,6 +179,7 @@
                     includeVendors: payload.includeVendors,
                     includeVendorNew: payload.includeVendorNew,
                     onlyMine: payload.onlyMine,
+                    senderName: payload.senderName,
                     attachments: attachments
                 });
                 renderFailed(result.failedItems || []);
@@ -211,6 +220,7 @@
                     subject: payload.subject,
                     greeting: payload.greeting,
                     testEmail: testEmail,
+                    senderName: payload.senderName,
                     attachments: attachments
                 });
                 setStatus("테스트 메일 발송 완료", false);
