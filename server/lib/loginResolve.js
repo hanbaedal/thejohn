@@ -59,7 +59,11 @@ async function findVendorByLoginId(loginId) {
     if (lf.$or) clauses.push.apply(clauses, lf.$or);
     else if (lf.loginId) clauses.push({ loginId: lf.loginId });
 
-    return getDb().collection("vendors").findOne({ $or: clauses });
+    const db = getDb();
+    const filter = { $or: clauses };
+    const vendor = await db.collection("vendors").findOne(filter);
+    if (vendor) return vendor;
+    return db.collection("vendor_prospects").findOne(filter);
 }
 
 /** staff · vendors 동시 조회 */
@@ -95,12 +99,14 @@ async function tryVendorLogin(vendor, loginId, password) {
     if (!vendorCheck.valid) return null;
 
     if (vendorCheck.migratePassword != null) {
-        await setLoginPassword(
-            getDb().collection("vendors"),
-            { id: vendor.id },
-            loginId,
-            vendorCheck.migratePassword
-        );
+        const db = getDb();
+        const inProspects =
+            String(vendor.id || "").indexOf("vp_") === 0 ||
+            String(vendor.vn_record_type || "")
+                .trim()
+                .toLowerCase() === "new";
+        const col = inProspects ? db.collection("vendor_prospects") : db.collection("vendors");
+        await setLoginPassword(col, { id: vendor.id }, loginId, vendorCheck.migratePassword);
     }
 
     const regBy = String(vendor[VF.registeredBy] || "").trim();

@@ -19,6 +19,15 @@ const {
     stampNewVendorRegistration,
     applyRegistrationOnUpdate
 } = require("../lib/vendorAccess");
+const { findProspectByLoginId } = require("../lib/vendorProspects");
+
+function isNewVendorRecordBody(body) {
+    return (
+        String((body && body.vn_record_type) || "")
+            .trim()
+            .toLowerCase() === "new"
+    );
+}
 
 const router = express.Router();
 
@@ -68,7 +77,9 @@ async function findStaffLoginConflict(loginId) {
 router.get("/", async (req, res) => {
     try {
         const auth = optionalAuth(req);
-        const query = buildVendorListQuery(auth);
+        const query = Object.assign({}, buildVendorListQuery(auth), {
+            vn_record_type: { $ne: "new" }
+        });
         const items = await getDb()
             .collection("vendors")
             .find(query)
@@ -107,11 +118,20 @@ router.get("/check-login-id", requireRole("supervisor", "admin"), async (req, re
                 error: "이미 관리자(staff)에 사용 중인 아이디입니다."
             });
         }
-        const dup = await findDuplicateVendor(getDb().collection("vendors"), loginId, excludeId);
+        const db = getDb();
+        const dup = await findDuplicateVendor(db.collection("vendors"), loginId, excludeId);
+        if (dup) {
+            return res.json({
+                ok: true,
+                duplicate: true,
+                error: "이미 사용 중인 아이디입니다."
+            });
+        }
+        const dupProspect = await findProspectByLoginId(db, loginId, excludeId);
         res.json({
             ok: true,
-            duplicate: !!dup,
-            error: dup ? "이미 사용 중인 아이디입니다." : ""
+            duplicate: !!dupProspect,
+            error: dupProspect ? "이미 사용 중인 아이디입니다. (신규업체)" : ""
         });
     } catch (e) {
         console.error("GET /api/vendors/check-login-id", e);
@@ -136,6 +156,13 @@ router.get("/:id", async (req, res) => {
 
 router.post("/", requireRole("supervisor", "admin"), async (req, res) => {
     try {
+        if (isNewVendorRecordBody(req.body)) {
+            return res.status(400).json({
+                ok: false,
+                error: "신규업체는 vendor_prospects(예비거래처) API로 등록해 주세요."
+            });
+        }
+
         const loginId = String(req.body.loginId || "").trim();
         const password = String(req.body.password || "").trim();
 
@@ -154,6 +181,9 @@ router.post("/", requireRole("supervisor", "admin"), async (req, res) => {
         const vendors = getDb().collection("vendors");
         const dup = await findDuplicateVendor(vendors, loginId);
         if (dup) return res.status(409).json({ ok: false, error: "이미 사용 중인 아이디입니다." });
+        if (await findProspectByLoginId(getDb(), loginId)) {
+            return res.status(409).json({ ok: false, error: "이미 사용 중인 아이디입니다. (신규업체)" });
+        }
 
         let doc = toDbDoc(newId(), built, null);
         doc = await stampNewVendorRegistration(doc, req.auth);

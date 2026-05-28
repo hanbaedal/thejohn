@@ -112,13 +112,16 @@
         });
     }
 
-    if (VF && VF.initLoginIdDuplicateCheck && api && api.checkVendorLoginId) {
+    if (VF && VF.initLoginIdDuplicateCheck && api && api.checkVendorProspectLoginId) {
         idDupCheck = VF.initLoginIdDuplicateCheck({
             loginIdInput: loginIdInput,
             hintEl: document.getElementById("vr-id-dup-hint"),
             isReserved: VF.isReservedVendorLoginId,
+            getExcludeId: function () {
+                return prospectIdInput ? prospectIdInput.value.trim() : "";
+            },
             checkDuplicate: function (loginId, excludeId) {
-                return api.checkVendorLoginId(loginId, excludeId);
+                return api.checkVendorProspectLoginId(loginId, excludeId);
             }
         });
     }
@@ -162,7 +165,10 @@
             listProspects: function (q) {
                 return api.listVendorProspects(q);
             },
-            onSelect: fillFromProspect,
+            onSelect: function (it) {
+                if (prospectIdInput) prospectIdInput.value = it.id || "";
+                fillFromProspect(it);
+            },
             onClear: function () {}
         });
     }
@@ -199,7 +205,10 @@
             vn_record_type: "new"
         };
 
-        var err = VF ? VF.validateVendorFields(body, { requirePassword: true }) : "";
+        var existingProspectId = prospectIdInput ? prospectIdInput.value.trim() : "";
+        var err = VF
+            ? VF.validateVendorFields(body, { requirePassword: !existingProspectId })
+            : "";
         if (err) {
             setStatus(err, true);
             return;
@@ -207,7 +216,10 @@
 
         function saveVendor() {
             submitBtn.disabled = true;
-            api.createVendor(body)
+            var savePromise = existingProspectId
+                ? api.updateVendorProspect(existingProspectId, body)
+                : api.createVendorProspect(body);
+            savePromise
                 .then(function () {
                     form.reset();
                     pendingLogoData = "";

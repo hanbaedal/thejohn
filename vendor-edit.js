@@ -149,7 +149,7 @@
         });
     }
 
-    if (VF && VF.initLoginIdDuplicateCheck && api && api.checkVendorLoginId) {
+    if (VF && VF.initLoginIdDuplicateCheck && api) {
         idDupCheck = VF.initLoginIdDuplicateCheck({
             loginIdInput: loginIdInput,
             hintEl: document.getElementById("vr-id-dup-hint"),
@@ -158,6 +158,9 @@
                 return editIdInput ? editIdInput.value.trim() : "";
             },
             checkDuplicate: function (loginId, excludeId) {
+                if (isFromNewVendorFlow() && api.checkVendorProspectLoginId) {
+                    return api.checkVendorProspectLoginId(loginId, excludeId);
+                }
                 return api.checkVendorLoginId(loginId, excludeId);
             }
         });
@@ -310,7 +313,11 @@
         function doSave(logoData) {
             body.vn_logo = prepareLogoForSave(logoData);
             submitBtn.disabled = true;
-            api.updateVendor(editingId, body)
+            var saveApi =
+                isFromNewVendorFlow() && api.updateVendorProspect
+                    ? api.updateVendorProspect(editingId, body)
+                    : api.updateVendor(editingId, body);
+            saveApi
                 .then(function () {
                     setStatus("수정했습니다. 리스트로 이동합니다…");
                     setTimeout(function () {
@@ -371,7 +378,18 @@
 
     editIdInput.value = editId;
     setStatus("불러오는 중…");
-    api.getVendor(editId)
+    function loadItem() {
+        if (isFromNewVendorFlow() && api.getVendorProspect) {
+            return api.getVendorProspect(editId).catch(function (err) {
+                if (err && err.status === 404 && api.getVendor) {
+                    return api.getVendor(editId);
+                }
+                throw err;
+            });
+        }
+        return api.getVendor(editId);
+    }
+    loadItem()
         .then(function (it) {
             if (!it || !it.id) throw new Error("업체를 찾을 수 없습니다.");
             fillFormFromItem(it);

@@ -185,6 +185,29 @@
                 return d.items || [];
             });
         },
+        getVendorProspect: function (id) {
+            return request("GET", "/api/vendor-prospects/" + encodeURIComponent(id)).then(function (d) {
+                return d.item;
+            });
+        },
+        checkVendorProspectLoginId: function (loginId, excludeId) {
+            var q = "?loginId=" + encodeURIComponent(String(loginId || ""));
+            if (excludeId) q += "&excludeId=" + encodeURIComponent(String(excludeId));
+            return request("GET", "/api/vendor-prospects/check-login-id" + q);
+        },
+        createVendorProspect: function (body) {
+            return request("POST", "/api/vendor-prospects", body).then(function (d) {
+                return d.item;
+            });
+        },
+        updateVendorProspect: function (id, body) {
+            return request("PUT", "/api/vendor-prospects/" + encodeURIComponent(id), body).then(function (d) {
+                return d.item;
+            });
+        },
+        deleteVendorProspect: function (id) {
+            return request("DELETE", "/api/vendor-prospects/" + encodeURIComponent(id));
+        },
         createVendor: function (body) {
             return request("POST", "/api/vendors", body).then(function (d) {
                 return d.item;
