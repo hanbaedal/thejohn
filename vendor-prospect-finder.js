@@ -11,6 +11,8 @@
     var previewCount = document.getElementById("vpf-preview-count");
     var importBtn = document.getElementById("vpf-import-btn");
     var resultEl = document.getElementById("vpf-result");
+    var saveModal = document.getElementById("vpf-save-modal");
+    var saveModalOk = document.getElementById("vpf-save-modal-ok");
 
     var parsedRows = [];
     var PREVIEW_FIELDS = [
@@ -43,7 +45,6 @@
         vn_web: "홈페이지",
         vn_email: "이메일"
     };
-    var DIFF_FIELDS = ["vn_ceo", "vn_ceo_tel", "vn_web", "vn_email", "vn_phone", "vn_addr"];
 
     function setStatus(msg, kind) {
         if (!statusEl) return;
@@ -82,8 +83,6 @@
 
     function syncRowFromTr(tr, idx) {
         if (!parsedRows[idx] || !tr) return;
-        var sel = tr.querySelector('input[type="checkbox"][data-row-select]');
-        if (sel) parsedRows[idx].__selected = !!sel.checked;
         PREVIEW_FIELDS.forEach(function (f) {
             var inp = tr.querySelector('input[data-field="' + f + '"]');
             if (inp) parsedRows[idx][f] = String(inp.value || "").trim();
@@ -97,19 +96,50 @@
         for (var i = 0; i < trs.length; i++) syncRowFromTr(trs[i], i);
     }
 
+    function speak(text) {
+        if (!text || !window.speechSynthesis) return;
+        try {
+            window.speechSynthesis.cancel();
+            var utter = new SpeechSynthesisUtterance(text);
+            utter.lang = "ko-KR";
+            utter.rate = 0.95;
+            window.speechSynthesis.speak(utter);
+        } catch (e) {}
+    }
+
+    function closeSaveModal() {
+        if (saveModal) saveModal.hidden = true;
+    }
+
+    function showSavedModal() {
+        if (saveModal) saveModal.hidden = false;
+        speak("선택한 내용이 저장이 되었습니다.");
+    }
+
+    if (saveModalOk) {
+        saveModalOk.addEventListener("click", closeSaveModal);
+    }
+    if (saveModal) {
+        saveModal.addEventListener("click", function (e) {
+            if (e.target === saveModal) closeSaveModal();
+        });
+    }
+    document.addEventListener("keydown", function (e) {
+        if (e.key === "Escape" && saveModal && !saveModal.hidden) closeSaveModal();
+    });
+
     function render(rows) {
         parsedRows = rows || [];
         if (!parsedRows.length) {
             if (previewWrap) previewWrap.hidden = true;
             if (previewCount) previewCount.textContent = "";
-            if (enrichBtn) enrichBtn.disabled = true;
             if (importBtn) importBtn.disabled = true;
             return;
         }
         previewWrap.hidden = false;
         previewHead.innerHTML =
             "<tr>" +
-            "<th>선택</th><th>삭제</th>" +
+            "<th>삭제</th>" +
             PREVIEW_FIELDS.map(function (f) {
                 return "<th>" + escapeHtml(LABELS[f] || f) + "</th>";
             }).join("") +
@@ -120,9 +150,6 @@
                     "<tr data-row-index=\"" +
                     i +
                     "\">" +
-                    '<td><input type="checkbox" data-row-select="1" ' +
-                    (row.__selected === false ? "" : "checked") +
-                    '></td>' +
                     '<td><button type="button" class="btn btn-secondary vpf-row-del" data-row-del="' +
                     i +
                     '">삭제</button></td>' +
@@ -169,43 +196,6 @@
         importBtn.disabled = false;
     }
 
-    function renderDiffs(diffs) {
-        var list = Array.isArray(diffs) ? diffs : [];
-        resultEl.hidden = false;
-        if (!list.length) {
-            resultEl.innerHTML = "<strong>조회 비교</strong> 변경된 항목이 없습니다.";
-            return;
-        }
-        var html =
-            "<strong>조회 비교</strong> " +
-            list.length +
-            "건 업데이트<ul class=\"vei-enrich-diff-list\">" +
-            list
-                .map(function (d) {
-                    var changes = (d.changes || [])
-                        .map(function (c) {
-                            return (
-                                (LABELS[c.field] || c.field) +
-                                ": " +
-                                (c.before || "(빈값)") +
-                                " → " +
-                                (c.after || "(빈값)")
-                            );
-                        })
-                        .join(" · ");
-                    return (
-                        "<li><strong>" +
-                        escapeHtml((d.row || "?") + "행 " + (d.company || "")) +
-                        "</strong><br>" +
-                        escapeHtml(changes) +
-                        "</li>"
-                    );
-                })
-                .join("") +
-            "</ul>";
-        resultEl.innerHTML = html;
-    }
-
     function dedupByCompany(rows) {
         var out = [];
         var seen = {};
@@ -232,9 +222,7 @@
             api.searchFuneralHalls(city)
                 .then(function (items) {
                     var rows = dedupByCompany(items || []).map(function (r) {
-                        var row = normalizeRow(r);
-                        row.__selected = true;
-                        return row;
+                        return normalizeRow(r);
                     });
                     render(rows);
                     setStatus(city + " 조회 완료: " + rows.length + "건", "ok");
@@ -248,12 +236,9 @@
     if (importBtn) {
         importBtn.addEventListener("click", function () {
             syncAllRows();
-            var selected = (parsedRows || []).filter(function (r) {
-                return !!(r && r.__selected);
-            });
-            var payload = dedupByCompany(selected);
+            var payload = dedupByCompany(parsedRows);
             if (!payload.length) {
-                setStatus("선택된 행이 없습니다. 저장할 항목을 체크해 주세요.", "error");
+                setStatus("저장할 데이터가 없습니다.", "error");
                 return;
             }
             importBtn.disabled = true;
@@ -273,6 +258,7 @@
                         "건, 오류 " +
                         failed +
                         "건";
+                    showSavedModal();
                 })
                 .catch(function (err) {
                     setStatus(err.message || "저장에 실패했습니다.", "error");
