@@ -105,6 +105,18 @@
 .vei-preview-table td:first-child .vei-cell-input {
     min-width: 7rem;
 }
+.vpf-row-del {
+    min-height: 1.8rem;
+    padding: 0.25rem 0.45rem;
+    font-size: 0.72rem;
+    border-color: #e8b4b4;
+    color: #a12c2c;
+    background: #fff;
+}
+.vpf-row-del:hover {
+    background: #fef5f5;
+    border-color: #c44;
+}
 .vei-actions {
     display: flex;
     flex-wrap: wrap;

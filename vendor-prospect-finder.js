@@ -9,7 +9,6 @@
     var previewHead = document.getElementById("vpf-preview-head");
     var previewBody = document.getElementById("vpf-preview-body");
     var previewCount = document.getElementById("vpf-preview-count");
-    var enrichBtn = document.getElementById("vpf-enrich-btn");
     var importBtn = document.getElementById("vpf-import-btn");
     var resultEl = document.getElementById("vpf-result");
 
@@ -24,6 +23,16 @@
         "vn_web",
         "vn_email"
     ];
+    var FIELD_SPECS = {
+        vn_company: { maxLength: 20, widthCh: 20 },
+        vn_phone: { maxLength: 13, widthCh: 13 },
+        vn_addr: { maxLength: 20, widthCh: 20 },
+        vn_room_count: { maxLength: 4, widthCh: 4 },
+        vn_ceo: { maxLength: 6, widthCh: 6 },
+        vn_ceo_tel: { maxLength: 13, widthCh: 13 },
+        vn_web: { maxLength: 50, widthCh: 50 },
+        vn_email: { maxLength: 20, widthCh: 20 }
+    };
     var LABELS = {
         vn_company: "장례식장명",
         vn_phone: "전화번호",
@@ -64,7 +73,6 @@
         parsedRows = [];
         if (previewWrap) previewWrap.hidden = true;
         if (previewCount) previewCount.textContent = "";
-        if (enrichBtn) enrichBtn.disabled = true;
         if (importBtn) importBtn.disabled = true;
         if (resultEl) {
             resultEl.hidden = true;
@@ -74,6 +82,8 @@
 
     function syncRowFromTr(tr, idx) {
         if (!parsedRows[idx] || !tr) return;
+        var sel = tr.querySelector('input[type="checkbox"][data-row-select]');
+        if (sel) parsedRows[idx].__selected = !!sel.checked;
         PREVIEW_FIELDS.forEach(function (f) {
             var inp = tr.querySelector('input[data-field="' + f + '"]');
             if (inp) parsedRows[idx][f] = String(inp.value || "").trim();
@@ -99,6 +109,7 @@
         previewWrap.hidden = false;
         previewHead.innerHTML =
             "<tr>" +
+            "<th>선택</th><th>삭제</th>" +
             PREVIEW_FIELDS.map(function (f) {
                 return "<th>" + escapeHtml(LABELS[f] || f) + "</th>";
             }).join("") +
@@ -109,14 +120,30 @@
                     "<tr data-row-index=\"" +
                     i +
                     "\">" +
+                    '<td><input type="checkbox" data-row-select="1" ' +
+                    (row.__selected === false ? "" : "checked") +
+                    '></td>' +
+                    '<td><button type="button" class="btn btn-secondary vpf-row-del" data-row-del="' +
+                    i +
+                    '">삭제</button></td>' +
                     PREVIEW_FIELDS.map(function (f) {
                         var v = row[f] || "";
+                        var spec = FIELD_SPECS[f] || {};
+                        var maxLen = spec.maxLength ? ' maxlength="' + String(spec.maxLength) + '"' : "";
+                        var widthStyle = spec.widthCh
+                            ? ' style="width:' + String(spec.widthCh) + 'ch;min-width:' + String(spec.widthCh) + 'ch"'
+                            : "";
+                        var mode = f.indexOf("phone") >= 0 || f === "vn_room_count" ? ' inputmode="numeric"' : "";
                         return (
                             '<td><input type="text" class="vei-cell-input" data-field="' +
                             escapeAttr(f) +
                             '" value="' +
                             escapeAttr(v) +
-                            '"></td>'
+                            '"' +
+                            maxLen +
+                            mode +
+                            widthStyle +
+                            '></td>'
                         );
                     }).join("") +
                     "</tr>"
@@ -130,8 +157,15 @@
                 if (idx >= 0) syncRowFromTr(tr, idx);
             });
         });
+        previewBody.querySelectorAll(".vpf-row-del").forEach(function (btn) {
+            btn.addEventListener("click", function () {
+                var idx = parseInt(btn.getAttribute("data-row-del") || "-1", 10);
+                if (idx < 0 || idx >= parsedRows.length) return;
+                parsedRows.splice(idx, 1);
+                render(parsedRows);
+            });
+        });
         previewCount.textContent = "총 " + parsedRows.length + "건";
-        enrichBtn.disabled = false;
         importBtn.disabled = false;
     }
 
@@ -198,7 +232,9 @@
             api.searchFuneralHalls(city)
                 .then(function (items) {
                     var rows = dedupByCompany(items || []).map(function (r) {
-                        return normalizeRow(r);
+                        var row = normalizeRow(r);
+                        row.__selected = true;
+                        return row;
                     });
                     render(rows);
                     setStatus(city + " 조회 완료: " + rows.length + "건", "ok");
@@ -209,39 +245,15 @@
         });
     }
 
-    if (enrichBtn) {
-        enrichBtn.addEventListener("click", function () {
-            syncAllRows();
-            if (!parsedRows.length) {
-                setStatus("먼저 도시 조회를 실행해 주세요.", "error");
-                return;
-            }
-            enrichBtn.disabled = true;
-            importBtn.disabled = true;
-            setStatus("빈 항목 조회 채우기 중…");
-            api.enrichVendorProspectsPreview(parsedRows, { useExternal: true })
-                .then(function (res) {
-                    var rows = (res && res.items) || [];
-                    render(rows);
-                    renderDiffs((res && res.diffs) || []);
-                    setStatus("빈 항목 채우기 완료: " + ((res && res.enriched) || 0) + "건", "ok");
-                })
-                .catch(function (err) {
-                    setStatus(err.message || "빈 항목 채우기에 실패했습니다.", "error");
-                })
-                .finally(function () {
-                    enrichBtn.disabled = !parsedRows.length;
-                    importBtn.disabled = !parsedRows.length;
-                });
-        });
-    }
-
     if (importBtn) {
         importBtn.addEventListener("click", function () {
             syncAllRows();
-            var payload = dedupByCompany(parsedRows);
+            var selected = (parsedRows || []).filter(function (r) {
+                return !!(r && r.__selected);
+            });
+            var payload = dedupByCompany(selected);
             if (!payload.length) {
-                setStatus("저장할 데이터가 없습니다.", "error");
+                setStatus("선택된 행이 없습니다. 저장할 항목을 체크해 주세요.", "error");
                 return;
             }
             importBtn.disabled = true;
@@ -288,7 +300,6 @@
         if (cityInput) cityInput.disabled = true;
         if (searchBtn) searchBtn.disabled = true;
         if (clearBtn) clearBtn.disabled = true;
-        if (enrichBtn) enrichBtn.disabled = true;
         if (importBtn) importBtn.disabled = true;
     }
 })();
