@@ -70,44 +70,102 @@
         return meta ? " · " + meta : "";
     }
 
+    function editHref(it) {
+        return (
+            "vendor-edit.html?id=" + encodeURIComponent(it.id) + "&from=new"
+        );
+    }
+
+    function bindDeleteButtons() {
+        if (!listEl || !api || !api.deleteVendorNew) return;
+        listEl.querySelectorAll("[data-vl-delete]").forEach(function (btn) {
+            btn.addEventListener("click", function () {
+                var id = btn.getAttribute("data-vl-delete");
+                if (!id) return;
+                var name = btn.getAttribute("data-vl-name") || "이 신규업체";
+                if (
+                    !window.confirm(
+                        "「" + name + "」을(를) 삭제할까요?\n\n삭제 후에는 복구할 수 없습니다."
+                    )
+                ) {
+                    return;
+                }
+                btn.disabled = true;
+                api.deleteVendorNew(id)
+                    .then(function () {
+                        cachedItems = (cachedItems || []).filter(function (row) {
+                            return row.id !== id;
+                        });
+                        renderList();
+                        var n = filteredItems().length;
+                        setStatus(
+                            (filterDept ? PF.deptLabel(catalog, filterDept) + " · " : "전체 · ") +
+                                n +
+                                "건"
+                        );
+                    })
+                    .catch(function (err) {
+                        btn.disabled = false;
+                        window.alert(
+                            (err && err.message) || "신규업체를 삭제하지 못했습니다."
+                        );
+                    });
+            });
+        });
+    }
+
     function renderList() {
+        if (!listEl) return;
         var items = filteredItems().sort(function (a, b) {
             return (b.updatedAt || 0) - (a.updatedAt || 0);
         });
         if (!items.length) {
             listEl.innerHTML =
                 '<p class="am-list-empty">신규 업체가 없습니다. <a href="vendor-new-register.html">신규업체 등록</a>에서 추가해 주세요.</p>';
+            setStatus(
+                (filterDept ? PF.deptLabel(catalog, filterDept) + " · " : "전체 · ") + "0건"
+            );
             return;
         }
         listEl.innerHTML =
             '<ul class="vl-admin-list">' +
             items
                 .map(function (it) {
-                    var href =
-                        "vendor-edit.html?id=" +
-                        encodeURIComponent(it.id) +
-                        "&from=new";
+                    var href = editHref(it);
                     var deptTxt = vendorDeptLabels(it) || "미지정";
                     var gradeTxt =
                         VA && VA.vendorGradeLabel
                             ? VA.vendorGradeLabel(it.vn_grade)
                             : String(it.vn_grade || "1") + "등급";
+                    var namePlain = String(it.vn_company || "(이름 없음)");
                     return (
-                        '<li><a class="vl-admin-item" href="' +
+                        '<li class="vl-admin-row">' +
+                        '<a class="vl-admin-row__main" href="' +
                         PF.escapeHtml(href) +
                         '"><span class="vl-admin-name">' +
-                        PF.escapeHtml(it.vn_company || "(이름 없음)") +
+                        PF.escapeHtml(namePlain) +
                         '</span><span class="vl-admin-meta">' +
                         PF.escapeHtml(deptTxt) +
                         " · " +
                         PF.escapeHtml(gradeTxt) +
                         (it.loginId ? " · " + PF.escapeHtml(String(it.loginId)) : "") +
                         PF.escapeHtml(registrarSuffix(it)) +
-                        "</span></a></li>"
+                        "</span></a>" +
+                        '<div class="vl-admin-row__actions">' +
+                        '<a class="btn" href="' +
+                        PF.escapeHtml(href) +
+                        '">수정</a>' +
+                        '<button type="button" class="btn vl-admin-del" data-vl-delete="' +
+                        PF.escapeHtml(it.id) +
+                        '" data-vl-name="' +
+                        PF.escapeHtml(namePlain) +
+                        '">삭제</button>' +
+                        "</div></li>"
                     );
                 })
                 .join("") +
             "</ul>";
+        bindDeleteButtons();
     }
 
     function loadVendors() {
