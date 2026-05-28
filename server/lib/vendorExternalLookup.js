@@ -128,11 +128,15 @@ async function findExternalVendorInfo(built) {
     return null;
 }
 
-async function searchFuneralHallsByCity(city) {
+async function searchFuneralHalls(keyword, mode) {
     if (!canUseNaver()) return { items: [], configured: false };
-    var c = String(city || "").trim();
-    if (!c) return { items: [], configured: true };
-    var queries = [c + " 장례식장", c + " 장례", c + " 장례문화원"];
+    var q = String(keyword || "").trim();
+    var searchMode = String(mode || "city").toLowerCase() === "name" ? "name" : "city";
+    if (!q) return { items: [], configured: true };
+    var queries =
+        searchMode === "name"
+            ? [q, q + " 장례식장", q + " 장례문화원"]
+            : [q + " 장례식장", q + " 장례", q + " 장례문화원"];
     var out = [];
     var seen = new Set();
     var lastErr = "";
@@ -195,6 +199,6 @@ async function searchFuneralHallsByCity(city) {
 module.exports = {
     findExternalVendorInfo,
     canUseNaver,
-    searchFuneralHallsByCity
+    searchFuneralHalls
 };
 

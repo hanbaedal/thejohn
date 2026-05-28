@@ -42,11 +42,18 @@
         <p id="vpf-status" class="vei-status" role="status" aria-live="polite"></p>
 
         <section class="vei-panel" aria-labelledby="vpf-search-title">
-            <h2 id="vpf-search-title">1. 도시명 조회</h2>
-            <p class="vei-hint">예: 서울, 부산, 대구, 인천, 광주, 대전, 울산, 세종, 수원, 고양, 용인, 성남, 부천, 제주, 전주, 청주, 창원</p>
+            <h2 id="vpf-search-title">1. 조회 조건 선택</h2>
             <div class="vei-file-row">
-                <label for="vpf-city" class="sr-only">도시명</label>
-                <input type="text" id="vpf-city" placeholder="도시명을 입력하세요">
+                <span>조회 기준</span>
+                <div class="vpf-mode-group" role="group" aria-label="조회 기준 선택">
+                    <button type="button" class="btn btn-secondary vpf-mode-btn is-active" id="vpf-mode-city" data-mode="city" aria-pressed="true">도시명</button>
+                    <button type="button" class="btn btn-secondary vpf-mode-btn" id="vpf-mode-name" data-mode="name" aria-pressed="false">장례식장명</button>
+                </div>
+            </div>
+            <p class="vei-hint">도시명 예: 서울, 부산, 대구, 인천, 광주, 대전, 울산, 세종, 수원, 고양, 용인, 성남, 부천, 제주, 전주, 청주, 창원</p>
+            <div class="vei-file-row">
+                <label for="vpf-city" class="sr-only">조회어</label>
+                <input type="text" id="vpf-city" placeholder="도시명 또는 장례식장 이름을 입력하세요">
                 <button type="button" class="btn btn-secondary" id="vpf-search-btn">장례식장 조회</button>
                 <button type="button" class="btn btn-secondary" id="vpf-clear-btn">초기화</button>
             </div>

@@ -40,6 +40,19 @@
     gap: 0.5rem;
     align-items: center;
 }
+.vpf-mode-group {
+    display: inline-flex;
+    gap: 0.4rem;
+}
+.vpf-mode-btn.is-active {
+    background: #0a4d9c;
+    color: #fff;
+    border-color: #0a4d9c;
+}
+.vpf-mode-btn.is-active:hover {
+    background: #0a4d9c;
+    color: #fff;
+}
 .vei-file-row input[type="file"] {
     font-size: 0.8rem;
     max-width: 100%;

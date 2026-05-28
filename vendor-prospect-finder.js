@@ -3,6 +3,8 @@
     var MAP = window.THEJHON_EXCEL_IMPORT_MAP;
     var statusEl = document.getElementById("vpf-status");
     var cityInput = document.getElementById("vpf-city");
+    var modeCityBtn = document.getElementById("vpf-mode-city");
+    var modeNameBtn = document.getElementById("vpf-mode-name");
     var searchBtn = document.getElementById("vpf-search-btn");
     var clearBtn = document.getElementById("vpf-clear-btn");
     var previewWrap = document.getElementById("vpf-preview-wrap");
@@ -45,6 +47,23 @@
         vn_web: "홈페이지",
         vn_email: "이메일"
     };
+    var searchMode = "city";
+
+    function setSearchMode(mode) {
+        searchMode = mode === "name" ? "name" : "city";
+        var isCity = searchMode === "city";
+        if (modeCityBtn) {
+            modeCityBtn.classList.toggle("is-active", isCity);
+            modeCityBtn.setAttribute("aria-pressed", isCity ? "true" : "false");
+        }
+        if (modeNameBtn) {
+            modeNameBtn.classList.toggle("is-active", !isCity);
+            modeNameBtn.setAttribute("aria-pressed", !isCity ? "true" : "false");
+        }
+        if (cityInput) {
+            cityInput.placeholder = isCity ? "도시명을 입력하세요" : "장례식장 이름을 입력하세요";
+        }
+    }
 
     function setStatus(msg, kind) {
         if (!statusEl) return;
@@ -212,20 +231,21 @@
 
     if (searchBtn) {
         searchBtn.addEventListener("click", function () {
-            var city = String((cityInput && cityInput.value) || "").trim();
-            if (!city) {
-                setStatus("도시명을 입력해 주세요.", "error");
+            var keyword = String((cityInput && cityInput.value) || "").trim();
+            var mode = searchMode;
+            if (!keyword) {
+                setStatus(mode === "name" ? "장례식장 이름을 입력해 주세요." : "도시명을 입력해 주세요.", "error");
                 return;
             }
             setStatus("조회 중…");
             reset();
-            api.searchFuneralHalls(city)
+            api.searchFuneralHalls(keyword, mode)
                 .then(function (items) {
                     var rows = dedupByCompany(items || []).map(function (r) {
                         return normalizeRow(r);
                     });
                     render(rows);
-                    setStatus(city + " 조회 완료: " + rows.length + "건", "ok");
+                    setStatus(keyword + " 조회 완료: " + rows.length + "건", "ok");
                 })
                 .catch(function (err) {
                     setStatus(err.message || "장례식장 조회에 실패했습니다.", "error");
@@ -272,8 +292,20 @@
     if (clearBtn) {
         clearBtn.addEventListener("click", function () {
             if (cityInput) cityInput.value = "";
+            setSearchMode("city");
             reset();
             setStatus("");
+        });
+    }
+
+    if (modeCityBtn) {
+        modeCityBtn.addEventListener("click", function () {
+            setSearchMode("city");
+        });
+    }
+    if (modeNameBtn) {
+        modeNameBtn.addEventListener("click", function () {
+            setSearchMode("name");
         });
     }
 
@@ -282,11 +314,13 @@
             ? THEJHON_AUTH.getProspectFinderAccess()
             : { allowed: false, reason: "권한 확인 불가" };
     if (!access.allowed) {
-        setStatus(access.reason, "error");
         if (cityInput) cityInput.disabled = true;
+        if (modeCityBtn) modeCityBtn.disabled = true;
+        if (modeNameBtn) modeNameBtn.disabled = true;
         if (searchBtn) searchBtn.disabled = true;
         if (clearBtn) clearBtn.disabled = true;
         if (importBtn) importBtn.disabled = true;
     }
+    setSearchMode("city");
 })();
 

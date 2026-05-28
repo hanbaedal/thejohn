@@ -185,8 +185,9 @@
                 return d.items || [];
             });
         },
-        searchFuneralHalls: function (city) {
-            var q = "?city=" + encodeURIComponent(String(city || ""));
+        searchFuneralHalls: function (keyword, mode) {
+            var q = "?q=" + encodeURIComponent(String(keyword || ""));
+            if (mode) q += "&mode=" + encodeURIComponent(String(mode));
             return request("GET", "/api/vendor-prospects/search-funeral-halls" + q).then(function (d) {
                 return d.items || [];
             });

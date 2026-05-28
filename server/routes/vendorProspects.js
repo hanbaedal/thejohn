@@ -18,7 +18,7 @@ const {
 const {
     findExternalVendorInfo,
     canUseNaver,
-    searchFuneralHallsByCity
+    searchFuneralHalls
 } = require("../lib/vendorExternalLookup");
 
 const router = express.Router();
@@ -119,12 +119,18 @@ router.get("/", requireRole("supervisor", "admin"), async function (req, res) {
     }
 });
 
-/** 관리자 — 도시명으로 장례식장 조회 (외부 웹) */
+/** 관리자 — 도시명/장례식장명으로 장례식장 조회 (외부 웹) */
 router.get("/search-funeral-halls", requireRole("admin"), async function (req, res) {
     try {
-        const city = String(req.query.city || "").trim();
-        if (!city) return res.status(400).json({ ok: false, error: "도시명을 입력해 주세요." });
-        const found = await searchFuneralHallsByCity(city);
+        const q = String(req.query.q || "").trim();
+        const mode = String(req.query.mode || "city").trim().toLowerCase() === "name" ? "name" : "city";
+        if (!q) {
+            return res.status(400).json({
+                ok: false,
+                error: mode === "name" ? "장례식장 이름을 입력해 주세요." : "도시명을 입력해 주세요."
+            });
+        }
+        const found = await searchFuneralHalls(q, mode);
         if (!found.configured) {
             return res.status(400).json({
                 ok: false,
@@ -135,11 +141,13 @@ router.get("/search-funeral-halls", requireRole("admin"), async function (req, r
             return res.status(404).json({
                 ok: false,
                 error:
-                    "조회 결과가 없습니다. 도시명을 줄여서 입력하거나(예: 서울, 창원), 네이버 API 권한/쿼터를 확인해 주세요.",
+                    mode === "name"
+                        ? "조회 결과가 없습니다. 장례식장 이름을 정확히 입력하거나 일부 키워드로 다시 시도해 주세요."
+                        : "조회 결과가 없습니다. 도시명을 줄여서 입력하거나(예: 서울, 창원), 네이버 API 권한/쿼터를 확인해 주세요.",
                 hint: found.lastErr ? "debug: " + found.lastErr : ""
             });
         }
-        res.json({ ok: true, items: found.items || [], city: city });
+        res.json({ ok: true, items: found.items || [], q: q, mode: mode });
     } catch (e) {
         console.error("GET /api/vendor-prospects/search-funeral-halls", e);
         res.status(500).json({ ok: false, error: "장례식장 조회에 실패했습니다." });
@@ -222,8 +230,8 @@ router.post("/enrich-preview", requireRole("supervisor"), async function (req, r
     }
 });
 
-/** 슈퍼바이저 — 엑셀 일괄 등록 → vendor_prospects */
-router.post("/import", requireRole("supervisor"), async function (req, res) {
+/** 슈퍼바이저/관리자 — 일괄 등록 → vendor_prospects */
+router.post("/import", requireRole("supervisor", "admin"), async function (req, res) {
     try {
         const rows = req.body && Array.isArray(req.body.rows) ? req.body.rows : [];
         if (!rows.length) {
