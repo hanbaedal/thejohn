@@ -179,8 +179,17 @@
             if (excludeId) q += "&excludeId=" + encodeURIComponent(String(excludeId));
             return request("GET", "/api/vendors/check-login-id" + q);
         },
-        listVendorProspects: function (q) {
-            var query = q ? "?q=" + encodeURIComponent(String(q)) : "";
+        listVendorProspects: function (qOrOpts) {
+            var parts = [];
+            var q = "";
+            if (typeof qOrOpts === "string") {
+                q = qOrOpts;
+            } else if (qOrOpts && typeof qOrOpts === "object") {
+                q = qOrOpts.q || "";
+                if (qOrOpts.forPicker) parts.push("forPicker=1");
+            }
+            if (q) parts.push("q=" + encodeURIComponent(String(q)));
+            var query = parts.length ? "?" + parts.join("&") : "";
             return request("GET", "/api/vendor-prospects" + query).then(function (d) {
                 return d.items || [];
             });

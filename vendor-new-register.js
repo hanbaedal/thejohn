@@ -105,6 +105,10 @@
         if (VF && VF.writeDeptCheckboxValues) VF.writeDeptCheckboxValues(deptCheckboxesRoot, ids);
     }
 
+    function setDefaultDepts() {
+        setSelectedDepts(["uncontracted"]);
+    }
+
     function setGrade(value) {
         if (!gradeSelect) return;
         var g = String(value || "1");
@@ -119,7 +123,8 @@
         ceoInput.value = it.vn_ceo || "";
         ceoTelInput.value = it.vn_ceo_tel || "";
         setGrade(it.vn_grade || "1");
-        setSelectedDepts(it.vn_depts || []);
+        var depts = it.vn_depts && it.vn_depts.length ? it.vn_depts : ["uncontracted"];
+        setSelectedDepts(depts);
         webInput.value = it.vn_web || "";
         emailInput.value = it.vn_email || "";
         phoneInput.value = it.vn_phone || "";
@@ -199,6 +204,7 @@
     }
 
     if (gradeSelect) gradeSelect.value = "1";
+    setDefaultDepts();
 
     var VPP = window.THEJHON_VENDOR_PROSPECT_PICKER;
     if (VPP && VPP.init && api && api.listVendorProspects) {
@@ -214,7 +220,7 @@
             listEl: document.getElementById("vp-list"),
             statusEl: document.getElementById("vp-status"),
             listProspects: function (q) {
-                return api.listVendorProspects(q);
+                return api.listVendorProspects({ q: q, forPicker: true });
             },
             onSelect: function (it) {
                 if (prospectIdInput) prospectIdInput.value = it.id || "";
@@ -280,7 +286,7 @@
                     if (logoPicker) logoPicker.clear();
                     if (idDupCheck) idDupCheck.reset();
                     updateLogoPreview("");
-                    clearSelectedDepts();
+                    setDefaultDepts();
                     if (gradeSelect) gradeSelect.value = "1";
                     if (prospectPicker) prospectPicker.clear();
                     setStatus("신규업체를 저장했습니다. 신규업체 리스트에서 확인·수정할 수 있습니다.");

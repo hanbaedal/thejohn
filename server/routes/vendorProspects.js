@@ -13,6 +13,8 @@ const {
 const {
     canReadVendor,
     canWriteVendor,
+    canReadProspectForPicker,
+    canWriteProspectForRegistration,
     buildVendorListQuery,
     stampNewVendorRegistration,
     applyRegistrationOnUpdate
@@ -109,7 +111,11 @@ router.get("/check-login-id", requireRole("supervisor", "admin"), async function
 router.get("/", requireRole("supervisor", "admin"), async function (req, res) {
     try {
         const q = String(req.query.q || "").trim();
-        const listQuery = buildVendorListQuery(req.auth);
+        const forPicker =
+            req.query.forPicker === "1" ||
+            req.query.forPicker === "true" ||
+            req.query.picker === "1";
+        const listQuery = forPicker ? {} : buildVendorListQuery(req.auth);
         const filter = Object.assign({}, listQuery);
         if (q) {
             filter.vn_company = { $regex: escapeRegex(q), $options: "i" };
@@ -136,7 +142,7 @@ router.get("/:id", requireRole("supervisor", "admin"), async function (req, res)
     try {
         const doc = await getDb().collection(COLLECTION).findOne({ id: req.params.id });
         if (!doc) return res.status(404).json({ ok: false, error: "신규업체를 찾을 수 없습니다." });
-        if (!canReadVendor(req.auth, doc)) {
+        if (!canReadVendor(req.auth, doc) && !canReadProspectForPicker(req.auth)) {
             return res.status(403).json({ ok: false, error: "이 신규업체를 조회할 권한이 없습니다." });
         }
         res.json({ ok: true, item: toPublic(doc) });
@@ -299,7 +305,7 @@ router.put("/:id", requireRole("supervisor", "admin"), async function (req, res)
         const col = getDb().collection(COLLECTION);
         const existing = await col.findOne({ id });
         if (!existing) return res.status(404).json({ ok: false, error: "신규업체를 찾을 수 없습니다." });
-        if (!canWriteVendor(req.auth, existing)) {
+        if (!canWriteProspectForRegistration(req.auth, existing)) {
             return res.status(403).json({
                 ok: false,
                 error: "다른 관리자가 등록한 신규업체는 수정할 수 없습니다."

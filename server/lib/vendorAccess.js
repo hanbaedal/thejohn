@@ -46,6 +46,21 @@ function canWriteVendor(auth, doc) {
     return vendorOwnedBy(doc, auth.userId);
 }
 
+/** 예비거래처 선택 모달 — 관리자·슈퍼바이저 모두 전체 목록 조회 */
+function canReadProspectForPicker(auth) {
+    return isStaffAuth(auth);
+}
+
+/** 신규업체 등록 완료 — 로그인 미설정(엑셀 등) 예비거래처는 관리자도 저장 가능 */
+function canWriteProspectForRegistration(auth, doc) {
+    if (!isStaffAuth(auth)) return false;
+    if (isSupervisorAuth(auth)) return true;
+    if (!doc) return true;
+    if (canWriteVendor(auth, doc)) return true;
+    if (!String(doc.loginId || "").trim()) return true;
+    return false;
+}
+
 /** MongoDB find 쿼리 — 슈퍼바이저: 전체, 관리자: 본인 등록 + legacy */
 function buildVendorListQuery(auth) {
     if (!auth || !isStaffAuth(auth)) return {};
@@ -91,6 +106,8 @@ module.exports = {
     isSharedLegacyVendor,
     canReadVendor,
     canWriteVendor,
+    canReadProspectForPicker,
+    canWriteProspectForRegistration,
     buildVendorListQuery,
     staffDisplayName,
     stampNewVendorRegistration,
