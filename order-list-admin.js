@@ -9,6 +9,7 @@
     var dateFromEl = document.getElementById("ol-date-from");
     var dateToEl = document.getElementById("ol-date-to");
     var vendorNameEl = document.getElementById("ol-vendor-name");
+    var vendorPickBtn = document.getElementById("ol-vendor-pick-btn");
     var vendorClearBtn = document.getElementById("ol-vendor-clear-btn");
     var vendorModal = document.getElementById("ol-vendor-modal");
     var vendorModalCloseBtn = document.getElementById("ol-vendor-modal-close");
@@ -197,7 +198,7 @@
 
     if (hintEl) {
         hintEl.textContent =
-            "목록을 클릭하면 주문 품목·금액이 아래에 표시됩니다. aksangsa 담당 업체 주문만 보입니다.";
+            "목록을 클릭하면 주문 품목·금액이 아래에 표시됩니다. 담당 거래처의 회사명 기준으로 주문 목록이 표시됩니다.";
         hintEl.hidden = false;
     }
 
@@ -230,7 +231,7 @@
                             '<span class="ol-admin-name">' +
                             escapeHtml(it.orderNo || it.id) +
                             " · " +
-                            escapeHtml(it.vendorCompany || it.vendorUserId || "") +
+                            escapeHtml(it.vendorCompany || "(회사명 없음)") +
                             "</span>" +
                             '<span class="ol-admin-meta">' +
                             escapeHtml(formatDate(it.createdAt)) +
@@ -261,6 +262,7 @@
     if (dateFromEl) dateFromEl.addEventListener("change", loadOrders);
     if (dateToEl) dateToEl.addEventListener("change", loadOrders);
     if (vendorNameEl) vendorNameEl.addEventListener("click", openVendorModal);
+    if (vendorPickBtn) vendorPickBtn.addEventListener("click", openVendorModal);
     if (vendorClearBtn) {
         vendorClearBtn.addEventListener("click", function () {
             selectedVendorName = "";

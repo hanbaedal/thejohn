@@ -91,6 +91,28 @@
         .order-detail-empty { margin: 0; color: #5a6d7e; }
         .ol-date-input { min-width: 10rem; }
         .ol-vendor-input { min-width: 14rem; cursor: pointer; background: #fff; }
+        .ol-filter-row {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 0.45rem 0.6rem;
+            margin-bottom: 0.55rem;
+        }
+        .ol-filter-row--vendor {
+            justify-content: space-between;
+        }
+        .ol-filter-left {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.45rem;
+            min-width: 0;
+        }
+        .ol-filter-actions {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            margin-left: auto;
+        }
         .ol-picker-modal {
             position: fixed;
             inset: 0;
@@ -171,14 +193,22 @@
         <h1>주문서관리</h1>
         <p id="ol-hint" class="ol-hint" hidden></p>
         <p id="ol-status" class="ol-status" role="status" aria-live="polite"></p>
-        <div class="vei-actions">
-            <label for="ol-vendor-name" class="sr-only">업체명 선택</label>
-            <input type="text" id="ol-vendor-name" class="ol-vendor-input" placeholder="업체 선택" readonly>
-            <button type="button" class="btn" id="ol-vendor-clear-btn">업체해제</button>
-            <label for="ol-date-from" class="sr-only">주문이력 시작일</label>
+        <div class="ol-filter-row ol-filter-row--vendor">
+            <div class="ol-filter-left">
+                <strong>등록업체로 조회</strong>
+                <label for="ol-vendor-name" class="sr-only">등록업체 선택</label>
+                <input type="text" id="ol-vendor-name" class="ol-vendor-input" placeholder="선택된 업체 없음" readonly>
+            </div>
+            <div class="ol-filter-actions">
+                <button type="button" class="btn" id="ol-vendor-pick-btn">업체선택</button>
+                <button type="button" class="btn" id="ol-vendor-clear-btn">업체해제</button>
+            </div>
+        </div>
+        <div class="ol-filter-row">
+            <strong>기간으로 조회</strong>
+            <label for="ol-date-from">시작일</label>
             <input type="date" id="ol-date-from" class="ol-date-input">
-            <span>~</span>
-            <label for="ol-date-to" class="sr-only">주문이력 종료일</label>
+            <label for="ol-date-to">종료일</label>
             <input type="date" id="ol-date-to" class="ol-date-input">
         </div>
         <div id="ol-list" class="ol-list-scroll"></div>
