@@ -22,7 +22,10 @@ const {
     newProspectId,
     toPickerItem,
     findProspectByLoginId,
-    findVendorByLoginId
+    findVendorByLoginId,
+    findDuplicateProspectCompany,
+    applyCompanyNormToDoc,
+    normalizeCompanyKey
 } = require("../lib/vendorProspects");
 const {
     MAX_IMPORT_ROWS,
@@ -157,17 +160,42 @@ router.post("/import", requireRole("supervisor"), async function (req, res) {
             });
         }
 
-        const col = getDb().collection(COLLECTION);
+        const db = getDb();
+        const col = db.collection(COLLECTION);
         const docs = [];
         const errors = [];
+        const seenInBatch = new Set();
         let registration = null;
+        let skipped = 0;
 
         for (let i = 0; i < rows.length; i++) {
-            const check = validateImportRow(rows[i], i + 2);
+            const rowNum = i + 2;
+            const check = validateImportRow(rows[i], rowNum);
             if (!check.ok) {
-                errors.push({ row: i + 2, error: check.error });
+                errors.push({ row: rowNum, error: check.error });
                 continue;
             }
+            const company = check.built.vn_company;
+            const norm = normalizeCompanyKey(company);
+            if (seenInBatch.has(norm)) {
+                skipped++;
+                errors.push({
+                    row: rowNum,
+                    error: "같은 파일에 중복된 업체명입니다: " + company
+                });
+                continue;
+            }
+            const dup = await findDuplicateProspectCompany(db, company);
+            if (dup) {
+                skipped++;
+                errors.push({
+                    row: rowNum,
+                    error: "이미 등록된 업체명입니다: " + company
+                });
+                continue;
+            }
+            seenInBatch.add(norm);
+
             let doc = toImportDbDoc(newProspectId(), check.built, null);
             if (!registration) {
                 doc = await stampNewVendorRegistration(doc, req.auth);
@@ -187,8 +215,11 @@ router.post("/import", requireRole("supervisor"), async function (req, res) {
         if (!docs.length) {
             return res.status(400).json({
                 ok: false,
-                error: "저장할 수 있는 행이 없습니다.",
-                errors: errors
+                error: "저장할 수 있는 행이 없습니다. (중복·오류 행 제외)",
+                inserted: 0,
+                skipped: skipped,
+                failed: errors.length,
+                errors: errors.slice(0, 50)
             });
         }
 
@@ -198,6 +229,7 @@ router.post("/import", requireRole("supervisor"), async function (req, res) {
         res.status(201).json({
             ok: true,
             inserted: docs.length,
+            skipped: skipped,
             failed: errors.length,
             errors: errors.slice(0, 50)
         });
@@ -231,9 +263,17 @@ router.post("/", requireRole("supervisor", "admin"), async function (req, res) {
         if (await findProspectByLoginId(db, loginId)) {
             return res.status(409).json({ ok: false, error: "이미 사용 중인 아이디입니다." });
         }
+        const dupCompany = await findDuplicateProspectCompany(db, built.vn_company);
+        if (dupCompany) {
+            return res.status(409).json({
+                ok: false,
+                error: "이미 등록된 업체명입니다: " + (built.vn_company || "")
+            });
+        }
 
         const col = db.collection(COLLECTION);
         let doc = toDbDoc(newProspectId(), built, null);
+        doc = applyCompanyNormToDoc(doc, built.vn_company);
         doc = await stampNewVendorRegistration(doc, req.auth);
         await col.insertOne(doc);
         console.log(
@@ -287,8 +327,16 @@ router.put("/:id", requireRole("supervisor", "admin"), async function (req, res)
         if (await findProspectByLoginId(db, loginId, id)) {
             return res.status(409).json({ ok: false, error: "이미 사용 중인 아이디입니다." });
         }
+        const dupCompany = await findDuplicateProspectCompany(db, built.vn_company, id);
+        if (dupCompany) {
+            return res.status(409).json({
+                ok: false,
+                error: "이미 등록된 업체명입니다: " + (built.vn_company || "")
+            });
+        }
 
         let doc = toDbDoc(id, built, existing);
+        doc = applyCompanyNormToDoc(doc, built.vn_company);
         doc = await applyRegistrationOnUpdate(doc, existing, req.auth, req.body);
         await col.replaceOne({ id }, doc);
         console.log("[vendor_prospects] updated:", doc.id, doc.loginId);

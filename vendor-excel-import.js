@@ -301,8 +301,17 @@
                 setStatus("API를 사용할 수 없습니다.", "error");
                 return;
             }
-            var payload = parsedRows.filter(function (r) {
-                return r && String(r.vn_company || "").trim();
+            var payload = [];
+            var seenLocal = {};
+            parsedRows.forEach(function (r) {
+                if (!r || !String(r.vn_company || "").trim()) return;
+                var key = String(r.vn_company || "")
+                    .trim()
+                    .replace(/\s+/g, " ")
+                    .toLowerCase();
+                if (seenLocal[key]) return;
+                seenLocal[key] = true;
+                payload.push(r);
             });
             if (!payload.length) {
                 setStatus("업체명이 있는 행이 없습니다.", "error");
@@ -314,15 +323,20 @@
             api.importVendorProspects(payload)
                 .then(function (res) {
                     var inserted = (res && res.inserted) || 0;
+                    var skipped = (res && res.skipped) || 0;
                     var failed = (res && res.failed) || 0;
-                    setStatus(inserted + "건을 vendor_prospects에 저장했습니다.", "ok");
+                    setStatus(
+                        inserted + "건 저장" + (skipped ? ", 중복 제외 " + skipped + "건" : "") + ".",
+                        inserted ? "ok" : "error"
+                    );
                     if (resultEl) {
                         resultEl.hidden = false;
                         var html =
                             "<strong>결과</strong> 저장 " +
                             inserted +
                             "건" +
-                            (failed ? ", 건너뜀 " + failed + "건" : "") +
+                            (skipped ? ", 중복·건너뜀 " + skipped + "건" : "") +
+                            (failed && !skipped ? ", 오류 " + failed + "건" : "") +
                             '. <a href="vendor-new-list.html">신규업체 리스트</a>에서 확인할 수 있습니다.';
                         if (res.errors && res.errors.length) {
                             html +=

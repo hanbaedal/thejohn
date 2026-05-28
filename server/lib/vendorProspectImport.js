@@ -1,4 +1,5 @@
 const { F, buildFromBody, parseGrade } = require("./vendorFields");
+const { normalizeCompanyKey } = require("./vendorProspects");
 
 const MAX_IMPORT_ROWS = 500;
 
@@ -171,6 +172,7 @@ function toImportDbDoc(id, built, registration) {
     const now = Date.now();
     const doc = {
         id,
+        vn_company_norm: normalizeCompanyKey(built.vn_company),
         [F.company]: built.vn_company,
         [F.depts]: built.vn_depts || [],
         [F.ceo]: built.vn_ceo || "",
