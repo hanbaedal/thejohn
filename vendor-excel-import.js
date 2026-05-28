@@ -337,7 +337,7 @@
                             "건" +
                             (skipped ? ", 중복·건너뜀 " + skipped + "건" : "") +
                             (failed && !skipped ? ", 오류 " + failed + "건" : "") +
-                            '. <a href="vendor-new-list.html">신규업체 리스트</a>에서 확인할 수 있습니다.';
+                            '. 신규업체 등록 시 <a href="vendor-new-register.html">예비거래처</a>에서 불러올 수 있습니다.';
                         if (res.errors && res.errors.length) {
                             html +=
                                 "<ul>" +

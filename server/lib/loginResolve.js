@@ -63,6 +63,8 @@ async function findVendorByLoginId(loginId) {
     const filter = { $or: clauses };
     const vendor = await db.collection("vendors").findOne(filter);
     if (vendor) return vendor;
+    const vnew = await db.collection("vendor_new").findOne(filter);
+    if (vnew) return vnew;
     return db.collection("vendor_prospects").findOne(filter);
 }
 
@@ -100,12 +102,8 @@ async function tryVendorLogin(vendor, loginId, password) {
 
     if (vendorCheck.migratePassword != null) {
         const db = getDb();
-        const inProspects =
-            String(vendor.id || "").indexOf("vp_") === 0 ||
-            String(vendor.vn_record_type || "")
-                .trim()
-                .toLowerCase() === "new";
-        const col = inProspects ? db.collection("vendor_prospects") : db.collection("vendors");
+        const { collectionNameForVendorDoc } = require("./vendorCollections");
+        const col = db.collection(collectionNameForVendorDoc(vendor));
         await setLoginPassword(col, { id: vendor.id }, loginId, vendorCheck.migratePassword);
     }
 

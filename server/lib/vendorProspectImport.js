@@ -1,5 +1,5 @@
 const { F, buildFromBody, parseGrade } = require("./vendorFields");
-const { normalizeCompanyKey } = require("./vendorProspects");
+const { normalizeCompanyKey } = require("./vendorCollections");
 
 const MAX_IMPORT_ROWS = 500;
 

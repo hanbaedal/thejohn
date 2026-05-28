@@ -179,46 +179,43 @@
             if (excludeId) q += "&excludeId=" + encodeURIComponent(String(excludeId));
             return request("GET", "/api/vendors/check-login-id" + q);
         },
-        listVendorProspects: function (qOrOpts) {
-            var parts = [];
-            var q = "";
-            if (typeof qOrOpts === "string") {
-                q = qOrOpts;
-            } else if (qOrOpts && typeof qOrOpts === "object") {
-                q = qOrOpts.q || "";
-                if (qOrOpts.forPicker) parts.push("forPicker=1");
-            }
-            if (q) parts.push("q=" + encodeURIComponent(String(q)));
-            var query = parts.length ? "?" + parts.join("&") : "";
+        listVendorProspects: function (q) {
+            var query = q ? "?q=" + encodeURIComponent(String(q)) : "";
             return request("GET", "/api/vendor-prospects" + query).then(function (d) {
                 return d.items || [];
-            });
-        },
-        getVendorProspect: function (id) {
-            return request("GET", "/api/vendor-prospects/" + encodeURIComponent(id)).then(function (d) {
-                return d.item;
-            });
-        },
-        checkVendorProspectLoginId: function (loginId, excludeId) {
-            var q = "?loginId=" + encodeURIComponent(String(loginId || ""));
-            if (excludeId) q += "&excludeId=" + encodeURIComponent(String(excludeId));
-            return request("GET", "/api/vendor-prospects/check-login-id" + q);
-        },
-        createVendorProspect: function (body) {
-            return request("POST", "/api/vendor-prospects", body).then(function (d) {
-                return d.item;
             });
         },
         importVendorProspects: function (rows) {
             return request("POST", "/api/vendor-prospects/import", { rows: rows || [] });
         },
-        updateVendorProspect: function (id, body) {
-            return request("PUT", "/api/vendor-prospects/" + encodeURIComponent(id), body).then(function (d) {
+        listVendorNew: function (q) {
+            var query = q ? "?q=" + encodeURIComponent(String(q)) : "";
+            return request("GET", "/api/vendor-new" + query).then(function (d) {
+                return d.items || [];
+            });
+        },
+        getVendorNew: function (id) {
+            return request("GET", "/api/vendor-new/" + encodeURIComponent(id)).then(function (d) {
                 return d.item;
             });
         },
-        deleteVendorProspect: function (id) {
-            return request("DELETE", "/api/vendor-prospects/" + encodeURIComponent(id));
+        checkVendorNewLoginId: function (loginId, excludeId) {
+            var q = "?loginId=" + encodeURIComponent(String(loginId || ""));
+            if (excludeId) q += "&excludeId=" + encodeURIComponent(String(excludeId));
+            return request("GET", "/api/vendor-new/check-login-id" + q);
+        },
+        createVendorNew: function (body) {
+            return request("POST", "/api/vendor-new", body).then(function (d) {
+                return d.item;
+            });
+        },
+        updateVendorNew: function (id, body) {
+            return request("PUT", "/api/vendor-new/" + encodeURIComponent(id), body).then(function (d) {
+                return d.item;
+            });
+        },
+        deleteVendorNew: function (id) {
+            return request("DELETE", "/api/vendor-new/" + encodeURIComponent(id));
         },
         createVendor: function (body) {
             return request("POST", "/api/vendors", body).then(function (d) {

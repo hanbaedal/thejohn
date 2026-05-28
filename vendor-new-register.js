@@ -168,16 +168,16 @@
         });
     }
 
-    if (VF && VF.initLoginIdDuplicateCheck && api && api.checkVendorProspectLoginId) {
+    if (VF && VF.initLoginIdDuplicateCheck && api && api.checkVendorNewLoginId) {
         idDupCheck = VF.initLoginIdDuplicateCheck({
             loginIdInput: loginIdInput,
             hintEl: document.getElementById("vr-id-dup-hint"),
             isReserved: VF.isReservedVendorLoginId,
             getExcludeId: function () {
-                return prospectIdInput ? prospectIdInput.value.trim() : "";
+                return "";
             },
             checkDuplicate: function (loginId, excludeId) {
-                return api.checkVendorProspectLoginId(loginId, excludeId);
+                return api.checkVendorNewLoginId(loginId, excludeId);
             }
         });
     }
@@ -220,7 +220,7 @@
             listEl: document.getElementById("vp-list"),
             statusEl: document.getElementById("vp-status"),
             listProspects: function (q) {
-                return api.listVendorProspects({ q: q, forPicker: true });
+                return api.listVendorProspects(q);
             },
             onSelect: function (it) {
                 if (prospectIdInput) prospectIdInput.value = it.id || "";
@@ -267,7 +267,8 @@
             vn_record_type: "new"
         };
 
-        var existingProspectId = prospectIdInput ? prospectIdInput.value.trim() : "";
+        var prospectSourceId = prospectIdInput ? prospectIdInput.value.trim() : "";
+        if (prospectSourceId) body.prospectId = prospectSourceId;
         var err = VF ? VF.validateVendorFields(body, { requirePassword: true }) : "";
         if (err) {
             setStatus(err, true);
@@ -276,9 +277,7 @@
 
         function saveVendor() {
             submitBtn.disabled = true;
-            var savePromise = existingProspectId
-                ? api.updateVendorProspect(existingProspectId, body)
-                : api.createVendorProspect(body);
+            var savePromise = api.createVendorNew(body);
             savePromise
                 .then(function () {
                     form.reset();

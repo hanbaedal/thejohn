@@ -24,6 +24,7 @@ const staffRoutes = require("./routes/staff");
 const productRoutes = require("./routes/products");
 const vendorRoutes = require("./routes/vendors");
 const vendorProspectRoutes = require("./routes/vendorProspects");
+const vendorNewRoutes = require("./routes/vendorNew");
 const orderRoutes = require("./routes/orders");
 const { requireRole } = require("./middleware/auth");
 
@@ -189,6 +190,7 @@ app.use("/api/staff", requireDb, staffRoutes);
 app.use("/api/products", requireDb, productRoutes);
 app.use("/api/vendors", requireDb, vendorRoutes);
 app.use("/api/vendor-prospects", requireDb, vendorProspectRoutes);
+app.use("/api/vendor-new", requireDb, vendorNewRoutes);
 app.use("/api/orders", requireDb, orderRoutes);
 
 app.use(express.static(staticRoot, { index: "index.html", extensions: ["html"] }));

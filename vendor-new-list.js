@@ -11,15 +11,7 @@
     var staffFilterEl = document.getElementById("vl-staff-filter");
     var cachedItems = [];
     var filterDept = "";
-    function vendorRecordType(it) {
-        return String((it && it.vn_record_type) || "partner")
-            .trim()
-            .toLowerCase();
-    }
-
-    function isNewVendor(it) {
-        return vendorRecordType(it) === "new";
-    }
+    var filterStaff = "all";
 
     function setStatus(msg, isError) {
         if (!statusEl) return;
@@ -62,8 +54,12 @@
     }
 
     function filteredItems() {
-        if (!filterDept) return cachedItems;
-        return cachedItems.filter(function (it) {
+        var base =
+            VA && VA.filterByRegistrar
+                ? VA.filterByRegistrar(cachedItems, filterStaff, "vn_registered_by")
+                : cachedItems;
+        if (!filterDept) return base;
+        return base.filter(function (it) {
             return vendorMatchesDept(it, filterDept);
         });
     }
@@ -114,36 +110,18 @@
             "</ul>";
     }
 
-    function mergeProspectLists(prospects, legacyNewFromVendors) {
-        var byId = {};
-        (prospects || []).forEach(function (it) {
-            if (it && it.id) byId[it.id] = it;
-        });
-        (legacyNewFromVendors || []).forEach(function (it) {
-            if (it && it.id && !byId[it.id]) byId[it.id] = it;
-        });
-        return Object.keys(byId).map(function (id) {
-            return byId[id];
-        });
-    }
-
     function loadVendors() {
         setStatus("불러오는 중…");
-        var prospectsP = api.listVendorProspects
-            ? api.listVendorProspects()
-            : Promise.resolve([]);
-        var legacyP = api.listVendors
-            ? api.listVendors().then(function (items) {
-                  return (items || []).filter(isNewVendor);
-              })
-            : Promise.resolve([]);
-        return Promise.all([prospectsP, legacyP])
-            .then(function (parts) {
-                cachedItems = mergeProspectLists(parts[0], parts[1]);
-                renderList();
-                var n = filteredItems().length;
-                setStatus((filterDept ? PF.deptLabel(catalog, filterDept) + " · " : "전체 · ") + n + "건");
-            });
+        if (!api || !api.listVendorNew) {
+            setStatus("API를 사용할 수 없습니다.", true);
+            return Promise.resolve();
+        }
+        return api.listVendorNew().then(function (items) {
+            cachedItems = items || [];
+            renderList();
+            var n = filteredItems().length;
+            setStatus((filterDept ? PF.deptLabel(catalog, filterDept) + " · " : "전체 · ") + n + "건");
+        });
     }
 
     if (PF && filterRoot && catalog) {
@@ -166,6 +144,17 @@
     if (!access.allowed) {
         setStatus(access.reason, true);
         return;
+    }
+
+    if (VA && staffFilterWrap && staffFilterEl) {
+        VA.initStaffFilter({
+            wrapEl: staffFilterWrap,
+            selectEl: staffFilterEl,
+            onChange: function (val) {
+                filterStaff = val || "all";
+                renderList();
+            }
+        });
     }
 
     loadVendors().catch(function (err) {

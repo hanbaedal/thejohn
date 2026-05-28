@@ -158,8 +158,8 @@
                 return editIdInput ? editIdInput.value.trim() : "";
             },
             checkDuplicate: function (loginId, excludeId) {
-                if (isFromNewVendorFlow() && api.checkVendorProspectLoginId) {
-                    return api.checkVendorProspectLoginId(loginId, excludeId);
+                if (isFromNewVendorFlow() && api.checkVendorNewLoginId) {
+                    return api.checkVendorNewLoginId(loginId, excludeId);
                 }
                 return api.checkVendorLoginId(loginId, excludeId);
             }
@@ -314,8 +314,8 @@
             body.vn_logo = prepareLogoForSave(logoData);
             submitBtn.disabled = true;
             var saveApi =
-                isFromNewVendorFlow() && api.updateVendorProspect
-                    ? api.updateVendorProspect(editingId, body)
+                isFromNewVendorFlow() && api.updateVendorNew
+                    ? api.updateVendorNew(editingId, body)
                     : api.updateVendor(editingId, body);
             saveApi
                 .then(function () {
@@ -379,13 +379,8 @@
     editIdInput.value = editId;
     setStatus("불러오는 중…");
     function loadItem() {
-        if (isFromNewVendorFlow() && api.getVendorProspect) {
-            return api.getVendorProspect(editId).catch(function (err) {
-                if (err && err.status === 404 && api.getVendor) {
-                    return api.getVendor(editId);
-                }
-                throw err;
-            });
+        if (isFromNewVendorFlow() && api.getVendorNew) {
+            return api.getVendorNew(editId);
         }
         return api.getVendor(editId);
     }

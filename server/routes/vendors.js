@@ -19,7 +19,7 @@ const {
     stampNewVendorRegistration,
     applyRegistrationOnUpdate
 } = require("../lib/vendorAccess");
-const { findProspectByLoginId } = require("../lib/vendorProspects");
+const { findAnyVendorLoginConflict } = require("../lib/vendorCollections");
 
 function isNewVendorRecordBody(body) {
     return (
@@ -127,11 +127,13 @@ router.get("/check-login-id", requireRole("supervisor", "admin"), async (req, re
                 error: "이미 사용 중인 아이디입니다."
             });
         }
-        const dupProspect = await findProspectByLoginId(db, loginId, excludeId);
+        const conflict = await findAnyVendorLoginConflict(db, loginId, {
+            vendorId: excludeId
+        });
         res.json({
             ok: true,
-            duplicate: !!dupProspect,
-            error: dupProspect ? "이미 사용 중인 아이디입니다. (신규업체)" : ""
+            duplicate: !!conflict,
+            error: conflict ? "이미 사용 중인 아이디입니다. (" + conflict.where + ")" : ""
         });
     } catch (e) {
         console.error("GET /api/vendors/check-login-id", e);
@@ -159,7 +161,7 @@ router.post("/", requireRole("supervisor", "admin"), async (req, res) => {
         if (isNewVendorRecordBody(req.body)) {
             return res.status(400).json({
                 ok: false,
-                error: "신규업체는 vendor_prospects(예비거래처) API로 등록해 주세요."
+                error: "신규업체는 /api/vendor-new 로 등록해 주세요."
             });
         }
 
@@ -181,8 +183,12 @@ router.post("/", requireRole("supervisor", "admin"), async (req, res) => {
         const vendors = getDb().collection("vendors");
         const dup = await findDuplicateVendor(vendors, loginId);
         if (dup) return res.status(409).json({ ok: false, error: "이미 사용 중인 아이디입니다." });
-        if (await findProspectByLoginId(getDb(), loginId)) {
-            return res.status(409).json({ ok: false, error: "이미 사용 중인 아이디입니다. (신규업체)" });
+        const loginConflict = await findAnyVendorLoginConflict(getDb(), loginId, {});
+        if (loginConflict) {
+            return res.status(409).json({
+                ok: false,
+                error: "이미 사용 중인 아이디입니다. (" + loginConflict.where + ")"
+            });
         }
 
         let doc = toDbDoc(newId(), built, null);
