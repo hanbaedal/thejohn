@@ -17,8 +17,10 @@
     <script src="api-config.js"></script>
     <script src="thejhon-api.js"></script>
     <script src="auth.js"></script>
+    <script src="product-catalog.js"></script>
+    <script src="product-form-shared.js"></script>
+    <script src="support-news-shared.js"></script>
     <script src="admin-header.js"></script>
-    <script src="support-common.js" defer></script>
     <script src="nav.js" defer></script>
     <script src="support-news-admin.js" defer></script>
 </head>
@@ -58,34 +60,53 @@
     <main class="page-main">
         <p class="company-branch-back"><a href="support.html">← 고객센터</a></p>
         <h1>최근소식 입력</h1>
-        <p class="sp-lead">아래에서 소식을 등록·수정·삭제합니다. 저장된 내용은 <a href="support-library.html">최근소식</a> 화면과 동일한 목록으로 공개됩니다.</p>
+        <p class="sp-lead">모든 관리자가 소식을 등록할 수 있습니다. 저장된 내용은 <a href="support-library.html">최근소식</a> 화면에 공개됩니다.</p>
         <p id="sna-status" class="sp-status" role="status" aria-live="polite"></p>
         <section class="sp-panel">
             <h2 class="sp-subheading">소식 등록</h2>
             <form id="sna-form" class="sp-form" novalidate>
                 <input type="hidden" id="sna-edit-id" value="">
+                <input type="hidden" id="sna-dept" value="">
                 <div class="sp-field">
-                    <label for="sna-title">제목</label>
-                    <input type="text" id="sna-title" required maxlength="200" autocomplete="off">
+                    <label for="sna-dept-display">제목 (사업부문)</label>
+                    <input type="text" id="sna-dept-display" class="sn-dept-input" readonly placeholder="클릭하여 사업부문 선택" autocomplete="off" aria-haspopup="dialog">
+                </div>
+                <div class="sn-photos">
+                    <p class="sn-photos-hint">사진 1~3장 (각 1MB 이하, 1:1 자동 조정)</p>
+                    <div id="sna-photo-slots" class="sn-photo-slots" aria-live="polite"></div>
+                    <input type="file" id="sna-gallery" accept="image/*,.heic,.heif" hidden>
+                    <input type="file" id="sna-camera" accept="image/*" capture="environment" hidden>
+                    <div class="sn-photo-btns">
+                        <button type="button" id="sna-btn-gallery" class="sp-btn sp-btn--secondary">앨범/파일</button>
+                        <button type="button" id="sna-btn-camera" class="sp-btn sp-btn--secondary">카메라</button>
+                    </div>
                 </div>
                 <div class="sp-field">
                     <label for="sna-body">내용</label>
-                    <textarea id="sna-body" required maxlength="12000" rows="8"></textarea>
+                    <textarea id="sna-body" required maxlength="256" rows="4" placeholder="최대 256자"></textarea>
+                    <p id="sna-char-count" class="sn-char-count">0 / 256</p>
                 </div>
                 <div class="sp-actions">
-                    <button type="submit" class="sp-btn sp-btn--primary">저장</button>
+                    <button type="submit" class="sp-btn sp-btn--primary" id="sna-submit">등록</button>
                     <button type="button" id="sna-cancel" class="sp-btn sp-btn--secondary" hidden>편집 취소</button>
                 </div>
             </form>
         </section>
         <h2 class="sp-subheading" style="max-width: min(100%, 42rem); margin: 1.25rem auto 0.65rem">등록된 소식</h2>
-        <div id="sna-list" class="sp-list" aria-live="polite"></div>
+        <ul id="sna-list" class="sn-admin-list" aria-live="polite"></ul>
     </main>
-        <footer class="site-footer">
+    <div id="sn-dept-modal" class="sn-dept-modal" hidden role="dialog" aria-modal="true" aria-labelledby="sn-dept-modal-title">
+        <div class="sn-dept-modal__panel">
+            <h2 id="sn-dept-modal-title" class="sn-dept-modal__title">사업부문 선택</h2>
+            <div id="sn-dept-modal-btns" class="sn-dept-modal__btns"></div>
+            <button type="button" class="sn-dept-modal__close">닫기</button>
+        </div>
+    </div>
+    <footer class="site-footer">
         <div class="site-footer-inner">
             <dl class="site-footer-grid" id="siteFooterCompanyGrid" aria-live="polite"></dl>
             <p class="site-footer-company-msg" id="siteFooterCompanyMsg" hidden></p>
-</div>
+        </div>
     </footer>
     <script>
         (function () {

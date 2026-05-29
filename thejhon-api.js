@@ -379,6 +379,33 @@
                 }
                 return res.blob();
             });
+        },
+        listSupportNews: function (opts) {
+            var q = "";
+            if (opts && opts.dept) {
+                q = "?dept=" + encodeURIComponent(String(opts.dept));
+            }
+            return request("GET", "/api/support-news" + q).then(function (d) {
+                return d.items || [];
+            });
+        },
+        getSupportNews: function (id) {
+            return request("GET", "/api/support-news/" + encodeURIComponent(id)).then(function (d) {
+                return d.item;
+            });
+        },
+        createSupportNews: function (body) {
+            return request("POST", "/api/support-news", body).then(function (d) {
+                return d.item;
+            });
+        },
+        updateSupportNews: function (id, body) {
+            return request("PUT", "/api/support-news/" + encodeURIComponent(id), body).then(function (d) {
+                return d.item;
+            });
+        },
+        deleteSupportNews: function (id) {
+            return request("DELETE", "/api/support-news/" + encodeURIComponent(id));
         }
     };
 })(typeof window !== "undefined" ? window : this);

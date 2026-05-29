@@ -1,208 +1,131 @@
 (function () {
-    var U = window.THEJHON_SUPPORT_COMMON;
-    var A = window.THEJHON_AUTH;
-    if (!U || !A) return;
+    var api = window.THEJHON_API;
+    var SN = window.THEJHON_SUPPORT_NEWS;
+    if (!api || !SN) return;
 
-    var KEY = U.KEYS.NEWS;
-    var statusEl = document.getElementById("sn-status");
-    var adminPanel = document.getElementById("sn-admin-panel");
-    var form = document.getElementById("sn-form");
-    var editIdInput = document.getElementById("sn-edit-id");
-    var titleInput = document.getElementById("sn-title");
-    var bodyInput = document.getElementById("sn-body");
-    var cancelBtn = document.getElementById("sn-cancel");
-    var listEl = document.getElementById("sn-list");
+    var listEl = document.getElementById("sl-list");
+    var filterBtn = document.getElementById("sl-filter-dept");
+    var deptHidden = document.getElementById("sl-dept");
+    var detailModal = document.getElementById("sl-detail-modal");
+    var detailBody = document.getElementById("sl-detail-body");
+    var detailTitle = document.getElementById("sl-detail-title");
+    var items = [];
 
     if (!listEl) return;
 
-    function isAdmin() {
-        return A.canManageRegisters && A.canManageRegisters();
+    var deptPicker = SN.initDeptModalPicker({
+        displayInput: filterBtn,
+        hiddenInput: deptHidden,
+        modal: document.getElementById("sn-dept-modal"),
+        modalBtns: document.getElementById("sn-dept-modal-btns"),
+        includeAll: true,
+        openOnHover: false,
+        onSelect: function () {
+            loadList();
+        }
+    });
+
+    function previewText(body) {
+        var t = String(body || "").trim();
+        if (!t) return "내용 없음";
+        return t.length > 56 ? t.slice(0, 56) + "…" : t;
     }
 
-    function setStatus(msg, isErr) {
-        if (!statusEl) return;
-        statusEl.textContent = msg || "";
-        statusEl.classList.toggle("sp-status--err", !!isErr);
-    }
-
-    function getItems() {
-        return U.getArray(KEY);
-    }
-
-    function setItems(items) {
-        U.setArray(KEY, items);
-    }
-
-    function resetForm() {
-        if (!form) return;
-        form.reset();
-        if (editIdInput) editIdInput.value = "";
-        if (cancelBtn) cancelBtn.hidden = true;
-        setStatus("");
-    }
-
-    function renderList() {
-        var items = getItems().slice().sort(function (a, b) {
-            return (b.updatedAt || 0) - (a.updatedAt || 0);
-        });
-        if (!items.length) {
-            listEl.innerHTML = '<p class="sp-empty">등록된 소식이 없습니다.</p>';
+    function renderList(rows) {
+        if (!rows.length) {
+            listEl.innerHTML = '<li class="sp-empty" style="list-style:none">등록된 소식이 없습니다.</li>';
             return;
         }
-        listEl.innerHTML = items
-            .map(function (it) {
-                var meta = U.formatDateKo(it.updatedAt || it.createdAt);
-                var actions = "";
-                if (isAdmin()) {
-                    actions =
-                        '<div class="sp-card-actions">' +
-                        '<button type="button" class="sp-btn sp-btn--secondary sn-edit" data-id="' +
-                        U.escapeHtml(it.id) +
-                        '">수정</button>' +
-                        '<button type="button" class="sp-btn sp-btn--danger sn-del" data-id="' +
-                        U.escapeHtml(it.id) +
-                        '">삭제</button>' +
-                        "</div>";
-                }
+        listEl.innerHTML = rows
+            .map(function (it, index) {
+                var meta = SN.formatDateKo(it.updatedAt || it.createdAt);
+                var photoHint =
+                    it.sn_images && it.sn_images.length
+                        ? " · 사진 " + it.sn_images.length + "장"
+                        : "";
                 return (
-                    '<article class="sp-card" data-id="' +
-                    U.escapeHtml(it.id) +
+                    '<li><button type="button" class="sn-news-row" data-index="' +
+                    index +
                     '">' +
-                    '<h2 class="sp-card-title">' +
-                    U.escapeHtml(String(it.title || "").trim() || "제목 없음") +
-                    "</h2>" +
-                    '<p class="sp-card-meta">' +
-                    U.escapeHtml(meta) +
-                    "</p>" +
-                    '<div class="sp-card-body">' +
-                    U.escapeMultiline(String(it.body || "")) +
-                    "</div>" +
-                    actions +
-                    "</article>"
+                    '<span class="sn-news-row__main">' +
+                    '<span class="sn-news-row__dept">' +
+                    SN.escapeHtml(SN.deptLabel(it.sn_dept)) +
+                    "</span>" +
+                    '<span class="sn-news-row__meta">' +
+                    SN.escapeHtml(meta + photoHint) +
+                    "</span>" +
+                    '<span class="sn-news-row__preview">' +
+                    SN.escapeHtml(previewText(it.sn_body)) +
+                    "</span>" +
+                    "</span>" +
+                    '<span class="sn-list-chevron" aria-hidden="true">›</span>' +
+                    "</button></li>"
                 );
             })
             .join("");
     }
 
-    function loadIntoForm(id) {
-        var it = getItems().filter(function (x) {
-            return x.id === id;
-        })[0];
-        if (!it || !titleInput || !bodyInput || !editIdInput) return;
-        editIdInput.value = it.id;
-        titleInput.value = it.title || "";
-        bodyInput.value = it.body || "";
-        if (cancelBtn) cancelBtn.hidden = false;
-        setStatus("수정 중입니다. 저장하면 반영됩니다.");
-        titleInput.focus();
+    function openDetail(it) {
+        if (!detailModal || !detailBody) return;
+        var title = SN.deptLabel(it.sn_dept);
+        if (detailTitle) detailTitle.textContent = title;
+        detailBody.innerHTML =
+            '<span class="sn-detail-dept">' +
+            SN.escapeHtml(title) +
+            "</span>" +
+            '<p class="sn-detail-meta">' +
+            SN.escapeHtml(SN.formatDateKo(it.updatedAt || it.createdAt)) +
+            (it.sn_created_by_name
+                ? " · " + SN.escapeHtml(it.sn_created_by_name)
+                : "") +
+            "</p>" +
+            SN.imagesHtml(it.sn_images) +
+            '<p class="sn-detail-body">' +
+            SN.escapeMultiline(String(it.sn_body || "")) +
+            "</p>";
+        detailModal.hidden = false;
+        document.body.style.overflow = "hidden";
     }
 
-    function deleteById(id) {
-        if (!confirm("이 소식을 삭제할까요?")) return;
-        var next = getItems().filter(function (x) {
-            return x.id !== id;
-        });
-        try {
-            setItems(next);
-        } catch (e) {
-            setStatus("삭제에 실패했습니다.", true);
-            return;
-        }
-        if (editIdInput && editIdInput.value === id) resetForm();
-        renderList();
-        setStatus("삭제했습니다.");
+    function closeDetail() {
+        if (!detailModal) return;
+        detailModal.hidden = true;
+        document.body.style.overflow = "";
+        if (detailBody) detailBody.innerHTML = "";
     }
 
-    function syncAdminUi() {
-        if (!adminPanel) return;
-        if (isAdmin()) {
-            adminPanel.hidden = false;
-        } else {
-            adminPanel.hidden = true;
-            resetForm();
-        }
+    function loadList() {
+        listEl.innerHTML = '<li class="sp-empty" style="list-style:none">불러오는 중…</li>';
+        var dept = deptPicker.getValue();
+        var opts = dept ? { dept: dept } : undefined;
+        api.listSupportNews(opts)
+            .then(function (rows) {
+                items = rows || [];
+                renderList(items);
+            })
+            .catch(function () {
+                listEl.innerHTML =
+                    '<li class="sp-empty" style="list-style:none">소식을 불러오지 못했습니다.</li>';
+            });
     }
 
     listEl.addEventListener("click", function (e) {
-        var t = e.target;
-        if (!(t instanceof HTMLElement)) return;
-        if (t.classList.contains("sn-edit")) {
-            loadIntoForm(t.getAttribute("data-id"));
-        } else if (t.classList.contains("sn-del")) {
-            deleteById(t.getAttribute("data-id"));
-        }
+        var btn = e.target.closest(".sn-news-row");
+        if (!btn) return;
+        var idx = parseInt(btn.getAttribute("data-index"), 10);
+        if (Number.isFinite(idx) && items[idx]) openDetail(items[idx]);
     });
 
-    if (cancelBtn) {
-        cancelBtn.addEventListener("click", function () {
-            resetForm();
-            setStatus("편집을 취소했습니다.");
+    var detailClose = document.getElementById("sl-detail-close");
+    if (detailClose) detailClose.addEventListener("click", closeDetail);
+    if (detailModal) {
+        detailModal.addEventListener("click", function (e) {
+            if (e.target === detailModal) closeDetail();
         });
     }
-
-    if (form) {
-        form.addEventListener("submit", function (e) {
-            e.preventDefault();
-            if (!isAdmin()) {
-                setStatus("등록 권한이 없습니다.", true);
-                return;
-            }
-            var title = (titleInput && titleInput.value.trim()) || "";
-            var body = (bodyInput && bodyInput.value.trim()) || "";
-            if (!title) {
-                setStatus("제목을 입력해 주세요.", true);
-                if (titleInput) titleInput.focus();
-                return;
-            }
-            if (!body) {
-                setStatus("내용을 입력해 주세요.", true);
-                if (bodyInput) bodyInput.focus();
-                return;
-            }
-            var now = Date.now();
-            var editingId = (editIdInput && editIdInput.value.trim()) || "";
-            var items = getItems();
-            var record = {
-                id: editingId || U.newId("news"),
-                title: title,
-                body: body,
-                createdAt: editingId
-                    ? (items.filter(function (x) {
-                          return x.id === editingId;
-                      })[0] || {}).createdAt || now
-                    : now,
-                updatedAt: now
-            };
-            var next;
-            if (editingId) {
-                next = items.map(function (x) {
-                    return x.id === editingId ? record : x;
-                });
-            } else {
-                next = items.concat([record]);
-            }
-            try {
-                setItems(next);
-            } catch (err) {
-                setStatus("저장에 실패했습니다. 내용 길이를 줄여 보세요.", true);
-                return;
-            }
-            resetForm();
-            renderList();
-            setStatus(editingId ? "수정했습니다." : "등록했습니다.");
-        });
-    }
-
-    function refresh() {
-        syncAdminUi();
-        renderList();
-    }
-
-    refresh();
-    window.addEventListener("storage", function (e) {
-        if (e.key === KEY) refresh();
+    document.addEventListener("keydown", function (e) {
+        if (e.key === "Escape" && detailModal && !detailModal.hidden) closeDetail();
     });
-    window.addEventListener("pageshow", function (e) {
-        if (e.persisted) refresh();
-    });
+
+    loadList();
 })();

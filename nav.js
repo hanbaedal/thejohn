@@ -492,10 +492,7 @@
 
         trigger.addEventListener("click", function (e) {
             if (!narrow()) return;
-            if (kind === "support" && isSupportSectionPage()) {
-                e.preventDefault();
-                setOpen(root, !root.classList.contains("is-open"));
-            } else if (kind === "product-manage" && isProductManageSectionPage()) {
+            if (kind === "product-manage" && isProductManageSectionPage()) {
                 e.preventDefault();
                 setOpen(root, !root.classList.contains("is-open"));
             } else if (kind === "vendor-manage" && isVendorManageSectionPage()) {
