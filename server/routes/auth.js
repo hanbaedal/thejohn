@@ -53,6 +53,11 @@ router.post("/login", async (req, res) => {
             });
         }
 
+        const tokenPayload = { role: result.role, userId: result.userId };
+        if (result.vendorGrade) tokenPayload.vendorGrade = result.vendorGrade;
+        if (result.vendorRegisteredBy) tokenPayload.vendorRegisteredBy = result.vendorRegisteredBy;
+        if (result.vendorOrderEnabled) tokenPayload.vendorOrderEnabled = true;
+
         if (isDbReady()) {
             const sessionGate = await assertCanStartLogin(result.role, result.userId);
             if (!sessionGate.ok) {
@@ -60,19 +65,15 @@ router.post("/login", async (req, res) => {
                 return res.status(status).json({
                     ok: false,
                     code: sessionGate.code,
-                    error: sessionGate.error
+                    error: sessionGate.error,
+                    activeSessions: sessionGate.activeSessions,
+                    maxSessions: sessionGate.maxSessions
                 });
             }
-        }
-
-        const tokenPayload = { role: result.role, userId: result.userId };
-        if (result.vendorGrade) tokenPayload.vendorGrade = result.vendorGrade;
-        if (result.vendorRegisteredBy) tokenPayload.vendorRegisteredBy = result.vendorRegisteredBy;
-        if (result.vendorOrderEnabled) tokenPayload.vendorOrderEnabled = true;
-
-        if (isDbReady() && sessionEnforced(result.role)) {
-            const sid = await assignLoginSession(result.role, result.userId);
-            if (sid) tokenPayload.sid = sid;
+            if (sessionEnforced(result.role)) {
+                const sid = await assignLoginSession(result.role, result.userId, sessionGate.resolved);
+                if (sid) tokenPayload.sid = sid;
+            }
         }
 
         const token = signToken(tokenPayload);

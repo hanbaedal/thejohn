@@ -198,7 +198,7 @@ async function updateStaffAccount(id, body, creatorRole) {
     if (doc.loginEnabled === false) {
         await staffCol.updateOne(
             { id: staffId },
-            { $unset: { activeSessionId: "", sessionUpdatedAt: "" } }
+            { $unset: { activeSessionIds: "", activeSessionId: "", sessionUpdatedAt: "" } }
         );
     }
     return toPublic(doc);
@@ -225,7 +225,7 @@ async function deleteStaffAccount(id, creatorRole) {
 
     await staffCol.updateOne(
         { id: staffId },
-        { $set: { active: false, updatedAt: Date.now() }, $unset: { activeSessionId: "", sessionUpdatedAt: "" } }
+        { $set: { active: false, updatedAt: Date.now() }, $unset: { activeSessionIds: "", activeSessionId: "", sessionUpdatedAt: "" } }
     );
     return { id: staffId, deleted: true };
 }

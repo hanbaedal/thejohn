@@ -3,6 +3,9 @@ const { getDb } = require("../db");
 const { findStaffByLoginId, findVendorByLoginId } = require("./loginResolve");
 const { collectionNameForVendorDoc } = require("./vendorCollections");
 
+/** 관리자·업체 동시 접속 허용 수 (슈퍼바이저 제외) */
+const MAX_CONCURRENT_SESSIONS = 2;
+
 function newSessionId() {
     return "sess_" + crypto.randomBytes(16).toString("hex");
 }
@@ -17,6 +20,21 @@ function sessionEnforced(role) {
 
 function str(v) {
     return String(v ?? "").trim();
+}
+
+/** legacy activeSessionId + activeSessionIds 배열 통합 */
+function getActiveSessionIds(doc) {
+    if (!doc) return [];
+    var ids = [];
+    if (Array.isArray(doc.activeSessionIds)) {
+        doc.activeSessionIds.forEach(function (s) {
+            var v = str(s);
+            if (v && ids.indexOf(v) < 0) ids.push(v);
+        });
+    }
+    var legacy = str(doc.activeSessionId);
+    if (legacy && ids.indexOf(legacy) < 0) ids.push(legacy);
+    return ids;
 }
 
 async function resolveAccountDoc(role, userId) {
@@ -39,7 +57,7 @@ function isLoginEnabledStaff(staff) {
     return staff.loginEnabled !== false;
 }
 
-/** 로그인 전 — 슈퍼바이저 제외 중복 접속·접속 비활성 검사 */
+/** 로그인 전 — 동시 접속 한도·접속 비활성 검사 */
 async function assertCanStartLogin(role, userId) {
     if (isSupervisorRole(role)) {
         return { ok: true };
@@ -56,12 +74,14 @@ async function assertCanStartLogin(role, userId) {
             error: "접속이 비활성화된 관리자 계정입니다. 슈퍼바이저에게 문의해 주세요."
         };
     }
-    if (str(doc.activeSessionId)) {
+    var activeCount = getActiveSessionIds(doc).length;
+    if (activeCount >= MAX_CONCURRENT_SESSIONS) {
         return {
             ok: false,
             code: "ALREADY_LOGGED_IN",
-            error:
-                "이미 다른 곳에서 로그인 중입니다. 기존 접속에서 로그아웃한 뒤 다시 시도해 주세요."
+            error: "다른곳에서 로그인해서 사용중입니다!",
+            activeSessions: activeCount,
+            maxSessions: MAX_CONCURRENT_SESSIONS
         };
     }
     return { ok: true, resolved: resolved };
@@ -75,11 +95,15 @@ async function assignLoginSession(role, userId, resolved) {
     const info = resolved || (await resolveAccountDoc(role, userId));
     if (!info || !info.doc || !info.doc.id) return "";
     const sid = newSessionId();
+    var next = getActiveSessionIds(info.doc).concat([sid]);
     await getDb()
         .collection(info.collection)
         .updateOne(
             { id: info.doc.id },
-            { $set: { activeSessionId: sid, sessionUpdatedAt: Date.now() } }
+            {
+                $set: { activeSessionIds: next, sessionUpdatedAt: Date.now() },
+                $unset: { activeSessionId: "" }
+            }
         );
     return sid;
 }
@@ -91,37 +115,55 @@ async function verifyAuthSession(auth) {
     const resolved = await resolveAccountDoc(auth.role, auth.userId);
     if (!resolved || !resolved.doc) return false;
     if (auth.role === "admin" && !isLoginEnabledStaff(resolved.doc)) return false;
-    return str(resolved.doc.activeSessionId) === sid;
+    return getActiveSessionIds(resolved.doc).indexOf(sid) >= 0;
 }
 
 async function clearLoginSession(auth) {
     if (!auth || !sessionEnforced(auth.role)) return;
     const resolved = await resolveAccountDoc(auth.role, auth.userId);
     if (!resolved || !resolved.doc || !resolved.doc.id) return;
-    const filter = { id: resolved.doc.id };
-    if (auth.sid) {
-        filter.activeSessionId = str(auth.sid);
+    const sid = str(auth.sid);
+    var current = getActiveSessionIds(resolved.doc);
+    var next = sid ? current.filter(function (id) { return id !== sid; }) : [];
+    if (next.length) {
+        await getDb()
+            .collection(resolved.collection)
+            .updateOne({ id: resolved.doc.id }, { $set: { activeSessionIds: next, sessionUpdatedAt: Date.now() } });
+    } else {
+        await getDb()
+            .collection(resolved.collection)
+            .updateOne(
+                { id: resolved.doc.id },
+                { $unset: { activeSessionIds: "", activeSessionId: "", sessionUpdatedAt: "" } }
+            );
     }
+}
+
+async function clearAllSessionsForDoc(collection, docId) {
+    if (!collection || !docId) return;
     await getDb()
-        .collection(resolved.collection)
-        .updateOne(filter, { $unset: { activeSessionId: "", sessionUpdatedAt: "" } });
+        .collection(collection)
+        .updateOne(
+            { id: docId },
+            { $unset: { activeSessionIds: "", activeSessionId: "", sessionUpdatedAt: "" } }
+        );
 }
 
 async function clearStaffSessionById(staffId) {
-    if (!staffId) return;
-    await getDb()
-        .collection("staff")
-        .updateOne({ id: staffId }, { $unset: { activeSessionId: "", sessionUpdatedAt: "" } });
+    await clearAllSessionsForDoc("staff", staffId);
 }
 
 module.exports = {
+    MAX_CONCURRENT_SESSIONS,
     newSessionId,
     isSupervisorRole,
     sessionEnforced,
     isLoginEnabledStaff,
+    getActiveSessionIds,
     assertCanStartLogin,
     assignLoginSession,
     verifyAuthSession,
     clearLoginSession,
-    clearStaffSessionById
+    clearStaffSessionById,
+    clearAllSessionsForDoc
 };

@@ -167,8 +167,7 @@
                 }
                 if (err && err.data && err.data.code === "ALREADY_LOGGED_IN") {
                     var dup = new Error(
-                        err.data.error ||
-                            "이미 다른 곳에서 로그인 중입니다. 기존 접속에서 로그아웃한 뒤 다시 시도해 주세요."
+                        err.data.error || "다른곳에서 로그인해서 사용중입니다!"
                     );
                     dup.code = "ALREADY_LOGGED_IN";
                     throw dup;

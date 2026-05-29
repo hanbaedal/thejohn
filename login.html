@@ -13,6 +13,43 @@
 
     <title>로그인 — 더존</title>
     <link rel="stylesheet" href="common.css">
+    <style>
+        .login-busy-modal {
+            position: fixed;
+            inset: 0;
+            z-index: 10050;
+            background: rgba(5, 42, 77, 0.55);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 1rem;
+        }
+        .login-busy-modal[hidden] { display: none !important; }
+        .login-busy-panel {
+            width: min(100%, 22rem);
+            background: #fff;
+            border-radius: 12px;
+            padding: 1.35rem 1.25rem 1.15rem;
+            box-shadow: 0 16px 38px rgba(0, 0, 0, 0.2);
+            text-align: center;
+        }
+        .login-busy-panel h2 {
+            margin: 0 0 0.65rem;
+            font-size: 1.05rem;
+            color: #a12c2c;
+        }
+        .login-busy-panel p {
+            margin: 0;
+            font-size: 0.95rem;
+            color: #2a4a5e;
+            line-height: 1.5;
+        }
+        .login-busy-timer {
+            margin-top: 0.85rem !important;
+            font-size: 0.88rem !important;
+            color: #5a6d7e !important;
+        }
+    </style>
     <script src="api-config.js"></script>
     <script src="thejhon-api.js"></script>
     <script src="auth.js"></script>
@@ -58,6 +95,13 @@
                 </div>
                 <button type="submit" class="login-submit">로그인</button>
             </form>
+        </div>
+    </div>
+    <div id="loginBusyModal" class="login-busy-modal" hidden role="alertdialog" aria-modal="true" aria-labelledby="loginBusyTitle">
+        <div class="login-busy-panel">
+            <h2 id="loginBusyTitle">로그인 불가</h2>
+            <p id="loginBusyMsg">다른곳에서 로그인해서 사용중입니다!</p>
+            <p id="loginBusyTimer" class="login-busy-timer" aria-live="polite"></p>
         </div>
     </div>
         <footer class="site-footer">
@@ -113,6 +157,46 @@
 
             if (!form) return;
 
+            function speakWarning(text) {
+                if (!window.speechSynthesis || !text) return;
+                try {
+                    window.speechSynthesis.cancel();
+                    var u = new SpeechSynthesisUtterance(text);
+                    u.lang = "ko-KR";
+                    u.rate = 0.95;
+                    window.speechSynthesis.speak(u);
+                } catch (speakErr) {}
+            }
+
+            function showBusyModal(message) {
+                return new Promise(function (resolve) {
+                    var modal = document.getElementById("loginBusyModal");
+                    var msgEl = document.getElementById("loginBusyMsg");
+                    var timerEl = document.getElementById("loginBusyTimer");
+                    var text = message || "다른곳에서 로그인해서 사용중입니다!";
+                    if (!modal) {
+                        resolve();
+                        return;
+                    }
+                    if (msgEl) msgEl.textContent = text;
+                    modal.hidden = false;
+                    speakWarning(text);
+                    var left = 5;
+                    if (timerEl) timerEl.textContent = left + "초 후 닫힙니다.";
+                    var iv = setInterval(function () {
+                        left -= 1;
+                        if (left <= 0) {
+                            clearInterval(iv);
+                            modal.hidden = true;
+                            if (window.speechSynthesis) window.speechSynthesis.cancel();
+                            resolve();
+                            return;
+                        }
+                        if (timerEl) timerEl.textContent = left + "초 후 닫힙니다.";
+                    }, 1000);
+                });
+            }
+
             form.addEventListener("submit", function (e) {
                 e.preventDefault();
                 var id = document.getElementById("userId").value.trim();
@@ -126,9 +210,13 @@
                     return;
                 }
 
+                var submitBtn = form.querySelector(".login-submit");
+                if (submitBtn) submitBtn.disabled = true;
+
                 THEJHON_AUTH.verifyFormCredentialsAsync(id, pw)
                     .then(function (ok) {
                         if (!ok) {
+                            if (submitBtn) submitBtn.disabled = false;
                             alert("아이디 또는 비밀번호가 올바르지 않습니다.");
                             return;
                         }
@@ -151,6 +239,7 @@
                         goAfterLogin();
                     })
                     .catch(function (err) {
+                        if (submitBtn) submitBtn.disabled = false;
                         if (err && err.code === "NOT_REGISTERED") {
                             alert(
                                 (err && err.message) ||
@@ -159,9 +248,8 @@
                             return;
                         }
                         if (err && err.code === "ALREADY_LOGGED_IN") {
-                            alert(
-                                err.message ||
-                                    "이미 다른 곳에서 로그인 중입니다. 기존 접속에서 로그아웃한 뒤 다시 시도해 주세요."
+                            showBusyModal(
+                                err.message || "다른곳에서 로그인해서 사용중입니다!"
                             );
                             return;
                         }

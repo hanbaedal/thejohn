@@ -206,8 +206,11 @@ function toDbDoc(id, built, existing) {
     };
     if (existing?.createdAt) doc.createdAt = existing.createdAt;
     else doc.createdAt = Date.now();
-    if (built.loginEnabled !== false && existing?.activeSessionId) {
-        doc.activeSessionId = existing.activeSessionId;
+    if (built.loginEnabled !== false && existing) {
+        var ids = [];
+        if (Array.isArray(existing.activeSessionIds)) ids = existing.activeSessionIds.slice();
+        else if (existing.activeSessionId) ids = [existing.activeSessionId];
+        if (ids.length) doc.activeSessionIds = ids;
         if (existing.sessionUpdatedAt) doc.sessionUpdatedAt = existing.sessionUpdatedAt;
     }
     if (existing) {
