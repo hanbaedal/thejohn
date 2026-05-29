@@ -50,11 +50,22 @@
     <main class="page-main">
         <p class="company-branch-back"><a href="support.html">← 고객센터</a></p>
         <h1>자유게시판</h1>
-        <p class="sp-lead">로그인한 회원은 글을 쓸 수 있고, 비로그인 방문자는 읽기만 할 수 있습니다. 본인이 작성한 글 또는 관리자만 삭제할 수 있습니다.</p>
+        <p class="sp-lead">누구나 글을 읽고 쓸 수 있습니다. 본인이 작성한 글(같은 브라우저) 또는 관리자만 삭제할 수 있습니다.</p>
         <p id="sq-status" class="sp-status" role="status" aria-live="polite"></p>
-        <p id="sq-login-hint" class="sp-hint" hidden>로그인한 회원만 글을 쓸 수 있습니다. <a href="login.html?next=support-qna.html">로그인</a></p>
-        <section id="sq-compose" class="sp-panel" hidden>
-            <h2 class="sp-subheading">글쓰기</h2>
+        <div class="sq-list-wrap">
+            <div class="sq-list-toolbar">
+                <span class="sq-list-toolbar__label">게시글</span>
+                <button type="button" id="sq-write-btn" class="sp-btn sp-btn--primary">글쓰기</button>
+            </div>
+            <ul id="sq-list" class="sq-board-list" aria-live="polite"></ul>
+        </div>
+    </main>
+    <div id="sq-write-modal" class="sq-modal" hidden role="dialog" aria-modal="true" aria-labelledby="sq-write-modal-title">
+        <div class="sq-modal__panel">
+            <div class="sq-modal__head">
+                <h2 id="sq-write-modal-title" class="sq-modal__title">글쓰기</h2>
+                <button type="button" class="sq-modal__close" id="sq-write-close" aria-label="닫기">×</button>
+            </div>
             <form id="sq-form" class="sp-form" novalidate>
                 <div class="sp-field">
                     <label for="sq-title">제목</label>
@@ -62,20 +73,29 @@
                 </div>
                 <div class="sp-field">
                     <label for="sq-body">내용</label>
-                    <textarea id="sq-body" required maxlength="8000" rows="6"></textarea>
+                    <textarea id="sq-body" required maxlength="8000" rows="8"></textarea>
                 </div>
                 <div class="sp-actions">
                     <button type="submit" class="sp-btn sp-btn--primary">등록</button>
+                    <button type="button" class="sp-btn sp-btn--secondary" id="sq-write-cancel">취소</button>
                 </div>
             </form>
-        </section>
-        <div id="sq-list" class="sp-list" aria-live="polite"></div>
-    </main>
-        <footer class="site-footer">
+        </div>
+    </div>
+    <div id="sq-view-modal" class="sq-modal" hidden role="dialog" aria-modal="true" aria-labelledby="sq-view-title">
+        <div class="sq-modal__panel sq-modal__panel--view">
+            <div class="sq-modal__head">
+                <h2 id="sq-view-title" class="sq-modal__title">게시글</h2>
+                <button type="button" class="sq-modal__close" id="sq-view-close" aria-label="닫기">×</button>
+            </div>
+            <div id="sq-view-body"></div>
+        </div>
+    </div>
+    <footer class="site-footer">
         <div class="site-footer-inner">
             <dl class="site-footer-grid" id="siteFooterCompanyGrid" aria-live="polite"></dl>
             <p class="site-footer-company-msg" id="siteFooterCompanyMsg" hidden></p>
-</div>
+        </div>
     </footer>
     <script>
         (function () {
