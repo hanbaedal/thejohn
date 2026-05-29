@@ -1,6 +1,7 @@
 (function () {
     var api = window.THEJHON_API;
     var SN = window.THEJHON_SUPPORT_NEWS;
+    var A = window.THEJHON_AUTH;
     if (!api || !SN) return;
 
     var listEl = document.getElementById("sl-list");
@@ -10,6 +11,7 @@
     var detailBody = document.getElementById("sl-detail-body");
     var detailTitle = document.getElementById("sl-detail-title");
     var items = [];
+    var currentNewsId = "";
 
     if (!listEl) return;
 
@@ -24,6 +26,39 @@
             loadList();
         }
     });
+
+    function isVendor() {
+        return A && A.isLoggedIn && A.isLoggedIn() && A.getRole && A.getRole() === "vendor";
+    }
+
+    function isStaff() {
+        return A && A.canManageRegisters && A.canManageRegisters();
+    }
+
+    function canComment() {
+        return isVendor() || isStaff();
+    }
+
+    function currentUserId() {
+        return A && A.getUserId ? String(A.getUserId() || "").trim().toLowerCase() : "";
+    }
+
+    function commentOptions() {
+        return {
+            canComment: canComment(),
+            canReply: canComment(),
+            canDeleteComment: function (c) {
+                if (isStaff()) return true;
+                if (!isVendor()) return false;
+                return (
+                    String(c.snc_author_user_id || "").trim().toLowerCase() === currentUserId()
+                );
+            },
+            loginHint: canComment()
+                ? ""
+                : "등록 업체 또는 관리자 로그인 후 댓글을 작성할 수 있습니다."
+        };
+    }
 
     function previewText(body) {
         var t = String(body || "").trim();
@@ -65,26 +100,65 @@
             .join("");
     }
 
-    function openDetail(it) {
-        if (!detailModal || !detailBody) return;
+    function renderDetailContent(it, comments) {
+        if (!detailBody) return;
         var title = SN.deptLabel(it.sn_dept);
         if (detailTitle) detailTitle.textContent = title;
+        var opts = commentOptions();
         detailBody.innerHTML =
             '<span class="sn-detail-dept">' +
             SN.escapeHtml(title) +
             "</span>" +
             '<p class="sn-detail-meta">' +
             SN.escapeHtml(SN.formatDateKo(it.updatedAt || it.createdAt)) +
-            (it.sn_created_by_name
-                ? " · " + SN.escapeHtml(it.sn_created_by_name)
-                : "") +
             "</p>" +
             SN.imagesHtml(it.sn_images) +
             '<p class="sn-detail-body">' +
             SN.escapeMultiline(String(it.sn_body || "")) +
-            "</p>";
-        detailModal.hidden = false;
-        document.body.style.overflow = "hidden";
+            "</p>" +
+            SN.authorContactHtml(it) +
+            SN.commentsSectionHtml(comments, opts);
+        var commentsRoot = detailBody.querySelector("#sn-comments-root");
+        if (commentsRoot) {
+            SN.bindCommentsUi(commentsRoot, {
+                api: api,
+                newsId: currentNewsId,
+                onRefresh: function () {
+                    return openDetailById(currentNewsId);
+                }
+            });
+        }
+    }
+
+    function openDetailById(id) {
+        currentNewsId = id;
+        if (detailBody) {
+            detailBody.innerHTML = '<p class="sn-comments__empty">불러오는 중…</p>';
+        }
+        if (detailModal) {
+            detailModal.hidden = false;
+            document.body.style.overflow = "hidden";
+        }
+        return Promise.all([api.getSupportNews(id), api.listSupportNewsComments(id)])
+            .then(function (results) {
+                var it = results[0];
+                var comments = results[1] || [];
+                if (!it) throw new Error("소식을 찾을 수 없습니다.");
+                renderDetailContent(it, comments);
+            })
+            .catch(function (err) {
+                if (detailBody) {
+                    detailBody.innerHTML =
+                        '<p class="sp-status sp-status--err">' +
+                        SN.escapeHtml((err && err.message) || "불러오지 못했습니다.") +
+                        "</p>";
+                }
+            });
+    }
+
+    function openDetail(it) {
+        if (!it || !it.id) return;
+        openDetailById(it.id);
     }
 
     function closeDetail() {
@@ -92,6 +166,7 @@
         detailModal.hidden = true;
         document.body.style.overflow = "";
         if (detailBody) detailBody.innerHTML = "";
+        currentNewsId = "";
     }
 
     function loadList() {

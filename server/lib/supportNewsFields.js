@@ -5,7 +5,8 @@ const F = {
     body: "sn_body",
     images: "sn_images",
     createdBy: "sn_created_by",
-    createdByName: "sn_created_by_name"
+    createdByName: "sn_created_by_name",
+    createdByTel: "sn_created_by_tel"
 };
 
 const MAX_BODY = 256;
@@ -42,6 +43,7 @@ function toPublic(doc) {
         sn_images: sanitizeImages(doc[F.images] || doc.sn_images),
         sn_created_by: str(doc[F.createdBy] || doc.sn_created_by),
         sn_created_by_name: str(doc[F.createdByName] || doc.sn_created_by_name),
+        sn_created_by_tel: str(doc[F.createdByTel] || doc.sn_created_by_tel),
         createdAt: doc.createdAt || 0,
         updatedAt: doc.updatedAt || 0
     };
@@ -57,6 +59,7 @@ function toDbDoc(id, built, existing, meta) {
         [F.images]: built.sn_images,
         [F.createdBy]: meta.createdBy || prev[F.createdBy] || prev.sn_created_by || "",
         [F.createdByName]: meta.createdByName || prev[F.createdByName] || prev.sn_created_by_name || "",
+        [F.createdByTel]: meta.createdByTel || prev[F.createdByTel] || prev.sn_created_by_tel || "",
         createdAt: prev.createdAt || now,
         updatedAt: now
     };

@@ -55,6 +55,11 @@
         photoManager.clear();
         if (cancelBtn) cancelBtn.hidden = true;
         if (submitBtn) submitBtn.textContent = "등록";
+        if (listEl) {
+            listEl.querySelectorAll(".sn-admin-row.is-editing").forEach(function (row) {
+                row.classList.remove("is-editing");
+            });
+        }
         syncCharCount();
         setStatus("");
     }
@@ -74,9 +79,11 @@
             .map(function (it) {
                 var meta = SN.formatDateKo(it.updatedAt || it.createdAt);
                 return (
-                    '<li class="sn-admin-row" data-id="' +
+                    '<li class="sn-admin-row sn-admin-row--clickable" data-id="' +
                     SN.escapeHtml(it.id) +
-                    '">' +
+                    '" role="button" tabindex="0" aria-label="' +
+                    SN.escapeHtml(SN.deptLabel(it.sn_dept)) +
+                    ' 수정">' +
                     '<div class="sn-admin-row__main">' +
                     '<span class="sn-news-row__dept">' +
                     SN.escapeHtml(SN.deptLabel(it.sn_dept)) +
@@ -126,6 +133,16 @@
                 if (submitBtn) submitBtn.textContent = "수정 저장";
                 syncCharCount();
                 setStatus("수정 중입니다. 저장하면 반영됩니다.");
+                listEl.querySelectorAll(".sn-admin-row").forEach(function (row) {
+                    row.classList.toggle("is-editing", row.getAttribute("data-id") === it.id);
+                });
+                if (form) {
+                    try {
+                        form.scrollIntoView({ behavior: "smooth", block: "start" });
+                    } catch (e) {
+                        form.scrollIntoView(true);
+                    }
+                }
                 if (bodyInput) bodyInput.focus();
             })
             .catch(function (err) {
@@ -149,11 +166,25 @@
     listEl.addEventListener("click", function (e) {
         var t = e.target;
         if (!(t instanceof HTMLElement)) return;
+        if (t.classList.contains("sna-del")) {
+            deleteById(t.getAttribute("data-id"));
+            return;
+        }
         if (t.classList.contains("sna-edit")) {
             loadIntoForm(t.getAttribute("data-id"));
-        } else if (t.classList.contains("sna-del")) {
-            deleteById(t.getAttribute("data-id"));
+            return;
         }
+        if (t.closest(".sn-admin-row__actions")) return;
+        var row = t.closest(".sn-admin-row");
+        if (row) loadIntoForm(row.getAttribute("data-id"));
+    });
+
+    listEl.addEventListener("keydown", function (e) {
+        if (e.key !== "Enter" && e.key !== " ") return;
+        var row = e.target.closest(".sn-admin-row");
+        if (!row || e.target.closest(".sn-admin-row__actions")) return;
+        e.preventDefault();
+        loadIntoForm(row.getAttribute("data-id"));
     });
 
     if (cancelBtn) {

@@ -271,6 +271,302 @@
         );
     }
 
+    function telHref(tel) {
+        var d = String(tel || "").replace(/\D/g, "");
+        if (!d) return "";
+        if (d.indexOf("82") === 0) return "tel:+" + d;
+        if (d.charAt(0) === "0") return "tel:+82" + d.slice(1);
+        return "tel:+" + d;
+    }
+
+    function authorContactHtml(it) {
+        var name = String(it.sn_created_by_name || "").trim();
+        var tel = String(it.sn_created_by_tel || "").trim();
+        if (!name && !tel) return "";
+        var nameDd = name ? escapeHtml(name) : '<span class="sn-contact-empty">—</span>';
+        var telDd;
+        if (tel) {
+            telDd =
+                '<a class="sn-detail-tel" href="' +
+                escapeHtml(telHref(tel)) +
+                '">' +
+                escapeHtml(tel) +
+                "</a>";
+        } else {
+            telDd = '<span class="sn-contact-empty">—</span>';
+        }
+        return (
+            '<dl class="sn-detail-contact">' +
+            "<dt>등록 관리자</dt><dd>" +
+            nameDd +
+            "</dd>" +
+            "<dt>연락처</dt><dd>" +
+            telDd +
+            "</dd></dl>"
+        );
+    }
+
+    function groupComments(comments) {
+        var roots = [];
+        var repliesByParent = Object.create(null);
+        (comments || []).forEach(function (c) {
+            if (!c || !c.id) return;
+            var parentId = String(c.snc_parent_id || "").trim();
+            if (parentId) {
+                if (!repliesByParent[parentId]) repliesByParent[parentId] = [];
+                repliesByParent[parentId].push(c);
+            } else {
+                roots.push(c);
+            }
+        });
+        return { roots: roots, repliesByParent: repliesByParent };
+    }
+
+    function commentActionsHtml(c, options) {
+        var canDelete = options.canDeleteComment && options.canDeleteComment(c);
+        var canReply = options.canReply && !String(c.snc_parent_id || "").trim();
+        if (!canDelete && !canReply) return "";
+        var html = '<div class="sn-comment__actions">';
+        if (canReply) {
+            html +=
+                '<button type="button" class="sn-comment__btn sn-comment-reply" data-id="' +
+                escapeHtml(c.id) +
+                '">답글</button>';
+        }
+        if (canDelete) {
+            html +=
+                '<button type="button" class="sn-comment__btn sn-comment__btn--danger sn-comment-del" data-id="' +
+                escapeHtml(c.id) +
+                '">삭제</button>';
+        }
+        html += "</div>";
+        return html;
+    }
+
+    function commentItemHtml(c, options, isReply) {
+        var cls = isReply ? "sn-comment sn-comment--reply" : "sn-comment";
+        var replySlot = isReply
+            ? ""
+            : '<div class="sn-reply-slot" data-reply-for="' + escapeHtml(c.id) + '"></div>';
+        return (
+            '<li class="' +
+            cls +
+            '" data-comment-id="' +
+            escapeHtml(c.id) +
+            '">' +
+            '<p class="sn-comment__meta">' +
+            '<strong>' +
+            escapeHtml(String(c.snc_author_name || "작성자")) +
+            "</strong> · " +
+            escapeHtml(formatDateKo(c.createdAt)) +
+            "</p>" +
+            '<p class="sn-comment__body">' +
+            escapeMultiline(String(c.snc_body || "")) +
+            "</p>" +
+            commentActionsHtml(c, options) +
+            replySlot +
+            "</li>"
+        );
+    }
+
+    function commentThreadHtml(c, replies, options) {
+        var repliesHtml = replies.length
+            ? '<ul class="sn-comments__replies">' +
+              replies
+                  .map(function (r) {
+                      return commentItemHtml(r, options, true);
+                  })
+                  .join("") +
+              "</ul>"
+            : "";
+        var cls = "sn-comment";
+        return (
+            '<li class="' +
+            cls +
+            '" data-comment-id="' +
+            escapeHtml(c.id) +
+            '">' +
+            '<p class="sn-comment__meta">' +
+            '<strong>' +
+            escapeHtml(String(c.snc_author_name || "작성자")) +
+            "</strong> · " +
+            escapeHtml(formatDateKo(c.createdAt)) +
+            "</p>" +
+            '<p class="sn-comment__body">' +
+            escapeMultiline(String(c.snc_body || "")) +
+            "</p>" +
+            commentActionsHtml(c, options) +
+            '<div class="sn-reply-slot" data-reply-for="' +
+            escapeHtml(c.id) +
+            '"></div>' +
+            repliesHtml +
+            "</li>"
+        );
+    }
+
+    function commentsListHtml(comments, options) {
+        var grouped = groupComments(comments);
+        if (!grouped.roots.length) return "";
+        return grouped.roots
+            .map(function (c) {
+                return commentThreadHtml(c, grouped.repliesByParent[c.id] || [], options);
+            })
+            .join("");
+    }
+
+    function replyFormHtml(parentId) {
+        return (
+            '<form class="sn-reply-form" data-parent-id="' +
+            escapeHtml(parentId) +
+            '" novalidate>' +
+            '<textarea maxlength="' +
+            MAX_BODY +
+            '" rows="2" placeholder="답글을 입력하세요 (최대 ' +
+            MAX_BODY +
+            '자)"></textarea>' +
+            '<div class="sn-reply-form__actions">' +
+            '<button type="button" class="sp-btn sp-btn--secondary sn-reply-cancel">취소</button>' +
+            '<button type="submit" class="sp-btn sp-btn--primary">답글 등록</button>' +
+            "</div></form>"
+        );
+    }
+
+    function commentsSectionHtml(comments, options) {
+        options = options || {};
+        var list = comments || [];
+        var html =
+            '<section class="sn-comments" id="sn-comments-root">' +
+            '<h3 class="sn-comments__title">댓글 <span class="sn-comments__count">' +
+            list.length +
+            "</span></h3>";
+        if (!list.length) {
+            html += '<p class="sn-comments__empty">아직 댓글이 없습니다.</p>';
+        } else {
+            html += '<ul class="sn-comments__list">' + commentsListHtml(list, options) + "</ul>";
+        }
+        if (options.canComment) {
+            html +=
+                '<form class="sn-comment-form" id="sn-comment-form" novalidate>' +
+                '<label for="sn-comment-body" class="sn-comment-form__label">댓글 작성</label>' +
+                '<textarea id="sn-comment-body" maxlength="' +
+                MAX_BODY +
+                '" rows="3" placeholder="댓글을 입력하세요 (최대 ' +
+                MAX_BODY +
+                '자)"></textarea>' +
+                '<p class="sn-char-count" id="sn-comment-char">0 / ' +
+                MAX_BODY +
+                "</p>" +
+                '<button type="submit" class="sp-btn sp-btn--primary">댓글 등록</button>' +
+                "</form>";
+        } else if (options.loginHint) {
+            html += '<p class="sn-comments__hint">' + escapeHtml(options.loginHint) + "</p>";
+        }
+        html += "</section>";
+        return html;
+    }
+
+    function bindCommentsUi(root, options) {
+        if (!root || !options || !options.api || !options.newsId) return;
+        var api = options.api;
+        var newsId = options.newsId;
+        var onRefresh = options.onRefresh || function () {};
+
+        function syncMainChar() {
+            var textarea = root.querySelector("#sn-comment-body");
+            var charEl = root.querySelector("#sn-comment-char");
+            if (!textarea || !charEl) return;
+            charEl.textContent = textarea.value.length + " / " + MAX_BODY;
+            charEl.classList.toggle("is-limit", textarea.value.length >= MAX_BODY);
+        }
+
+        var mainForm = root.querySelector("#sn-comment-form");
+        if (mainForm) {
+            var mainText = root.querySelector("#sn-comment-body");
+            if (mainText) mainText.addEventListener("input", syncMainChar);
+            syncMainChar();
+            mainForm.addEventListener("submit", function (e) {
+                e.preventDefault();
+                var body = mainText ? mainText.value.trim() : "";
+                if (!body) {
+                    alert("댓글 내용을 입력해 주세요.");
+                    return;
+                }
+                var btn = mainForm.querySelector('button[type="submit"]');
+                if (btn) btn.disabled = true;
+                api.createSupportNewsComment(newsId, { snc_body: body })
+                    .then(onRefresh)
+                    .catch(function (err) {
+                        alert((err && err.message) || "댓글 등록에 실패했습니다.");
+                    })
+                    .finally(function () {
+                        if (btn) btn.disabled = false;
+                    });
+            });
+        }
+
+        root.addEventListener("click", function (e) {
+            var t = e.target;
+            if (!(t instanceof HTMLElement)) return;
+
+            if (t.classList.contains("sn-comment-del")) {
+                var delId = t.getAttribute("data-id");
+                if (!delId || !confirm("이 댓글을 삭제할까요?")) return;
+                t.disabled = true;
+                api.deleteSupportNewsComment(newsId, delId)
+                    .then(onRefresh)
+                    .catch(function (err) {
+                        alert((err && err.message) || "삭제에 실패했습니다.");
+                    })
+                    .finally(function () {
+                        t.disabled = false;
+                    });
+                return;
+            }
+
+            if (t.classList.contains("sn-comment-reply")) {
+                var parentId = t.getAttribute("data-id");
+                if (!parentId) return;
+                root.querySelectorAll(".sn-reply-form").forEach(function (f) {
+                    f.remove();
+                });
+                var slot = root.querySelector('.sn-reply-slot[data-reply-for="' + parentId + '"]');
+                if (!slot) return;
+                slot.innerHTML = replyFormHtml(parentId);
+                var ta = slot.querySelector("textarea");
+                if (ta) ta.focus();
+                return;
+            }
+
+            if (t.classList.contains("sn-reply-cancel")) {
+                var form = t.closest(".sn-reply-form");
+                if (form && form.parentElement) form.parentElement.innerHTML = "";
+            }
+        });
+
+        root.addEventListener("submit", function (e) {
+            var form = e.target;
+            if (!(form instanceof HTMLFormElement) || !form.classList.contains("sn-reply-form")) return;
+            e.preventDefault();
+            var parentId = form.getAttribute("data-parent-id") || "";
+            var textarea = form.querySelector("textarea");
+            var body = textarea ? textarea.value.trim() : "";
+            if (!body) {
+                alert("답글 내용을 입력해 주세요.");
+                return;
+            }
+            var btn = form.querySelector('button[type="submit"]');
+            if (btn) btn.disabled = true;
+            api.createSupportNewsComment(newsId, { snc_body: body, snc_parent_id: parentId })
+                .then(onRefresh)
+                .catch(function (err) {
+                    alert((err && err.message) || "답글 등록에 실패했습니다.");
+                })
+                .finally(function () {
+                    if (btn) btn.disabled = false;
+                });
+        });
+    }
+
     g.THEJHON_SUPPORT_NEWS = {
         MAX_BODY: MAX_BODY,
         MAX_PHOTOS: MAX_PHOTOS,
@@ -280,6 +576,10 @@
         deptLabel: deptLabel,
         initDeptModalPicker: initDeptModalPicker,
         initPhotoManager: initPhotoManager,
-        imagesHtml: imagesHtml
+        imagesHtml: imagesHtml,
+        authorContactHtml: authorContactHtml,
+        commentsSectionHtml: commentsSectionHtml,
+        bindCommentsUi: bindCommentsUi,
+        telHref: telHref
     };
 })(typeof window !== "undefined" ? window : this);

@@ -406,6 +406,26 @@
         },
         deleteSupportNews: function (id) {
             return request("DELETE", "/api/support-news/" + encodeURIComponent(id));
+        },
+        listSupportNewsComments: function (newsId) {
+            return request("GET", "/api/support-news/" + encodeURIComponent(newsId) + "/comments").then(
+                function (d) {
+                    return d.items || [];
+                }
+            );
+        },
+        createSupportNewsComment: function (newsId, body) {
+            return request("POST", "/api/support-news/" + encodeURIComponent(newsId) + "/comments", body).then(
+                function (d) {
+                    return d.item;
+                }
+            );
+        },
+        deleteSupportNewsComment: function (newsId, commentId) {
+            return request(
+                "DELETE",
+                "/api/support-news/" + encodeURIComponent(newsId) + "/comments/" + encodeURIComponent(commentId)
+            );
         }
     };
 })(typeof window !== "undefined" ? window : this);
