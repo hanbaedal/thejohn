@@ -94,6 +94,55 @@
     margin: 0;
     padding: 0;
 }
+.sm-list-row {
+    display: flex;
+    align-items: stretch;
+    gap: 0.45rem;
+    margin-bottom: 0.5rem;
+}
+.sm-list-row .sm-list-item {
+    flex: 1;
+    min-width: 0;
+    margin-bottom: 0;
+}
+.sm-list-access {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 0.25rem;
+    flex-shrink: 0;
+}
+.sm-access-btn {
+    min-width: 4.1rem;
+    padding: 0.35rem 0.55rem;
+    font-size: 0.78rem;
+    font-weight: 600;
+    font-family: inherit;
+    border: 1px solid #c5d0dc;
+    border-radius: 8px;
+    background: #fff;
+    color: #3d5166;
+    cursor: pointer;
+    touch-action: manipulation;
+}
+.sm-access-btn:hover {
+    border-color: var(--dz-blue, #0a4d9c);
+    background: #f8fbff;
+}
+.sm-access-btn.is-active {
+    border-color: var(--dz-blue, #0a4d9c);
+    background: #e8f0f8;
+    color: #0a4d9c;
+}
+.sm-access-btn--off.is-active {
+    border-color: #a12c2c;
+    background: #fdeaea;
+    color: #a12c2c;
+}
+.sm-access-btn:disabled {
+    opacity: 0.55;
+    cursor: wait;
+}
 .sm-list-item {
     display: block;
     width: 100%;

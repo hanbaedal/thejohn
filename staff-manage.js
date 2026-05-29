@@ -51,7 +51,6 @@
 
     function readForm(form) {
         var fd = new FormData(form);
-        var loginEnabledVal = fd.get("loginEnabled");
         var body = {
             loginId: String(fd.get("loginId") || "").trim(),
             password: String(fd.get("password") || ""),
@@ -71,9 +70,34 @@
             st_naver_cafe: String(fd.get("st_naver_cafe") || "").trim(),
             st_youtube: String(fd.get("st_youtube") || "").trim()
         };
-        if (loginEnabledVal === "true") body.loginEnabled = true;
-        else if (loginEnabledVal === "false") body.loginEnabled = false;
         if (!body.password) delete body.password;
+        return body;
+    }
+
+    function staffToUpdateBody(st, overrides) {
+        var body = {
+            st_company: st.st_company || "",
+            st_phone: st.st_phone || "",
+            st_fax: st.st_fax || "",
+            st_email: st.st_email || "",
+            st_web: st.st_web || "",
+            st_ceo: st.st_ceo || "",
+            st_ceo_tel: st.st_ceo_tel || "",
+            st_biz_no: st.st_biz_no || "",
+            st_biz_type: st.st_biz_type || "",
+            st_biz_item: st.st_biz_item || "",
+            st_address: st.st_address || "",
+            st_facebook: st.st_facebook || "",
+            st_instagram: st.st_instagram || "",
+            st_naver_cafe: st.st_naver_cafe || "",
+            st_youtube: st.st_youtube || "",
+            loginEnabled: st.loginEnabled !== false
+        };
+        if (overrides) {
+            Object.keys(overrides).forEach(function (k) {
+                body[k] = overrides[k];
+            });
+        }
         return body;
     }
 
@@ -114,18 +138,6 @@
                 ? "이 관리자 계정을 삭제합니다"
                 : "슈퍼바이저·기본 계정은 삭제할 수 없습니다";
         }
-        var loginWrap = document.getElementById("sm-edit-login-enabled-wrap");
-        var loginOn = document.getElementById("sm-edit-login-on");
-        var loginOff = document.getElementById("sm-edit-login-off");
-        if (loginWrap) {
-            var showLoginToggle = st.role === "admin";
-            loginWrap.hidden = !showLoginToggle;
-            if (showLoginToggle && loginOn && loginOff) {
-                var enabled = st.loginEnabled !== false;
-                loginOn.checked = enabled;
-                loginOff.checked = !enabled;
-            }
-        }
     }
 
     function showEditModal() {
@@ -159,14 +171,28 @@
                     var meta = [
                         it.loginId ? "아이디: " + it.loginId : "",
                         it.st_ceo ? "대표: " + it.st_ceo : "",
-                        it.st_biz_no ? "사업자: " + it.st_biz_no : "",
-                        it.role === "admin" && it.loginEnabled === false ? "접속: 비활성" : ""
+                        it.st_biz_no ? "사업자: " + it.st_biz_no : ""
                     ]
                         .filter(Boolean)
                         .join(" · ");
                     var key = staffKey(it);
+                    var enabled = it.loginEnabled !== false;
+                    var accessHtml =
+                        it.role === "admin"
+                            ? '<div class="sm-list-access" role="group" aria-label="접속">' +
+                              '<button type="button" class="sm-access-btn sm-access-btn--on' +
+                              (enabled ? " is-active" : "") +
+                              '" data-staff-id="' +
+                              escapeHtml(key) +
+                              '" data-login-enabled="true">활성</button>' +
+                              '<button type="button" class="sm-access-btn sm-access-btn--off' +
+                              (!enabled ? " is-active" : "") +
+                              '" data-staff-id="' +
+                              escapeHtml(key) +
+                              '" data-login-enabled="false">비활성</button></div>'
+                            : "";
                     return (
-                        '<li><button type="button" class="sm-list-item" data-staff-id="' +
+                        '<li class="sm-list-row"><button type="button" class="sm-list-item" data-staff-id="' +
                         escapeHtml(key) +
                         '"><span class="sm-list-name">' +
                         escapeHtml(it.st_company || it.loginId || "(이름 없음)") +
@@ -175,12 +201,14 @@
                         '">' +
                         escapeHtml(roleLabel(it.role)) +
                         "</span>" +
-                        (it.role === "admin" && it.loginEnabled === false
+                        (it.role === "admin" && !enabled
                             ? '<span class="sm-role sm-role--disabled">접속비활성</span>'
                             : "") +
                         "</span>" +
                         (meta ? '<span class="sm-list-meta">' + escapeHtml(meta) + "</span>" : "") +
-                        "</button></li>"
+                        "</button>" +
+                        accessHtml +
+                        "</li>"
                     );
                 })
                 .join("") +
@@ -191,6 +219,59 @@
                 openEdit(btn.getAttribute("data-staff-id"));
             });
         });
+        listEl.querySelectorAll(".sm-access-btn").forEach(function (btn) {
+            btn.addEventListener("click", function (e) {
+                e.preventDefault();
+                e.stopPropagation();
+                setLoginEnabledFromList(btn);
+            });
+        });
+    }
+
+    function setLoginEnabledFromList(btn) {
+        if (!btn || !api.updateStaff) return;
+        var key = String(btn.getAttribute("data-staff-id") || "").trim();
+        var wantEnabled = btn.getAttribute("data-login-enabled") === "true";
+        var st = staffByKey[key];
+        if (!st || st.role !== "admin") return;
+        var currentEnabled = st.loginEnabled !== false;
+        if (currentEnabled === wantEnabled) return;
+        var label = st.loginId || st.st_company || "관리자";
+        if (wantEnabled) {
+            if (!window.confirm(label + " 계정 접속을 활성화할까요?")) return;
+        } else if (
+            !window.confirm(
+                label +
+                    " 계정 접속을 비활성화할까요?\n\n로그인이 차단되고 접속 중인 세션이 종료됩니다."
+            )
+        ) {
+            return;
+        }
+        btn.disabled = true;
+        var row = btn.closest(".sm-list-row");
+        if (row) {
+            row.querySelectorAll(".sm-access-btn").forEach(function (b) {
+                b.disabled = true;
+            });
+        }
+        setStatus(wantEnabled ? "접속 활성화 중…" : "접속 비활성화 중…");
+        api
+            .updateStaff(st.id || key, staffToUpdateBody(st, { loginEnabled: wantEnabled }))
+            .then(function () {
+                setStatus(
+                    (st.st_company || label) + " — 접속 " + (wantEnabled ? "활성" : "비활성") + "으로 변경했습니다.",
+                    "ok"
+                );
+                loadList();
+            })
+            .catch(function (err) {
+                setStatus((err && err.message) || "접속 상태 변경에 실패했습니다.", "err");
+                if (row) {
+                    row.querySelectorAll(".sm-access-btn").forEach(function (b) {
+                        b.disabled = false;
+                    });
+                }
+            });
     }
 
     function loadList() {
