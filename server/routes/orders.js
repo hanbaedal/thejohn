@@ -186,13 +186,13 @@ router.get("/", requireRole("admin", "vendor", "supervisor"), async function (re
             var adminStaffId = normalizeStaffLoginId(req.query.adminStaffId || "");
             query = buildSupervisorOrderListQuery(req.auth, adminStaffId);
         } else {
-            if (!staffCanAccessOrderManage(req.auth)) {
+            if (!(await staffCanAccessOrderManage(req.auth))) {
                 return res.status(403).json({
                     ok: false,
                     error: "주문서관리 권한이 있는 관리자만 이용할 수 있습니다."
                 });
             }
-            query = buildOrderListQuery(req.auth);
+            query = await buildOrderListQuery(req.auth);
         }
         if (fromMs || toMs) {
             query.createdAt = {};
@@ -225,7 +225,7 @@ router.get("/:id", requireRole("admin", "vendor", "supervisor"), async function 
         if (!order) {
             return res.status(404).json({ ok: false, error: "주문을 찾을 수 없습니다." });
         }
-        if (!staffCanReadOrder(req.auth, order)) {
+        if (!(await staffCanReadOrder(req.auth, order))) {
             return res.status(403).json({ ok: false, error: "권한이 없습니다." });
         }
         return res.json({ ok: true, order: toOrderDetail(order) });
@@ -246,7 +246,7 @@ router.delete("/:id", requireRole("admin", "vendor"), async function (req, res) 
         if (!order) {
             return res.status(404).json({ ok: false, error: "주문을 찾을 수 없습니다." });
         }
-        if (!staffCanReadOrder(req.auth, order)) {
+        if (!(await staffCanReadOrder(req.auth, order))) {
             return res.status(403).json({ ok: false, error: "권한이 없습니다." });
         }
         await col.deleteOne({ id: id });
@@ -351,7 +351,7 @@ router.get("/:id/pdf", requireRole("vendor", "admin", "supervisor"), async funct
         if (!order) {
             return res.status(404).json({ ok: false, error: "주문을 찾을 수 없습니다." });
         }
-        if (!staffCanReadOrder(req.auth, order)) {
+        if (!(await staffCanReadOrder(req.auth, order))) {
             return res.status(403).json({ ok: false, error: "권한이 없습니다." });
         }
         const pdfOrder = await prepareOrderForPdf(getDb(), order);

@@ -76,11 +76,13 @@ function normalizeStaffLoginId(loginId) {
 
 function staffOrderEnabledFromDoc(doc) {
     if (!doc || doc.role !== "admin") return false;
-    if (doc[F.orderEnabled] === true) return true;
-    if (doc[F.orderEnabled] === false) return false;
-    if (doc.st_order_enabled === true) return true;
-    if (doc.st_order_enabled === false) return false;
-    return false;
+    if (doc[F.orderEnabled] === true || doc.st_order_enabled === true) return true;
+    if (doc[F.orderEnabled] === false || doc.st_order_enabled === false) return false;
+    /** DB 마이그레이션 전: 기존 주문 담당(기본 aksangsa) 호환 */
+    var legacyId = normalizeStaffLoginId(
+        String(process.env.ORDER_VENDOR_STAFF_ID || "aksangsa").trim()
+    );
+    return normalizeStaffLoginId(doc.loginId) === legacyId;
 }
 
 function fromLegacyDoc(doc) {

@@ -32,15 +32,15 @@ async function vendorCanPlaceOrders(vendorDoc) {
     return staffOrderEnabledByLoginId(reg);
 }
 
-/** 주문서관리 — st_order_enabled 관리자만 */
-function staffCanAccessOrderManage(auth) {
+/** 주문서관리 — st_order_enabled 관리자만 (DB 최신값 반영) */
+async function staffCanAccessOrderManage(auth) {
     if (!auth || auth.role !== "admin") return false;
     if (auth.staffOrderEnabled === true) return true;
-    return false;
+    return staffOrderEnabledByLoginId(auth.userId);
 }
 
-function buildOrderListQuery(auth) {
-    if (!staffCanAccessOrderManage(auth)) return { id: "__none__" };
+async function buildOrderListQuery(auth) {
+    if (!(await staffCanAccessOrderManage(auth))) return { id: "__none__" };
     return { vendorRegisteredBy: normalizeStaffLoginId(auth.userId) };
 }
 
@@ -70,13 +70,13 @@ function buildSupervisorOrderListQuery(auth, adminStaffId) {
     return {};
 }
 
-function staffCanReadOrder(auth, order) {
+async function staffCanReadOrder(auth, order) {
     if (!order) return false;
     if (auth.role === "vendor") {
         return vendorOwnsOrder(auth, order);
     }
     if (supervisorCanAccessAllOrders(auth)) return true;
-    if (!staffCanAccessOrderManage(auth)) return false;
+    if (!(await staffCanAccessOrderManage(auth))) return false;
     return normalizeStaffLoginId(order.vendorRegisteredBy) === normalizeStaffLoginId(auth.userId);
 }
 

@@ -6,6 +6,7 @@ const {
     toDbDoc,
     getCompanyName,
     getCeoName,
+    staffOrderEnabledFromDoc,
     DEFAULT_STAFF_IDS
 } = require("./staffFields");
 const { getStoredPassword } = require("./loginAccount");
@@ -189,7 +190,11 @@ async function updateStaffAccount(id, body, creatorRole) {
             loginEnabled:
                 picked.loginEnabled !== undefined
                     ? picked.loginEnabled
-                    : existing.loginEnabled !== false
+                    : existing.loginEnabled !== false,
+            orderEnabled:
+                picked.orderEnabled !== undefined
+                    ? picked.orderEnabled
+                    : staffOrderEnabledFromDoc(existing)
         },
         existing,
         existing.loginId,

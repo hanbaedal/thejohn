@@ -3,7 +3,8 @@ const { signToken, extractBearer, verifyToken, requireRole } = require("../middl
 const { getDb, isDbReady } = require("../db");
 const { resolveFormLogin, findVendorByLoginId, findStaffByLoginId } = require("../lib/loginResolve");
 const { toPublic, F: VF } = require("../lib/vendorFields");
-const { toPublic: toPublicStaff } = require("../lib/staffFields");
+const { toPublic: toPublicStaff, staffOrderEnabledFromDoc } = require("../lib/staffFields");
+const { vendorCanPlaceOrders } = require("../lib/orderAccess");
 const { logStaffLogin, logVendorLogin } = require("../lib/accessLog");
 const {
     assertCanStartLogin,
@@ -213,6 +214,21 @@ router.get("/session", async function (req, res) {
                 });
             }
         }
+        var vendorOrderEnabled = !!payload.vendorOrderEnabled;
+        var staffOrderEnabled = !!payload.staffOrderEnabled;
+        if (isDbReady()) {
+            try {
+                if (payload.role === "vendor") {
+                    const vendor = await findVendorByLoginId(payload.userId || "");
+                    vendorOrderEnabled = !!(vendor && (await vendorCanPlaceOrders(vendor)));
+                } else if (payload.role === "admin") {
+                    const staff = await findStaffByLoginId(payload.userId || "");
+                    staffOrderEnabled = staffOrderEnabledFromDoc(staff);
+                }
+            } catch (refreshErr) {
+                console.warn("[auth] session permission refresh:", refreshErr.message);
+            }
+        }
         return res.json({
             ok: true,
             loggedIn: true,
@@ -220,8 +236,8 @@ router.get("/session", async function (req, res) {
             userId: payload.userId,
             vendorGrade: payload.vendorGrade || "",
             vendorRegisteredBy: payload.vendorRegisteredBy || "",
-            vendorOrderEnabled: !!payload.vendorOrderEnabled,
-            staffOrderEnabled: !!payload.staffOrderEnabled
+            vendorOrderEnabled: vendorOrderEnabled,
+            staffOrderEnabled: staffOrderEnabled
         });
     } catch (e) {
         return res.json({ ok: true, loggedIn: false, error: "세션이 만료되었습니다." });
