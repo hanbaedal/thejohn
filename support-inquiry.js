@@ -1,9 +1,9 @@
 (function () {
     var U = window.THEJHON_SUPPORT_COMMON;
     var A = window.THEJHON_AUTH;
-    if (!U || !A) return;
+    var API = window.THEJHON_API;
+    if (!U || !A || !API) return;
 
-    var KEY = U.KEYS.INQUIRY;
     var GUEST_ID_KEY = "thejhon_inquiry_guest_id";
     var UNLOCK_KEY = "thejhon_inquiry_unlocked";
 
@@ -23,6 +23,7 @@
     var listEl = document.getElementById("si-list");
     var items = [];
     var pendingViewId = "";
+    var loading = false;
 
     if (!listEl) return;
 
@@ -51,49 +52,11 @@
         }
     }
 
-    function authorLabel() {
-        if (!loggedIn()) return "방문자";
-        var role = A.getRole();
-        var uid = A.getUserId();
-        if (role === "supervisor") return "슈퍼바이저";
-        if (role === "admin") return "관리자";
-        if (role === "vendor") {
-            var n = A.getLoggedInCompanyDisplayName && A.getLoggedInCompanyDisplayName();
-            return (n && String(n).trim()) || uid || "업체";
-        }
-        if (role === "oauth") return "SNS 로그인";
-        return uid || "회원";
-    }
-
     function currentFromKey() {
         if (!loggedIn()) {
             return "guest\t" + guestAuthorId().toLowerCase();
         }
         return (A.getRole() || "") + "\t" + String(A.getUserId() || "").toLowerCase();
-    }
-
-    function fromMeta() {
-        if (loggedIn()) {
-            return {
-                fromRole: A.getRole() || "member",
-                fromUserId: A.getUserId() || "",
-                fromLabel: authorLabel()
-            };
-        }
-        return {
-            fromRole: "guest",
-            fromUserId: guestAuthorId(),
-            fromLabel: "방문자"
-        };
-    }
-
-    function matchesAuthor(it) {
-        var key = (it.fromRole || "") + "\t" + String(it.fromUserId || "").toLowerCase();
-        return key === currentFromKey();
-    }
-
-    function hasPassword(it) {
-        return /^\d{6}$/.test(String(it.password || ""));
     }
 
     function getUnlockedIds() {
@@ -116,16 +79,18 @@
         }
     }
 
-    function isUnlocked(id) {
-        return getUnlockedIds().indexOf(id) !== -1;
+    function matchesAuthor(it) {
+        var key = (it.fromRole || "") + "\t" + String(it.fromUserId || "").toLowerCase();
+        return key === currentFromKey();
     }
 
     function canView(it) {
         if (!it) return false;
+        if (it.canView) return true;
         if (isAdmin()) return true;
         if (matchesAuthor(it)) return true;
-        if (!hasPassword(it)) return true;
-        return isUnlocked(it.id);
+        if (!it.hasPassword) return true;
+        return getUnlockedIds().indexOf(it.id) !== -1;
     }
 
     function canDelete(it) {
@@ -137,14 +102,6 @@
         if (!statusEl) return;
         statusEl.textContent = msg || "";
         statusEl.classList.toggle("sp-status--err", !!isErr);
-    }
-
-    function getItems() {
-        return U.getArray(KEY);
-    }
-
-    function setItems(arr) {
-        U.setArray(KEY, arr);
     }
 
     function syncBodyScroll() {
@@ -187,17 +144,7 @@
             : '<span class="sp-badge sp-badge--open">접수</span>';
     }
 
-    function previewText(it) {
-        if (!canView(it)) return "🔒 비밀글입니다";
-        var t = String(it.body || "").trim();
-        if (!t) return "";
-        return t.length > 64 ? t.slice(0, 64) + "…" : t;
-    }
-
     function renderList() {
-        items = getItems().slice().sort(function (a, b) {
-            return (b.createdAt || 0) - (a.createdAt || 0);
-        });
         if (!items.length) {
             listEl.innerHTML = '<li class="sp-empty" style="list-style:none">접수된 문의가 없습니다.</li>';
             return;
@@ -205,8 +152,8 @@
         listEl.innerHTML = items
             .map(function (it, index) {
                 var title = String(it.subject || "").trim() || "제목 없음";
-                var preview = previewText(it);
-                var lock = hasPassword(it) && !canView(it) ? " 🔒" : "";
+                var preview = it.preview || "";
+                var lock = it.hasPassword && !canView(it) ? " 🔒" : "";
                 return (
                     '<li><button type="button" class="sq-board-row" data-index="' +
                     index +
@@ -243,7 +190,7 @@
         if (it.reply && String(it.reply).trim() && !isAdmin()) {
             replyBlock =
                 '<div class="si-reply-block">' +
-                "<h3 class=\"si-reply-block__title\">답변</h3>" +
+                '<h3 class="si-reply-block__title">답변</h3>' +
                 '<div class="sq-view-content">' +
                 U.escapeMultiline(String(it.reply).trim()) +
                 "</div>" +
@@ -259,12 +206,12 @@
                 '<div class="si-admin-reply">' +
                 '<h3 class="si-reply-block__title">관리자 답변</h3>' +
                 '<div class="sp-field">' +
-                "<label for=\"si-admin-reply-ta\">답변 내용</label>" +
+                '<label for="si-admin-reply-ta">답변 내용</label>' +
                 '<textarea id="si-admin-reply-ta" rows="5" maxlength="12000">' +
                 U.escapeHtml(String(it.reply || "")) +
                 "</textarea></div>" +
                 '<div class="sp-field">' +
-                "<label for=\"si-admin-status\">상태</label>" +
+                '<label for="si-admin-status">상태</label>' +
                 '<select id="si-admin-status">' +
                 '<option value="open"' +
                 (it.status !== "answered" ? " selected" : "") +
@@ -293,7 +240,7 @@
             U.escapeHtml(U.formatDateKo(it.createdAt)) +
             " " +
             badgeHtml(it.status) +
-            (hasPassword(it) ? ' · <span class="si-lock-label">비밀글</span>' : "") +
+            (it.hasPassword ? ' · <span class="si-lock-label">비밀글</span>' : "") +
             "</p>" +
             '<div class="sq-view-content">' +
             U.escapeMultiline(String(it.body || "")) +
@@ -309,10 +256,31 @@
         openModal(viewModal);
     }
 
+    function fetchDetail(id) {
+        return API.getSupportInquiry(id, { unlocked: getUnlockedIds() });
+    }
+
     function tryOpenInquiry(it) {
         if (!it) return;
-        if (canView(it)) {
+        if (canView(it) && it.body) {
             openViewModal(it);
+            return;
+        }
+        if (canView(it)) {
+            fetchDetail(it.id)
+                .then(function (full) {
+                    openViewModal(full);
+                })
+                .catch(function (err) {
+                    if (err.status === 403) {
+                        pendingViewId = it.id;
+                        if (pwdCheckInput) pwdCheckInput.value = "";
+                        openModal(pwdModal);
+                        if (pwdCheckInput) pwdCheckInput.focus();
+                        return;
+                    }
+                    setStatus(err.message || "불러오지 못했습니다.", true);
+                });
             return;
         }
         pendingViewId = it.id;
@@ -321,49 +289,58 @@
         if (pwdCheckInput) pwdCheckInput.focus();
     }
 
+    function loadList() {
+        if (loading) return;
+        loading = true;
+        setStatus("불러오는 중…");
+        API.listSupportInquiry({ unlocked: getUnlockedIds() })
+            .then(function (rows) {
+                items = rows || [];
+                renderList();
+                setStatus("");
+            })
+            .catch(function (err) {
+                listEl.innerHTML =
+                    '<li class="sp-empty" style="list-style:none">목록을 불러오지 못했습니다.</li>';
+                setStatus(err.message || "목록을 불러오지 못했습니다.", true);
+            })
+            .finally(function () {
+                loading = false;
+            });
+    }
+
     function saveAdminReply(id) {
         var ta = document.getElementById("si-admin-reply-ta");
         var sel = document.getElementById("si-admin-status");
         var reply = ta ? ta.value.trim() : "";
         var status = sel && sel.value === "answered" ? "answered" : "open";
-        var now = Date.now();
-        var next = getItems().map(function (x) {
-            if (x.id !== id) return x;
-            return Object.assign({}, x, {
-                reply: reply,
-                status: status,
-                repliedAt: reply ? now : x.repliedAt,
-                replyBy: "admin"
+        API.saveSupportInquiryReply(id, { reply: reply, status: status })
+            .then(function (updated) {
+                var idx = items.findIndex(function (x) {
+                    return x.id === id;
+                });
+                if (idx >= 0) items[idx] = Object.assign({}, items[idx], updated);
+                renderList();
+                renderViewContent(updated);
+                setStatus("답변을 저장했습니다.");
+            })
+            .catch(function (err) {
+                setStatus(err.message || "저장에 실패했습니다.", true);
             });
-        });
-        try {
-            setItems(next);
-        } catch (err) {
-            setStatus("저장에 실패했습니다.", true);
-            return;
-        }
-        var updated = next.filter(function (x) {
-            return x.id === id;
-        })[0];
-        renderList();
-        if (updated) renderViewContent(updated);
-        setStatus("답변을 저장했습니다.");
     }
 
     function deleteById(id) {
         if (!confirm("이 문의를 삭제할까요?")) return;
-        var next = getItems().filter(function (x) {
-            return x.id !== id;
-        });
-        try {
-            setItems(next);
-        } catch (err) {
-            setStatus("삭제에 실패했습니다.", true);
-            return;
-        }
-        closeViewModal();
-        renderList();
-        setStatus("삭제했습니다.");
+        var body = loggedIn() ? {} : { guestId: guestAuthorId() };
+        API.deleteSupportInquiry(id, body)
+            .then(function () {
+                closeViewModal();
+                setStatus("삭제했습니다.");
+                loadList();
+            })
+            .catch(function (err) {
+                setStatus(err.message || "삭제에 실패했습니다.", true);
+            });
     }
 
     listEl.addEventListener("click", function (e) {
@@ -377,7 +354,7 @@
         viewBody.addEventListener("click", function (e) {
             var t = e.target;
             if (!(t instanceof HTMLElement)) return;
-            if (t.id === "si-save-reply" || t.classList.contains("si-save-reply")) {
+            if (t.id === "si-save-reply") {
                 saveAdminReply(t.getAttribute("data-id"));
             } else if (t.classList.contains("si-del-inq")) {
                 deleteById(t.getAttribute("data-id"));
@@ -385,11 +362,13 @@
         });
     }
 
-    if (writeBtn) writeBtn.addEventListener("click", function () {
-        if (newForm) newForm.reset();
-        openModal(writeModal);
-        if (subjInput) subjInput.focus();
-    });
+    if (writeBtn) {
+        writeBtn.addEventListener("click", function () {
+            if (newForm) newForm.reset();
+            openModal(writeModal);
+            if (subjInput) subjInput.focus();
+        });
+    }
 
     var writeClose = document.getElementById("si-write-close");
     var writeCancel = document.getElementById("si-write-cancel");
@@ -430,23 +409,20 @@
         pwdForm.addEventListener("submit", function (e) {
             e.preventDefault();
             var id = pendingViewId;
-            var it = items.filter(function (x) {
-                return x.id === id;
-            })[0];
-            if (!it) {
-                closePwdModal();
-                return;
-            }
             var entered = pwdCheckInput ? pwdCheckInput.value.trim() : "";
-            if (entered !== String(it.password || "")) {
-                setStatus("비밀번호가 올바르지 않습니다.", true);
-                if (pwdCheckInput) pwdCheckInput.focus();
-                return;
-            }
-            markUnlocked(id);
-            closePwdModal();
-            setStatus("");
-            openViewModal(it);
+            if (!id || !entered) return;
+            API.unlockSupportInquiry(id, entered)
+                .then(function (item) {
+                    markUnlocked(id);
+                    closePwdModal();
+                    setStatus("");
+                    openViewModal(item);
+                    loadList();
+                })
+                .catch(function (err) {
+                    setStatus(err.message || "비밀번호가 올바르지 않습니다.", true);
+                    if (pwdCheckInput) pwdCheckInput.focus();
+                });
         });
     }
 
@@ -471,43 +447,20 @@
                 if (pwdInput) pwdInput.focus();
                 return;
             }
-            var meta = fromMeta();
-            var rec = {
-                id: U.newId("inq"),
-                subject: subject,
-                body: body,
-                password: pw,
-                fromRole: meta.fromRole,
-                fromUserId: meta.fromUserId,
-                fromLabel: meta.fromLabel,
-                createdAt: Date.now(),
-                status: "open",
-                reply: "",
-                repliedAt: null,
-                replyBy: ""
-            };
-            var next = getItems().concat([rec]);
-            try {
-                setItems(next);
-            } catch (err) {
-                setStatus("저장에 실패했습니다.", true);
-                return;
-            }
-            closeWriteModal();
-            renderList();
-            setStatus("문의를 접수했습니다.");
+            var payload = { subject: subject, body: body, password: pw };
+            if (!loggedIn()) payload.guestId = guestAuthorId();
+            API.createSupportInquiry(payload)
+                .then(function (item) {
+                    if (pw) markUnlocked(item.id);
+                    closeWriteModal();
+                    setStatus("문의를 접수했습니다.");
+                    loadList();
+                })
+                .catch(function (err) {
+                    setStatus(err.message || "저장에 실패했습니다.", true);
+                });
         });
     }
 
-    function refresh() {
-        renderList();
-    }
-
-    refresh();
-    window.addEventListener("storage", function (e) {
-        if (e.key === KEY) refresh();
-    });
-    window.addEventListener("pageshow", function (e) {
-        if (e.persisted) refresh();
-    });
+    loadList();
 })();

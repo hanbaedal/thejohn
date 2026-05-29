@@ -30,6 +30,8 @@ const vendorEmailRoutes = require("./routes/vendorEmail");
 const supervisorRoutes = require("./routes/supervisor");
 const accessRoutes = require("./routes/access");
 const supportNewsRoutes = require("./routes/supportNews");
+const supportBoardRoutes = require("./routes/supportBoard");
+const supportInquiryRoutes = require("./routes/supportInquiry");
 const { requireRole } = require("./middleware/auth");
 
 const app = express();
@@ -207,6 +209,8 @@ app.use("/api/vendor-email", requireDb, vendorEmailRoutes);
 app.use("/api/supervisor", requireDb, supervisorRoutes);
 app.use("/api/access", requireDb, accessRoutes);
 app.use("/api/support-news", requireDb, supportNewsRoutes);
+app.use("/api/support-board", requireDb, supportBoardRoutes);
+app.use("/api/support-inquiry", requireDb, supportInquiryRoutes);
 
 app.use(express.static(staticRoot, { index: "index.html", extensions: ["html"] }));
 

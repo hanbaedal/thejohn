@@ -103,8 +103,8 @@
         put: function (path, body) {
             return request("PUT", path, body);
         },
-        del: function (path) {
-            return request("DELETE", path);
+        del: function (path, body) {
+            return request("DELETE", path, body);
         },
         listProducts: function (opts) {
             var parts = [];
@@ -426,6 +426,59 @@
                 "DELETE",
                 "/api/support-news/" + encodeURIComponent(newsId) + "/comments/" + encodeURIComponent(commentId)
             );
+        },
+        listSupportBoard: function () {
+            return request("GET", "/api/support-board").then(function (d) {
+                return d.items || [];
+            });
+        },
+        createSupportBoard: function (body) {
+            return request("POST", "/api/support-board", body).then(function (d) {
+                return d.item;
+            });
+        },
+        deleteSupportBoard: function (id, body) {
+            return request("DELETE", "/api/support-board/" + encodeURIComponent(id), body || {});
+        },
+        listSupportInquiry: function (opts) {
+            var q = "";
+            if (opts && opts.unlocked && opts.unlocked.length) {
+                q = "?unlocked=" + encodeURIComponent(opts.unlocked.join(","));
+            }
+            return request("GET", "/api/support-inquiry" + q).then(function (d) {
+                return d.items || [];
+            });
+        },
+        getSupportInquiry: function (id, opts) {
+            var q = "";
+            if (opts && opts.unlocked && opts.unlocked.length) {
+                q = "?unlocked=" + encodeURIComponent(opts.unlocked.join(","));
+            }
+            return request("GET", "/api/support-inquiry/" + encodeURIComponent(id) + q).then(function (d) {
+                return d.item;
+            });
+        },
+        unlockSupportInquiry: function (id, password) {
+            return request("POST", "/api/support-inquiry/" + encodeURIComponent(id) + "/unlock", {
+                password: password
+            }).then(function (d) {
+                return d.item;
+            });
+        },
+        createSupportInquiry: function (body) {
+            return request("POST", "/api/support-inquiry", body).then(function (d) {
+                return d.item;
+            });
+        },
+        saveSupportInquiryReply: function (id, body) {
+            return request("PUT", "/api/support-inquiry/" + encodeURIComponent(id) + "/reply", body).then(
+                function (d) {
+                    return d.item;
+                }
+            );
+        },
+        deleteSupportInquiry: function (id, body) {
+            return request("DELETE", "/api/support-inquiry/" + encodeURIComponent(id), body || {});
         }
     };
 })(typeof window !== "undefined" ? window : this);

@@ -1,9 +1,9 @@
 (function () {
     var U = window.THEJHON_SUPPORT_COMMON;
     var A = window.THEJHON_AUTH;
-    if (!U || !A) return;
+    var API = window.THEJHON_API;
+    if (!U || !A || !API) return;
 
-    var KEY = U.KEYS.BOARD;
     var statusEl = document.getElementById("sq-status");
     var writeBtn = document.getElementById("sq-write-btn");
     var writeModal = document.getElementById("sq-write-modal");
@@ -15,6 +15,9 @@
     var bodyInput = document.getElementById("sq-body");
     var listEl = document.getElementById("sq-list");
     var items = [];
+    var loading = false;
+
+    var GUEST_ID_KEY = "thejhon_board_guest_id";
 
     if (!listEl) return;
 
@@ -25,8 +28,6 @@
     function loggedIn() {
         return A.isLoggedIn && A.isLoggedIn();
     }
-
-    var GUEST_ID_KEY = "thejhon_board_guest_id";
 
     function guestAuthorId() {
         try {
@@ -45,40 +46,11 @@
         }
     }
 
-    function authorLabel() {
-        if (!loggedIn()) return "방문자";
-        var role = A.getRole();
-        var uid = A.getUserId();
-        if (role === "supervisor") return "슈퍼바이저";
-        if (role === "admin") return "관리자";
-        if (role === "vendor") {
-            var n = A.getLoggedInCompanyDisplayName && A.getLoggedInCompanyDisplayName();
-            return (n && String(n).trim()) || uid || "업체";
-        }
-        if (role === "oauth") return "SNS 로그인";
-        return uid || "회원";
-    }
-
     function currentAuthorKey() {
         if (!loggedIn()) {
             return "guest\t" + guestAuthorId().toLowerCase();
         }
         return (A.getRole() || "") + "\t" + String(A.getUserId() || "").toLowerCase();
-    }
-
-    function postAuthorMeta() {
-        if (loggedIn()) {
-            return {
-                authorRole: A.getRole() || "member",
-                authorUserId: A.getUserId() || "",
-                authorLabel: authorLabel()
-            };
-        }
-        return {
-            authorRole: "guest",
-            authorUserId: guestAuthorId(),
-            authorLabel: "방문자"
-        };
     }
 
     function canDeletePost(post) {
@@ -91,14 +63,6 @@
         if (!statusEl) return;
         statusEl.textContent = msg || "";
         statusEl.classList.toggle("sp-status--err", !!isErr);
-    }
-
-    function getItems() {
-        return U.getArray(KEY);
-    }
-
-    function setItems(arr) {
-        U.setArray(KEY, arr);
     }
 
     function previewText(body) {
@@ -160,9 +124,6 @@
     }
 
     function renderList() {
-        items = getItems().slice().sort(function (a, b) {
-            return (b.createdAt || 0) - (a.createdAt || 0);
-        });
         if (!items.length) {
             listEl.innerHTML = '<li class="sp-empty" style="list-style:none">등록된 글이 없습니다.</li>';
             return;
@@ -195,24 +156,43 @@
             .join("");
     }
 
+    function loadList() {
+        if (loading) return;
+        loading = true;
+        setStatus("불러오는 중…");
+        API.listSupportBoard()
+            .then(function (rows) {
+                items = (rows || []).slice().sort(function (a, b) {
+                    return (b.createdAt || 0) - (a.createdAt || 0);
+                });
+                renderList();
+                setStatus(items.length ? "" : "");
+            })
+            .catch(function (err) {
+                listEl.innerHTML = '<li class="sp-empty" style="list-style:none">목록을 불러오지 못했습니다.</li>';
+                setStatus(err.message || "목록을 불러오지 못했습니다.", true);
+            })
+            .finally(function () {
+                loading = false;
+            });
+    }
+
     function deleteById(id) {
         var it = items.filter(function (x) {
             return x.id === id;
         })[0];
         if (!it || !canDeletePost(it)) return;
         if (!confirm("이 글을 삭제할까요?")) return;
-        var next = getItems().filter(function (x) {
-            return x.id !== id;
-        });
-        try {
-            setItems(next);
-        } catch (err) {
-            setStatus("삭제에 실패했습니다.", true);
-            return;
-        }
-        closeViewModal();
-        renderList();
-        setStatus("삭제했습니다.");
+        var body = loggedIn() ? {} : { guestId: guestAuthorId() };
+        API.deleteSupportBoard(id, body)
+            .then(function () {
+                closeViewModal();
+                setStatus("삭제했습니다.");
+                loadList();
+            })
+            .catch(function (err) {
+                setStatus(err.message || "삭제에 실패했습니다.", true);
+            });
     }
 
     listEl.addEventListener("click", function (e) {
@@ -230,9 +210,7 @@
         });
     }
 
-    if (writeBtn) {
-        writeBtn.addEventListener("click", openWriteModal);
-    }
+    if (writeBtn) writeBtn.addEventListener("click", openWriteModal);
 
     var writeClose = document.getElementById("sq-write-close");
     var writeCancel = document.getElementById("sq-write-cancel");
@@ -273,38 +251,19 @@
                 if (bodyInput) bodyInput.focus();
                 return;
             }
-            var meta = postAuthorMeta();
-            var post = {
-                id: U.newId("board"),
-                title: title,
-                body: body,
-                authorRole: meta.authorRole,
-                authorUserId: meta.authorUserId,
-                authorLabel: meta.authorLabel,
-                createdAt: Date.now()
-            };
-            var next = getItems().concat([post]);
-            try {
-                setItems(next);
-            } catch (err) {
-                setStatus("저장에 실패했습니다.", true);
-                return;
-            }
-            closeWriteModal();
-            renderList();
-            setStatus("등록했습니다.");
+            var payload = { title: title, body: body };
+            if (!loggedIn()) payload.guestId = guestAuthorId();
+            API.createSupportBoard(payload)
+                .then(function () {
+                    closeWriteModal();
+                    setStatus("등록했습니다.");
+                    loadList();
+                })
+                .catch(function (err) {
+                    setStatus(err.message || "저장에 실패했습니다.", true);
+                });
         });
     }
 
-    function refresh() {
-        renderList();
-    }
-
-    refresh();
-    window.addEventListener("storage", function (e) {
-        if (e.key === KEY) refresh();
-    });
-    window.addEventListener("pageshow", function (e) {
-        if (e.persisted) refresh();
-    });
+    loadList();
 })();

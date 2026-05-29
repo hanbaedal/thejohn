@@ -69,4 +69,43 @@ function verifyToken(token) {
     return jwt.verify(token, getJwtSecret());
 }
 
-module.exports = { signToken, extractBearer, requireRole, verifyToken, getJwtSecret };
+function optionalAuth(req, res, next) {
+    const token = extractBearer(req);
+    if (!token) {
+        req.auth = null;
+        return next();
+    }
+    let payload;
+    try {
+        payload = jwt.verify(token, getJwtSecret());
+    } catch (e) {
+        req.auth = null;
+        return next();
+    }
+    if (!sessionEnforced(payload.role)) {
+        req.auth = payload;
+        return next();
+    }
+    if (!isDbReady()) {
+        req.auth = payload;
+        return next();
+    }
+    verifyAuthSession(payload)
+        .then(function (valid) {
+            req.auth = valid ? payload : null;
+            next();
+        })
+        .catch(function () {
+            req.auth = null;
+            next();
+        });
+}
+
+module.exports = {
+    signToken,
+    extractBearer,
+    requireRole,
+    optionalAuth,
+    verifyToken,
+    getJwtSecret
+};

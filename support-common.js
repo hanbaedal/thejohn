@@ -62,7 +62,9 @@
         formatDateKo: formatDateKo,
         KEYS: {
             NEWS: "thejhon_support_news_v1",
+            /** @deprecated MongoDB support_board — localStorage 마이그레이션 참고용 */
             BOARD: "thejhon_support_board_v1",
+            /** @deprecated MongoDB support_inquiry — localStorage 마이그레이션 참고용 */
             INQUIRY: "thejhon_support_inquiry_v1"
         }
     };

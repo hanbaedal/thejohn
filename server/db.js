@@ -229,6 +229,21 @@ async function connectDbOnce() {
             await ensureVendorNewIndexes(database);
             const { ensureAccessLogIndexes } = require("./lib/accessLog");
             await ensureAccessLogIndexes(database);
+            await safeCreateIndex(database.collection("support_news"), { id: 1 }, { unique: true });
+            await safeCreateIndex(database.collection("support_news_comments"), { id: 1 }, { unique: true });
+            await safeCreateIndex(
+                database.collection("support_news_comments"),
+                { snc_news_id: 1, createdAt: 1 },
+                { name: "support_news_comments_news_created" }
+            );
+            await safeCreateIndex(database.collection("support_board"), { id: 1 }, { unique: true });
+            await safeCreateIndex(database.collection("support_board"), { createdAt: -1 }, { name: "support_board_created" });
+            await safeCreateIndex(database.collection("support_inquiry"), { id: 1 }, { unique: true });
+            await safeCreateIndex(
+                database.collection("support_inquiry"),
+                { createdAt: -1 },
+                { name: "support_inquiry_created" }
+            );
             try {
                 const { ensureLoginFieldsMigrated } = require("./lib/loginResolve");
                 await ensureLoginFieldsMigrated(database);
