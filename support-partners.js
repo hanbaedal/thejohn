@@ -1,7 +1,7 @@
 (function () {
     var api = window.THEJHON_API;
     var root = document.getElementById("sp-partners-root");
-    if (!root) return;
+    var DETAIL_HREF = "support-partner-detail.html";
 
     function escapeHtml(s) {
         return String(s)
@@ -11,83 +11,64 @@
             .replace(/"/g, "&quot;");
     }
 
-    function escapeMultiline(s) {
-        return String(s)
-            .split("\n")
-            .map(function (line) {
-                return escapeHtml(line);
-            })
-            .join("<br>");
+    function str(v) {
+        return String(v || "").trim();
     }
 
-    function safeWebHref(s) {
-        var t = String(s || "").trim();
-        if (!t) return "";
-        if (/^https?:\/\//i.test(t)) return t;
-        return "https://" + t;
+    function detailHref(id) {
+        return DETAIL_HREF + "?id=" + encodeURIComponent(String(id || ""));
+    }
+
+    function listThumbHtml(it) {
+        var logo = str(it.vn_logo);
+        if (logo) {
+            return (
+                '<span class="sp-list-thumb"><img src="' +
+                escapeHtml(logo) +
+                '" alt="" loading="lazy"></span>'
+            );
+        }
+        return '<span class="sp-list-thumb sp-list-thumb--empty" aria-hidden="true">로고</span>';
+    }
+
+    function listRowHtml(it) {
+        var name = str(it.vn_company) || "이름 미등록";
+        var meta = [
+            str(it.vn_mgr_name) ? "담당 " + str(it.vn_mgr_name) : "",
+            str(it.vn_phone) || str(it.vn_mgr_tel) || "",
+            str(it.vn_web) ? "홈페이지 있음" : ""
+        ]
+            .filter(Boolean)
+            .join(" · ");
+        return (
+            '<li><a class="sp-list-row" href="' +
+            escapeHtml(detailHref(it.id)) +
+            '">' +
+            listThumbHtml(it) +
+            '<span class="sp-list-main"><span class="sp-list-name">' +
+            escapeHtml(name) +
+            "</span>" +
+            (meta ? '<span class="sp-list-meta">' + escapeHtml(meta) + "</span>" : "") +
+            '</span><span class="sp-list-chevron" aria-hidden="true">›</span></a></li>'
+        );
     }
 
     function render(items) {
-        var list = (items || []).slice().sort(function (a, b) {
-            return (b.updatedAt || 0) - (a.updatedAt || 0);
-        });
-        if (!list.length) {
+        var vendors = (items || [])
+            .filter(function (it) {
+                return it && it.id;
+            })
+            .slice()
+            .sort(function (a, b) {
+                return str(a.vn_company).localeCompare(str(b.vn_company), "ko");
+            });
+        if (!vendors.length) {
             root.innerHTML =
                 '<p class="sp-partners-empty">등록된 업체가 없습니다. <a href="vendor-register.html">업체등록</a>에서 정보를 등록하면 이곳에 표시됩니다.</p>';
             return;
         }
         root.innerHTML =
-            '<ul class="sp-partners-grid">' +
-            list
-                .map(function (it) {
-                    var name = String(it.vn_company || "").trim() || "이름 미등록";
-                    var w = String(it.vn_web || "").trim();
-                    var webBlock;
-                    if (w) {
-                        var href = safeWebHref(w);
-                        webBlock =
-                            '<p class="sp-partner-web"><span class="sp-partner-label">홈페이지</span> <a href="' +
-                            escapeHtml(href) +
-                            '" target="_blank" rel="noopener noreferrer">' +
-                            escapeHtml(w) +
-                            "</a></p>";
-                    } else {
-                        webBlock =
-                            '<p class="sp-partner-web sp-partner-web--muted"><span class="sp-partner-label">홈페이지</span> 미등록</p>';
-                    }
-                    var logo = it.vn_logo && String(it.vn_logo).trim();
-                    var logoBlock = logo
-                        ? '<div class="sp-partner-logo-wrap"><img class="sp-partner-logo" src=' +
-                          JSON.stringify(logo) +
-                          ' alt="' +
-                          escapeHtml(name + " 로고") +
-                          '" loading="lazy" width="200" height="120"></div>'
-                        : '<div class="sp-partner-logo-wrap sp-partner-logo-wrap--empty" role="img" aria-label="로고 없음">로고 없음</div>';
-                    var noteRaw = String(it.vn_note || "").trim();
-                    var gradeLbl =
-                        window.THEJHON_AUTH && THEJHON_AUTH.vendorGradeLabel
-                            ? THEJHON_AUTH.vendorGradeLabel(it.vn_grade)
-                            : String(it.vn_grade || "1") + "등급";
-                    var noteBlock = noteRaw
-                        ? '<div class="sp-partner-note"><span class="sp-partner-label">회사 상황 · ' +
-                          escapeHtml(gradeLbl) +
-                          '</span><p class="sp-partner-note-body">' +
-                          escapeMultiline(noteRaw) +
-                          "</p></div>"
-                        : '<div class="sp-partner-note sp-partner-note--empty"><span class="sp-partner-label">추가설명</span> 없음</div>';
-                    return (
-                        '<li><article class="sp-partner-card"><header class="sp-partner-header"><h2 class="sp-partner-name">' +
-                        escapeHtml(name) +
-                        "</h2>" +
-                        webBlock +
-                        "</header>" +
-                        logoBlock +
-                        noteBlock +
-                        "</article></li>"
-                    );
-                })
-                .join("") +
-            "</ul>";
+            '<ul class="sp-list">' + vendors.map(listRowHtml).join("") + "</ul>";
     }
 
     function load() {

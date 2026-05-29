@@ -1,0 +1,306 @@
+/* 파트너회사 소개 — 업체 리스트 + 상품상세형 모달 */
+.page-main--partners {
+    max-width: 56rem;
+    padding: 0.75rem 0.85rem 1.25rem;
+}
+.sp-partners-lead {
+    margin: 0 0 0.85rem;
+    color: #3d556d;
+    line-height: 1.55;
+    font-size: 0.92rem;
+}
+.sp-partners-empty {
+    margin: 0;
+    padding: 1rem;
+    text-align: center;
+    color: #3d5166;
+    background: #f4f6f9;
+    border-radius: 8px;
+    border: 1px dashed #c5d0dc;
+}
+.sp-partners-empty a {
+    color: var(--dz-blue);
+    font-weight: 600;
+}
+.sp-feed-toolbar {
+    position: sticky;
+    top: 0;
+    z-index: 5;
+    padding: 0.35rem 0.5rem 0.5rem;
+    margin-bottom: 0.5rem;
+    background: rgba(245, 247, 250, 0.96);
+    -webkit-backdrop-filter: blur(6px);
+    backdrop-filter: blur(6px);
+}
+.sp-back-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    padding: 0.38rem 0.85rem 0.38rem 0.5rem;
+    border-radius: 999px;
+    border: 1px solid #d4e0ed;
+    background: #fff;
+    color: #1a4a6e;
+    font-size: 0.88rem;
+    font-weight: 600;
+    text-decoration: none;
+    line-height: 1;
+    box-shadow: 0 1px 4px rgba(10, 77, 156, 0.07);
+}
+.sp-back-link:hover {
+    background: #eef4fc;
+    border-color: var(--dz-blue);
+    color: var(--dz-blue);
+    text-decoration: none;
+}
+.sp-list {
+    list-style: none;
+    margin: 0;
+    padding: 0 0 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+.sp-list-row {
+    display: flex;
+    align-items: center;
+    gap: 0.65rem;
+    width: 100%;
+    padding: 0.75rem 0.85rem;
+    border: 1px solid #e0e6ed;
+    border-radius: 8px;
+    background: #fff;
+    cursor: pointer;
+    font: inherit;
+    text-align: left;
+    color: inherit;
+    text-decoration: none;
+    box-shadow: 0 1px 4px rgba(10, 77, 156, 0.05);
+    transition: border-color 0.15s, background 0.15s;
+}
+.sp-list-row:hover {
+    border-color: var(--dz-blue);
+    background: #f8fbff;
+}
+.sp-list-row:focus-visible {
+    outline: 2px solid var(--dz-blue);
+    outline-offset: 2px;
+}
+.sp-list-thumb {
+    flex: 0 0 2.75rem;
+    width: 2.75rem;
+    height: 2.75rem;
+    border-radius: 6px;
+    border: 1px solid #e8edf2;
+    background: #f8fafc;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+}
+.sp-list-thumb img {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+}
+.sp-list-thumb--empty {
+    font-size: 0.55rem;
+    color: #8a9bab;
+    text-align: center;
+    line-height: 1.2;
+}
+.sp-list-main {
+    flex: 1;
+    min-width: 0;
+}
+.sp-list-name {
+    display: block;
+    font-weight: 700;
+    color: #052a4d;
+    margin-bottom: 0.15rem;
+    line-height: 1.3;
+}
+.sp-list-meta {
+    font-size: 0.85rem;
+    color: #5a6d7e;
+    line-height: 1.35;
+}
+.sp-list-chevron {
+    flex-shrink: 0;
+    color: #8a9bab;
+    font-size: 1.1rem;
+    line-height: 1;
+}
+
+/* 상세 페이지 — product-detail 유사 피드 */
+.page-main--partner-detail {
+    padding-top: 0.75rem;
+}
+.sp-missing {
+    margin: 0;
+    color: #3d5166;
+    line-height: 1.55;
+}
+.sp-missing a {
+    color: var(--dz-blue);
+    font-weight: 600;
+}
+.sp-feed {
+    max-width: 40rem;
+    margin: 0 auto;
+}
+.sp-feed-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1.15rem;
+    padding-bottom: 1.5rem;
+}
+.sp-article {
+    max-width: 48rem;
+    margin: 0 auto;
+    background: #fff;
+    border: 1px solid #e0e6ed;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 2px 14px rgba(10, 77, 156, 0.08);
+    scroll-margin-top: 4.5rem;
+}
+.sp-article.is-current {
+    border-color: var(--dz-blue);
+    box-shadow: 0 4px 18px rgba(10, 77, 156, 0.14);
+}
+.sp-main {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    padding: 0.75rem 0.85rem 0.85rem;
+}
+.sp-hero-wrap {
+    width: 100%;
+    background: #f4f6f9;
+    border-radius: 8px;
+    overflow: hidden;
+}
+.sp-hero-img {
+    width: 100%;
+    max-height: min(52vh, 28rem);
+    object-fit: contain;
+    object-position: center top;
+    display: block;
+    margin: 0 auto;
+    background: #f4f6f9;
+}
+.sp-hero-img--empty {
+    width: 100%;
+    min-height: 12rem;
+    max-height: min(52vh, 28rem);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.5rem 0.65rem;
+    font-size: 0.95rem;
+    color: #8a9bab;
+    box-sizing: border-box;
+    text-align: center;
+}
+.sp-summary {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+}
+.sp-title {
+    margin: 0;
+    font-size: 1.35rem;
+    font-weight: 700;
+    color: #052a4d;
+    line-height: 1.32;
+}
+.sp-web {
+    margin: 0;
+    font-size: 0.92rem;
+    line-height: 1.45;
+    word-break: break-all;
+}
+.sp-web a {
+    color: var(--dz-blue);
+    font-weight: 600;
+    text-decoration: none;
+}
+.sp-web a:hover {
+    text-decoration: underline;
+}
+.sp-web--empty {
+    color: #8a9bab;
+}
+.sp-contact {
+    margin: 0.35rem 0 0;
+    padding: 0.55rem 0.65rem;
+    background: #f4f8fc;
+    border: 1px solid #e0e8f2;
+    border-radius: 8px;
+    display: grid;
+    grid-template-columns: 4.25rem minmax(0, 1fr);
+    gap: 0.3rem 0.55rem;
+    font-size: 0.92rem;
+}
+.sp-contact dt {
+    margin: 0;
+    font-weight: 700;
+    color: #2a4a5e;
+}
+.sp-contact dd {
+    margin: 0;
+    color: #3d5166;
+}
+.sp-contact a {
+    color: var(--dz-blue);
+    text-decoration: none;
+    font-weight: 600;
+}
+.sp-contact a:hover {
+    text-decoration: underline;
+}
+.sp-contact-empty {
+    color: #8a9bab;
+}
+.sp-section-label {
+    margin: 0.5rem 0 0;
+    font-size: 0.88rem;
+    font-weight: 700;
+    color: #2a4a5e;
+}
+.sp-content {
+    margin: 0.35rem 0 0;
+    font-size: 0.95rem;
+    line-height: 1.55;
+    color: #3d5166;
+    white-space: pre-wrap;
+    word-break: break-word;
+}
+.sp-content--empty {
+    color: #8a9bab;
+}
+
+@media (max-width: 720px) {
+    .page-main--partners {
+        padding: 0.45rem 0.55rem 0.85rem;
+    }
+    .sp-title {
+        font-size: 1.05rem;
+    }
+    .sp-hero-img {
+        max-height: min(48vh, 22rem);
+    }
+    .sp-hero-img--empty {
+        min-height: 10rem;
+        max-height: min(48vh, 22rem);
+        font-size: 0.86rem;
+    }
+    .sp-contact {
+        font-size: 0.84rem;
+        grid-template-columns: 3.6rem minmax(0, 1fr);
+    }
+    .sp-content {
+        font-size: 0.86rem;
+    }
+}
