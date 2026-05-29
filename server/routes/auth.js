@@ -57,6 +57,7 @@ router.post("/login", async (req, res) => {
         if (result.vendorGrade) tokenPayload.vendorGrade = result.vendorGrade;
         if (result.vendorRegisteredBy) tokenPayload.vendorRegisteredBy = result.vendorRegisteredBy;
         if (result.vendorOrderEnabled) tokenPayload.vendorOrderEnabled = true;
+        if (result.staffOrderEnabled) tokenPayload.staffOrderEnabled = true;
 
         if (isDbReady()) {
             const sessionGate = await assertCanStartLogin(result.role, result.userId);
@@ -108,6 +109,7 @@ router.post("/login", async (req, res) => {
             vendorRegisteredBy: result.vendorRegisteredBy || "",
             vendorRegisteredByName: result.vendorRegisteredByName || "",
             vendorOrderEnabled: !!result.vendorOrderEnabled,
+            staffOrderEnabled: !!result.staffOrderEnabled,
             vendorMgrName: result.vendorMgrName || "",
             vendorMgrTel: result.vendorMgrTel || "",
             vendorMgrEmail: result.vendorMgrEmail || "",
@@ -218,7 +220,8 @@ router.get("/session", async function (req, res) {
             userId: payload.userId,
             vendorGrade: payload.vendorGrade || "",
             vendorRegisteredBy: payload.vendorRegisteredBy || "",
-            vendorOrderEnabled: !!payload.vendorOrderEnabled
+            vendorOrderEnabled: !!payload.vendorOrderEnabled,
+            staffOrderEnabled: !!payload.staffOrderEnabled
         });
     } catch (e) {
         return res.json({ ok: true, loggedIn: false, error: "세션이 만료되었습니다." });

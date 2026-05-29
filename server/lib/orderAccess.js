@@ -1,6 +1,7 @@
+const { getDb } = require("../db");
+const { loginLookupFilter } = require("./loginAccount");
 const { F: VF, fromLegacyDoc: vendorFromLegacy } = require("./vendorFields");
-
-const DEFAULT_ORDER_VENDOR_STAFF = "aksangsa";
+const { staffOrderEnabledFromDoc } = require("./staffFields");
 
 function normalizeStaffLoginId(loginId) {
     return String(loginId || "")
@@ -13,30 +14,34 @@ function isStaffAuth(auth) {
     return auth.role === "supervisor" || auth.role === "admin";
 }
 
-function getOrderEnabledStaffId() {
-    return normalizeStaffLoginId(
-        String(process.env.ORDER_VENDOR_STAFF_ID || DEFAULT_ORDER_VENDOR_STAFF).trim()
-    );
+async function staffOrderEnabledByLoginId(loginId) {
+    const key = String(loginId || "").trim();
+    if (!key) return false;
+    const staff = await getDb()
+        .collection("staff")
+        .findOne({ active: { $ne: false }, ...loginLookupFilter(key) });
+    return staffOrderEnabledFromDoc(staff);
 }
 
-/** 주문·장바구니 — vn_registered_by 가 ORDER_VENDOR_STAFF_ID(기본 aksangsa) 인 업체만 */
-function vendorCanPlaceOrders(vendorDoc) {
+/** 업체 주문 — 등록 담당 관리자(st_order_enabled)인 업체만 */
+async function vendorCanPlaceOrders(vendorDoc) {
     if (!vendorDoc) return false;
     const v = vendorFromLegacy(vendorDoc) || {};
     const reg = normalizeStaffLoginId(v[VF.registeredBy]);
     if (!reg || reg === "legacy") return false;
-    return reg === getOrderEnabledStaffId();
+    return staffOrderEnabledByLoginId(reg);
 }
 
-/** 주문서관리 메뉴·API — aksangsa 관리자만 */
+/** 주문서관리 — st_order_enabled 관리자만 */
 function staffCanAccessOrderManage(auth) {
     if (!auth || auth.role !== "admin") return false;
-    return normalizeStaffLoginId(auth.userId) === getOrderEnabledStaffId();
+    if (auth.staffOrderEnabled === true) return true;
+    return false;
 }
 
 function buildOrderListQuery(auth) {
     if (!staffCanAccessOrderManage(auth)) return { id: "__none__" };
-    return { vendorRegisteredBy: getOrderEnabledStaffId() };
+    return { vendorRegisteredBy: normalizeStaffLoginId(auth.userId) };
 }
 
 function buildVendorOrderListQuery(auth) {
@@ -72,12 +77,23 @@ function staffCanReadOrder(auth, order) {
     }
     if (supervisorCanAccessAllOrders(auth)) return true;
     if (!staffCanAccessOrderManage(auth)) return false;
-    return normalizeStaffLoginId(order.vendorRegisteredBy) === getOrderEnabledStaffId();
+    return normalizeStaffLoginId(order.vendorRegisteredBy) === normalizeStaffLoginId(auth.userId);
+}
+
+/** 상품 주문 가능 — 업체 담당과 상품 등록 담당이 같고, 그 관리자가 주문 권한 보유 */
+async function vendorProductAllowsOrderForVendor(productRegisteredBy, vendorDoc) {
+    const v = vendorFromLegacy(vendorDoc) || {};
+    const vReg = normalizeStaffLoginId(v[VF.registeredBy]);
+    const pReg = normalizeStaffLoginId(productRegisteredBy);
+    if (!vReg || !pReg || vReg === "legacy" || pReg === "legacy" || vReg !== pReg) {
+        return false;
+    }
+    return staffOrderEnabledByLoginId(vReg);
 }
 
 module.exports = {
-    DEFAULT_ORDER_VENDOR_STAFF,
-    getOrderEnabledStaffId,
+    normalizeStaffLoginId,
+    staffOrderEnabledByLoginId,
     vendorCanPlaceOrders,
     staffCanAccessOrderManage,
     supervisorCanAccessAllOrders,
@@ -86,5 +102,5 @@ module.exports = {
     buildVendorOrderListQuery,
     vendorOwnsOrder,
     staffCanReadOrder,
-    normalizeStaffLoginId
+    vendorProductAllowsOrderForVendor
 };

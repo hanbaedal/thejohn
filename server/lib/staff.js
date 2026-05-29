@@ -68,7 +68,8 @@ function pickStaffBody(body) {
         st_naver_cafe: body.st_naver_cafe,
         st_youtube: body.st_youtube,
         name: body.name,
-        loginEnabled: body.loginEnabled
+        loginEnabled: body.loginEnabled,
+        orderEnabled: body.orderEnabled
     };
 }
 
@@ -132,7 +133,8 @@ async function createStaffAccount(body, creatorRole) {
             st_naver_cafe: picked.st_naver_cafe,
             st_youtube: picked.st_youtube,
             role: "admin",
-            loginEnabled: true
+            loginEnabled: true,
+            st_order_enabled: false
         },
         null,
         loginId,

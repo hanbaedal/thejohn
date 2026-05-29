@@ -4,7 +4,7 @@ const { requireRole } = require("../middleware/auth");
 const { buildOrderPdfBuffer } = require("../lib/orderPdf");
 const { notifyOrderAdmin } = require("../lib/orderNotify");
 const { findVendorByLoginId } = require("../lib/loginResolve");
-const { vendorProductAllowsOrder, resolveVendorUnitPrice } = require("../lib/vendorPricing");
+const { resolveVendorUnitPrice } = require("../lib/vendorPricing");
 const { buildEnrichedOrder, prepareOrderForPdf } = require("../lib/orderEnrich");
 const { deptLabel } = require("../lib/orderDeptLabels");
 const { F: PF } = require("../lib/productFields");
@@ -17,7 +17,7 @@ const {
     staffCanAccessOrderManage,
     supervisorCanAccessAllOrders,
     normalizeStaffLoginId,
-    getOrderEnabledStaffId
+    vendorProductAllowsOrderForVendor
 } = require("../lib/orderAccess");
 
 const router = express.Router();
@@ -124,12 +124,10 @@ async function buildOrderItemsFromDb(db, clientItems, vendorDoc) {
         var product = await db.collection("products").findOne({ id: productId });
         if (!product) continue;
 
-        if (!vendorProductAllowsOrder(product[PF.registeredBy])) {
+        if (!(await vendorProductAllowsOrderForVendor(product[PF.registeredBy], vendorDoc))) {
             return {
                 error:
-                    "주문 가능한 상품(" +
-                    getOrderEnabledStaffId() +
-                    " 등록)만 담을 수 있습니다: " +
+                    "담당 거래처가 등록한 상품만 주문할 수 있습니다: " +
                     (product[PF.name] || productId)
             };
         }
@@ -177,7 +175,7 @@ router.get("/", requireRole("admin", "vendor", "supervisor"), async function (re
         let query;
         if (req.auth.role === "vendor") {
             const vendor = await findVendorByLoginId(req.auth.userId || "");
-            if (!vendor || !vendorCanPlaceOrders(vendor)) {
+            if (!vendor || !(await vendorCanPlaceOrders(vendor))) {
                 return res.status(403).json({
                     ok: false,
                     error: "주문 내역을 조회할 권한이 없습니다."
@@ -191,7 +189,7 @@ router.get("/", requireRole("admin", "vendor", "supervisor"), async function (re
             if (!staffCanAccessOrderManage(req.auth)) {
                 return res.status(403).json({
                     ok: false,
-                    error: "주문서관리는 aksangsa 관리자만 이용할 수 있습니다."
+                    error: "주문서관리 권한이 있는 관리자만 이용할 수 있습니다."
                 });
             }
             query = buildOrderListQuery(req.auth);
@@ -266,13 +264,11 @@ router.post("/", requireRole("vendor"), async function (req, res) {
         if (!vendor) {
             return res.status(403).json({ ok: false, error: "업체 정보를 찾을 수 없습니다." });
         }
-        if (!vendorCanPlaceOrders(vendor)) {
+        if (!(await vendorCanPlaceOrders(vendor))) {
             return res.status(403).json({
                 ok: false,
                 error:
-                    "주문 권한이 없습니다. 담당 거래처(" +
-                    getOrderEnabledStaffId() +
-                    ")에 등록된 업체만 주문할 수 있습니다."
+                    "주문 권한이 없습니다. 주문 권한이 있는 관리자에게 등록된 업체만 주문할 수 있습니다."
             });
         }
 

@@ -15,7 +15,7 @@ function vendorGradeFromDoc(vendor) {
     const raw = vendor[VF.grade] != null ? vendor[VF.grade] : vendor.vn_grade;
     return parseGrade(raw) || "1";
 }
-const { getCompanyName: getStaffCompanyName } = require("./staffFields");
+const { getCompanyName: getStaffCompanyName, staffOrderEnabledFromDoc } = require("./staffFields");
 
 function normalizeId(s) {
     return String(s || "")
@@ -90,7 +90,8 @@ async function tryStaffLogin(staff, loginId, password) {
         role: staff.role || "admin",
         userId: staff.loginId,
         companyName: companyLabel,
-        displayName: companyLabel || staff.loginId
+        displayName: companyLabel || staff.loginId,
+        staffOrderEnabled: staffOrderEnabledFromDoc(staff)
     };
 }
 
@@ -117,7 +118,7 @@ async function tryVendorLogin(vendor, loginId, password) {
         vendorGrade: vendorGradeFromDoc(vendor),
         vendorRegisteredBy: regBy,
         vendorRegisteredByName: String(vendor[VF.registeredByName] || "").trim(),
-        vendorOrderEnabled: vendorCanPlaceOrders(vendor),
+        vendorOrderEnabled: await vendorCanPlaceOrders(vendor),
         vendorMgrName: String(vendor[VF.mgrName] || "").trim(),
         vendorMgrTel: String(vendor[VF.mgrTel] || "").trim(),
         vendorMgrEmail: String(vendor[VF.mgrEmail] || "").trim()

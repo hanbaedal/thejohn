@@ -200,7 +200,7 @@
         }
         if (!Auth.canPlaceVendorOrders || !Auth.canPlaceVendorOrders()) {
             bodyEl.innerHTML =
-                '<p class="cart-empty">이 계정은 주문할 수 없습니다. 담당 거래처(aksangsa)에 등록된 업체만 주문할 수 있습니다.</p>';
+                '<p class="cart-empty">이 계정은 주문할 수 없습니다. 주문 권한이 있는 관리자에게 등록된 업체만 주문할 수 있습니다.</p>';
             return;
         }
 

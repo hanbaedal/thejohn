@@ -19,8 +19,7 @@
     var VENDOR_MGR_NAME_KEY = "thejhon_vendor_mgr_name";
     var VENDOR_MGR_TEL_KEY = "thejhon_vendor_mgr_tel";
     var VENDOR_MGR_EMAIL_KEY = "thejhon_vendor_mgr_email";
-    /** 주문·장바구니 허용 업체 등록 담당 (서버 ORDER_VENDOR_STAFF_ID 와 동일, 기본 aksangsa) */
-    var ORDER_VENDOR_STAFF_ID = "aksangsa";
+    var STAFF_ORDER_ENABLED_KEY = "thejhon_staff_order_enabled";
 
     function normalizeId(s) {
         return String(s || "")
@@ -56,6 +55,7 @@
         sessionStorage.removeItem(VENDOR_MGR_NAME_KEY);
         sessionStorage.removeItem(VENDOR_MGR_TEL_KEY);
         sessionStorage.removeItem(VENDOR_MGR_EMAIL_KEY);
+        sessionStorage.removeItem(STAFF_ORDER_ENABLED_KEY);
         if (global.THEJHON_API && THEJHON_API.setToken) THEJHON_API.setToken("");
     }
 
@@ -87,6 +87,7 @@
             vendorGrade: data.vendorGrade || "",
             vendorRegisteredBy: data.vendorRegisteredBy || "",
             vendorOrderEnabled: !!data.vendorOrderEnabled,
+            staffOrderEnabled: !!data.staffOrderEnabled,
             vendorMgrName: data.vendorMgrName || "",
             vendorMgrTel: data.vendorMgrTel || "",
             vendorMgrEmail: data.vendorMgrEmail || ""
@@ -195,7 +196,8 @@
         vendorOrderEnabled,
         vendorMgrName,
         vendorMgrTel,
-        vendorMgrEmail
+        vendorMgrEmail,
+        staffOrderEnabled
     ) {
         sessionStorage.setItem(AUTH_KEY, "1");
         sessionStorage.setItem(USER_ID_KEY, userId || "");
@@ -220,6 +222,11 @@
             sessionStorage.removeItem(VENDOR_MGR_NAME_KEY);
             sessionStorage.removeItem(VENDOR_MGR_TEL_KEY);
             sessionStorage.removeItem(VENDOR_MGR_EMAIL_KEY);
+        }
+        if (role === "admin" && staffOrderEnabled) {
+            sessionStorage.setItem(STAFF_ORDER_ENABLED_KEY, "1");
+        } else {
+            sessionStorage.removeItem(STAFF_ORDER_ENABLED_KEY);
         }
         var label = companyName || "";
         if (isStaffRole(role) || role === "vendor") {
@@ -368,6 +375,17 @@
                 sessionStorage.removeItem(VENDOR_ORDER_ENABLED_KEY);
             }
         }
+        if (sess && sess.loggedIn && sess.role === "admin") {
+            if (sess.staffOrderEnabled) {
+                sessionStorage.setItem(STAFF_ORDER_ENABLED_KEY, "1");
+            } else {
+                sessionStorage.removeItem(STAFF_ORDER_ENABLED_KEY);
+            }
+        }
+    }
+
+    function isStaffOrderEnabled() {
+        return sessionStorage.getItem(STAFF_ORDER_ENABLED_KEY) === "1";
     }
 
     function isVendorOrderEnabled() {
@@ -394,15 +412,16 @@
         return mine === productOwner;
     }
 
-    /** 주문·장바구니 — aksangsa(ORDER_VENDOR_STAFF_ID) 등록 상품만 */
+    /** 주문·장바구니 — 담당 관리자가 등록한 상품만 */
     function vendorProductCanOrder(it) {
         if (!it || getRole() !== "vendor") return false;
         if (!isVendorOrderEnabled()) return false;
+        var mine = getVendorRegisteredBy();
         var owner = String(it.pd_registered_by || "")
             .trim()
             .toLowerCase();
-        if (!owner || owner === "legacy") return false;
-        return owner === normalizeId(ORDER_VENDOR_STAFF_ID);
+        if (!mine || !owner || owner === "legacy" || mine === "legacy") return false;
+        return mine === owner;
     }
 
     /**
@@ -481,12 +500,12 @@
         );
     }
 
-    /** 업체관리 — 주문서관리 메뉴·화면 (aksangsa 관리자만) */
+    /** 업체관리 — 주문서관리 메뉴·화면 (주문 권한 관리자만) */
     function canShowOrderManageMenu() {
         return (
             isLoggedIn() &&
             getRole() === "admin" &&
-            normalizeId(getUserId()) === normalizeId(ORDER_VENDOR_STAFF_ID) &&
+            isStaffOrderEnabled() &&
             !!(global.THEJHON_API && THEJHON_API.getToken && THEJHON_API.getToken())
         );
     }
@@ -505,8 +524,7 @@
         if (!canShowOrderManageMenu()) {
             return {
                 allowed: false,
-                reason:
-                    "주문서관리는 aksangsa 관리자만 이용할 수 있습니다."
+                reason: "주문서관리 권한이 있는 관리자만 이용할 수 있습니다."
             };
         }
         return { allowed: true, role: getRole() };
@@ -892,7 +910,7 @@
         canShowOrderManageMenu: canShowOrderManageMenu,
         getOrderManageAccess: getOrderManageAccess,
         isVendorOrderEnabled: isVendorOrderEnabled,
-        ORDER_VENDOR_STAFF_ID: ORDER_VENDOR_STAFF_ID,
+        isStaffOrderEnabled: isStaffOrderEnabled,
         isSupervisorStaff: isSupervisorStaff,
         getSupervisorExcelImportAccess: getSupervisorExcelImportAccess,
         getProspectFinderAccess: getProspectFinderAccess,

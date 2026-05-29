@@ -16,7 +16,8 @@ const F = {
     facebook: "st_facebook",
     instagram: "st_instagram",
     naverCafe: "st_naver_cafe",
-    youtube: "st_youtube"
+    youtube: "st_youtube",
+    orderEnabled: "st_order_enabled"
 };
 
 /**
@@ -43,7 +44,8 @@ const DEFAULT_STAFF_ACCOUNTS = [
         st_company: "(주)에이케이상사",
         st_ceo: "김종철",
         st_ceo_tel: "01047212333",
-        role: "admin"
+        role: "admin",
+        st_order_enabled: true
     },
     {
         id: "st_supervisor_hanbaedal",
@@ -66,6 +68,19 @@ const EXPECTED_STAFF_LOGIN_IDS = DEFAULT_STAFF_ACCOUNTS.map(function (s) {
 
 function str(v) {
     return String(v ?? "").trim();
+}
+
+function normalizeStaffLoginId(loginId) {
+    return str(loginId).toLowerCase();
+}
+
+function staffOrderEnabledFromDoc(doc) {
+    if (!doc || doc.role !== "admin") return false;
+    if (doc[F.orderEnabled] === true) return true;
+    if (doc[F.orderEnabled] === false) return false;
+    if (doc.st_order_enabled === true) return true;
+    if (doc.st_order_enabled === false) return false;
+    return false;
 }
 
 function fromLegacyDoc(doc) {
@@ -126,6 +141,7 @@ function toPublic(doc) {
         role: d.role || "admin",
         active: d.active !== false,
         loginEnabled: d.loginEnabled !== false,
+        orderEnabled: staffOrderEnabledFromDoc(d),
         updatedAt: d.updatedAt || 0
     };
 }
@@ -175,7 +191,21 @@ function buildFromBody(body, existing, loginId, password) {
                   ? true
                   : existing
                     ? existing.loginEnabled !== false
-                    : true
+                    : true,
+        st_order_enabled:
+            body.orderEnabled === false ||
+            body.orderEnabled === "false" ||
+            body.orderEnabled === 0 ||
+            body.st_order_enabled === false
+                ? false
+                : body.orderEnabled === true ||
+                    body.orderEnabled === "true" ||
+                    body.orderEnabled === 1 ||
+                    body.st_order_enabled === true
+                  ? true
+                  : existing
+                    ? staffOrderEnabledFromDoc(existing)
+                    : false
     };
 }
 
@@ -202,6 +232,7 @@ function toDbDoc(id, built, existing) {
         role: built.role,
         active: existing?.active !== false,
         loginEnabled: built.loginEnabled !== false,
+        [F.orderEnabled]: built.st_order_enabled === true,
         updatedAt: Date.now()
     };
     if (existing?.createdAt) doc.createdAt = existing.createdAt;
@@ -370,6 +401,22 @@ async function migrateStaffCollection(db) {
         n++;
     }
     if (n) console.log("[staff] migrated field names:", n);
+    await migrateStaffOrderEnabled(col);
+}
+
+async function migrateStaffOrderEnabled(col) {
+    const legacyId = normalizeStaffLoginId(
+        String(process.env.ORDER_VENDOR_STAFF_ID || "aksangsa").trim()
+    );
+    const docs = await col.find({ role: "admin" }).toArray();
+    let n = 0;
+    for (const doc of docs) {
+        if (doc[F.orderEnabled] !== undefined || doc.st_order_enabled !== undefined) continue;
+        const enabled = normalizeStaffLoginId(doc.loginId) === legacyId;
+        await col.updateOne({ id: doc.id }, { $set: { [F.orderEnabled]: enabled, updatedAt: Date.now() } });
+        n++;
+    }
+    if (n) console.log("[staff] migrated st_order_enabled:", n);
 }
 
 async function findExpectedStaffInDb(db) {
@@ -397,5 +444,8 @@ module.exports = {
     ensureDefaultStaffSeeds,
     migrateStaffCollection,
     findExpectedStaffInDb,
-    legacyStaffUnset
+    legacyStaffUnset,
+    normalizeStaffLoginId,
+    staffOrderEnabledFromDoc,
+    migrateStaffOrderEnabled
 };
