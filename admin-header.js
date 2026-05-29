@@ -111,11 +111,11 @@
         if (!Auth || !Auth.canManageStaffAccounts || !Auth.canManageStaffAccounts()) {
             return "";
         }
-        return '<a href="staff-manage.html" class="header-nav-link">관리자관리</a>';
+        return '<a href="staff-manage-hub.html" class="header-nav-link">관리자관리</a>';
     }
 
     function injectStaffManageLink(nav) {
-        if (!nav || nav.querySelector('a[href="staff-manage.html"]')) return;
+        if (!nav || nav.querySelector('a[href="staff-manage-hub.html"], a[href="staff-manage.html"]')) return;
         var html = staffManageLinkHtml();
         if (!html) return;
         var wrap = document.createElement("div");

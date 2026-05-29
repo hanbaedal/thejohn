@@ -11,9 +11,12 @@ const { F: PF } = require("../lib/productFields");
 const {
     vendorCanPlaceOrders,
     buildOrderListQuery,
+    buildSupervisorOrderListQuery,
     buildVendorOrderListQuery,
     staffCanReadOrder,
     staffCanAccessOrderManage,
+    supervisorCanAccessAllOrders,
+    normalizeStaffLoginId,
     getOrderEnabledStaffId
 } = require("../lib/orderAccess");
 
@@ -150,7 +153,7 @@ async function buildOrderItemsFromDb(db, clientItems, vendorDoc) {
     return out.length ? out : null;
 }
 
-router.get("/", requireRole("admin", "vendor"), async function (req, res) {
+router.get("/", requireRole("admin", "vendor", "supervisor"), async function (req, res) {
     try {
         function parseYmdToMs(s, endOfDay) {
             var m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(s || "").trim());
@@ -181,6 +184,9 @@ router.get("/", requireRole("admin", "vendor"), async function (req, res) {
                 });
             }
             query = buildVendorOrderListQuery(req.auth);
+        } else if (supervisorCanAccessAllOrders(req.auth)) {
+            var adminStaffId = normalizeStaffLoginId(req.query.adminStaffId || "");
+            query = buildSupervisorOrderListQuery(req.auth, adminStaffId);
         } else {
             if (!staffCanAccessOrderManage(req.auth)) {
                 return res.status(403).json({
@@ -211,7 +217,7 @@ router.get("/", requireRole("admin", "vendor"), async function (req, res) {
     }
 });
 
-router.get("/:id", requireRole("admin", "vendor"), async function (req, res) {
+router.get("/:id", requireRole("admin", "vendor", "supervisor"), async function (req, res) {
     try {
         const id = String(req.params.id || "").trim();
         if (!id) {
@@ -342,7 +348,7 @@ router.post("/", requireRole("vendor"), async function (req, res) {
     }
 });
 
-router.get("/:id/pdf", requireRole("vendor", "admin"), async function (req, res) {
+router.get("/:id/pdf", requireRole("vendor", "admin", "supervisor"), async function (req, res) {
     try {
         const id = String(req.params.id || "");
         const order = await getDb().collection("orders").findOne({ id: id });

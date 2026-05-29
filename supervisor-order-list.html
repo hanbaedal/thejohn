@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" href="img/icon-192.png" sizes="192x192" type="image/png">
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#0a4d9c">
+    <title>발주서 관리 — 더존</title>
+    <link rel="stylesheet" href="common.css">
+    <link rel="stylesheet" href="admin-manage.css">
+    <link rel="stylesheet" href="staff-hub.css">
+    <style>
+        .ol-admin-list { list-style: none; margin: 0; padding: 0; }
+        .ol-list-scroll { max-height: 19rem; overflow-y: auto; }
+        .ol-admin-item {
+            display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem 1rem;
+            padding: 0.85rem 1rem; border: 1px solid #e0e6ed; border-radius: 8px;
+            margin-bottom: 0.5rem; background: #fff; cursor: pointer;
+        }
+        .ol-admin-item.is-selected { border-color: var(--dz-blue, #0a4d9c); box-shadow: 0 0 0 2px rgba(10, 77, 156, 0.15); }
+        .ol-admin-main { flex: 1; min-width: 12rem; }
+        .ol-admin-name { display: block; font-weight: 700; color: #052a4d; }
+        .ol-admin-meta { font-size: 0.85rem; color: #5a6d7e; }
+        #ol-detail { margin-top: 1rem; padding: 1rem; background: #f8fafc; border: 1px solid #d4e2f0; border-radius: 12px; }
+        #ol-detail[hidden] { display: none !important; }
+    </style>
+    <script src="api-config.js"></script>
+    <script src="thejhon-api.js"></script>
+    <script src="auth.js"></script>
+    <script src="order-ui.js"></script>
+    <script src="admin-header.js"></script>
+    <script src="nav.js" defer></script>
+</head>
+<body>
+    <header class="site-header">
+        <div class="site-header-start">
+            <a href="index.html" class="dz-logo dz-logo--compact" aria-label="더존 홈"><img src="img/logo.png" alt="" width="72" height="72" class="dz-logo-img"></a>
+            <nav class="site-header-nav" aria-label="주요 메뉴">
+                <a href="company.html" class="header-nav-link">회사소개</a>
+                <a href="products.html" class="header-nav-link">사업부문</a>
+                <a href="staff-manage-hub.html" class="header-nav-link is-current">관리자관리</a>
+                <a href="product-register.html" class="header-nav-link">상품등록</a>
+                <a href="vendor-register.html" class="header-nav-link">업체등록</a>
+                <div class="nav-dropdown" data-nav-dropdown="support">
+                    <a href="support.html" class="header-nav-link nav-dropdown-trigger">고객센터</a>
+                    <div class="nav-dropdown-panel" role="menu">
+                        <a href="support-partners.html" class="nav-dropdown-item" role="menuitem">파트너회사 소개</a>
+                        <a href="support-library.html" class="nav-dropdown-item" role="menuitem">최근소식</a>
+                        <a href="support-qna.html" class="nav-dropdown-item" role="menuitem">자유게시판</a>
+                        <a href="support-inquiry.html" class="nav-dropdown-item" role="menuitem">문의사항</a>
+                    </div>
+                </div>
+            </nav>
+        </div>
+        <nav class="site-header-actions" aria-label="계정">
+            <time class="header-date" id="headerToday" datetime=""></time>
+            <button type="button" class="btn btn-auth-icon btn-logout" id="btnLogout" hidden aria-label="로그아웃"></button>
+        </nav>
+    </header>
+    <main class="page-main page-main--hide-scrollbar shub-page">
+        <p class="shub-subnav"><a href="staff-manage-hub.html">← 관리자관리</a></p>
+        <h1>발주서 관리</h1>
+        <p class="shub-intro">시작일·종료일로 조회합니다. 담당 관리자를 선택하지 않으면 전체 발주서가 표시됩니다.</p>
+        <p id="sol-status" class="shub-status" role="status"></p>
+        <section class="shub-panel">
+            <div class="shub-filters">
+                <label for="sol-date-from">시작일</label>
+                <input type="date" id="sol-date-from">
+                <label for="sol-date-to">종료일</label>
+                <input type="date" id="sol-date-to">
+                <label for="sol-admin">담당 관리자</label>
+                <select id="sol-admin">
+                    <option value="">전체</option>
+                </select>
+                <button type="button" class="btn btn-primary" id="sol-search">조회</button>
+            </div>
+            <div id="sol-summary" class="shub-summary" hidden></div>
+            <div id="sol-by-admin" class="shub-table-wrap shub-list-scroll" hidden></div>
+            <div id="sol-list" class="ol-list-scroll"></div>
+            <div id="ol-detail" hidden aria-live="polite"></div>
+        </section>
+    </main>
+    <footer class="site-footer">
+        <div class="site-footer-inner">
+            <dl class="site-footer-grid" id="siteFooterCompanyGrid" aria-live="polite"></dl>
+            <p class="site-footer-company-msg" id="siteFooterCompanyMsg" hidden></p>
+        </div>
+    </footer>
+    <script src="supervisor-order-list.js"></script>
+</body>
+</html>

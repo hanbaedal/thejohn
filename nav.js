@@ -3,6 +3,7 @@
         THEJHON_AUTH.normalizeLegacySession();
         THEJHON_AUTH.enforceRegisterPages();
         THEJHON_AUTH.applyNavRegisterVisibility();
+        if (THEJHON_AUTH.trackPageViewIfNeeded) THEJHON_AUTH.trackPageViewIfNeeded();
     }
 
     (function ensureHeaderLayout() {

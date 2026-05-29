@@ -227,6 +227,8 @@ async function connectDbOnce() {
             await ensureProspectIndexes(database);
             const { ensureVendorNewIndexes } = require("./lib/vendorNew");
             await ensureVendorNewIndexes(database);
+            const { ensureAccessLogIndexes } = require("./lib/accessLog");
+            await ensureAccessLogIndexes(database);
             try {
                 const { ensureLoginFieldsMigrated } = require("./lib/loginResolve");
                 await ensureLoginFieldsMigrated(database);

@@ -1,8 +1,10 @@
 const express = require("express");
 const { signToken, extractBearer, verifyToken, requireRole } = require("../middleware/auth");
+const { getDb, isDbReady } = require("../db");
 const { resolveFormLogin, findVendorByLoginId, findStaffByLoginId } = require("../lib/loginResolve");
 const { toPublic, F: VF } = require("../lib/vendorFields");
 const { toPublic: toPublicStaff } = require("../lib/staffFields");
+const { logStaffLogin, logVendorLogin } = require("../lib/accessLog");
 
 const router = express.Router();
 
@@ -49,6 +51,27 @@ router.post("/login", async (req, res) => {
         if (result.vendorRegisteredBy) tokenPayload.vendorRegisteredBy = result.vendorRegisteredBy;
         if (result.vendorOrderEnabled) tokenPayload.vendorOrderEnabled = true;
         const token = signToken(tokenPayload);
+        try {
+            if (!isDbReady()) throw new Error("DB not ready");
+            const db = getDb();
+            if (result.role === "vendor") {
+                await logVendorLogin(
+                    db,
+                    result.userId,
+                    result.vendorRegisteredBy || "",
+                    result.companyName || result.userId
+                );
+            } else if (result.role === "admin" || result.role === "supervisor") {
+                await logStaffLogin(
+                    db,
+                    result.role,
+                    result.userId,
+                    result.companyName || result.displayName || result.userId
+                );
+            }
+        } catch (logErr) {
+            console.warn("[thejohn] login access log:", logErr.message);
+        }
         return res.json({
             ok: true,
             role: result.role,

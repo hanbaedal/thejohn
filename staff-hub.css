@@ -1,0 +1,121 @@
+.shub-page h1 {
+    margin: 0 0 0.35rem;
+    font-size: 1.35rem;
+    color: #052a4d;
+}
+.shub-intro {
+    margin: 0 0 1.25rem;
+    font-size: 0.92rem;
+    color: #3d556d;
+}
+.shub-subnav {
+    margin: 0 0 1rem;
+    font-size: 0.88rem;
+}
+.shub-subnav a {
+    color: var(--dz-blue, #0a4d9c);
+    text-decoration: none;
+}
+.shub-subnav a:hover {
+    text-decoration: underline;
+}
+.shub-status {
+    margin: 0 0 1rem;
+    font-size: 0.85rem;
+    color: #3d5166;
+    min-height: 1.25rem;
+}
+.shub-status--err {
+    color: #a12c2c;
+}
+.shub-status--ok {
+    color: #2d6a4f;
+}
+.shub-panel {
+    background: #fff;
+    border: 1px solid #e0e6ed;
+    border-radius: 10px;
+    padding: 1rem 1.1rem;
+    margin-bottom: 1.25rem;
+}
+.shub-panel h2 {
+    margin: 0 0 0.75rem;
+    font-size: 1.05rem;
+    color: #1a4a6e;
+}
+.shub-filters {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.45rem 0.65rem;
+    margin-bottom: 0.85rem;
+}
+.shub-filters label {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #2a4a5e;
+}
+.shub-filters input,
+.shub-filters select {
+    padding: 0.4rem 0.55rem;
+    border: 1px solid #c5d0dc;
+    border-radius: 8px;
+    font: inherit;
+}
+.shub-summary {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.65rem 1.25rem;
+    margin: 0 0 1rem;
+    padding: 0.65rem 0.85rem;
+    background: #f4f8fc;
+    border: 1px solid #d4e2f0;
+    border-radius: 8px;
+    font-size: 0.9rem;
+}
+.shub-summary strong {
+    color: #052a4d;
+}
+.shub-table-wrap {
+    overflow-x: auto;
+    border: 1px solid #e0e6ed;
+    border-radius: 8px;
+    background: #fff;
+}
+.shub-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.86rem;
+}
+.shub-table th,
+.shub-table td {
+    padding: 0.45rem 0.6rem;
+    border-bottom: 1px solid #e8edf2;
+    text-align: left;
+}
+.shub-table th {
+    background: #f4f7fb;
+    font-weight: 700;
+    color: #2a4a5e;
+}
+.shub-table tr:last-child td {
+    border-bottom: none;
+}
+.shub-cat--staff {
+    color: #0a4d9c;
+}
+.shub-cat--vendor {
+    color: #2d6a4f;
+}
+.shub-cat--guest {
+    color: #6b5a3d;
+}
+.shub-list-scroll {
+    max-height: 22rem;
+    overflow-y: auto;
+}
+.am-list-empty {
+    margin: 0;
+    padding: 0.7rem;
+    color: #5a6d7e;
+}

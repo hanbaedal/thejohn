@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" href="img/icon-192.png" sizes="192x192" type="image/png">
+    <title>접속통계 관리 — 더존</title>
+    <link rel="stylesheet" href="common.css">
+    <link rel="stylesheet" href="admin-manage.css">
+    <link rel="stylesheet" href="staff-hub.css">
+    <script src="api-config.js"></script>
+    <script src="thejhon-api.js"></script>
+    <script src="auth.js"></script>
+    <script src="admin-header.js"></script>
+    <script src="nav.js" defer></script>
+</head>
+<body>
+    <header class="site-header">
+        <div class="site-header-start">
+            <a href="index.html" class="dz-logo dz-logo--compact" aria-label="더존 홈"><img src="img/logo.png" alt="" width="72" height="72" class="dz-logo-img"></a>
+            <nav class="site-header-nav" aria-label="주요 메뉴">
+                <a href="company.html" class="header-nav-link">회사소개</a>
+                <a href="products.html" class="header-nav-link">사업부문</a>
+                <a href="staff-manage-hub.html" class="header-nav-link is-current">관리자관리</a>
+                <a href="product-register.html" class="header-nav-link">상품등록</a>
+                <a href="vendor-register.html" class="header-nav-link">업체등록</a>
+                <div class="nav-dropdown" data-nav-dropdown="support">
+                    <a href="support.html" class="header-nav-link nav-dropdown-trigger">고객센터</a>
+                    <div class="nav-dropdown-panel" role="menu">
+                        <a href="support-partners.html" class="nav-dropdown-item" role="menuitem">파트너회사 소개</a>
+                        <a href="support-library.html" class="nav-dropdown-item" role="menuitem">최근소식</a>
+                        <a href="support-qna.html" class="nav-dropdown-item" role="menuitem">자유게시판</a>
+                        <a href="support-inquiry.html" class="nav-dropdown-item" role="menuitem">문의사항</a>
+                    </div>
+                </div>
+            </nav>
+        </div>
+        <nav class="site-header-actions" aria-label="계정">
+            <time class="header-date" id="headerToday" datetime=""></time>
+            <button type="button" class="btn btn-auth-icon btn-logout" id="btnLogout" hidden aria-label="로그아웃"></button>
+        </nav>
+    </header>
+    <main class="page-main page-main--hide-scrollbar shub-page">
+        <p class="shub-subnav"><a href="staff-manage-hub.html">← 관리자관리</a></p>
+        <h1>접속통계 관리</h1>
+        <p class="shub-intro">관리자 로그인·업체 로그인·비로그인 페이지 방문을 날짜별로 확인합니다. 로그인 이후부터 기록됩니다.</p>
+        <p id="sas-status" class="shub-status" role="status"></p>
+        <section class="shub-panel">
+            <div class="shub-filters">
+                <label for="sas-date-from">시작일</label>
+                <input type="date" id="sas-date-from">
+                <label for="sas-date-to">종료일</label>
+                <input type="date" id="sas-date-to">
+                <button type="button" class="btn btn-primary" id="sas-search">조회</button>
+            </div>
+            <div id="sas-summary" class="shub-summary" hidden></div>
+            <h2>날짜별 요약</h2>
+            <div id="sas-by-day" class="shub-table-wrap"></div>
+            <h2 style="margin-top:1.25rem">상세 기록</h2>
+            <div id="sas-items" class="shub-table-wrap shub-list-scroll"></div>
+        </section>
+    </main>
+    <footer class="site-footer">
+        <div class="site-footer-inner">
+            <dl class="site-footer-grid" id="siteFooterCompanyGrid" aria-live="polite"></dl>
+            <p class="site-footer-company-msg" id="siteFooterCompanyMsg" hidden></p>
+        </div>
+    </footer>
+    <script src="supervisor-access-stats.js"></script>
+</body>
+</html>

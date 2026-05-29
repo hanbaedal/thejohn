@@ -274,7 +274,13 @@
         "vendor-prospect-finder.html"
     ];
     var ORDER_MANAGE_PAGES = ["order-list-admin.html"];
-    var STAFF_MANAGE_PAGES = ["staff-manage.html"];
+    var STAFF_MANAGE_PAGES = [
+        "staff-manage-hub.html",
+        "staff-manage.html",
+        "supervisor-order-list.html",
+        "supervisor-access-stats.html",
+        "supervisor-db-stats.html"
+    ];
     var ADMIN_REGISTER_PAGES = PRODUCT_ADMIN_PAGES.concat(VENDOR_ADMIN_PAGES);
 
     /** 관리자(staff admin)만 상품·업체 관리 메뉴·등록 API */
@@ -659,6 +665,15 @@
         );
     }
 
+    function trackPageViewIfNeeded() {
+        try {
+            if (!global.THEJHON_API || !THEJHON_API.trackPageView) return;
+            var page = currentPageFile();
+            if (!page || page === "login.html") return;
+            THEJHON_API.trackPageView(page).catch(function () {});
+        } catch (e) {}
+    }
+
     function enforceRegisterPages() {
         var page = currentPageFile();
         if (ORDER_MANAGE_PAGES.indexOf(page) >= 0) {
@@ -784,10 +799,15 @@
                     orderLinks[o].remove();
                 }
             }
-            var staffManage = nav.querySelector('a[href="staff-manage.html"]');
+            var staffManage = nav.querySelector(
+                'a[href="staff-manage-hub.html"], a[href="staff-manage.html"]'
+            );
             var showStaffManage = canManageStaffAccounts();
             if (staffManage) {
                 if (showStaffManage) {
+                    if (staffManage.getAttribute("href") === "staff-manage.html") {
+                        staffManage.setAttribute("href", "staff-manage-hub.html");
+                    }
                     staffManage.classList.remove("header-nav-link--register-hidden");
                     staffManage.removeAttribute("aria-hidden");
                     staffManage.style.removeProperty("display");
@@ -849,6 +869,7 @@
         fetchVendorOrderContactAsync: fetchVendorOrderContactAsync,
         isNotebookViewport: isNotebookViewport,
         enforceRegisterPages: enforceRegisterPages,
+        trackPageViewIfNeeded: trackPageViewIfNeeded,
         applyNavRegisterVisibility: applyNavRegisterVisibility,
         safeNextPath: safeNextPath
     };

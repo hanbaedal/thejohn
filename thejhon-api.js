@@ -310,10 +310,34 @@
             if (opts.dateFrom) qs.push("dateFrom=" + encodeURIComponent(String(opts.dateFrom)));
             if (opts.dateTo) qs.push("dateTo=" + encodeURIComponent(String(opts.dateTo)));
             if (opts.vendorName) qs.push("vendorName=" + encodeURIComponent(String(opts.vendorName)));
+            if (opts.adminStaffId) qs.push("adminStaffId=" + encodeURIComponent(String(opts.adminStaffId)));
             var q = qs.length ? "?" + qs.join("&") : "";
             return request("GET", "/api/orders" + q).then(function (d) {
                 return d.items || [];
             });
+        },
+        getSupervisorOrderStats: function (opts) {
+            opts = opts || {};
+            var qs = [];
+            if (opts.dateFrom) qs.push("dateFrom=" + encodeURIComponent(String(opts.dateFrom)));
+            if (opts.dateTo) qs.push("dateTo=" + encodeURIComponent(String(opts.dateTo)));
+            if (opts.adminStaffId) qs.push("adminStaffId=" + encodeURIComponent(String(opts.adminStaffId)));
+            var q = qs.length ? "?" + qs.join("&") : "";
+            return request("GET", "/api/supervisor/order-stats" + q);
+        },
+        getSupervisorAccessStats: function (opts) {
+            opts = opts || {};
+            var qs = [];
+            if (opts.dateFrom) qs.push("dateFrom=" + encodeURIComponent(String(opts.dateFrom)));
+            if (opts.dateTo) qs.push("dateTo=" + encodeURIComponent(String(opts.dateTo)));
+            var q = qs.length ? "?" + qs.join("&") : "";
+            return request("GET", "/api/supervisor/access-stats" + q);
+        },
+        getSupervisorDbStats: function () {
+            return request("GET", "/api/supervisor/db-stats");
+        },
+        trackPageView: function (page) {
+            return request("POST", "/api/access/page-view", { page: page });
         },
         getOrder: function (orderId) {
             return request("GET", "/api/orders/" + encodeURIComponent(orderId)).then(function (d) {

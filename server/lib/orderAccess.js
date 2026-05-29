@@ -54,11 +54,23 @@ function vendorOwnsOrder(auth, order) {
     return !!mine && mine === theirs;
 }
 
+function supervisorCanAccessAllOrders(auth) {
+    return !!(auth && auth.role === "supervisor");
+}
+
+function buildSupervisorOrderListQuery(auth, adminStaffId) {
+    if (!supervisorCanAccessAllOrders(auth)) return { id: "__none__" };
+    var reg = normalizeStaffLoginId(adminStaffId);
+    if (reg) return { vendorRegisteredBy: reg };
+    return {};
+}
+
 function staffCanReadOrder(auth, order) {
     if (!order) return false;
     if (auth.role === "vendor") {
         return vendorOwnsOrder(auth, order);
     }
+    if (supervisorCanAccessAllOrders(auth)) return true;
     if (!staffCanAccessOrderManage(auth)) return false;
     return normalizeStaffLoginId(order.vendorRegisteredBy) === getOrderEnabledStaffId();
 }
@@ -68,7 +80,9 @@ module.exports = {
     getOrderEnabledStaffId,
     vendorCanPlaceOrders,
     staffCanAccessOrderManage,
+    supervisorCanAccessAllOrders,
     buildOrderListQuery,
+    buildSupervisorOrderListQuery,
     buildVendorOrderListQuery,
     vendorOwnsOrder,
     staffCanReadOrder,
