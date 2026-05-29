@@ -67,7 +67,8 @@ function pickStaffBody(body) {
         st_instagram: body.st_instagram,
         st_naver_cafe: body.st_naver_cafe,
         st_youtube: body.st_youtube,
-        name: body.name
+        name: body.name,
+        loginEnabled: body.loginEnabled
     };
 }
 
@@ -130,7 +131,8 @@ async function createStaffAccount(body, creatorRole) {
             st_instagram: picked.st_instagram,
             st_naver_cafe: picked.st_naver_cafe,
             st_youtube: picked.st_youtube,
-            role: "admin"
+            role: "admin",
+            loginEnabled: true
         },
         null,
         loginId,
@@ -181,7 +183,11 @@ async function updateStaffAccount(id, body, creatorRole) {
             st_instagram: picked.st_instagram,
             st_naver_cafe: picked.st_naver_cafe,
             st_youtube: picked.st_youtube,
-            role: existing.role || "admin"
+            role: existing.role || "admin",
+            loginEnabled:
+                picked.loginEnabled !== undefined
+                    ? picked.loginEnabled
+                    : existing.loginEnabled !== false
         },
         existing,
         existing.loginId,
@@ -189,6 +195,12 @@ async function updateStaffAccount(id, body, creatorRole) {
     );
     const doc = toDbDoc(existing.id, built, existing);
     await staffCol.replaceOne({ id: staffId }, doc);
+    if (doc.loginEnabled === false) {
+        await staffCol.updateOne(
+            { id: staffId },
+            { $unset: { activeSessionId: "", sessionUpdatedAt: "" } }
+        );
+    }
     return toPublic(doc);
 }
 
@@ -213,7 +225,7 @@ async function deleteStaffAccount(id, creatorRole) {
 
     await staffCol.updateOne(
         { id: staffId },
-        { $set: { active: false, updatedAt: Date.now() } }
+        { $set: { active: false, updatedAt: Date.now() }, $unset: { activeSessionId: "", sessionUpdatedAt: "" } }
     );
     return { id: staffId, deleted: true };
 }

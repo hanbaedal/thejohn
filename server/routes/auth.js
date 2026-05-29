@@ -5,6 +5,13 @@ const { resolveFormLogin, findVendorByLoginId, findStaffByLoginId } = require(".
 const { toPublic, F: VF } = require("../lib/vendorFields");
 const { toPublic: toPublicStaff } = require("../lib/staffFields");
 const { logStaffLogin, logVendorLogin } = require("../lib/accessLog");
+const {
+    assertCanStartLogin,
+    assignLoginSession,
+    verifyAuthSession,
+    clearLoginSession,
+    sessionEnforced
+} = require("../lib/sessionControl");
 
 const router = express.Router();
 
@@ -46,10 +53,28 @@ router.post("/login", async (req, res) => {
             });
         }
 
+        if (isDbReady()) {
+            const sessionGate = await assertCanStartLogin(result.role, result.userId);
+            if (!sessionGate.ok) {
+                const status = sessionGate.code === "ALREADY_LOGGED_IN" ? 409 : 403;
+                return res.status(status).json({
+                    ok: false,
+                    code: sessionGate.code,
+                    error: sessionGate.error
+                });
+            }
+        }
+
         const tokenPayload = { role: result.role, userId: result.userId };
         if (result.vendorGrade) tokenPayload.vendorGrade = result.vendorGrade;
         if (result.vendorRegisteredBy) tokenPayload.vendorRegisteredBy = result.vendorRegisteredBy;
         if (result.vendorOrderEnabled) tokenPayload.vendorOrderEnabled = true;
+
+        if (isDbReady() && sessionEnforced(result.role)) {
+            const sid = await assignLoginSession(result.role, result.userId);
+            if (sid) tokenPayload.sid = sid;
+        }
+
         const token = signToken(tokenPayload);
         try {
             if (!isDbReady()) throw new Error("DB not ready");
@@ -151,13 +176,40 @@ router.get("/staff-profile", requireRole("admin", "supervisor", "vendor"), async
     }
 });
 
-router.get("/session", function (req, res) {
+router.post("/logout", async function (req, res) {
+    try {
+        const token = extractBearer(req);
+        if (token && isDbReady()) {
+            try {
+                const payload = verifyToken(token);
+                await clearLoginSession(payload);
+            } catch (e) {}
+        }
+        return res.json({ ok: true });
+    } catch (e) {
+        console.error("POST /api/auth/logout", e);
+        return res.status(500).json({ ok: false, error: "로그아웃 처리 중 오류가 발생했습니다." });
+    }
+});
+
+router.get("/session", async function (req, res) {
     const token = extractBearer(req);
     if (!token) {
         return res.json({ ok: true, loggedIn: false, error: "토큰 없음" });
     }
     try {
         const payload = verifyToken(token);
+        if (sessionEnforced(payload.role) && isDbReady()) {
+            const valid = await verifyAuthSession(payload);
+            if (!valid) {
+                return res.json({
+                    ok: true,
+                    loggedIn: false,
+                    code: "SESSION_INVALID",
+                    error: "다른 곳에서 로그인되었거나 접속이 종료되었습니다."
+                });
+            }
+        }
         return res.json({
             ok: true,
             loggedIn: true,

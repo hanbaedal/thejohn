@@ -51,6 +51,7 @@
 
     function readForm(form) {
         var fd = new FormData(form);
+        var loginEnabledVal = fd.get("loginEnabled");
         var body = {
             loginId: String(fd.get("loginId") || "").trim(),
             password: String(fd.get("password") || ""),
@@ -70,6 +71,8 @@
             st_naver_cafe: String(fd.get("st_naver_cafe") || "").trim(),
             st_youtube: String(fd.get("st_youtube") || "").trim()
         };
+        if (loginEnabledVal === "true") body.loginEnabled = true;
+        else if (loginEnabledVal === "false") body.loginEnabled = false;
         if (!body.password) delete body.password;
         return body;
     }
@@ -111,6 +114,18 @@
                 ? "이 관리자 계정을 삭제합니다"
                 : "슈퍼바이저·기본 계정은 삭제할 수 없습니다";
         }
+        var loginWrap = document.getElementById("sm-edit-login-enabled-wrap");
+        var loginOn = document.getElementById("sm-edit-login-on");
+        var loginOff = document.getElementById("sm-edit-login-off");
+        if (loginWrap) {
+            var showLoginToggle = st.role === "admin";
+            loginWrap.hidden = !showLoginToggle;
+            if (showLoginToggle && loginOn && loginOff) {
+                var enabled = st.loginEnabled !== false;
+                loginOn.checked = enabled;
+                loginOff.checked = !enabled;
+            }
+        }
     }
 
     function showEditModal() {
@@ -144,7 +159,8 @@
                     var meta = [
                         it.loginId ? "아이디: " + it.loginId : "",
                         it.st_ceo ? "대표: " + it.st_ceo : "",
-                        it.st_biz_no ? "사업자: " + it.st_biz_no : ""
+                        it.st_biz_no ? "사업자: " + it.st_biz_no : "",
+                        it.role === "admin" && it.loginEnabled === false ? "접속: 비활성" : ""
                     ]
                         .filter(Boolean)
                         .join(" · ");
@@ -158,7 +174,11 @@
                         roleClass(it.role) +
                         '">' +
                         escapeHtml(roleLabel(it.role)) +
-                        "</span></span>" +
+                        "</span>" +
+                        (it.role === "admin" && it.loginEnabled === false
+                            ? '<span class="sm-role sm-role--disabled">접속비활성</span>'
+                            : "") +
+                        "</span>" +
                         (meta ? '<span class="sm-list-meta">' + escapeHtml(meta) + "</span>" : "") +
                         "</button></li>"
                     );

@@ -33,6 +33,16 @@
     }
 
     function clearSession() {
+        try {
+            if (
+                global.THEJHON_API &&
+                THEJHON_API.getToken &&
+                THEJHON_API.getToken() &&
+                THEJHON_API.logoutAsync
+            ) {
+                THEJHON_API.logoutAsync().catch(function () {});
+            }
+        } catch (e) {}
         sessionStorage.removeItem(AUTH_KEY);
         sessionStorage.removeItem(USER_ID_KEY);
         sessionStorage.removeItem(ROLE_KEY);
@@ -154,6 +164,21 @@
                     );
                     badPw.code = "BAD_PASSWORD";
                     throw badPw;
+                }
+                if (err && err.data && err.data.code === "ALREADY_LOGGED_IN") {
+                    var dup = new Error(
+                        err.data.error ||
+                            "이미 다른 곳에서 로그인 중입니다. 기존 접속에서 로그아웃한 뒤 다시 시도해 주세요."
+                    );
+                    dup.code = "ALREADY_LOGGED_IN";
+                    throw dup;
+                }
+                if (err && err.data && err.data.code === "LOGIN_DISABLED") {
+                    var disabled = new Error(
+                        err.data.error || "접속이 비활성화된 관리자 계정입니다."
+                    );
+                    disabled.code = "LOGIN_DISABLED";
+                    throw disabled;
                 }
                 if (err && err.message) throw err;
                 throw new Error("로그인에 실패했습니다. 잠시 후 다시 시도해 주세요.");
@@ -709,10 +734,24 @@
         redirectFromProtectedPage(true);
     }
 
-    /** 로그아웃 — 세션 삭제 후 홈으로 (관리 페이지에서 reload 시 권한 알림이 뜨지 않음) */
+    /** 로그아웃 — 서버 세션 해제 후 홈으로 */
     function logout() {
         clearSession();
         window.location.replace("index.html");
+    }
+
+    var sessionInvalidHandled = false;
+    function handleSessionInvalid(data) {
+        if (sessionInvalidHandled) return;
+        sessionInvalidHandled = true;
+        clearSession();
+        var msg =
+            (data && data.error) ||
+            "다른 곳에서 로그인되었거나 접속이 종료되었습니다. 다시 로그인해 주세요.";
+        if (currentPageFile() !== "login.html" && currentPageFile() !== "index.html") {
+            alert(msg);
+            window.location.replace("login.html?next=" + encodeURIComponent(location.pathname + location.search));
+        }
     }
 
     function getRegisterAccess() {
@@ -827,6 +866,7 @@
         setOAuthSession: setOAuthSession,
         clearSession: clearSession,
         logout: logout,
+        handleSessionInvalid: handleSessionInvalid,
         normalizeLegacySession: normalizeLegacySession,
         isLoggedIn: isLoggedIn,
         getRole: getRole,

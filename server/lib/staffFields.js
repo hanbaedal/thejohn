@@ -125,6 +125,7 @@ function toPublic(doc) {
         st_youtube: str(d[F.youtube]),
         role: d.role || "admin",
         active: d.active !== false,
+        loginEnabled: d.loginEnabled !== false,
         updatedAt: d.updatedAt || 0
     };
 }
@@ -164,7 +165,17 @@ function buildFromBody(body, existing, loginId, password) {
         st_instagram: str(body.st_instagram != null ? body.st_instagram : prev[F.instagram]),
         st_naver_cafe: str(body.st_naver_cafe != null ? body.st_naver_cafe : prev[F.naverCafe]),
         st_youtube: str(body.st_youtube != null ? body.st_youtube : prev[F.youtube]),
-        role: body.role || prev.role || "admin"
+        role: body.role || prev.role || "admin",
+        loginEnabled:
+            body.loginEnabled === false || body.loginEnabled === "false" || body.loginEnabled === 0
+                ? false
+                : body.loginEnabled === true ||
+                    body.loginEnabled === "true" ||
+                    body.loginEnabled === 1
+                  ? true
+                  : existing
+                    ? existing.loginEnabled !== false
+                    : true
     };
 }
 
@@ -189,11 +200,16 @@ function toDbDoc(id, built, existing) {
         [F.naverCafe]: built.st_naver_cafe,
         [F.youtube]: built.st_youtube,
         role: built.role,
-        active: true,
+        active: existing?.active !== false,
+        loginEnabled: built.loginEnabled !== false,
         updatedAt: Date.now()
     };
     if (existing?.createdAt) doc.createdAt = existing.createdAt;
     else doc.createdAt = Date.now();
+    if (built.loginEnabled !== false && existing?.activeSessionId) {
+        doc.activeSessionId = existing.activeSessionId;
+        if (existing.sessionUpdatedAt) doc.sessionUpdatedAt = existing.sessionUpdatedAt;
+    }
     if (existing) {
         if (existing.passwordHash) doc.passwordHash = existing.passwordHash;
         if (existing.password) doc.password = existing.password;

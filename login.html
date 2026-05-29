@@ -158,6 +158,17 @@
                             );
                             return;
                         }
+                        if (err && err.code === "ALREADY_LOGGED_IN") {
+                            alert(
+                                err.message ||
+                                    "이미 다른 곳에서 로그인 중입니다. 기존 접속에서 로그아웃한 뒤 다시 시도해 주세요."
+                            );
+                            return;
+                        }
+                        if (err && err.code === "LOGIN_DISABLED") {
+                            alert(err.message || "접속이 비활성화된 관리자 계정입니다.");
+                            return;
+                        }
                         alert(
                             (err && err.message) ||
                                 "아이디 또는 비밀번호가 올바르지 않습니다. 업체등록 시 입력한 비밀번호(8~16자)를 확인해 주세요."

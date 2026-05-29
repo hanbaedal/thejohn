@@ -197,3 +197,26 @@
     font-weight: 600;
     color: #1a4a6e;
 }
+.sm-login-enabled {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem 1.25rem;
+    margin-top: 0.35rem;
+}
+.sm-radio {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    font-size: 0.9rem;
+    color: #2a4a5e;
+    cursor: pointer;
+}
+.sm-field-hint {
+    margin: 0.45rem 0 0;
+    font-size: 0.8rem;
+    color: #5a6d7e;
+}
+.sm-role--disabled {
+    background: #f3e8e8;
+    color: #8b3a3a;
+}

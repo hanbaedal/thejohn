@@ -68,6 +68,15 @@
         return fetch(apiUrl(path), opts).then(function (res) {
             return parseJson(res).then(function (data) {
                 if (!res.ok || (data && data.ok === false)) {
+                    if (
+                        res.status === 401 &&
+                        data &&
+                        data.code === "SESSION_INVALID" &&
+                        global.THEJHON_AUTH &&
+                        THEJHON_AUTH.handleSessionInvalid
+                    ) {
+                        THEJHON_AUTH.handleSessionInvalid(data);
+                    }
                     var msg = (data && data.error) || "요청에 실패했습니다.";
                     if (data && data.hint) msg += "\n\n" + data.hint;
                     var err = new Error(msg);
@@ -282,6 +291,9 @@
         },
         login: function (loginId, password) {
             return request("POST", "/api/auth/login", { loginId: loginId, password: password });
+        },
+        logoutAsync: function () {
+            return request("POST", "/api/auth/logout", {});
         },
         checkSession: function () {
             return request("GET", "/api/auth/session");
