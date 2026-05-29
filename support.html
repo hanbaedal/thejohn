@@ -95,14 +95,6 @@
                     <h2>문의사항</h2>
                 </span>
             </a>
-            <a href="support-inquiry-reply.html" id="support-hub-inquiry-reply" class="company-division-card company-division-card--icon" hidden>
-                <span class="support-hub-card-row">
-                    <span class="support-hub-card-icon" aria-hidden="true">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11 4 6l5-5"/><path d="M4 6h10a6 6 0 0 1 6 6v7"/><path d="M20 13v6a2 2 0 0 1-2 2H6l-3 3 3-3h9"/></svg>
-                    </span>
-                    <h2>문의사항 답변</h2>
-                </span>
-            </a>
         </div>
     </main>
         <footer class="site-footer">
@@ -141,7 +133,6 @@
             syncAuthUi();
             function syncSupportHubAdminCards() {
                 var hubNews = document.getElementById("support-hub-news-admin");
-                var hubInq = document.getElementById("support-hub-inquiry-reply");
                 var admin =
                     window.THEJHON_AUTH &&
                     THEJHON_AUTH.canManageRegisters &&
@@ -149,10 +140,6 @@
                 if (hubNews) {
                     hubNews.hidden = !admin;
                     hubNews.setAttribute("aria-hidden", admin ? "false" : "true");
-                }
-                if (hubInq) {
-                    hubInq.hidden = !admin;
-                    hubInq.setAttribute("aria-hidden", admin ? "false" : "true");
                 }
             }
             syncSupportHubAdminCards();

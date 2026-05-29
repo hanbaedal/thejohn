@@ -50,11 +50,22 @@
     <main class="page-main">
         <p class="company-branch-back"><a href="support.html">← 고객센터</a></p>
         <h1>문의사항</h1>
-        <p class="sp-lead">업체·SNS 로그인 회원은 문의를 남길 수 있고, 관리자가 답변합니다. 관리자로 로그인하면 전체 문의를 보고 답변·삭제할 수 있습니다.</p>
+        <p class="sp-lead">누구나 문의를 남길 수 있습니다. 비밀번호(6자리)를 설정하면 문의·답변을 작성자와 관리자만 볼 수 있습니다. 비밀번호 없이 작성하면 누구나 열람할 수 있습니다.</p>
         <p id="si-status" class="sp-status" role="status" aria-live="polite"></p>
-        <p id="si-hint-notlogin" class="sp-hint" hidden>문의를 보내거나 내역을 보려면 <a href="login.html?next=support-inquiry.html">로그인</a>해 주세요.</p>
-        <section id="si-user-panel" class="sp-panel" hidden>
-            <h2 class="sp-subheading">문의 작성</h2>
+        <div class="sq-list-wrap">
+            <div class="sq-list-toolbar">
+                <span class="sq-list-toolbar__label">문의사항</span>
+                <button type="button" id="si-write-btn" class="sp-btn sp-btn--primary">글쓰기</button>
+            </div>
+            <ul id="si-list" class="sq-board-list" aria-live="polite"></ul>
+        </div>
+    </main>
+    <div id="si-write-modal" class="sq-modal" hidden role="dialog" aria-modal="true" aria-labelledby="si-write-modal-title">
+        <div class="sq-modal__panel">
+            <div class="sq-modal__head">
+                <h2 id="si-write-modal-title" class="sq-modal__title">문의 작성</h2>
+                <button type="button" class="sq-modal__close" id="si-write-close" aria-label="닫기">×</button>
+            </div>
             <form id="si-new-form" class="sp-form" novalidate>
                 <div class="sp-field">
                     <label for="si-subject">제목</label>
@@ -62,25 +73,53 @@
                 </div>
                 <div class="sp-field">
                     <label for="si-body">내용</label>
-                    <textarea id="si-body" required maxlength="8000" rows="6"></textarea>
+                    <textarea id="si-body" required maxlength="8000" rows="8"></textarea>
+                </div>
+                <div class="sp-field">
+                    <label for="si-password">비밀번호 (선택, 6자리)</label>
+                    <input type="password" id="si-password" maxlength="6" inputmode="numeric" pattern="[0-9]*" autocomplete="new-password" placeholder="숫자 6자리 — 비밀글">
+                    <p class="si-field-hint">입력하지 않으면 누구나 볼 수 있습니다. 입력하면 문의·답변 모두 비밀글입니다.</p>
                 </div>
                 <div class="sp-actions">
                     <button type="submit" class="sp-btn sp-btn--primary">문의 보내기</button>
+                    <button type="button" class="sp-btn sp-btn--secondary" id="si-write-cancel">취소</button>
                 </div>
             </form>
-            <h2 class="sp-subheading" style="margin-top: 1.25rem">내 문의</h2>
-            <div id="si-my-list"></div>
-        </section>
-        <section id="si-admin-panel" class="sp-panel" hidden>
-            <h2 class="sp-subheading">전체 문의 · 답변 (관리자)</h2>
-            <div id="si-admin-list"></div>
-        </section>
-    </main>
-        <footer class="site-footer">
+        </div>
+    </div>
+    <div id="si-pwd-modal" class="sq-modal" hidden role="dialog" aria-modal="true" aria-labelledby="si-pwd-modal-title">
+        <div class="sq-modal__panel">
+            <div class="sq-modal__head">
+                <h2 id="si-pwd-modal-title" class="sq-modal__title">비밀글 확인</h2>
+                <button type="button" class="sq-modal__close" id="si-pwd-close" aria-label="닫기">×</button>
+            </div>
+            <form id="si-pwd-form" class="sp-form" novalidate>
+                <p class="si-field-hint">비밀번호 6자리를 입력해 주세요.</p>
+                <div class="sp-field">
+                    <label for="si-pwd-input">비밀번호</label>
+                    <input type="password" id="si-pwd-input" maxlength="6" inputmode="numeric" required autocomplete="off">
+                </div>
+                <div class="sp-actions">
+                    <button type="submit" class="sp-btn sp-btn--primary">확인</button>
+                    <button type="button" class="sp-btn sp-btn--secondary" id="si-pwd-cancel">취소</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    <div id="si-view-modal" class="sq-modal" hidden role="dialog" aria-modal="true" aria-labelledby="si-view-title">
+        <div class="sq-modal__panel sq-modal__panel--view">
+            <div class="sq-modal__head">
+                <h2 id="si-view-title" class="sq-modal__title">문의사항</h2>
+                <button type="button" class="sq-modal__close" id="si-view-close" aria-label="닫기">×</button>
+            </div>
+            <div id="si-view-body"></div>
+        </div>
+    </div>
+    <footer class="site-footer">
         <div class="site-footer-inner">
             <dl class="site-footer-grid" id="siteFooterCompanyGrid" aria-live="polite"></dl>
             <p class="site-footer-company-msg" id="siteFooterCompanyMsg" hidden></p>
-</div>
+        </div>
     </footer>
     <script>
         (function () {

@@ -2,101 +2,11 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="icon" href="img/icon-192.png" sizes="192x192" type="image/png">
-
-    <link rel="manifest" href="manifest.json">
-    <meta name="theme-color" content="#0a4d9c">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-title" content="더존">
-    <link rel="apple-touch-icon" sizes="192x192" href="img/icon-192.png">
-
-    <title>문의사항 답변 — 고객센터 — 더존</title>
-    <link rel="stylesheet" href="common.css">
-    <link rel="stylesheet" href="support-pages.css">
-    <script src="api-config.js"></script>
-    <script src="thejhon-api.js"></script>
-    <script src="auth.js"></script>
-    <script src="admin-header.js"></script>
-    <script src="support-common.js" defer></script>
-    <script src="nav.js" defer></script>
-    <script src="support-inquiry-reply.js" defer></script>
+    <meta http-equiv="refresh" content="0;url=support-inquiry.html">
+    <script>window.location.replace("support-inquiry.html");</script>
+    <title>문의사항 — 고객센터 — 더존</title>
 </head>
 <body>
-    <script>
-        (function () {
-            var A = window.THEJHON_AUTH;
-            if (!A || !A.canManageRegisters || !A.canManageRegisters()) {
-                window.location.replace("support.html");
-            }
-        })();
-    </script>
-    <header class="site-header">
-        <div class="site-header-start">
-            <a href="index.html" class="dz-logo dz-logo--compact" aria-label="더존 홈"><img src="img/logo.png" alt="" width="72" height="72" class="dz-logo-img"></a>
-            <nav class="site-header-nav" aria-label="주요 메뉴">
-                <a href="company.html" class="header-nav-link">회사소개</a>
-                <a href="products.html" class="header-nav-link">사업부문</a>
-                <a href="product-register.html" class="header-nav-link">상품등록</a>
-                <a href="vendor-register.html" class="header-nav-link">업체등록</a>
-                <div class="nav-dropdown" data-nav-dropdown="support">
-                    <a href="support.html" class="header-nav-link nav-dropdown-trigger is-current" aria-haspopup="true" aria-expanded="false" aria-controls="supportSubmenu">고객센터</a>
-                    <div id="supportSubmenu" class="nav-dropdown-panel" role="menu" aria-label="고객센터 하위 메뉴">
-                        <a href="support-partners.html" class="nav-dropdown-item" role="menuitem">파트너회사 소개</a>
-                        <a href="support-library.html" class="nav-dropdown-item" role="menuitem">최근소식</a>
-                        <a href="support-qna.html" class="nav-dropdown-item" role="menuitem">자유게시판</a>
-                        <a href="support-inquiry.html" class="nav-dropdown-item" role="menuitem">문의사항</a>
-                    </div>
-                </div>
-            </nav>
-        </div>
-        <nav class="site-header-actions" aria-label="계정">
-            <time class="header-date" id="headerToday" datetime=""></time>
-            <button type="button" class="btn btn-auth-icon btn-logout" id="btnLogout" hidden aria-label="로그아웃" title="로그아웃"></button>
-        </nav>
-    </header>
-    <main class="page-main">
-        <p class="company-branch-back"><a href="support.html">← 고객센터</a></p>
-        <h1>문의사항 답변</h1>
-        <p class="sp-lead">접수된 문의를 확인하고 답변을 등록합니다. 일반 문의사항 페이지와 동일한 데이터를 사용합니다.</p>
-        <p id="sir-status" class="sp-status" role="status" aria-live="polite"></p>
-        <div id="sir-admin-list" class="sp-list" aria-live="polite"></div>
-    </main>
-        <footer class="site-footer">
-        <div class="site-footer-inner">
-            <dl class="site-footer-grid" id="siteFooterCompanyGrid" aria-live="polite"></dl>
-            <p class="site-footer-company-msg" id="siteFooterCompanyMsg" hidden></p>
-</div>
-    </footer>
-    <script>
-        (function () {
-            var todayEl = document.getElementById("headerToday");
-            if (todayEl) {
-                var now = new Date();
-                var y = now.getFullYear();
-                var m = String(now.getMonth() + 1).padStart(2, "0");
-                var d = String(now.getDate()).padStart(2, "0");
-                todayEl.dateTime = y + "-" + m + "-" + d;
-                todayEl.textContent = now.toLocaleDateString("ko-KR", {
-                    year: "numeric",
-                    month: "long",
-                    day: "numeric",
-                    weekday: "long"
-                });
-            }
-            var logoutBtn = document.getElementById("btnLogout");
-            function syncAuthUi() {
-                var loggedIn = window.THEJHON_AUTH && THEJHON_AUTH.isLoggedIn();
-                if (logoutBtn) logoutBtn.hidden = !loggedIn;
-            }
-            if (logoutBtn) {
-                logoutBtn.addEventListener("click", function () {
-                    if (window.THEJHON_AUTH) THEJHON_AUTH.clearSession();
-                    location.reload();
-                });
-            }
-            syncAuthUi();
-        })();
-    </script>
+    <p><a href="support-inquiry.html">문의사항 페이지로 이동</a></p>
 </body>
 </html>

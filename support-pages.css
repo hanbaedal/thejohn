@@ -322,6 +322,34 @@
     border-top: 1px solid #e8edf2;
 }
 
+/* 문의사항 */
+.si-field-hint {
+    margin: 0.25rem 0 0;
+    font-size: 0.75rem;
+    color: #5a6b7d;
+    line-height: 1.45;
+}
+.si-lock-label {
+    color: #8a5a00;
+    font-weight: 600;
+}
+.si-reply-block {
+    margin-top: 1rem;
+    padding-top: 0.75rem;
+    border-top: 1px solid #e8edf2;
+}
+.si-reply-block__title {
+    margin: 0 0 0.45rem;
+    font-size: 0.88rem;
+    font-weight: 800;
+    color: #052a4d;
+}
+.si-admin-reply {
+    margin-top: 1rem;
+    padding-top: 0.75rem;
+    border-top: 1px dashed #d4e0ed;
+}
+
 /* 최근소식 — 사업부문·사진·목록 */
 .sn-dept-input {
     cursor: pointer;

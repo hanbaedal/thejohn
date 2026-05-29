@@ -616,11 +616,9 @@
         var seg = pageSegment();
 
         var newsEl = document.getElementById("nav-support-news-admin");
-        var inqEl = document.getElementById("nav-support-inquiry-reply");
 
         if (!admin) {
             if (newsEl) newsEl.remove();
-            if (inqEl) inqEl.remove();
             return;
         }
 
@@ -639,31 +637,14 @@
             panel.insertBefore(newsEl, panel.firstChild);
         }
 
-        if (!inqEl) {
-            inqEl = document.createElement("a");
-            inqEl.id = "nav-support-inquiry-reply";
-            inqEl.href = "support-inquiry-reply.html";
-            inqEl.className = "nav-dropdown-item";
-            inqEl.setAttribute("role", "menuitem");
-            inqEl.textContent = "문의사항 답변";
-            panel.appendChild(inqEl);
-        }
-
         if (seg === "support-news-admin.html") {
             var items = panel.querySelectorAll(".nav-dropdown-item");
             for (var i = 0; i < items.length; i++) {
                 items[i].classList.remove("is-current");
             }
             newsEl.classList.add("is-current");
-        } else if (seg === "support-inquiry-reply.html") {
-            var items2 = panel.querySelectorAll(".nav-dropdown-item");
-            for (var j = 0; j < items2.length; j++) {
-                items2[j].classList.remove("is-current");
-            }
-            inqEl.classList.add("is-current");
         } else {
             newsEl.classList.remove("is-current");
-            inqEl.classList.remove("is-current");
         }
     })();
 

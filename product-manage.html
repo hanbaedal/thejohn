@@ -92,7 +92,6 @@
             syncAuthUi();
             function syncSupportHubAdminCards() {
                 var hubNews = document.getElementById("support-hub-news-admin");
-                var hubInq = document.getElementById("support-hub-inquiry-reply");
                 var admin =
                     window.THEJHON_AUTH &&
                     THEJHON_AUTH.canManageRegisters &&
@@ -100,10 +99,6 @@
                 if (hubNews) {
                     hubNews.hidden = !admin;
                     hubNews.setAttribute("aria-hidden", admin ? "false" : "true");
-                }
-                if (hubInq) {
-                    hubInq.hidden = !admin;
-                    hubInq.setAttribute("aria-hidden", admin ? "false" : "true");
                 }
             }
             syncSupportHubAdminCards();
