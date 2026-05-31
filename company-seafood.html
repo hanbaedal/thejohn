@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
@@ -75,12 +75,6 @@
             function syncAuthUi() {
                 var loggedIn = window.THEJHON_AUTH && THEJHON_AUTH.isLoggedIn();
                 if (logoutBtn) logoutBtn.hidden = !loggedIn;
-            }
-            if (logoutBtn) {
-                logoutBtn.addEventListener("click", function () {
-                    if (window.THEJHON_AUTH) THEJHON_AUTH.clearSession();
-                    location.reload();
-                });
             }
             syncAuthUi();
         })();

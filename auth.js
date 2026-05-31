@@ -1,18 +1,12 @@
 /**
  * 세션 + /api/auth/login (MongoDB staff · vendors)
  *
- * 로그인·권한 정책 (deploy/LOGIN-PERMISSIONS.md)
- * 0. 슈퍼바이저 — 모든 기능(관리자 관리 포함)
- * 1. 관리자 — 「관리자 관리」 제외 전부
- * 2. 관리자 목록 「주문」 ON → 해당 관리자 등록 업체 주문 전 기능
- * 3. 새 탭·같은 아이디 재로그인 허용 (동시 접속 차단 없음)
- * 4. 기기·브라우저 간 서버 세션 독립
- * 5. 업체 아이디 다중 기기 동시 로그인 제한 없음
- *
- * 표시·가격
- * - 관리자·슈퍼바이저: 상품·업체 관리 메뉴, 사업부문·상세는 가격1
- * - 업체: 담당 관리자 상품 등급가, 타 관리자 상품은 가격1
- * - 미로그인: 관리 메뉴 숨김, 가격 비표시
+ * 로그인·권한 정책
+ * - 로그아웃 → login.html
+ * - 슈퍼바이저: 관리자(staff) 생성 · 전체 기능
+ * - 관리자: 업체(vendors) 생성 · 주문 권한(st_order_enabled)은 슈퍼바이저 부여
+ * - 업체: 담당 관리자 상품 등급가, 타 관리자 상품은 가격1 · 주문은 담당 관리자+주문권한 있을 때
+ * - 게스트(미로그인): 상품 내용만, 가격 비표시
  */
 (function (global) {
     var AUTH_KEY = "thejhon_logged_in";
@@ -1028,10 +1022,10 @@
         redirectFromProtectedPage(true);
     }
 
-    /** 로그아웃 — 서버 세션 해제 후 홈으로 */
+    /** 로그아웃 — 서버 세션 해제 후 로그인 페이지로 */
     function logout() {
         clearSession();
-        window.location.replace("index.html");
+        window.location.replace("login.html");
     }
 
     var sessionInvalidHandled = false;

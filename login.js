@@ -24,12 +24,20 @@
         });
     }
 
-    function initLogout() {
-        var logoutBtn = $("btnLogout");
-        if (!logoutBtn) return;
-        logoutBtn.addEventListener("click", function () {
-            if (global.THEJHON_AUTH) THEJHON_AUTH.clearSession();
-            global.location.reload();
+    function initGuest() {
+        var guestBtn = document.querySelector(".login-guest");
+        if (!guestBtn) return;
+        guestBtn.addEventListener("click", function (e) {
+            e.preventDefault();
+            if (global.THEJHON_AUTH && THEJHON_AUTH.clearSession) {
+                THEJHON_AUTH.clearSession();
+            }
+            var Auth = global.THEJHON_AUTH;
+            var next =
+                Auth && Auth.safeNextPath
+                    ? Auth.safeNextPath(params.get("next"))
+                    : "index.html";
+            global.location.href = next || "index.html";
         });
     }
 
@@ -184,7 +192,7 @@
 
     function boot() {
         initHeaderDate();
-        initLogout();
+        initGuest();
         initLoginForm();
     }
 

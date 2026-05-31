@@ -211,12 +211,6 @@
                 var loggedIn = window.THEJHON_AUTH && THEJHON_AUTH.isLoggedIn();
                 if (logoutBtn) logoutBtn.hidden = !loggedIn;
             }
-            if (logoutBtn) {
-                logoutBtn.addEventListener("click", function () {
-                    if (window.THEJHON_AUTH) THEJHON_AUTH.clearSession();
-                    location.reload();
-                });
-            }
             function syncHomeHeroTitle() {
                 var el = document.getElementById("homeHeroTitle");
                 if (!el || !window.THEJHON_AUTH) return;

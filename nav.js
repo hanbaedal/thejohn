@@ -325,6 +325,17 @@
         if (loginBtn) loginBtn.remove();
         var logoutBtn = document.getElementById("btnLogout");
         if (logoutBtn) applyAuthIconButton(logoutBtn, "logout");
+        if (logoutBtn && logoutBtn.dataset.logoutBound !== "1") {
+            logoutBtn.dataset.logoutBound = "1";
+            logoutBtn.addEventListener("click", function () {
+                if (window.THEJHON_AUTH && THEJHON_AUTH.logout) {
+                    THEJHON_AUTH.logout();
+                } else if (window.THEJHON_AUTH && THEJHON_AUTH.clearSession) {
+                    THEJHON_AUTH.clearSession();
+                    window.location.replace("login.html");
+                }
+            });
+        }
         function sync() {
             var loggedIn = window.THEJHON_AUTH && THEJHON_AUTH.isLoggedIn();
             if (logoutBtn) logoutBtn.hidden = !loggedIn;
