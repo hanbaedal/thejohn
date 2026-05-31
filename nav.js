@@ -94,10 +94,19 @@
             if (poster.indexOf("logo.png") >= 0) {
                 video.removeAttribute("poster");
             }
+            document.documentElement.classList.add("site-brand-video-ready");
         }
         document.documentElement.classList.remove("site-brand-pending", "site-brand-custom");
         if (window.__THEJHON_BRAND_BOOT && window.__THEJHON_BRAND_BOOT.clearPending) {
             window.__THEJHON_BRAND_BOOT.clearPending();
+        }
+    }
+
+    function markSiteBrandLogoReady() {
+        document.documentElement.classList.add("site-brand-has-logo", "site-brand-video-ready");
+        document.documentElement.classList.remove("site-brand-pending");
+        if (window.__THEJHON_BRAND_BOOT && window.__THEJHON_BRAND_BOOT.markBrandHasLogo) {
+            window.__THEJHON_BRAND_BOOT.markBrandHasLogo();
         }
     }
 
@@ -113,6 +122,12 @@
             links[j].setAttribute("aria-label", "더존 홈");
         }
         clearSiteBrandPending();
+        document.documentElement.classList.remove(
+            "site-brand-active",
+            "site-brand-has-logo",
+            "site-brand-hero-ready",
+            "site-brand-video-ready"
+        );
         applyHomeHeroCompany("");
     }
 
@@ -126,6 +141,7 @@
         var defaultText = el.dataset.heroDefault;
         var name = String(companyName || "").trim();
         el.textContent = name ? defaultText.replace(/더존/g, name) : defaultText;
+        if (name) document.documentElement.classList.add("site-brand-hero-ready");
         scheduleFitHomeHeroTitle();
     }
 
@@ -251,6 +267,7 @@
                     links[j].setAttribute("aria-label", label);
                 }
                 clearSiteBrandPending();
+                markSiteBrandLogoReady();
             } else {
                 applySiteBrandDefaults();
             }

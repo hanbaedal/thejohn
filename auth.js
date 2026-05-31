@@ -125,14 +125,12 @@
         return r === "admin" || r === "supervisor" || r === "vendor";
     }
 
-    function cacheStaffLogo(logo, companyName) {
+    function cacheStaffLogo(logo, brandCompanyName) {
         var src = String(logo || "").trim();
-        if (src) {
-            authSet(STAFF_LOGO_KEY, src);
-            if (companyName) authSet(COMPANY_KEY, String(companyName).trim());
-        } else {
-            authRemove(STAFF_LOGO_KEY);
-        }
+        if (src) authSet(STAFF_LOGO_KEY, src);
+        else authRemove(STAFF_LOGO_KEY);
+        var brand = String(brandCompanyName || "").trim();
+        if (brand && usesStaffLogoRole()) authSet(BRAND_COMPANY_KEY, brand);
     }
 
     function getCachedStaffLogo() {
@@ -166,9 +164,19 @@
             clearSession();
             return;
         }
-        if (isStaffRole(role) || role === "vendor") {
+        if (role === "vendor") {
+            var brand = String(authGet(BRAND_COMPANY_KEY) || "").trim();
+            if (brand) authSet(DISPLAY_KEY, brand);
+            else {
+                var vendorCo = authGet(COMPANY_KEY);
+                if (vendorCo) authSet(DISPLAY_KEY, vendorCo);
+            }
+        } else if (isStaffRole(role)) {
             var company = authGet(COMPANY_KEY);
-            if (company) authSet(DISPLAY_KEY, company);
+            if (company) {
+                authSet(DISPLAY_KEY, company);
+                if (!authGet(BRAND_COMPANY_KEY)) authSet(BRAND_COMPANY_KEY, company);
+            }
         } else if (role === "admin" && !authGet(DISPLAY_KEY)) {
             authSet(DISPLAY_KEY, authGet(USER_ID_KEY) || "");
         }
@@ -229,8 +237,16 @@
         if (!st || !isLoggedIn()) return;
         var company = String(st.st_company || "").trim();
         var logo = String(st.st_logo || "").trim();
-        if (company) authSet(BRAND_COMPANY_KEY, company);
-        if (usesStaffLogoRole(getRole())) {
+        var role = getRole();
+        if (company) {
+            authSet(BRAND_COMPANY_KEY, company);
+            if (role === "vendor") authSet(DISPLAY_KEY, company);
+            else if (isStaffRole(role)) {
+                authSet(COMPANY_KEY, company);
+                authSet(DISPLAY_KEY, company);
+            }
+        }
+        if (usesStaffLogoRole(role)) {
             cacheStaffLogo(logo, company || getBrandCompanyDisplayName());
         }
         if (typeof global.__thejhonApplyHomeHeroCompany === "function") {
@@ -242,6 +258,11 @@
             try {
                 global.__thejhonRefreshHeaderCompany();
             } catch (e2) {}
+        }
+        if (typeof global.__thejhonApplySiteLogo === "function") {
+            try {
+                global.__thejhonApplySiteLogo(logo, company || getBrandCompanyDisplayName());
+            } catch (e3) {}
         }
     }
 
@@ -596,6 +617,33 @@
             });
     }
 
+    function refreshBrandFromStaffProfileAsync() {
+        if (!isLoggedIn() || !usesStaffLogoRole()) return Promise.resolve(null);
+        if (!global.THEJHON_API || !THEJHON_API.getStaffProfile) return Promise.resolve(null);
+        if (!THEJHON_API.getToken || !THEJHON_API.getToken()) return Promise.resolve(null);
+        return THEJHON_API.getStaffProfile()
+            .then(function (data) {
+                if (data && data.item) updateBrandFromStaffProfile(data.item);
+                return data;
+            })
+            .catch(function () {
+                return null;
+            });
+    }
+
+    (function bootBrandProfileRefresh() {
+        if (typeof document === "undefined") return;
+        function run() {
+            refreshBrandFromStaffProfileAsync();
+        }
+        if (document.readyState === "loading") {
+            document.addEventListener("DOMContentLoaded", run);
+        } else {
+            run();
+        }
+        window.addEventListener("pageshow", run);
+    })();
+
     (function bootSessionPermissionRefresh() {
         if (typeof document === "undefined") return;
         function run() {
@@ -892,10 +940,7 @@
 
     function getLoggedInCompanyDisplayName() {
         if (!isLoggedIn()) return "";
-        var brand = getBrandCompanyDisplayName();
-        if (brand) return brand;
-        var role = getRole();
-        if (role === "vendor") return getVendorCompanyName() || getUserId();
+        if (usesStaffLogoRole()) return getBrandCompanyDisplayName();
         return authGet(DISPLAY_KEY) || "";
     }
 
