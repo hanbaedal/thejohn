@@ -33,18 +33,9 @@ function resolveLoginIdForLookup(loginId) {
 /** staff 컬렉션 — loginId로 1건 조회 */
 async function findStaffByLoginId(loginId) {
     const resolved = resolveLoginIdForLookup(loginId);
-    const idn = normalizeId(resolved);
-    const clauses = [];
     const lf = loginLookupFilter(resolved);
-    if (lf.$or) clauses.push.apply(clauses, lf.$or);
-    else clauses.push(lf);
-    if (idn === "thejohn") clauses.push({ id: "st_admin_thejohn" });
-    if (idn === "aksangsa") clauses.push({ id: "st_admin_aksangsa" });
-    if (idn === "hanbaedal") clauses.push({ id: "st_supervisor_hanbaedal" });
-
-    return getDb()
-        .collection("staff")
-        .findOne({ active: { $ne: false }, $or: clauses });
+    if (lf.$or) return getDb().collection("staff").findOne({ active: { $ne: false }, $or: lf.$or });
+    return getDb().collection("staff").findOne({ active: { $ne: false }, ...lf });
 }
 
 /** vendors 컬렉션 — loginId로 1건 조회 (loginIdNorm·대소문자 혼용 지원) */

@@ -266,10 +266,18 @@ function legacyStaffUnset() {
     };
 }
 
-/** 같은 loginId를 쓰는 옛 문서 제거 (고유 인덱스 충돌 방지) */
+/** 같은 loginId를 쓰는 옛 문서 제거 (고유 인덱스 충돌 방지) — 시드 계정의 현재 loginId 기준 */
 async function removeStaffLoginIdConflicts(col, seed) {
-    const loginIds = [seed.loginId];
-    if (seed.loginId === "thejohn") loginIds.push("thejhon");
+    const existing = await col.findOne({ id: seed.id });
+    const canonicalLoginId =
+        existing && str(existing.loginId) ? str(existing.loginId) : str(seed.loginId);
+    if (!canonicalLoginId) return;
+
+    const loginIds = [canonicalLoginId];
+    const idn = normalizeStaffLoginId(canonicalLoginId);
+    if (idn === "thejohn" || idn === "thejhon") {
+        loginIds.push("thejohn", "thejhon");
+    }
 
     await col.deleteMany({
         loginId: { $in: loginIds },
@@ -360,11 +368,6 @@ async function ensureDefaultStaffSeeds(db) {
         await col.insertOne(doc);
         console.log("[staff] seed created:", doc.loginId, doc.role, doc.id);
     }
-
-    await col.deleteMany({
-        loginId: { $in: ["thejohn", "thejhon", "aksangsa", "hanbaedal"] },
-        id: { $nin: DEFAULT_STAFF_IDS }
-    });
 }
 
 async function migrateStaffCollection(db) {
@@ -425,11 +428,19 @@ async function findExpectedStaffInDb(db) {
     const col = db.collection("staff");
     return col
         .find({
-            $or: [{ id: { $in: DEFAULT_STAFF_IDS } }, { loginId: { $in: EXPECTED_STAFF_LOGIN_IDS } }],
+            id: { $in: DEFAULT_STAFF_IDS },
             active: { $ne: false }
         })
         .project({ id: 1, loginId: 1, role: 1, st_company: 1, _id: 0 })
         .toArray();
+}
+
+function staffSeedAccountsOk(docs) {
+    return DEFAULT_STAFF_IDS.every(function (sid) {
+        return (docs || []).some(function (d) {
+            return d.id === sid;
+        });
+    });
 }
 
 module.exports = {
@@ -446,6 +457,7 @@ module.exports = {
     ensureDefaultStaffSeeds,
     migrateStaffCollection,
     findExpectedStaffInDb,
+    staffSeedAccountsOk,
     legacyStaffUnset,
     normalizeStaffLoginId,
     staffOrderEnabledFromDoc,

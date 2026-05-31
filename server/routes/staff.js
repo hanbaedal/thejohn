@@ -1,6 +1,6 @@
 const express = require("express");
 const { requireRole } = require("../middleware/auth");
-const { createStaffAccount, updateStaffAccount, deleteStaffAccount, findStaffById } = require("../lib/staff");
+const { createStaffAccount, updateStaffAccount, deleteStaffAccount, findStaffById, checkStaffLoginId } = require("../lib/staff");
 const { getDb } = require("../db");
 const { sensitiveLoginProjection } = require("../lib/loginAccount");
 const { toPublic } = require("../lib/staffFields");
@@ -35,6 +35,22 @@ router.get("/", requireRole("supervisor", "admin"), async (req, res) => {
     }
 });
 
+/** 슈퍼바이저 — 관리자 아이디 중복 검사 */
+router.get("/check-login-id", requireRole("supervisor"), async (req, res) => {
+    try {
+        const loginId = String(req.query.loginId || "").trim();
+        const excludeId = req.query.excludeId ? String(req.query.excludeId) : "";
+        if (!loginId) {
+            return res.json({ ok: true, duplicate: false });
+        }
+        const result = await checkStaffLoginId(loginId, excludeId);
+        res.json({ ok: true, ...result });
+    } catch (e) {
+        console.error("GET /api/staff/check-login-id", e);
+        res.status(500).json({ ok: false, error: "아이디 확인에 실패했습니다." });
+    }
+});
+
 /** 슈퍼바이저 — 관리자 1건 조회 */
 router.get("/:id", requireRole("supervisor"), async (req, res) => {
     try {
@@ -53,10 +69,10 @@ router.get("/:id", requireRole("supervisor"), async (req, res) => {
 router.put("/:id", requireRole("supervisor"), async (req, res) => {
     try {
         const result = await updateStaffAccount(req.params.id, req.body, req.auth.role);
-        res.json({ ok: true, staff: result });
+        res.json({ ok: true, staff: result, loginIdChanged: !!result.loginIdChanged, loginIdMigration: result.loginIdMigration || null });
     } catch (e) {
         const msg = e.message || "수정에 실패했습니다.";
-        const code = msg.includes("찾을") ? 404 : msg.includes("권한") ? 403 : 400;
+        const code = msg.includes("찾을") ? 404 : msg.includes("권한") ? 403 : msg.includes("이미") ? 409 : 400;
         res.status(code).json({ ok: false, error: msg });
     }
 });

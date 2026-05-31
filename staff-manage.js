@@ -109,7 +109,9 @@
     function fillEditForm(st) {
         if (!st) return;
         document.getElementById("sm-edit-id").value = st.id || st.loginId || "";
-        document.getElementById("sm-edit-loginId").value = st.loginId || "";
+        var loginInput = document.getElementById("sm-edit-loginId");
+        loginInput.value = st.loginId || "";
+        loginInput.dataset.originalLoginId = st.loginId || "";
         document.getElementById("sm-edit-password").value = "";
         document.getElementById("sm-edit-st_company").value = st.st_company || "";
         document.getElementById("sm-edit-st_phone").value = st.st_phone || "";
@@ -454,23 +456,80 @@
                 return;
             }
             var id = document.getElementById("sm-edit-id").value;
+            var loginInput = document.getElementById("sm-edit-loginId");
             var body = readForm(editForm);
-            delete body.loginId;
+            if (!body.loginId) {
+                setEditMsg("아이디를 입력해 주세요.", "err");
+                return;
+            }
             if (!body.st_company) {
                 setEditMsg("회사명을 입력해 주세요.", "err");
                 return;
             }
-            setEditMsg("저장 중…");
-            api
-                .updateStaff(id, body)
-                .then(function () {
-                    setEditMsg("저장했습니다.", "ok");
-                    loadList();
-                    setTimeout(closeEdit, 600);
-                })
-                .catch(function (err) {
-                    setEditMsg((err && err.message) || "저장에 실패했습니다.", "err");
-                });
+            var origLoginId = (loginInput && loginInput.dataset.originalLoginId) || "";
+            var loginChanged = origLoginId && body.loginId !== origLoginId;
+
+            function saveUpdate() {
+                setEditMsg("저장 중…");
+                api
+                    .updateStaff(id, body)
+                    .then(function (result) {
+                        var msg = "저장했습니다.";
+                        if (result && result.loginIdChanged) {
+                            msg +=
+                                " 아이디가 변경되었습니다. 해당 관리자는 새 아이디로 다시 로그인해야 합니다.";
+                            var mig = result.loginIdMigration;
+                            if (mig && typeof mig === "object") {
+                                var parts = [];
+                                Object.keys(mig).forEach(function (col) {
+                                    if (mig[col]) parts.push(col + " " + mig[col] + "건");
+                                });
+                                if (parts.length) {
+                                    msg += " (연동 갱신: " + parts.join(", ") + ")";
+                                }
+                            }
+                        }
+                        setEditMsg(msg, "ok");
+                        loadList();
+                        setTimeout(closeEdit, 900);
+                    })
+                    .catch(function (err) {
+                        setEditMsg((err && err.message) || "저장에 실패했습니다.", "err");
+                    });
+            }
+
+            if (loginChanged) {
+                if (
+                    !window.confirm(
+                        "아이디를 「" +
+                            origLoginId +
+                            "」에서 「" +
+                            body.loginId +
+                            "」(으)로 변경합니다.\n\n등록 업체·상품·주문 등 담당 정보가 함께 갱신되며, 해당 관리자는 새 아이디로 다시 로그인해야 합니다.\n\n계속할까요?"
+                    )
+                ) {
+                    return;
+                }
+                if (!api.checkStaffLoginId) {
+                    saveUpdate();
+                    return;
+                }
+                setEditMsg("아이디 확인 중…");
+                api
+                    .checkStaffLoginId(body.loginId, id)
+                    .then(function (check) {
+                        if (check && (check.duplicate || check.invalid)) {
+                            setEditMsg((check && check.error) || "사용할 수 없는 아이디입니다.", "err");
+                            return;
+                        }
+                        saveUpdate();
+                    })
+                    .catch(function (err) {
+                        setEditMsg((err && err.message) || "아이디 확인에 실패했습니다.", "err");
+                    });
+                return;
+            }
+            saveUpdate();
         });
     }
 

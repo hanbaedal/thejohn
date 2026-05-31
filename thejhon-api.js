@@ -163,6 +163,11 @@
                 return d.staff || d.item || null;
             });
         },
+        checkStaffLoginId: function (loginId, excludeId) {
+            var q = "?loginId=" + encodeURIComponent(String(loginId || ""));
+            if (excludeId) q += "&excludeId=" + encodeURIComponent(String(excludeId));
+            return request("GET", "/api/staff/check-login-id" + q);
+        },
         createStaff: function (body) {
             return request("POST", "/api/staff", body).then(function (d) {
                 return d.staff;

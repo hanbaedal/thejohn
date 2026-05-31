@@ -10,6 +10,12 @@ const {
     DEFAULT_STAFF_IDS
 } = require("./staffFields");
 const { getStoredPassword } = require("./loginAccount");
+const { validateLoginIdLength } = require("./vendorFields");
+const { findAnyVendorLoginConflict } = require("./vendorCollections");
+const {
+    propagateStaffLoginIdChange,
+    loginIdsEquivalent
+} = require("./staffLoginIdMigration");
 
 function str(v) {
     return String(v ?? "").trim();
@@ -51,8 +57,15 @@ function isReservedStaffLoginId(loginId) {
     return idn === "thejohn" || idn === "thejhon" || idn === "aksangsa";
 }
 
+function canAssignStaffLoginId(loginId, existingStaff) {
+    if (!isReservedStaffLoginId(loginId)) return true;
+    if (!existingStaff) return false;
+    return loginIdsEquivalent(loginId, existingStaff.loginId);
+}
+
 function pickStaffBody(body) {
     return {
+        loginId: body.loginId,
         st_company: body.st_company,
         st_phone: body.st_phone,
         st_fax: body.st_fax,
@@ -88,13 +101,51 @@ async function findStaffById(idOrLogin) {
     return doc;
 }
 
+async function findStaffLoginConflict(loginId, excludeStaffId) {
+    const staffCol = getDb().collection("staff");
+    const lf = loginLookupFilter(loginId);
+    const filter = excludeStaffId
+        ? { $and: [lf, { id: { $ne: excludeStaffId } }] }
+        : lf;
+    return staffCol.findOne(filter);
+}
+
+async function checkStaffLoginId(loginId, excludeStaffId) {
+    const id = str(loginId);
+    if (!id) {
+        return { duplicate: false, invalid: true, error: "아이디를 입력해 주세요." };
+    }
+    const fmt = validateLoginIdLength(id);
+    if (fmt) {
+        return { duplicate: false, invalid: true, error: fmt };
+    }
+    let existing = null;
+    if (excludeStaffId) {
+        existing = await findStaffById(excludeStaffId);
+    }
+    // 신규 등록만 예약 아이디(thejohn·aksangsa 등) 차단 — 수정은 슈퍼바이저가 자유롭게 변경
+    if (!excludeStaffId && !canAssignStaffLoginId(id, existing)) {
+        return { duplicate: true, reserved: true, error: "사용할 수 없는 아이디입니다." };
+    }
+    if (await findStaffLoginConflict(id, excludeStaffId)) {
+        return { duplicate: true, error: "이미 사용 중인 아이디입니다." };
+    }
+    const conflict = await findAnyVendorLoginConflict(getDb(), id, {});
+    if (conflict) {
+        return { duplicate: true, error: "이미 업체 등록에 사용 중인 아이디입니다." };
+    }
+    return { duplicate: false };
+}
+
 async function createStaffAccount(body, creatorRole) {
     const loginId = body.loginId;
     const password = body.password;
     const role = body.role || "admin";
     const idn = normalizeLoginId(loginId);
     if (!idn) throw new Error("아이디를 입력해 주세요.");
-    if (isReservedStaffLoginId(loginId)) {
+    const idErr = validateLoginIdLength(loginId);
+    if (idErr) throw new Error(idErr);
+    if (!canAssignStaffLoginId(loginId, null)) {
         throw new Error("사용할 수 없는 아이디입니다.");
     }
     if (role !== "admin") throw new Error("관리자(admin)만 추가할 수 있습니다.");
@@ -106,12 +157,11 @@ async function createStaffAccount(body, creatorRole) {
     }
     if (!str(body.st_company)) throw new Error("회사명을 입력해 주세요.");
 
-    const vendors = getDb().collection("vendors");
-    if (await vendors.findOne(loginLookupFilter(loginId))) {
+    if (await findAnyVendorLoginConflict(getDb(), loginId, {})) {
         throw new Error("이미 업체 등록에 사용 중인 아이디입니다.");
     }
     const staffCol = getDb().collection("staff");
-    if (await staffCol.findOne(loginLookupFilter(loginId))) {
+    if (await findStaffLoginConflict(loginId, "")) {
         throw new Error("이미 사용 중인 아이디입니다.");
     }
 
@@ -163,6 +213,17 @@ async function updateStaffAccount(id, body, creatorRole) {
         throw new Error("회사명을 입력해 주세요.");
     }
 
+    const nextLoginId =
+        picked.loginId != null && str(picked.loginId) ? str(picked.loginId) : str(existing.loginId);
+    if (!nextLoginId) throw new Error("아이디를 입력해 주세요.");
+
+    const loginChanged = !loginIdsEquivalent(nextLoginId, existing.loginId);
+    if (loginChanged) {
+        const check = await checkStaffLoginId(nextLoginId, existing.id);
+        if (check.invalid) throw new Error(check.error || "아이디 형식이 올바르지 않습니다.");
+        if (check.duplicate) throw new Error(check.error || "이미 사용 중인 아이디입니다.");
+    }
+
     const password =
         body.password && String(body.password).length >= 4
             ? String(body.password)
@@ -197,18 +258,34 @@ async function updateStaffAccount(id, body, creatorRole) {
                     : staffOrderEnabledFromDoc(existing)
         },
         existing,
-        existing.loginId,
+        nextLoginId,
         password
     );
     const doc = toDbDoc(existing.id, built, existing);
     await staffCol.replaceOne({ id: staffId }, doc);
+
+    var migration = null;
+    if (loginChanged) {
+        migration = await propagateStaffLoginIdChange(
+            getDb(),
+            existing.loginId,
+            nextLoginId,
+            getCompanyName(doc) || doc.st_company || ""
+        );
+    }
+
     if (doc.loginEnabled === false) {
         await staffCol.updateOne(
             { id: staffId },
             { $unset: { activeSessionIds: "", activeSessionId: "", sessionUpdatedAt: "" } }
         );
     }
-    return toPublic(doc);
+    const pub = toPublic(doc);
+    if (loginChanged) {
+        pub.loginIdChanged = true;
+        pub.loginIdMigration = migration && migration.updated ? migration.updated : {};
+    }
+    return pub;
 }
 
 async function deleteStaffAccount(id, creatorRole) {
@@ -244,6 +321,8 @@ module.exports = {
     verifyStaffPassword,
     isStaffRole,
     isReservedStaffLoginId,
+    canAssignStaffLoginId,
+    checkStaffLoginId,
     createStaffAccount,
     updateStaffAccount,
     deleteStaffAccount,

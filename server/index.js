@@ -131,15 +131,11 @@ app.get("/api/health", async function (req, res) {
             loginSource: "mongodb collections staff and vendors (not source code)"
         };
         if (isDbReady()) {
-            const { EXPECTED_STAFF_LOGIN_IDS, findExpectedStaffInDb } = require("./lib/staffFields");
+            const { DEFAULT_STAFF_IDS, findExpectedStaffInDb, staffSeedAccountsOk } = require("./lib/staffFields");
             const docs = await findExpectedStaffInDb(getDb());
             payload.staffInDb = docs;
-            payload.staffExpected = EXPECTED_STAFF_LOGIN_IDS;
-            payload.staffOk = EXPECTED_STAFF_LOGIN_IDS.every(function (id) {
-                return docs.some(function (d) {
-                    return d.loginId === id;
-                });
-            });
+            payload.staffExpected = DEFAULT_STAFF_IDS;
+            payload.staffOk = staffSeedAccountsOk(docs);
             payload.vendorCount = await getDb().collection("vendors").countDocuments();
         }
         res.json(payload);
@@ -178,15 +174,11 @@ app.get("/api/env-check", (req, res) => {
 app.post("/api/admin/reconnect-db", requireDb, requireRole("supervisor", "admin"), async function (req, res) {
     try {
         await connectDb();
-        const { ensureDefaultStaffSeeds, findExpectedStaffInDb, EXPECTED_STAFF_LOGIN_IDS } =
+        const { ensureDefaultStaffSeeds, findExpectedStaffInDb, staffSeedAccountsOk } =
             require("./lib/staffFields");
         await ensureDefaultStaffSeeds(getDb());
         const staffInDb = await findExpectedStaffInDb(getDb());
-        const staffOk = EXPECTED_STAFF_LOGIN_IDS.every(function (id) {
-            return staffInDb.some(function (d) {
-                return d.loginId === id;
-            });
-        });
+        const staffOk = staffSeedAccountsOk(staffInDb);
         res.json({
             ok: true,
             db: true,

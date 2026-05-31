@@ -59,7 +59,7 @@
             <form id="sm-register-form" class="sm-grid" novalidate>
                 <div class="sm-field">
                     <label for="sm-reg-loginId">아이디</label>
-                    <input type="text" id="sm-reg-loginId" name="loginId" autocomplete="username" required>
+                    <input type="text" id="sm-reg-loginId" name="loginId" autocomplete="username" required minlength="6" maxlength="12" pattern="[a-zA-Z0-9_-]+">
                 </div>
                 <div class="sm-field">
                     <label for="sm-reg-password">비밀번호</label>
@@ -150,7 +150,8 @@
                 <input type="hidden" id="sm-edit-id" name="id">
                 <div class="sm-field sm-field--full">
                     <label for="sm-edit-loginId">아이디</label>
-                    <input type="text" id="sm-edit-loginId" name="loginId" readonly>
+                    <input type="text" id="sm-edit-loginId" name="loginId" autocomplete="username" required minlength="6" maxlength="12" pattern="[a-zA-Z0-9_-]+">
+                    <p class="sm-field-hint">슈퍼바이저 전용 · 6~12자(영문·숫자·_·-). 변경 시 이 관리자가 등록한 업체·상품·주문·게시글 담당 정보가 함께 갱신됩니다.</p>
                 </div>
                 <div class="sm-field sm-field--full">
                     <label for="sm-edit-password">비밀번호 <small>(변경 시에만 입력)</small></label>
