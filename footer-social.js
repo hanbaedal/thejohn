@@ -86,71 +86,13 @@
         return s;
     }
 
-    var kakaoSdkPromise = null;
-
-    function ensureKakaoSdk() {
-        if (kakaoSdkPromise) return kakaoSdkPromise;
-        kakaoSdkPromise = new Promise(function (resolve) {
-            var key = global.THEJHON_OAUTH && global.THEJHON_OAUTH.kakaoJsKey;
-            if (!key) {
-                resolve(null);
-                return;
-            }
-            if (global.Kakao && global.Kakao.isInitialized && global.Kakao.isInitialized()) {
-                resolve(global.Kakao);
-                return;
-            }
-            var s = document.createElement("script");
-            s.src = "https://t1.kakaocdn.net/kakao_js_sdk/2.7.4/kakao.min.js";
-            s.crossOrigin = "anonymous";
-            s.onload = function () {
-                try {
-                    if (!global.Kakao.isInitialized()) global.Kakao.init(key);
-                    resolve(global.Kakao);
-                } catch (e) {
-                    resolve(null);
-                }
-            };
-            s.onerror = function () {
-                resolve(null);
-            };
-            document.head.appendChild(s);
-        });
-        return kakaoSdkPromise;
-    }
-
-    function openKakaoChannelChat(chatUrl) {
-        var url = normalizeKakaoChatUrl(chatUrl);
-        var channelId = parseKakaoChannelPublicId(url);
-        if (!url) return;
-        ensureKakaoSdk().then(function (Kakao) {
-            if (Kakao && Kakao.Channel && typeof Kakao.Channel.chat === "function" && channelId) {
-                try {
-                    Kakao.Channel.chat({ channelPublicId: channelId });
-                    return;
-                } catch (e) {}
-            }
-            global.open(url, "_blank", "noopener,noreferrer");
-        });
-    }
-
     function btnKakao(chatUrl) {
         var url = normalizeKakaoChatUrl(chatUrl);
         var channelId = parseKakaoChannelPublicId(url);
         if (!url || !channelId) {
             return btnLink("kakao", "", "카카오톡 채널 채팅", "카카오톡 채널 채팅", iconKakao());
         }
-        var a = document.createElement("a");
-        a.href = url;
-        a.className = "site-footer-social__btn site-footer-social__btn--kakao";
-        a.title = "카카오톡 채널 채팅";
-        a.setAttribute("aria-label", "카카오톡 채널 채팅");
-        a.innerHTML = iconKakao();
-        a.addEventListener("click", function (e) {
-            e.preventDefault();
-            openKakaoChannelChat(url);
-        });
-        return a;
+        return btnLink("kakao", url, "카카오톡 채널 채팅", "카카오톡 채널 채팅", iconKakao());
     }
 
     function replaceSocialBtn(nav, classMod, url, title) {
