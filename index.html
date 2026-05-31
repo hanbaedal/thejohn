@@ -19,6 +19,8 @@
             width: 100%;
             flex: 1;
             min-height: 0;
+            display: flex;
+            flex-direction: column;
         }
         .home-intro {
             position: relative;
@@ -120,6 +122,59 @@
         html.page-home-doc .home-intro-video {
             opacity: 1;
             visibility: visible;
+        }
+        /* Galaxy S25 등 스마트폰(약 360×780) — 인삿말 한 화면 */
+        @media (max-width: 430px) {
+            .page-home .home-intro {
+                flex: 1;
+                min-height: calc(
+                    100dvh - 7rem - env(safe-area-inset-top, 0) - env(safe-area-inset-bottom, 0)
+                );
+                max-height: calc(
+                    100dvh - 7rem - env(safe-area-inset-top, 0) - env(safe-area-inset-bottom, 0)
+                );
+            }
+            .page-home .home-intro-copy {
+                padding: 0.45rem 0.75rem 0.65rem;
+            }
+            .page-home .home-intro-copy .company-hero-stack {
+                gap: 0.48rem;
+                max-width: 100%;
+            }
+            .page-home .home-intro-copy .company-hero {
+                font-size: clamp(1.38rem, 5.5vw + 0.42rem, 1.82rem);
+                line-height: 1.1;
+                letter-spacing: -0.038em;
+            }
+            .page-home .home-intro-copy .company-taglines {
+                padding: 0 0.25rem;
+            }
+            .page-home .home-intro-copy .company-taglines p {
+                font-size: 0.8125rem;
+                line-height: 1.26;
+                margin: 0 0 0.2rem;
+                letter-spacing: -0.018em;
+            }
+            .page-home .home-intro-copy .company-taglines p:last-child {
+                margin-bottom: 0;
+            }
+            .page-home .home-bgm-wrap {
+                bottom: max(0.45rem, env(safe-area-inset-bottom, 0));
+            }
+        }
+        @media (max-width: 430px) and (max-height: 740px) {
+            .page-home .home-intro-copy .company-hero-stack {
+                gap: 0.38rem;
+            }
+            .page-home .home-intro-copy .company-hero {
+                font-size: clamp(1.28rem, 5vw + 0.35rem, 1.65rem);
+                line-height: 1.08;
+            }
+            .page-home .home-intro-copy .company-taglines p {
+                font-size: 0.78rem;
+                line-height: 1.22;
+                margin: 0 0 0.14rem;
+            }
         }
     </style>
     <script src="api-config.js"></script>
