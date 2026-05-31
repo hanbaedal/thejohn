@@ -4,7 +4,7 @@
     flex-direction: column;
     min-height: 100dvh;
     margin: 0;
-    background: #f4f6f9;
+    background: #ffffff;
 }
 
 .page-login .login-header {
@@ -12,10 +12,17 @@
     align-items: center;
     justify-content: center;
     padding: 1rem 1rem 0.5rem;
+    background: #ffffff;
 }
 
 .page-login .login-header .dz-logo {
     display: inline-flex;
+    background: #ffffff;
+}
+
+.page-login .login-header .dz-logo-img {
+    display: block;
+    background: #ffffff;
 }
 
 .page-login .login-header .dz-logo--compact {
@@ -34,16 +41,35 @@
     min-height: 0;
     padding: 1rem 1rem 2rem;
     box-sizing: border-box;
+    gap: 0.85rem;
+    background: #ffffff;
 }
 
-.page-login .login-card {
+.page-login .login-panel,
+.page-login .login-card,
+.page-login .login-about {
     width: 100%;
     max-width: 22rem;
     background: #fff;
     border: 1px solid #e0e6ed;
     border-radius: 12px;
-    padding: 1.75rem 1.5rem 1.35rem;
+    padding: 1.75rem 1.5rem;
     box-shadow: 0 4px 24px rgba(10, 77, 156, 0.1);
+    box-sizing: border-box;
+}
+
+.page-login .login-card {
+    padding-bottom: 1.35rem;
+}
+
+.page-login .login-about-text {
+    margin: 0;
+    font-size: 0.92rem;
+    font-weight: 600;
+    line-height: 1.65;
+    letter-spacing: -0.02em;
+    color: #2a4a5e;
+    text-align: center;
 }
 
 .page-login .login-card h1 {
@@ -161,7 +187,7 @@
 }
 
 .page-login .login-submit {
-    flex: 1 1 auto;
+    flex: 0 0 28%;
     min-width: 0;
     width: auto;
     min-height: 48px;
@@ -189,7 +215,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    flex: 0 0 auto;
+    flex: 0 0 48%;
     width: auto;
     min-height: 48px;
     padding: 0.72rem 0.85rem;

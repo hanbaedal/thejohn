@@ -14,10 +14,12 @@
     <link rel="stylesheet" href="login.css">
     <style>
         /* common.css 로드 전에도 로그인 폼 표시 */
-        body.page-login { display: flex; flex-direction: column; min-height: 100dvh; margin: 0; background: #f4f6f9; }
+        body.page-login { display: flex; flex-direction: column; min-height: 100dvh; margin: 0; background: #ffffff; }
         body.page-login .login-page,
-        body.page-login .login-card { display: flex !important; visibility: visible !important; }
-        body.page-login .login-card { display: block !important; flex-direction: column; }
+        body.page-login .login-card,
+        body.page-login .login-about { display: flex !important; visibility: visible !important; }
+        body.page-login .login-card,
+        body.page-login .login-about { display: block !important; flex-direction: column; }
     </style>
     <script src="api-config.js"></script>
     <script src="thejhon-api.js"></script>
@@ -31,9 +33,16 @@
     </header>
 
     <main class="login-page">
+        <div class="login-about">
+            <p class="login-about-text">
+                더존 그룹은<br>
+                정육, 건어물, 냉동식품,<br>
+                냉동수산물, 공산품, 음료수<br>
+                각 품목별 소사장 책임운영 체계를 도입했습니다.
+            </p>
+        </div>
         <div class="login-card">
             <h1>로그인</h1>
-            <p class="login-intro">관리자·업체는 아이디로 로그인합니다. 외부 방문은 <strong>게스트 로그인</strong>을 이용해 주세요.</p>
             <form id="loginForm" action="login.html" method="post" novalidate>
                 <div class="login-field">
                     <label for="userId">아이디</label>
