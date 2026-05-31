@@ -64,7 +64,7 @@ function canAssignStaffLoginId(loginId, existingStaff) {
 }
 
 function pickStaffBody(body) {
-    return {
+    const picked = {
         loginId: body.loginId,
         st_company: body.st_company,
         st_phone: body.st_phone,

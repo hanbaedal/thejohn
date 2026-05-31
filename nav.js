@@ -98,9 +98,7 @@
         var src = String(logoSrc || "").trim() || DEFAULT_SITE_LOGO;
         var imgs = document.querySelectorAll(".dz-logo-img");
         for (var i = 0; i < imgs.length; i++) {
-            var img = imgs[i];
-            var cur = img.getAttribute("src") || "";
-            if (cur !== src) img.setAttribute("src", src);
+            imgs[i].src = src;
         }
         var links = document.querySelectorAll(".dz-logo, .dz-logo--compact");
         var label = String(companyName || "").trim()
@@ -157,6 +155,7 @@
         function syncAll() {
             sync();
             if (window.__thejhonRefreshHeaderCompany) window.__thejhonRefreshHeaderCompany();
+            if (window.__thejhonRefreshFooterCompany) window.__thejhonRefreshFooterCompany();
             refreshVendorCartNav();
             if (window.THEJHON_AUTH && THEJHON_AUTH.applyNavRegisterVisibility) {
                 THEJHON_AUTH.applyNavRegisterVisibility();

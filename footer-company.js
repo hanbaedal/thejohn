@@ -149,6 +149,9 @@
         loadStaffItem()
             .then(function (item) {
                 grid.innerHTML = renderStaffGrid(item);
+                if (window.__thejhonApplySiteLogo && item) {
+                    window.__thejhonApplySiteLogo(item.st_logo, item.st_company);
+                }
                 setMsg(msgEl, "", false);
             })
             .catch(function () {
