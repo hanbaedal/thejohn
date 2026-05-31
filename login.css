@@ -91,6 +91,60 @@
     box-sizing: border-box;
 }
 
+.page-login .login-password-wrap {
+    position: relative;
+    display: block;
+}
+
+.page-login .login-password-wrap input {
+    padding-right: 2.85rem;
+}
+
+.page-login .login-password-toggle {
+    position: absolute;
+    top: 0;
+    right: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.85rem;
+    height: 100%;
+    min-height: 2.75rem;
+    padding: 0;
+    border: none;
+    border-radius: 0 6px 6px 0;
+    background: transparent;
+    color: #5a6d7e;
+    cursor: pointer;
+    font-family: inherit;
+    -webkit-tap-highlight-color: rgba(10, 77, 156, 0.12);
+}
+
+.page-login .login-password-toggle:hover {
+    color: var(--dz-blue);
+}
+
+.page-login .login-password-toggle:focus-visible {
+    outline: 2px solid var(--dz-blue);
+    outline-offset: -2px;
+}
+
+.page-login .login-password-icon {
+    display: block;
+}
+
+.page-login .login-password-toggle[aria-pressed="true"] .login-password-icon--closed {
+    display: none;
+}
+
+.page-login .login-password-toggle[aria-pressed="true"] .login-password-icon--open {
+    display: block !important;
+}
+
+.page-login .login-password-toggle[aria-pressed="false"] .login-password-icon--open {
+    display: none !important;
+}
+
 .page-login .login-field input:focus {
     outline: none;
     border-color: var(--dz-blue);

@@ -103,6 +103,28 @@
         );
     }
 
+    function initPasswordToggle() {
+        var pwEl = $("password");
+        var toggleBtn = $("passwordToggle");
+        if (!pwEl || !toggleBtn) return;
+
+        var iconClosed = toggleBtn.querySelector(".login-password-icon--closed");
+        var iconOpen = toggleBtn.querySelector(".login-password-icon--open");
+
+        function setVisible(visible) {
+            pwEl.type = visible ? "text" : "password";
+            toggleBtn.setAttribute("aria-pressed", visible ? "true" : "false");
+            toggleBtn.setAttribute("aria-label", visible ? "비밀번호 숨기기" : "비밀번호 표시");
+            toggleBtn.title = visible ? "비밀번호 숨기기" : "비밀번호 표시";
+            if (iconClosed) iconClosed.hidden = visible;
+            if (iconOpen) iconOpen.hidden = !visible;
+        }
+
+        toggleBtn.addEventListener("click", function () {
+            setVisible(pwEl.type === "password");
+        });
+    }
+
     function initLoginForm() {
         var Auth = global.THEJHON_AUTH;
         if (!Auth) return;
@@ -121,10 +143,6 @@
         if (!form) return;
 
         var userIdInput = $("userId");
-        if (userIdInput && Auth.getSavedLoginIdHint) {
-            var savedId = Auth.getSavedLoginIdHint();
-            if (savedId) userIdInput.value = savedId;
-        }
 
         form.addEventListener("submit", function (e) {
             e.preventDefault();
@@ -178,6 +196,7 @@
 
     function boot() {
         initGuest();
+        initPasswordToggle();
         initLoginForm();
     }
 
