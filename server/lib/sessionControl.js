@@ -3,8 +3,8 @@ const { getDb } = require("../db");
 const { findStaffByLoginId, findVendorByLoginId } = require("./loginResolve");
 const { collectionNameForVendorDoc } = require("./vendorCollections");
 
-/** 관리자·업체 동시 접속 허용 수 (슈퍼바이저 제외) */
-const MAX_CONCURRENT_SESSIONS = 2;
+/** @deprecated 동시 접속 제한 미사용 — 하위 호환용 export */
+const MAX_CONCURRENT_SESSIONS = Infinity;
 
 function newSessionId() {
     return "sess_" + crypto.randomBytes(16).toString("hex");
@@ -14,8 +14,9 @@ function isSupervisorRole(role) {
     return role === "supervisor";
 }
 
-function sessionEnforced(role) {
-    return !isSupervisorRole(role);
+/** 동시 접속·세션 추적 없음 — 어디서든 동일 아이디로 로그인 허용 */
+function sessionEnforced(_role) {
+    return false;
 }
 
 function str(v) {
@@ -57,7 +58,7 @@ function isLoginEnabledStaff(staff) {
     return staff.loginEnabled !== false;
 }
 
-/** 로그인 전 — 동시 접속 한도·접속 비활성 검사 */
+/** 로그인 전 — 접속 비활성(관리자) 검사 */
 async function assertCanStartLogin(role, userId) {
     if (isSupervisorRole(role)) {
         return { ok: true };
@@ -72,16 +73,6 @@ async function assertCanStartLogin(role, userId) {
             ok: false,
             code: "LOGIN_DISABLED",
             error: "접속이 비활성화된 관리자 계정입니다. 슈퍼바이저에게 문의해 주세요."
-        };
-    }
-    var activeCount = getActiveSessionIds(doc).length;
-    if (activeCount >= MAX_CONCURRENT_SESSIONS) {
-        return {
-            ok: false,
-            code: "ALREADY_LOGGED_IN",
-            error: "다른곳에서 로그인해서 사용중입니다!",
-            activeSessions: activeCount,
-            maxSessions: MAX_CONCURRENT_SESSIONS
         };
     }
     return { ok: true, resolved: resolved };
