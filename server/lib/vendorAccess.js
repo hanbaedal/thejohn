@@ -1,5 +1,5 @@
 const { F } = require("./vendorFields");
-const { findStaffByLoginId } = require("./loginResolve");
+const { findStaffByLoginId } = require("./loginLookup");
 const { getCompanyName: getStaffCompanyName } = require("./staffFields");
 const {
     trimStaffLoginId,

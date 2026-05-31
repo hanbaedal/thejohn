@@ -186,6 +186,13 @@
                         alert(err.message || "접속이 비활성화된 관리자 계정입니다.");
                         return;
                     }
+                    if (err && err.code === "VENDOR_NO_PASSWORD") {
+                        alert(
+                            err.message ||
+                                "비밀번호가 설정되지 않은 업체입니다. 관리자에게 비밀번호 재설정을 요청해 주세요."
+                        );
+                        return;
+                    }
                     alert(
                         (err && err.message) ||
                             "아이디 또는 비밀번호가 올바르지 않습니다. 업체등록 시 입력한 비밀번호(8~16자)를 확인해 주세요."

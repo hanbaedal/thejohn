@@ -376,6 +376,9 @@ async function migrateVendorsCollection(db) {
             skipped++;
             continue;
         }
+        if (!pw && doc.loginId) {
+            console.warn("[vendors] missing login password:", id, doc.loginId);
+        }
         if (!vendorNeedsFieldMigration(doc)) {
             skipped++;
             continue;

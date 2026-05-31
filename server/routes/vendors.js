@@ -1,6 +1,6 @@
 const express = require("express");
 const { getDb } = require("../db");
-const { loginLookupFilter } = require("../lib/loginAccount");
+const { loginLookupFilter, getVendorStoredPassword } = require("../lib/loginAccount");
 const { requireRole, extractBearer, verifyToken } = require("../middleware/auth");
 const { isReservedStaffLoginId } = require("../lib/staff");
 const {
@@ -192,6 +192,12 @@ router.post("/", requireRole("supervisor", "admin"), async (req, res) => {
         }
 
         let doc = toDbDoc(newId(), built, null);
+        if (!getVendorStoredPassword(doc) && !doc.passwordHash) {
+            return res.status(500).json({
+                ok: false,
+                error: "업체 비밀번호 저장에 실패했습니다. 다시 등록해 주세요."
+            });
+        }
         doc = await stampNewVendorRegistration(doc, req.auth);
         await vendors.insertOne(doc);
         console.log(

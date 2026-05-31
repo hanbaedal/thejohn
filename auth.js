@@ -327,6 +327,15 @@
                     badPw.code = "BAD_PASSWORD";
                     throw badPw;
                 }
+                if (err && err.data && err.data.code === "VENDOR_NO_PASSWORD") {
+                    var noPw = new Error(
+                        (err.data.hint && String(err.data.hint).trim()) ||
+                            err.data.error ||
+                            "비밀번호가 설정되지 않은 업체 계정입니다."
+                    );
+                    noPw.code = "VENDOR_NO_PASSWORD";
+                    throw noPw;
+                }
                 if (err && err.data && err.data.code === "ALREADY_LOGGED_IN") {
                     var dup = new Error(
                         err.data.error || "다른곳에서 로그인해서 사용중입니다!"

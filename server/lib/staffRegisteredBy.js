@@ -1,5 +1,5 @@
 const { getDb } = require("../db");
-const { findStaffByLoginId } = require("./loginResolve");
+const { findStaffByLoginId } = require("./loginLookup");
 const {
     LEGACY_PROTECTED_STAFF_DOC_IDS,
     getCompanyName

@@ -43,6 +43,14 @@ router.post("/login", async (req, res) => {
                     hint: hint
                 });
             }
+            if (result.reason === "VENDOR_NO_PASSWORD") {
+                return res.status(401).json({
+                    ok: false,
+                    code: "VENDOR_NO_PASSWORD",
+                    error: "비밀번호가 설정되지 않은 업체 계정입니다.",
+                    hint: "관리자에게 업체 수정 화면에서 비밀번호를 다시 설정해 달라고 요청해 주세요."
+                });
+            }
             const vendorDoc = await findVendorByLoginId(loginId);
             const hint = vendorDoc
                 ? "업체등록 시 설정한 비밀번호(8~16자)를 그대로 입력해 주세요. 아이디·비밀번호 앞뒤 공백은 제외됩니다."
