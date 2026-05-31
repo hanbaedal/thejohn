@@ -12,6 +12,13 @@
     <title>로그인 — 더존</title>
     <link rel="stylesheet" href="common.css">
     <link rel="stylesheet" href="login.css">
+    <style>
+        /* common.css 로드 전에도 로그인 폼 표시 */
+        body.page-login { display: flex; flex-direction: column; min-height: 100dvh; margin: 0; background: #f4f6f9; }
+        body.page-login .login-page,
+        body.page-login .login-card { display: flex !important; visibility: visible !important; }
+        body.page-login .login-card { display: block !important; flex-direction: column; }
+    </style>
     <script src="api-config.js"></script>
     <script src="thejhon-api.js"></script>
     <script src="auth.js"></script>

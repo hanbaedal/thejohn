@@ -321,9 +321,16 @@
     (function syncHeaderAuthButtons() {
         var actions = document.querySelector(".site-header-actions");
         if (!actions) return;
-        var loginBtn = document.getElementById("btnLogin");
-        if (loginBtn) loginBtn.remove();
         var logoutBtn = document.getElementById("btnLogout");
+        var loginBtn = document.getElementById("btnLogin");
+        if (!loginBtn) {
+            loginBtn = document.createElement("a");
+            loginBtn.id = "btnLogin";
+            loginBtn.href = "login.html";
+            loginBtn.className = "header-login-link";
+            loginBtn.textContent = "로그인";
+            actions.insertBefore(loginBtn, logoutBtn || actions.firstChild);
+        }
         if (logoutBtn) applyAuthIconButton(logoutBtn, "logout");
         if (logoutBtn && logoutBtn.dataset.logoutBound !== "1") {
             logoutBtn.dataset.logoutBound = "1";
@@ -339,6 +346,7 @@
         function sync() {
             var loggedIn = window.THEJHON_AUTH && THEJHON_AUTH.isLoggedIn();
             if (logoutBtn) logoutBtn.hidden = !loggedIn;
+            if (loginBtn) loginBtn.hidden = !!loggedIn;
         }
         sync();
         function syncAll() {
