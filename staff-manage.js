@@ -16,6 +16,10 @@
     var pendingEditLogo = null;
     var editLogoTouched = false;
     var PF = window.THEJHON_PRODUCT_FORM;
+    var STAFF_LOGO_PROCESS_OPTIONS =
+        PF && PF.STAFF_LOGO_PROCESS_OPTIONS
+            ? PF.STAFF_LOGO_PROCESS_OPTIONS
+            : { maxDimension: 512, fixedDimension: true, fit: "contain", maxBytes: 1024 * 1024 };
 
     function updateLogoPreview(imgEl, clearBtn, src) {
         if (PF && PF.showImagePreview) {
@@ -40,7 +44,8 @@
             btnGallery: opts.btnGallery,
             btnCamera: opts.btnCamera,
             onSelect: opts.onSelect,
-            onError: opts.onError
+            onError: opts.onError,
+            processOptions: STAFF_LOGO_PROCESS_OPTIONS
         });
     }
 

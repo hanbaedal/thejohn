@@ -3,6 +3,8 @@
  */
 (function (global) {
     var MAX_IMAGE_BYTES = 1 * 1024 * 1024;
+    /** 관리자 로고 — 저장 시 항상 이 크기(정사각)로 변환 */
+    var STAFF_LOGO_PIXEL_SIZE = 512;
 
     function escapeHtml(s) {
         return String(s)
@@ -95,19 +97,31 @@
         return Promise.resolve(img);
     }
 
-    function drawSquareJpeg(img, size, quality) {
+    function drawSquareJpeg(img, size, quality, fit) {
         var w = img.naturalWidth || img.width;
         var h = img.naturalHeight || img.height;
         if (!w || !h) throw new Error("이미지 크기를 확인할 수 없습니다.");
-        var side = Math.min(w, h);
-        var sx = (w - side) / 2;
-        var sy = (h - side) / 2;
         var canvas = document.createElement("canvas");
         canvas.width = size;
         canvas.height = size;
         var ctx = canvas.getContext("2d");
         if (!ctx) throw new Error("이미지 처리를 지원하지 않는 브라우저입니다.");
-        ctx.drawImage(img, sx, sy, side, side, 0, 0, size, size);
+        var mode = fit === "contain" ? "contain" : "cover";
+        if (mode === "contain") {
+            ctx.fillStyle = "#ffffff";
+            ctx.fillRect(0, 0, size, size);
+            var scale = Math.min(size / w, size / h);
+            var dw = w * scale;
+            var dh = h * scale;
+            var dx = (size - dw) / 2;
+            var dy = (size - dh) / 2;
+            ctx.drawImage(img, dx, dy, dw, dh);
+        } else {
+            var side = Math.min(w, h);
+            var sx = (w - side) / 2;
+            var sy = (h - side) / 2;
+            ctx.drawImage(img, sx, sy, side, side, 0, 0, size, size);
+        }
         return canvas.toDataURL("image/jpeg", quality);
     }
 
@@ -118,11 +132,15 @@
         options = options || {};
         var maxBytes = options.maxBytes || MAX_IMAGE_BYTES;
         var maxDim = options.maxDimension || 1024;
+        var fixedDimension = !!options.fixedDimension;
+        var fit = options.fit === "contain" ? "contain" : "cover";
         var fileSize = file && file.size ? file.size : 0;
 
-        if (fileSize > maxBytes * 8) maxDim = Math.min(maxDim, 640);
-        else if (fileSize > maxBytes * 4) maxDim = Math.min(maxDim, 800);
-        else if (fileSize > maxBytes) maxDim = Math.min(maxDim, 1024);
+        if (!fixedDimension) {
+            if (fileSize > maxBytes * 8) maxDim = Math.min(maxDim, 640);
+            else if (fileSize > maxBytes * 4) maxDim = Math.min(maxDim, 800);
+            else if (fileSize > maxBytes) maxDim = Math.min(maxDim, 1024);
+        }
 
         return loadImageFromFile(file).then(function (payload) {
             var img = payload.img;
@@ -144,16 +162,20 @@
                     var quality = 0.9;
                     var dataUrl = "";
                     var lastBytes = Infinity;
+                    var minDim = fixedDimension ? maxDim : 280;
 
                     for (var attempt = 0; attempt < 36; attempt++) {
-                        dataUrl = drawSquareJpeg(decoded, dim, quality);
+                        dataUrl = drawSquareJpeg(decoded, dim, quality, fit);
                         var bytes = dataUrlByteSize(dataUrl);
                         if (bytes <= maxBytes) return finish(dataUrl);
 
                         if (quality > 0.55) {
                             quality = Math.max(0.55, quality - 0.07);
-                        } else if (dim > 280) {
-                            dim = Math.max(280, Math.round(dim * 0.82));
+                        } else if (!fixedDimension && dim > minDim) {
+                            dim = Math.max(minDim, Math.round(dim * 0.82));
+                            quality = 0.88;
+                        } else if (fixedDimension && dim > 256) {
+                            dim = Math.max(256, Math.round(dim * 0.85));
                             quality = 0.88;
                         } else {
                             if (bytes >= lastBytes) break;
@@ -165,7 +187,13 @@
                     if (dataUrlByteSize(dataUrl) <= maxBytes) return finish(dataUrl);
                     return fail(
                         new Error(
-                            "이미지를 1MB 이하·1:1 비율로 줄이지 못했습니다. 다른 사진을 선택해 주세요."
+                            fixedDimension
+                                ? "이미지를 " +
+                                      maxDim +
+                                      "×" +
+                                      maxDim +
+                                      "·1MB 이하로 줄이지 못했습니다. 다른 사진을 선택해 주세요."
+                                : "이미지를 1MB 이하·1:1 비율로 줄이지 못했습니다. 다른 사진을 선택해 주세요."
                         )
                     );
                 })
@@ -173,6 +201,17 @@
                     return fail(err);
                 });
         });
+    }
+
+    var STAFF_LOGO_PROCESS_OPTIONS = {
+        maxDimension: STAFF_LOGO_PIXEL_SIZE,
+        fixedDimension: true,
+        fit: "contain",
+        maxBytes: MAX_IMAGE_BYTES
+    };
+
+    function processStaffLogoFile(file) {
+        return processImageFileToSquareDataURL(file, STAFF_LOGO_PROCESS_OPTIONS);
     }
 
     /** 미리보기 img — hidden 속성·로드 타이밍 모두 처리 */
@@ -470,11 +509,14 @@
 
     global.THEJHON_PRODUCT_FORM = {
         MAX_IMAGE_BYTES: MAX_IMAGE_BYTES,
+        STAFF_LOGO_PIXEL_SIZE: STAFF_LOGO_PIXEL_SIZE,
+        STAFF_LOGO_PROCESS_OPTIONS: STAFF_LOGO_PROCESS_OPTIONS,
         escapeHtml: escapeHtml,
         formatWon: formatWon,
         parsePriceInput: parsePriceInput,
         isImageFile: isImageFile,
         processImageFileToSquareDataURL: processImageFileToSquareDataURL,
+        processStaffLogoFile: processStaffLogoFile,
         showImagePreview: showImagePreview,
         readFileAsDataURL: readFileAsDataURL,
         initProductPhotoPicker: initProductPhotoPicker,
