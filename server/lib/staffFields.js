@@ -17,6 +17,7 @@ const F = {
     instagram: "st_instagram",
     naverCafe: "st_naver_cafe",
     youtube: "st_youtube",
+    logo: "st_logo",
     orderEnabled: "st_order_enabled"
 };
 
@@ -116,6 +117,7 @@ function fromLegacyDoc(doc) {
     if (doc.st_instagram != null) d[F.instagram] = str(doc.st_instagram);
     if (doc.st_naver_cafe != null) d[F.naverCafe] = str(doc.st_naver_cafe);
     if (doc.st_youtube != null) d[F.youtube] = str(doc.st_youtube);
+    if (doc.st_logo != null) d[F.logo] = String(doc.st_logo);
     return d;
 }
 
@@ -140,6 +142,7 @@ function toPublic(doc) {
         st_instagram: str(d[F.instagram]),
         st_naver_cafe: str(d[F.naverCafe]),
         st_youtube: str(d[F.youtube]),
+        st_logo: String(d[F.logo] || ""),
         role: d.role || "admin",
         active: d.active !== false,
         loginEnabled: d.loginEnabled !== false,
@@ -183,6 +186,10 @@ function buildFromBody(body, existing, loginId, password) {
         st_instagram: str(body.st_instagram != null ? body.st_instagram : prev[F.instagram]),
         st_naver_cafe: str(body.st_naver_cafe != null ? body.st_naver_cafe : prev[F.naverCafe]),
         st_youtube: str(body.st_youtube != null ? body.st_youtube : prev[F.youtube]),
+        st_logo:
+            body.st_logo !== undefined && body.st_logo !== null
+                ? String(body.st_logo)
+                : String(prev[F.logo] || ""),
         role: body.role || prev.role || "admin",
         loginEnabled:
             body.loginEnabled === false || body.loginEnabled === "false" || body.loginEnabled === 0
@@ -231,6 +238,7 @@ function toDbDoc(id, built, existing) {
         [F.instagram]: built.st_instagram,
         [F.naverCafe]: built.st_naver_cafe,
         [F.youtube]: built.st_youtube,
+        [F.logo]: built.st_logo,
         role: built.role,
         active: existing?.active !== false,
         loginEnabled: built.loginEnabled !== false,

@@ -85,6 +85,10 @@ function pickStaffBody(body) {
         loginEnabled: body.loginEnabled,
         orderEnabled: body.orderEnabled
     };
+    if (body.st_logo !== undefined) {
+        picked.st_logo = body.st_logo;
+    }
+    return picked;
 }
 
 async function findStaffById(idOrLogin) {
@@ -183,6 +187,7 @@ async function createStaffAccount(body, creatorRole) {
             st_instagram: picked.st_instagram,
             st_naver_cafe: picked.st_naver_cafe,
             st_youtube: picked.st_youtube,
+            st_logo: picked.st_logo !== undefined ? picked.st_logo : "",
             role: "admin",
             loginEnabled: true,
             st_order_enabled: false
@@ -247,6 +252,7 @@ async function updateStaffAccount(id, body, creatorRole) {
             st_instagram: picked.st_instagram,
             st_naver_cafe: picked.st_naver_cafe,
             st_youtube: picked.st_youtube,
+            ...(picked.st_logo !== undefined ? { st_logo: picked.st_logo } : {}),
             role: existing.role || "admin",
             loginEnabled:
                 picked.loginEnabled !== undefined

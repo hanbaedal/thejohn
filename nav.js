@@ -72,6 +72,8 @@
         header.dataset.headerShell = "2";
     })();
 
+    var DEFAULT_SITE_LOGO = "img/logo.png";
+
     (function injectCompactHomeLogo() {
         if (document.body && document.body.classList.contains("page-home")) return;
         var start =
@@ -83,7 +85,7 @@
         link.className = "dz-logo dz-logo--compact";
         link.setAttribute("aria-label", "더존 홈");
         var img = document.createElement("img");
-        img.src = "img/logo.png";
+        img.src = DEFAULT_SITE_LOGO;
         img.alt = "";
         img.width = 32;
         img.height = 32;
@@ -91,6 +93,25 @@
         link.appendChild(img);
         start.insertBefore(link, start.firstChild);
     })();
+
+    function applySiteLogo(logoSrc, companyName) {
+        var src = String(logoSrc || "").trim() || DEFAULT_SITE_LOGO;
+        var imgs = document.querySelectorAll(".dz-logo-img");
+        for (var i = 0; i < imgs.length; i++) {
+            var img = imgs[i];
+            var cur = img.getAttribute("src") || "";
+            if (cur !== src) img.setAttribute("src", src);
+        }
+        var links = document.querySelectorAll(".dz-logo, .dz-logo--compact");
+        var label = String(companyName || "").trim()
+            ? String(companyName).trim() + " 홈"
+            : "더존 홈";
+        for (var j = 0; j < links.length; j++) {
+            links[j].setAttribute("aria-label", label);
+        }
+    }
+
+    window.__thejhonApplySiteLogo = applySiteLogo;
 
     var AUTH_ICON_HTML = {
         login:
@@ -322,6 +343,7 @@
 
         function applyFromStaff(st) {
             if (!st) return;
+            applySiteLogo(st.st_logo, st.st_company || "");
             var grid = document.querySelector(".site-footer .site-footer-grid");
             if (grid) {
                 setDdTextByLabel(grid, "상호", st.st_company || "");
@@ -360,13 +382,21 @@
             ensureUnifiedSiteFooter();
             var Auth = window.THEJHON_AUTH;
             var Api = window.THEJHON_API;
-            if (!Auth || !Api || !Auth.isLoggedIn || !Auth.isLoggedIn()) return;
+            if (!Auth || !Api || !Auth.isLoggedIn || !Auth.isLoggedIn()) {
+                applySiteLogo("", "");
+                return;
+            }
             var role = Auth.getRole ? Auth.getRole() : "";
-            if (role !== "admin" && role !== "supervisor" && role !== "vendor") return;
+            if (role !== "admin" && role !== "supervisor" && role !== "vendor") {
+                applySiteLogo("", "");
+                return;
+            }
             if (!Api.getStaffProfile) return;
             Api.getStaffProfile()
                 .then(applyFromStaff)
-                .catch(function () {});
+                .catch(function () {
+                    applySiteLogo("", "");
+                });
         }
 
         function bootFooter() {

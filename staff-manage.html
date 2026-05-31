@@ -69,6 +69,18 @@
                     <label for="sm-reg-st_company">회사명</label>
                     <input type="text" id="sm-reg-st_company" name="st_company" required>
                 </div>
+                <div class="sm-field sm-field--full pr-photo-field">
+                    <span class="pr-photo-label" id="sm-reg-logo-label">회사 로고</span>
+                    <input type="file" id="sm-reg-logo-gallery" class="pr-photo-file-input" accept="image/*,.heic,.heif">
+                    <input type="file" id="sm-reg-logo-camera" class="pr-photo-file-input" accept="image/*" capture="environment">
+                    <div class="pr-photo-actions" role="group" aria-labelledby="sm-reg-logo-label">
+                        <button type="button" class="pr-photo-btn" id="sm-reg-logo-gallery-btn">앨범·파일에서 선택</button>
+                        <button type="button" class="pr-photo-btn pr-photo-btn--camera" id="sm-reg-logo-camera-btn">카메라로 촬영</button>
+                        <button type="button" class="btn btn-secondary sm-logo-clear-btn" id="sm-reg-logo-clear" hidden>로고 제거</button>
+                    </div>
+                    <p class="sm-field-hint">로그인 시 사이트 헤더 로고로 표시됩니다. 1:1·1MB 이하 권장.</p>
+                    <img id="sm-reg-logo-preview" class="sm-logo-preview pr-photo-preview tj-image-preview" alt="로고 미리보기" width="96" height="96" hidden>
+                </div>
                 <div class="sm-field">
                     <label for="sm-reg-st_biz_no">사업자등록번호</label>
                     <input type="text" id="sm-reg-st_biz_no" name="st_biz_no" inputmode="numeric">
@@ -161,6 +173,18 @@
                     <label for="sm-edit-st_company">회사명</label>
                     <input type="text" id="sm-edit-st_company" name="st_company" required>
                 </div>
+                <div class="sm-field sm-field--full pr-photo-field">
+                    <span class="pr-photo-label" id="sm-edit-logo-label">회사 로고</span>
+                    <input type="file" id="sm-edit-logo-gallery" class="pr-photo-file-input" accept="image/*,.heic,.heif">
+                    <input type="file" id="sm-edit-logo-camera" class="pr-photo-file-input" accept="image/*" capture="environment">
+                    <div class="pr-photo-actions" role="group" aria-labelledby="sm-edit-logo-label">
+                        <button type="button" class="pr-photo-btn" id="sm-edit-logo-gallery-btn">앨범·파일에서 선택</button>
+                        <button type="button" class="pr-photo-btn pr-photo-btn--camera" id="sm-edit-logo-camera-btn">카메라로 촬영</button>
+                        <button type="button" class="btn btn-secondary sm-logo-clear-btn" id="sm-edit-logo-clear" hidden>로고 제거</button>
+                    </div>
+                    <p class="sm-field-hint">관리자 로그인 시 헤더 로고로 표시됩니다.</p>
+                    <img id="sm-edit-logo-preview" class="sm-logo-preview pr-photo-preview tj-image-preview" alt="로고 미리보기" width="96" height="96" hidden>
+                </div>
                 <div class="sm-field">
                     <label for="sm-edit-st_biz_no">사업자등록번호</label>
                     <input type="text" id="sm-edit-st_biz_no" name="st_biz_no" inputmode="numeric">
@@ -236,6 +260,7 @@
             <p class="site-footer-company-msg" id="siteFooterCompanyMsg" hidden></p>
 </div>
     </footer>
+    <script src="product-form-shared.js"></script>
     <script src="staff-manage.js"></script>
     <script>
         (function () {

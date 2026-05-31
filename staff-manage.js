@@ -12,6 +12,107 @@
     var editDeleteBtn = document.getElementById("sm-edit-delete");
     var staffByKey = {};
     var editLoadedFromServer = false;
+    var pendingRegLogo = "";
+    var pendingEditLogo = null;
+    var editLogoTouched = false;
+    var PF = window.THEJHON_PRODUCT_FORM;
+
+    function updateLogoPreview(imgEl, clearBtn, src) {
+        if (PF && PF.showImagePreview) {
+            PF.showImagePreview(imgEl, src);
+        } else if (imgEl) {
+            if (src) {
+                imgEl.src = src;
+                imgEl.removeAttribute("hidden");
+            } else {
+                imgEl.removeAttribute("src");
+                imgEl.setAttribute("hidden", "");
+            }
+        }
+        if (clearBtn) clearBtn.hidden = !src;
+    }
+
+    function initLogoPicker(opts) {
+        if (!PF || !PF.initProductPhotoPicker) return null;
+        return PF.initProductPhotoPicker({
+            galleryInput: opts.galleryInput,
+            cameraInput: opts.cameraInput,
+            btnGallery: opts.btnGallery,
+            btnCamera: opts.btnCamera,
+            onSelect: opts.onSelect,
+            onError: opts.onError
+        });
+    }
+
+    var regLogoPicker = initLogoPicker({
+        galleryInput: document.getElementById("sm-reg-logo-gallery"),
+        cameraInput: document.getElementById("sm-reg-logo-camera"),
+        btnGallery: document.getElementById("sm-reg-logo-gallery-btn"),
+        btnCamera: document.getElementById("sm-reg-logo-camera-btn"),
+        onSelect: function (dataUrl) {
+            pendingRegLogo = dataUrl || "";
+            updateLogoPreview(
+                document.getElementById("sm-reg-logo-preview"),
+                document.getElementById("sm-reg-logo-clear"),
+                pendingRegLogo
+            );
+        },
+        onError: function (err) {
+            setStatus((err && err.message) || "로고 오류", "err");
+            pendingRegLogo = "";
+            updateLogoPreview(
+                document.getElementById("sm-reg-logo-preview"),
+                document.getElementById("sm-reg-logo-clear"),
+                ""
+            );
+        }
+    });
+
+    var editLogoPicker = initLogoPicker({
+        galleryInput: document.getElementById("sm-edit-logo-gallery"),
+        cameraInput: document.getElementById("sm-edit-logo-camera"),
+        btnGallery: document.getElementById("sm-edit-logo-gallery-btn"),
+        btnCamera: document.getElementById("sm-edit-logo-camera-btn"),
+        onSelect: function (dataUrl) {
+            editLogoTouched = true;
+            pendingEditLogo = dataUrl || "";
+            updateLogoPreview(
+                document.getElementById("sm-edit-logo-preview"),
+                document.getElementById("sm-edit-logo-clear"),
+                pendingEditLogo
+            );
+        },
+        onError: function (err) {
+            setEditMsg((err && err.message) || "로고 오류", "err");
+        }
+    });
+
+    var regLogoClear = document.getElementById("sm-reg-logo-clear");
+    if (regLogoClear) {
+        regLogoClear.addEventListener("click", function () {
+            pendingRegLogo = "";
+            if (regLogoPicker && regLogoPicker.clear) regLogoPicker.clear();
+            updateLogoPreview(
+                document.getElementById("sm-reg-logo-preview"),
+                regLogoClear,
+                ""
+            );
+        });
+    }
+
+    var editLogoClear = document.getElementById("sm-edit-logo-clear");
+    if (editLogoClear) {
+        editLogoClear.addEventListener("click", function () {
+            editLogoTouched = true;
+            pendingEditLogo = "";
+            if (editLogoPicker && editLogoPicker.clear) editLogoPicker.clear();
+            updateLogoPreview(
+                document.getElementById("sm-edit-logo-preview"),
+                editLogoClear,
+                ""
+            );
+        });
+    }
 
     function escapeHtml(s) {
         return String(s)
@@ -128,6 +229,14 @@
         document.getElementById("sm-edit-st_instagram").value = st.st_instagram || "";
         document.getElementById("sm-edit-st_naver_cafe").value = st.st_naver_cafe || "";
         document.getElementById("sm-edit-st_youtube").value = st.st_youtube || "";
+        pendingEditLogo = null;
+        editLogoTouched = false;
+        updateLogoPreview(
+            document.getElementById("sm-edit-logo-preview"),
+            document.getElementById("sm-edit-logo-clear"),
+            st.st_logo || ""
+        );
+        if (editLogoPicker && editLogoPicker.clear) editLogoPicker.clear();
         var title = document.getElementById("sm-edit-title");
         if (title) {
             title.textContent =
@@ -434,11 +543,19 @@
                 setStatus("회사명을 입력해 주세요.", "err");
                 return;
             }
+            if (pendingRegLogo) body.st_logo = pendingRegLogo;
             setStatus("등록 중…");
             api
                 .createStaff(body)
                 .then(function () {
                     regForm.reset();
+                    pendingRegLogo = "";
+                    updateLogoPreview(
+                        document.getElementById("sm-reg-logo-preview"),
+                        document.getElementById("sm-reg-logo-clear"),
+                        ""
+                    );
+                    if (regLogoPicker && regLogoPicker.clear) regLogoPicker.clear();
                     setStatus("관리자를 등록했습니다.", "ok");
                     loadList();
                 })
@@ -470,6 +587,7 @@
             var loginChanged = origLoginId && body.loginId !== origLoginId;
 
             function saveUpdate() {
+                if (editLogoTouched) body.st_logo = pendingEditLogo || "";
                 setEditMsg("저장 중…");
                 api
                     .updateStaff(id, body)
