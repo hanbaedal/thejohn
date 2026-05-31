@@ -219,6 +219,8 @@
         return;
     }
 
+    var VA = window.THEJHON_VENDOR_ADMIN;
+
     if (backListLink) backListLink.href = listReturnUrl();
 
     var editId = queryParam("id").trim();
@@ -232,6 +234,16 @@
     api.getProduct(editId)
         .then(function (it) {
             if (!it || !it.id) throw new Error("상품을 찾을 수 없습니다.");
+            var canWrite =
+                VA && VA.canWriteRegisteredItem
+                    ? VA.canWriteRegisteredItem(it, "pd_registered_by")
+                    : true;
+            if (!canWrite) {
+                if (formWrap) formWrap.hidden = true;
+                if (submitBtn) submitBtn.hidden = true;
+                if (cancelBtn) cancelBtn.textContent = "목록으로";
+                throw new Error("다른 관리자가 등록한 상품은 수정할 수 없습니다.");
+            }
             fillFormFromItem(it);
         })
         .catch(function (err) {

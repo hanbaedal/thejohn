@@ -37,15 +37,31 @@
         .pl-admin-row__actions {
             flex: 0 0 auto;
             display: flex;
-            flex-wrap: wrap;
-            gap: 0.35rem;
+            flex-wrap: nowrap;
+            align-items: center;
+            gap: 0.25rem;
+            margin-left: auto;
             justify-content: flex-end;
         }
-        .pl-admin-row__actions .btn {
-            font-size: 0.82rem;
-            padding: 0.4rem 0.7rem;
-            min-height: 2.25rem;
+        .pl-admin-row__actions .btn,
+        .pl-admin-row__actions .pl-admin-act {
+            font-size: 0.7rem;
+            line-height: 1.2;
+            padding: 0.18rem 0.45rem;
+            min-height: 0;
+            min-width: 0;
             white-space: nowrap;
+            border-radius: 4px;
+        }
+        .pl-admin-edit {
+            border-color: #c5d4e8;
+            color: #2a5080;
+            background: #fff;
+        }
+        .pl-admin-edit:hover {
+            background: #f0f6fc;
+            border-color: var(--dz-blue);
+            color: var(--dz-blue);
         }
         .pl-admin-del {
             border-color: #e8b4b4;
@@ -56,18 +72,36 @@
             background: #fef5f5;
             border-color: #c44;
         }
+        .pl-admin-row--readonly {
+            background: #f7f9fb;
+        }
+        .pl-admin-row--readonly:hover {
+            border-color: #e0e6ed;
+            background: #f7f9fb;
+        }
+        .pl-admin-row__main--readonly {
+            cursor: default;
+        }
+        .pl-admin-readonly-tag {
+            flex: 0 0 auto;
+            margin-left: auto;
+            font-size: 0.68rem;
+            color: #6b7c8f;
+            padding: 0.25rem 0.5rem;
+            border: 1px solid #dce3eb;
+            border-radius: 999px;
+            background: #fff;
+            white-space: nowrap;
+        }
         .vl-status { margin: 0 0 1rem; font-size: 0.85rem; color: #3d5166; min-height: 1.25rem; }
         @media (max-width: 520px) {
             .pl-admin-row {
-                flex-wrap: wrap;
-                align-items: flex-start;
+                flex-wrap: nowrap;
+                align-items: center;
+                gap: 0.45rem;
             }
             .pl-admin-row__actions {
-                width: 100%;
-                justify-content: stretch;
-            }
-            .pl-admin-row__actions .btn {
-                flex: 1 1 calc(50% - 0.2rem);
+                flex-shrink: 0;
             }
         }
     </style>

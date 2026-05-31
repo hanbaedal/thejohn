@@ -207,7 +207,7 @@
         var cart = Cart.readCart();
         if (!cart.items.length) {
             bodyEl.innerHTML =
-                '<p class="cart-empty">담은 상품이 없습니다. <a href="products.html">사업부문</a> 목록에서 <strong>주문 목록에 담기</strong>를 누르거나, 상품 카드의 <strong>주문하기</strong>를 이용해 주세요.</p>' +
+                '<p class="cart-empty">담은 상품이 없습니다. <a href="products.html">사업부문</a> 목록에서 <strong>목록에 담기</strong>를 누르거나, 상품 카드의 <strong>주문하기</strong>를 이용해 주세요.</p>' +
                 '<div class="cart-actions-row"><a href="products.html" class="btn btn-primary">사업부문으로</a></div>';
             return;
         }

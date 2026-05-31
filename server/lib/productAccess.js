@@ -12,7 +12,7 @@ const {
 } = require("./vendorAccess");
 const { F: VF, fromLegacyDoc: vendorFromLegacy } = require("./vendorFields");
 const { findStaffById } = require("./staff");
-const { loginIdValues } = require("./staffLoginId");
+const { loginIdValues, staffLoginIdKey } = require("./staffLoginId");
 
 function vendorRegistrarFromDoc(vendorDoc, auth) {
     var reg = "";
@@ -44,8 +44,54 @@ function productOwnedBy(doc, staffLoginId) {
     return staffLoginIdsEqual(doc[F.registeredBy], staffLoginId);
 }
 
-function canReadProduct() {
-    return true;
+/** 관리자 소유 loginId 집합(현재·previousLoginIds) — 목록 canWrite 판정용 */
+function buildProductWriteChecker(auth, staffDoc) {
+    if (!auth || !isStaffAuth(auth)) {
+        return function () {
+            return false;
+        };
+    }
+    if (isSupervisorAuth(auth)) {
+        return function () {
+            return true;
+        };
+    }
+    const ownedKeys = new Set();
+
+    function addLoginId(id) {
+        loginIdValues(id).forEach(function (v) {
+            const k = staffLoginIdKey(v);
+            if (k) ownedKeys.add(k);
+        });
+    }
+
+    addLoginId(trimStaffLoginId(auth.userId));
+    if (staffDoc && Array.isArray(staffDoc.previousLoginIds)) {
+        staffDoc.previousLoginIds.forEach(addLoginId);
+    }
+
+    return function canWriteDoc(doc) {
+        if (!doc) return true;
+        if (isSharedLegacyProduct(doc)) return true;
+        const k = staffLoginIdKey(doc[F.registeredBy]);
+        return !!k && ownedKeys.has(k);
+    };
+}
+
+async function createProductWriteChecker(auth) {
+    if (!auth || !isStaffAuth(auth)) {
+        return buildProductWriteChecker(auth, null);
+    }
+    if (isSupervisorAuth(auth)) {
+        return buildProductWriteChecker(auth, null);
+    }
+    const staff = await findStaffById(trimStaffLoginId(auth.userId));
+    return buildProductWriteChecker(auth, staff);
+}
+
+async function canWriteProductAsync(auth, doc) {
+    const checker = await createProductWriteChecker(auth);
+    return checker(doc);
 }
 
 function canWriteProduct(auth, doc) {
@@ -54,6 +100,10 @@ function canWriteProduct(auth, doc) {
     if (!doc) return true;
     if (isSharedLegacyProduct(doc)) return true;
     return productOwnedBy(doc, auth.userId);
+}
+
+function canReadProduct() {
+    return true;
 }
 
 function buildProductListQuery(auth) {
@@ -118,6 +168,8 @@ async function applyProductRegistrationOnUpdate(doc, existing, auth, body) {
 module.exports = {
     canReadProduct,
     canWriteProduct,
+    canWriteProductAsync,
+    createProductWriteChecker,
     buildProductListQuery,
     buildProductListQueryAsync,
     buildVendorCatalogProductQuery,

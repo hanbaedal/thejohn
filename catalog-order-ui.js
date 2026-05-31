@@ -1,5 +1,5 @@
 /**
- * 사업부문 목록 카드 — 주문 목록에 담기 · 주문하기 (담당 관리자 등록 상품)
+ * 사업부문 목록 카드 — 목록에 담기 · 주문하기 (담당 관리자 등록 상품)
  */
 (function (global) {
     function canShowCatalogOrder() {
@@ -21,7 +21,7 @@
         return (
             '<section class="ps-order" aria-label="주문" data-ps-order>' +
             '<div class="ps-order-actions">' +
-            '<button type="button" class="btn btn-primary ps-add-cart" data-ps-add>주문 목록에 담기</button>' +
+            '<button type="button" class="btn btn-primary ps-add-cart" data-ps-add>목록에 담기</button>' +
             '<button type="button" class="btn ps-open-order" data-ps-order-open>주문하기</button>' +
             "</div>" +
             "</section>"

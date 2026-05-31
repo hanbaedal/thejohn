@@ -38,6 +38,19 @@
         );
     }
 
+    /** 관리자 — 본인(또는 legacy) 등록 건만 수정·삭제. API canWrite 우선 */
+    function canWriteRegisteredItem(it, fieldKey) {
+        if (it && typeof it.canWrite === "boolean") return it.canWrite;
+        if (isSupervisorView()) return true;
+        if (!global.THEJHON_AUTH || THEJHON_AUTH.getRole() !== "admin") return false;
+        var me = THEJHON_AUTH.getUserId ? String(THEJHON_AUTH.getUserId() || "").trim() : "";
+        var key = fieldKey || "pd_registered_by";
+        var reg = String((it && it[key]) || "").trim();
+        if (!reg || reg.toLowerCase() === "legacy") return true;
+        if (!me) return false;
+        return me.toLowerCase() === reg.toLowerCase();
+    }
+
     /** 슈퍼바이저 목록 — 담당 관리자 필터 (all | legacy | loginId) */
     function filterByRegistrar(items, filterStaff, fieldKey) {
         var list = items || [];
@@ -104,6 +117,7 @@
         registeredByMeta: registeredByMeta,
         vendorGradeLabel: vendorGradeLabel,
         isSupervisorView: isSupervisorView,
+        canWriteRegisteredItem: canWriteRegisteredItem,
         filterByRegistrar: filterByRegistrar,
         initStaffFilter: initStaffFilter
     };

@@ -14,7 +14,8 @@ const {
 const { findStaffByLoginId } = require("../lib/loginResolve");
 const { findStaffByRegisteredBy } = require("../lib/staffRegisteredBy");
 const {
-    canWriteProduct,
+    canWriteProductAsync,
+    createProductWriteChecker,
     buildProductListQuery,
     buildProductListQueryAsync,
     buildVendorCatalogProductQuery,
@@ -112,6 +113,8 @@ router.get("/", async (req, res) => {
         const vendorDoc = await resolveVendorForAuth(auth);
         const query = await buildListFindQuery(auth, req.query, vendorDoc);
         const catalogByDept = !!req.query.dept && !req.query.registeredBy;
+        const writeChecker =
+            auth && isStaffAuth(auth) ? await createProductWriteChecker(auth) : null;
         const items = await getDb()
             .collection("products")
             .find(query, { projection: { [F.image]: 0, pd_image: 0, image: 0 } })
@@ -121,7 +124,10 @@ router.get("/", async (req, res) => {
         for (const doc of items) {
             try {
                 const row = toPublicListItem(doc);
-                if (row) rows.push(row);
+                if (row) {
+                    if (writeChecker) row.canWrite = writeChecker(doc);
+                    rows.push(row);
+                }
             } catch (mapErr) {
                 console.error("GET /api/products map", doc && doc.id, mapErr.message);
             }
@@ -231,6 +237,9 @@ router.get("/:id", async (req, res) => {
             const staff = await findStaffByLoginId(String(item.pd_registered_by || "").trim());
             item = applyStaffContactFallback(item, staff);
         }
+        if (auth && isStaffAuth(auth)) {
+            item.canWrite = await canWriteProductAsync(auth, doc);
+        }
         res.json({ ok: true, item: item });
     } catch (e) {
         console.error("GET /api/products/:id", e);
@@ -270,7 +279,7 @@ router.put("/:id", requireRole("supervisor", "admin"), async (req, res) => {
         const id = req.params.id;
         const existing = await getDb().collection("products").findOne({ id });
         if (!existing) return res.status(404).json({ ok: false, error: "상품을 찾을 수 없습니다." });
-        if (!canWriteProduct(req.auth, existing)) {
+        if (!(await canWriteProductAsync(req.auth, existing))) {
             return res.status(403).json({
                 ok: false,
                 error: "다른 관리자가 등록한 상품은 수정할 수 없습니다."
@@ -305,7 +314,7 @@ router.delete("/:id", requireRole("supervisor", "admin"), async (req, res) => {
     try {
         const existing = await getDb().collection("products").findOne({ id: req.params.id });
         if (!existing) return res.status(404).json({ ok: false, error: "상품을 찾을 수 없습니다." });
-        if (!canWriteProduct(req.auth, existing)) {
+        if (!(await canWriteProductAsync(req.auth, existing))) {
             return res.status(403).json({
                 ok: false,
                 error: "다른 관리자가 등록한 상품은 삭제할 수 없습니다."

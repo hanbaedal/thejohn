@@ -114,6 +114,12 @@
         });
     }
 
+    function canWriteItem(it) {
+        return VA && VA.canWriteRegisteredItem
+            ? VA.canWriteRegisteredItem(it, "pd_registered_by")
+            : true;
+    }
+
     function renderList() {
         if (!listEl) return;
         var items = filteredItems().sort(function (a, b) {
@@ -129,9 +135,25 @@
             '<ul class="vl-admin-list">' +
             items
                 .map(function (it) {
-                    var href = editHref(it);
                     var deptTxt = deptLabel(itemDept(it)) || "미지정";
                     var namePlain = String(it.pd_name || "(이름 없음)");
+                    var metaHtml =
+                        escapeHtml(deptTxt) +
+                        (it.pd_size ? " · " + escapeHtml(String(it.pd_size)) : "") +
+                        escapeHtml(registrarSuffix(it));
+                    if (!canWriteItem(it)) {
+                        return (
+                            '<li class="pl-admin-row pl-admin-row--readonly">' +
+                            '<div class="pl-admin-row__main pl-admin-row__main--readonly">' +
+                            '<span class="vl-admin-name">' +
+                            escapeHtml(namePlain) +
+                            '</span><span class="vl-admin-meta">' +
+                            metaHtml +
+                            "</span></div>" +
+                            '<span class="pl-admin-readonly-tag">조회만</span></li>'
+                        );
+                    }
+                    var href = editHref(it);
                     return (
                         '<li class="pl-admin-row">' +
                         '<a class="pl-admin-row__main" href="' +
@@ -139,15 +161,13 @@
                         '"><span class="vl-admin-name">' +
                         escapeHtml(namePlain) +
                         '</span><span class="vl-admin-meta">' +
-                        escapeHtml(deptTxt) +
-                        (it.pd_size ? " · " + escapeHtml(String(it.pd_size)) : "") +
-                        escapeHtml(registrarSuffix(it)) +
+                        metaHtml +
                         "</span></a>" +
                         '<div class="pl-admin-row__actions">' +
-                        '<a class="btn" href="' +
+                        '<a class="btn pl-admin-act pl-admin-edit" href="' +
                         escapeHtml(href) +
                         '">수정</a>' +
-                        '<button type="button" class="btn pl-admin-del" data-pl-delete="' +
+                        '<button type="button" class="btn pl-admin-act pl-admin-del" data-pl-delete="' +
                         escapeHtml(it.id) +
                         '" data-pl-name="' +
                         escapeHtml(namePlain) +
