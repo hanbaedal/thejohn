@@ -313,18 +313,13 @@
                 THEJHON_AUTH.applyNavRegisterVisibility();
             }
             if (
-                window.THEJHON_API &&
-                THEJHON_API.checkSession &&
                 window.THEJHON_AUTH &&
-                THEJHON_AUTH.syncVendorGradeFromSessionApi
+                THEJHON_AUTH.refreshSessionPermissionsAsync
             ) {
-                THEJHON_API.checkSession()
-                    .then(function (sess) {
-                        THEJHON_AUTH.syncVendorGradeFromSessionApi(sess);
-                    })
-                    .catch(function () {});
+                THEJHON_AUTH.refreshSessionPermissionsAsync();
             }
         }
+        syncAll();
         window.addEventListener("pageshow", syncAll);
     })();
 

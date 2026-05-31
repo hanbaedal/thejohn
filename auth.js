@@ -487,6 +487,51 @@
         }
     }
 
+    function refreshSessionPermissionsAsync() {
+        if (!global.THEJHON_API || !THEJHON_API.checkSession) {
+            return Promise.resolve(null);
+        }
+        if (!THEJHON_API.getToken || !THEJHON_API.getToken()) {
+            return Promise.resolve(null);
+        }
+        if (!isLoggedIn()) {
+            return Promise.resolve(null);
+        }
+        return THEJHON_API.checkSession()
+            .then(function (sess) {
+                if (sess && sess.code === "SESSION_INVALID") {
+                    handleSessionInvalid(sess);
+                    return sess;
+                }
+                if (sess && sess.loggedIn) {
+                    syncVendorGradeFromSessionApi(sess);
+                    applyNavRegisterVisibility();
+                    if (typeof global.__thejhonRefreshVendorCartNav === "function") {
+                        try {
+                            global.__thejhonRefreshVendorCartNav();
+                        } catch (e) {}
+                    }
+                }
+                return sess;
+            })
+            .catch(function () {
+                return null;
+            });
+    }
+
+    (function bootSessionPermissionRefresh() {
+        if (typeof document === "undefined") return;
+        function run() {
+            refreshSessionPermissionsAsync();
+        }
+        if (document.readyState === "loading") {
+            document.addEventListener("DOMContentLoaded", run);
+        } else {
+            run();
+        }
+        window.addEventListener("pageshow", run);
+    })();
+
     function isStaffOrderEnabled() {
         return authGet(STAFF_ORDER_ENABLED_KEY) === "1";
     }
@@ -1031,6 +1076,7 @@
         VENDOR_ORDER_ENABLED_KEY: VENDOR_ORDER_ENABLED_KEY,
         getVendorUnitPriceForProduct: getVendorUnitPriceForProduct,
         syncVendorGradeFromSessionApi: syncVendorGradeFromSessionApi,
+        refreshSessionPermissionsAsync: refreshSessionPermissionsAsync,
         VENDOR_GRADE_KEY: VENDOR_GRADE_KEY,
         getLoggedInCompanyDisplayName: getLoggedInCompanyDisplayName,
         getVendorOrderContact: getVendorOrderContact,

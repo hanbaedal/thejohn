@@ -281,6 +281,14 @@
     color: #2a4a5e;
     cursor: pointer;
 }
+.sm-order-check {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    font-size: 0.92rem;
+    color: #2a4a5e;
+    cursor: pointer;
+}
 .sm-field-hint {
     margin: 0.45rem 0 0;
     font-size: 0.8rem;

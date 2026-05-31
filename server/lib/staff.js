@@ -192,7 +192,7 @@ async function createStaffAccount(body, creatorRole) {
             st_logo: picked.st_logo !== undefined ? picked.st_logo : "",
             role: "admin",
             loginEnabled: true,
-            st_order_enabled: false
+            orderEnabled: picked.orderEnabled === true
         },
         null,
         loginId,
