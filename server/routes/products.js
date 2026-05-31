@@ -12,9 +12,11 @@ const {
     F
 } = require("../lib/productFields");
 const { findStaffByLoginId } = require("../lib/loginResolve");
+const { findStaffByRegisteredBy } = require("../lib/staffRegisteredBy");
 const {
     canWriteProduct,
     buildProductListQuery,
+    buildProductListQueryAsync,
     buildVendorCatalogProductQuery,
     vendorCanAccessProduct,
     stampNewProductRegistration,
@@ -40,18 +42,19 @@ function optionalAuth(req) {
     }
 }
 
-function buildListFindQuery(auth, reqQuery, vendorDoc) {
+async function buildListFindQuery(auth, reqQuery, vendorDoc) {
     const deptPart = reqQuery.dept ? deptQuery(reqQuery.dept) : null;
     let base = {};
 
     if (auth && auth.role === "vendor") {
         base = buildVendorCatalogProductQuery(vendorDoc, auth);
     } else {
-        /** 사업부문(?dept=) — 비로그인 공개 카탈로그: 부문만 필터 */
-        const catalogByDept =
-            !!reqQuery.dept && !reqQuery.registeredBy && !(auth && isStaffAuth(auth));
+        /** ?dept= 만 있으면 사업부문 카탈로그(부문 전체). ?registeredBy= 있으면 담당 관리자 필터 */
+        const catalogByDept = !!reqQuery.dept && !reqQuery.registeredBy;
         if (catalogByDept) {
             base = {};
+        } else if (auth && auth.role === "admin" && isStaffAuth(auth)) {
+            base = await buildProductListQueryAsync(auth);
         } else if (auth && isStaffAuth(auth)) {
             base = buildProductListQuery(auth);
         } else if (auth) {
@@ -89,7 +92,8 @@ async function enrichProductsContact(rows) {
         }
         const key = String(row.pd_registered_by || "").trim();
         if (!staffCache[key]) {
-            staffCache[key] = await findStaffByLoginId(key);
+            staffCache[key] =
+                (await findStaffByRegisteredBy(key)) || (await findStaffByLoginId(key));
         }
         out.push(applyStaffContactFallback(row, staffCache[key]));
     }
@@ -106,12 +110,8 @@ router.get("/", async (req, res) => {
         }
         const auth = optionalAuth(req);
         const vendorDoc = await resolveVendorForAuth(auth);
-        const query = buildListFindQuery(auth, req.query, vendorDoc);
-        const catalogByDept =
-            !!req.query.dept &&
-            !req.query.registeredBy &&
-            !(auth && isStaffAuth(auth)) &&
-            !(auth && auth.role === "vendor");
+        const query = await buildListFindQuery(auth, req.query, vendorDoc);
+        const catalogByDept = !!req.query.dept && !req.query.registeredBy;
         const items = await getDb()
             .collection("products")
             .find(query, { projection: { [F.image]: 0, pd_image: 0, image: 0 } })

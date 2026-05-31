@@ -11,6 +11,8 @@ const {
     staffDisplayName
 } = require("./vendorAccess");
 const { F: VF, fromLegacyDoc: vendorFromLegacy } = require("./vendorFields");
+const { findStaffById } = require("./staff");
+const { loginIdValues } = require("./staffLoginId");
 
 function vendorRegistrarFromDoc(vendorDoc, auth) {
     var reg = "";
@@ -68,6 +70,35 @@ function buildProductListQuery(auth) {
     };
 }
 
+/** 관리자 — loginId 변경·이전 아이디(previousLoginIds)까지 담당 상품 조회 */
+async function buildProductListQueryAsync(auth) {
+    if (!auth || !isStaffAuth(auth)) return {};
+    if (isSupervisorAuth(auth)) return {};
+    const me = trimStaffLoginId(auth.userId);
+    const inVals = [];
+
+    function addLoginId(id) {
+        loginIdValues(id).forEach(function (v) {
+            if (inVals.indexOf(v) < 0) inVals.push(v);
+        });
+    }
+
+    addLoginId(me);
+    const staff = await findStaffById(me);
+    if (staff && Array.isArray(staff.previousLoginIds)) {
+        staff.previousLoginIds.forEach(addLoginId);
+    }
+
+    return {
+        $or: [
+            { [F.registeredBy]: { $in: inVals.length ? inVals : ["__none__"] } },
+            { [F.registeredBy]: LEGACY_REGISTERED_BY },
+            { [F.registeredBy]: { $exists: false } },
+            { [F.registeredBy]: "" }
+        ]
+    };
+}
+
 async function stampNewProductRegistration(doc, auth) {
     const me = trimStaffLoginId(auth && auth.userId);
     doc[F.registeredBy] = me;
@@ -88,6 +119,7 @@ module.exports = {
     canReadProduct,
     canWriteProduct,
     buildProductListQuery,
+    buildProductListQueryAsync,
     buildVendorCatalogProductQuery,
     vendorCanAccessProduct,
     vendorRegistrarFromDoc,
