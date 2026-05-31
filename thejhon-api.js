@@ -23,17 +23,32 @@
 
     function getToken() {
         try {
-            return sessionStorage.getItem(TOKEN_KEY) || "";
-        } catch (e) {
-            return "";
-        }
+            var t = localStorage.getItem(TOKEN_KEY) || "";
+            if (t) return t;
+        } catch (e) {}
+        try {
+            var legacy = sessionStorage.getItem(TOKEN_KEY) || "";
+            if (legacy) {
+                localStorage.setItem(TOKEN_KEY, legacy);
+                sessionStorage.removeItem(TOKEN_KEY);
+                return legacy;
+            }
+        } catch (e2) {}
+        return "";
     }
 
     function setToken(token) {
         try {
-            if (token) sessionStorage.setItem(TOKEN_KEY, token);
-            else sessionStorage.removeItem(TOKEN_KEY);
+            if (token) localStorage.setItem(TOKEN_KEY, token);
+            else localStorage.removeItem(TOKEN_KEY);
         } catch (e) {}
+        try {
+            sessionStorage.removeItem(TOKEN_KEY);
+        } catch (e2) {}
+    }
+
+    function migrateTokenStorage() {
+        getToken();
     }
 
     function headers() {
@@ -94,6 +109,7 @@
         TOKEN_KEY: TOKEN_KEY,
         getToken: getToken,
         setToken: setToken,
+        migrateTokenStorage: migrateTokenStorage,
         get: function (path) {
             return request("GET", path);
         },

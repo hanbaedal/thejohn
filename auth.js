@@ -21,32 +21,98 @@
     var VENDOR_MGR_EMAIL_KEY = "thejhon_vendor_mgr_email";
     var STAFF_ORDER_ENABLED_KEY = "thejhon_staff_order_enabled";
     var STAFF_LOGO_KEY = "thejhon_staff_logo";
+    var LOGIN_ID_HINT_KEY = "thejhon_login_id_hint";
+
+    /** PWA·모바일 — 탭/앱 종료 후에도 로그인 유지 (localStorage) */
+    var AUTH_PERSIST_KEYS = [
+        AUTH_KEY,
+        USER_ID_KEY,
+        ROLE_KEY,
+        COMPANY_KEY,
+        DISPLAY_KEY,
+        "thejhon_auth_provider",
+        VENDOR_GRADE_KEY,
+        VENDOR_REGISTERED_BY_KEY,
+        VENDOR_ORDER_ENABLED_KEY,
+        VENDOR_MGR_NAME_KEY,
+        VENDOR_MGR_TEL_KEY,
+        VENDOR_MGR_EMAIL_KEY,
+        STAFF_ORDER_ENABLED_KEY,
+        STAFF_LOGO_KEY
+    ];
+
+    function authGet(key) {
+        try {
+            var v = localStorage.getItem(key);
+            if (v != null && v !== "") return v;
+        } catch (e) {}
+        try {
+            var legacy = sessionStorage.getItem(key);
+            if (legacy != null && legacy !== "") {
+                localStorage.setItem(key, legacy);
+                sessionStorage.removeItem(key);
+                return legacy;
+            }
+        } catch (e2) {}
+        return "";
+    }
+
+    function authSet(key, value) {
+        try {
+            if (value == null || value === "") localStorage.removeItem(key);
+            else localStorage.setItem(key, String(value));
+        } catch (e) {}
+        try {
+            sessionStorage.removeItem(key);
+        } catch (e2) {}
+    }
+
+    function authRemove(key) {
+        try {
+            localStorage.removeItem(key);
+        } catch (e) {}
+        try {
+            sessionStorage.removeItem(key);
+        } catch (e2) {}
+    }
+
+    function migrateAuthStorageOnce() {
+        var i;
+        for (i = 0; i < AUTH_PERSIST_KEYS.length; i++) {
+            authGet(AUTH_PERSIST_KEYS[i]);
+        }
+        if (global.THEJHON_API && THEJHON_API.migrateTokenStorage) {
+            THEJHON_API.migrateTokenStorage();
+        }
+    }
+
+    migrateAuthStorageOnce();
 
     function usesStaffLogoRole(role) {
-        var r = role != null ? role : sessionStorage.getItem(ROLE_KEY) || "";
+        var r = role != null ? role : authGet(ROLE_KEY) || "";
         return r === "admin" || r === "supervisor" || r === "vendor";
     }
 
     function cacheStaffLogo(logo, companyName) {
         var src = String(logo || "").trim();
         if (src) {
-            sessionStorage.setItem(STAFF_LOGO_KEY, src);
-            if (companyName) sessionStorage.setItem(COMPANY_KEY, String(companyName).trim());
+            authSet(STAFF_LOGO_KEY, src);
+            if (companyName) authSet(COMPANY_KEY, String(companyName).trim());
         } else {
-            sessionStorage.removeItem(STAFF_LOGO_KEY);
+            authRemove(STAFF_LOGO_KEY);
         }
     }
 
     function getCachedStaffLogo() {
         try {
-            return String(sessionStorage.getItem(STAFF_LOGO_KEY) || "").trim();
+            return String(authGet(STAFF_LOGO_KEY) || "").trim();
         } catch (e) {
             return "";
         }
     }
 
     function clearStaffLogoCache() {
-        sessionStorage.removeItem(STAFF_LOGO_KEY);
+        authRemove(STAFF_LOGO_KEY);
     }
 
     function normalizeId(s) {
@@ -70,38 +136,38 @@
                 THEJHON_API.logoutAsync().catch(function () {});
             }
         } catch (e) {}
-        sessionStorage.removeItem(AUTH_KEY);
-        sessionStorage.removeItem(USER_ID_KEY);
-        sessionStorage.removeItem(ROLE_KEY);
-        sessionStorage.removeItem(COMPANY_KEY);
-        sessionStorage.removeItem(DISPLAY_KEY);
-        sessionStorage.removeItem("thejhon_auth_provider");
-        sessionStorage.removeItem("thejhon_google_credential");
-        sessionStorage.removeItem(VENDOR_GRADE_KEY);
-        sessionStorage.removeItem(VENDOR_REGISTERED_BY_KEY);
-        sessionStorage.removeItem(VENDOR_ORDER_ENABLED_KEY);
-        sessionStorage.removeItem(VENDOR_MGR_NAME_KEY);
-        sessionStorage.removeItem(VENDOR_MGR_TEL_KEY);
-        sessionStorage.removeItem(VENDOR_MGR_EMAIL_KEY);
-        sessionStorage.removeItem(STAFF_ORDER_ENABLED_KEY);
+        authRemove(AUTH_KEY);
+        authRemove(USER_ID_KEY);
+        authRemove(ROLE_KEY);
+        authRemove(COMPANY_KEY);
+        authRemove(DISPLAY_KEY);
+        authRemove("thejhon_auth_provider");
+        authRemove("thejhon_google_credential");
+        authRemove(VENDOR_GRADE_KEY);
+        authRemove(VENDOR_REGISTERED_BY_KEY);
+        authRemove(VENDOR_ORDER_ENABLED_KEY);
+        authRemove(VENDOR_MGR_NAME_KEY);
+        authRemove(VENDOR_MGR_TEL_KEY);
+        authRemove(VENDOR_MGR_EMAIL_KEY);
+        authRemove(STAFF_ORDER_ENABLED_KEY);
         clearStaffLogoCache();
         if (global.THEJHON_API && THEJHON_API.setToken) THEJHON_API.setToken("");
     }
 
     function normalizeLegacySession() {
-        if (sessionStorage.getItem(AUTH_KEY) === "1" && !sessionStorage.getItem(ROLE_KEY)) {
+        if (authGet(AUTH_KEY) === "1" && !authGet(ROLE_KEY)) {
             clearSession();
         }
-        var role = sessionStorage.getItem(ROLE_KEY);
+        var role = authGet(ROLE_KEY);
         if (role === "guest") {
             clearSession();
             return;
         }
         if (isStaffRole(role) || role === "vendor") {
-            var company = sessionStorage.getItem(COMPANY_KEY);
-            if (company) sessionStorage.setItem(DISPLAY_KEY, company);
-        } else if (role === "admin" && !sessionStorage.getItem(DISPLAY_KEY)) {
-            sessionStorage.setItem(DISPLAY_KEY, sessionStorage.getItem(USER_ID_KEY) || "");
+            var company = authGet(COMPANY_KEY);
+            if (company) authSet(DISPLAY_KEY, company);
+        } else if (role === "admin" && !authGet(DISPLAY_KEY)) {
+            authSet(DISPLAY_KEY, authGet(USER_ID_KEY) || "");
         }
     }
 
@@ -129,20 +195,20 @@
         var name = String(c.mgrName != null ? c.mgrName : c.vn_mgr_name || "").trim();
         var tel = String(c.mgrTel != null ? c.mgrTel : c.vn_mgr_tel || "").trim();
         var email = String(c.mgrEmail != null ? c.mgrEmail : c.vn_mgr_email || "").trim();
-        if (name) sessionStorage.setItem(VENDOR_MGR_NAME_KEY, name);
-        else sessionStorage.removeItem(VENDOR_MGR_NAME_KEY);
-        if (tel) sessionStorage.setItem(VENDOR_MGR_TEL_KEY, tel);
-        else sessionStorage.removeItem(VENDOR_MGR_TEL_KEY);
-        if (email) sessionStorage.setItem(VENDOR_MGR_EMAIL_KEY, email);
-        else sessionStorage.removeItem(VENDOR_MGR_EMAIL_KEY);
+        if (name) authSet(VENDOR_MGR_NAME_KEY, name);
+        else authRemove(VENDOR_MGR_NAME_KEY);
+        if (tel) authSet(VENDOR_MGR_TEL_KEY, tel);
+        else authRemove(VENDOR_MGR_TEL_KEY);
+        if (email) authSet(VENDOR_MGR_EMAIL_KEY, email);
+        else authRemove(VENDOR_MGR_EMAIL_KEY);
     }
 
     function getVendorOrderContact() {
         return {
             company: getLoggedInCompanyDisplayName(),
-            mgrName: String(sessionStorage.getItem(VENDOR_MGR_NAME_KEY) || "").trim(),
-            mgrTel: String(sessionStorage.getItem(VENDOR_MGR_TEL_KEY) || "").trim(),
-            mgrEmail: String(sessionStorage.getItem(VENDOR_MGR_EMAIL_KEY) || "").trim()
+            mgrName: String(authGet(VENDOR_MGR_NAME_KEY) || "").trim(),
+            mgrTel: String(authGet(VENDOR_MGR_TEL_KEY) || "").trim(),
+            mgrEmail: String(authGet(VENDOR_MGR_EMAIL_KEY) || "").trim()
         };
     }
 
@@ -230,49 +296,50 @@
         staffOrderEnabled,
         staffLogo
     ) {
-        sessionStorage.setItem(AUTH_KEY, "1");
-        sessionStorage.setItem(USER_ID_KEY, userId || "");
-        sessionStorage.setItem(ROLE_KEY, role || "");
-        sessionStorage.setItem("thejhon_auth_provider", "form");
+        authSet(AUTH_KEY, "1");
+        authSet(USER_ID_KEY, userId || "");
+        authSet(ROLE_KEY, role || "");
+        authSet(LOGIN_ID_HINT_KEY, userId || "");
+        authSet("thejhon_auth_provider", "form");
         if (role === "vendor") {
-            sessionStorage.setItem(VENDOR_GRADE_KEY, parseVendorGrade(vendorGrade));
+            authSet(VENDOR_GRADE_KEY, parseVendorGrade(vendorGrade));
             var regBy = String(vendorRegisteredBy || "").trim().toLowerCase();
-            if (regBy) sessionStorage.setItem(VENDOR_REGISTERED_BY_KEY, regBy);
-            else sessionStorage.removeItem(VENDOR_REGISTERED_BY_KEY);
-            if (vendorOrderEnabled) sessionStorage.setItem(VENDOR_ORDER_ENABLED_KEY, "1");
-            else sessionStorage.removeItem(VENDOR_ORDER_ENABLED_KEY);
+            if (regBy) authSet(VENDOR_REGISTERED_BY_KEY, regBy);
+            else authRemove(VENDOR_REGISTERED_BY_KEY);
+            if (vendorOrderEnabled) authSet(VENDOR_ORDER_ENABLED_KEY, "1");
+            else authRemove(VENDOR_ORDER_ENABLED_KEY);
             storeVendorOrderContact({
                 mgrName: vendorMgrName,
                 mgrTel: vendorMgrTel,
                 mgrEmail: vendorMgrEmail
             });
         } else {
-            sessionStorage.removeItem(VENDOR_GRADE_KEY);
-            sessionStorage.removeItem(VENDOR_REGISTERED_BY_KEY);
-            sessionStorage.removeItem(VENDOR_ORDER_ENABLED_KEY);
-            sessionStorage.removeItem(VENDOR_MGR_NAME_KEY);
-            sessionStorage.removeItem(VENDOR_MGR_TEL_KEY);
-            sessionStorage.removeItem(VENDOR_MGR_EMAIL_KEY);
+            authRemove(VENDOR_GRADE_KEY);
+            authRemove(VENDOR_REGISTERED_BY_KEY);
+            authRemove(VENDOR_ORDER_ENABLED_KEY);
+            authRemove(VENDOR_MGR_NAME_KEY);
+            authRemove(VENDOR_MGR_TEL_KEY);
+            authRemove(VENDOR_MGR_EMAIL_KEY);
         }
         if (role === "admin" && staffOrderEnabled) {
-            sessionStorage.setItem(STAFF_ORDER_ENABLED_KEY, "1");
+            authSet(STAFF_ORDER_ENABLED_KEY, "1");
         } else {
-            sessionStorage.removeItem(STAFF_ORDER_ENABLED_KEY);
+            authRemove(STAFF_ORDER_ENABLED_KEY);
         }
         var label = companyName || "";
         if (isStaffRole(role) || role === "vendor") {
             if (label) {
-                sessionStorage.setItem(COMPANY_KEY, label);
-                sessionStorage.setItem(DISPLAY_KEY, label);
+                authSet(COMPANY_KEY, label);
+                authSet(DISPLAY_KEY, label);
             } else {
-                sessionStorage.removeItem(COMPANY_KEY);
-                sessionStorage.removeItem(DISPLAY_KEY);
+                authRemove(COMPANY_KEY);
+                authRemove(DISPLAY_KEY);
             }
         } else {
-            if (companyName) sessionStorage.setItem(COMPANY_KEY, companyName);
-            else sessionStorage.removeItem(COMPANY_KEY);
-            if (displayName) sessionStorage.setItem(DISPLAY_KEY, displayName);
-            else sessionStorage.removeItem(DISPLAY_KEY);
+            if (companyName) authSet(COMPANY_KEY, companyName);
+            else authRemove(COMPANY_KEY);
+            if (displayName) authSet(DISPLAY_KEY, displayName);
+            else authRemove(DISPLAY_KEY);
         }
         if (global.THEJHON_API && THEJHON_API.setToken) THEJHON_API.setToken(token || "");
         if (usesStaffLogoRole(role)) {
@@ -293,30 +360,30 @@
     }
 
     function setOAuthSession(provider) {
-        sessionStorage.setItem(AUTH_KEY, "1");
-        sessionStorage.setItem(USER_ID_KEY, "oauth_" + String(provider || "sns"));
-        sessionStorage.setItem(ROLE_KEY, "oauth");
-        sessionStorage.setItem("thejhon_auth_provider", String(provider || "oauth"));
-        sessionStorage.removeItem(COMPANY_KEY);
-        sessionStorage.removeItem(DISPLAY_KEY);
-        sessionStorage.removeItem(VENDOR_GRADE_KEY);
-        sessionStorage.removeItem(VENDOR_REGISTERED_BY_KEY);
-        sessionStorage.removeItem(VENDOR_ORDER_ENABLED_KEY);
-        sessionStorage.removeItem(VENDOR_MGR_NAME_KEY);
-        sessionStorage.removeItem(VENDOR_MGR_TEL_KEY);
-        sessionStorage.removeItem(VENDOR_MGR_EMAIL_KEY);
+        authSet(AUTH_KEY, "1");
+        authSet(USER_ID_KEY, "oauth_" + String(provider || "sns"));
+        authSet(ROLE_KEY, "oauth");
+        authSet("thejhon_auth_provider", String(provider || "oauth"));
+        authRemove(COMPANY_KEY);
+        authRemove(DISPLAY_KEY);
+        authRemove(VENDOR_GRADE_KEY);
+        authRemove(VENDOR_REGISTERED_BY_KEY);
+        authRemove(VENDOR_ORDER_ENABLED_KEY);
+        authRemove(VENDOR_MGR_NAME_KEY);
+        authRemove(VENDOR_MGR_TEL_KEY);
+        authRemove(VENDOR_MGR_EMAIL_KEY);
     }
 
     function isLoggedIn() {
-        return sessionStorage.getItem(AUTH_KEY) === "1" && !!sessionStorage.getItem(ROLE_KEY);
+        return authGet(AUTH_KEY) === "1" && !!authGet(ROLE_KEY);
     }
 
     function getRole() {
-        return sessionStorage.getItem(ROLE_KEY) || "";
+        return authGet(ROLE_KEY) || "";
     }
 
     function getUserId() {
-        return sessionStorage.getItem(USER_ID_KEY) || "";
+        return authGet(USER_ID_KEY) || "";
     }
 
     var PRODUCT_ADMIN_PAGES = [
@@ -379,7 +446,7 @@
 
     function getVendorPriceGrade() {
         if (getRole() !== "vendor") return "";
-        return parseVendorGrade(sessionStorage.getItem(VENDOR_GRADE_KEY));
+        return parseVendorGrade(authGet(VENDOR_GRADE_KEY));
     }
 
     function getPriceKeyForGrade(grade) {
@@ -397,40 +464,40 @@
     function syncVendorGradeFromSessionApi(sess) {
         if (sess && sess.loggedIn && sess.role === "vendor") {
             if (sess.vendorGrade) {
-                sessionStorage.setItem(VENDOR_GRADE_KEY, parseVendorGrade(sess.vendorGrade));
+                authSet(VENDOR_GRADE_KEY, parseVendorGrade(sess.vendorGrade));
             }
             if (sess.vendorRegisteredBy) {
-                sessionStorage.setItem(
+                authSet(
                     VENDOR_REGISTERED_BY_KEY,
                     String(sess.vendorRegisteredBy).trim().toLowerCase()
                 );
             }
             if (sess.vendorOrderEnabled) {
-                sessionStorage.setItem(VENDOR_ORDER_ENABLED_KEY, "1");
+                authSet(VENDOR_ORDER_ENABLED_KEY, "1");
             } else {
-                sessionStorage.removeItem(VENDOR_ORDER_ENABLED_KEY);
+                authRemove(VENDOR_ORDER_ENABLED_KEY);
             }
         }
         if (sess && sess.loggedIn && sess.role === "admin") {
             if (sess.staffOrderEnabled) {
-                sessionStorage.setItem(STAFF_ORDER_ENABLED_KEY, "1");
+                authSet(STAFF_ORDER_ENABLED_KEY, "1");
             } else {
-                sessionStorage.removeItem(STAFF_ORDER_ENABLED_KEY);
+                authRemove(STAFF_ORDER_ENABLED_KEY);
             }
         }
     }
 
     function isStaffOrderEnabled() {
-        return sessionStorage.getItem(STAFF_ORDER_ENABLED_KEY) === "1";
+        return authGet(STAFF_ORDER_ENABLED_KEY) === "1";
     }
 
     function isVendorOrderEnabled() {
-        return sessionStorage.getItem(VENDOR_ORDER_ENABLED_KEY) === "1";
+        return authGet(VENDOR_ORDER_ENABLED_KEY) === "1";
     }
 
     function getVendorRegisteredBy() {
         if (getRole() !== "vendor") return "";
-        return String(sessionStorage.getItem(VENDOR_REGISTERED_BY_KEY) || "")
+        return String(authGet(VENDOR_REGISTERED_BY_KEY) || "")
             .trim()
             .toLowerCase();
     }
@@ -704,11 +771,11 @@
     function getLoggedInCompanyDisplayName() {
         if (!isLoggedIn()) return "";
         var role = getRole();
-        var company = sessionStorage.getItem(COMPANY_KEY);
+        var company = authGet(COMPANY_KEY);
         if (company) return company;
         if (role === "supervisor" || role === "admin") return "(주)더존";
         if (role === "vendor") return getUserId();
-        return sessionStorage.getItem(DISPLAY_KEY) || "";
+        return authGet(DISPLAY_KEY) || "";
     }
 
     function isNotebookViewport() {
@@ -910,6 +977,10 @@
         } catch (e) {}
     }
 
+    function getSavedLoginIdHint() {
+        return authGet(LOGIN_ID_HINT_KEY) || authGet(USER_ID_KEY) || "";
+    }
+
     global.THEJHON_AUTH = {
         AUTH_KEY: AUTH_KEY,
         ROLE_KEY: ROLE_KEY,
@@ -922,6 +993,7 @@
         usesStaffLogoRole: usesStaffLogoRole,
         cacheStaffLogo: cacheStaffLogo,
         getCachedStaffLogo: getCachedStaffLogo,
+        getSavedLoginIdHint: getSavedLoginIdHint,
         clearStaffLogoCache: clearStaffLogoCache,
         handleSessionInvalid: handleSessionInvalid,
         normalizeLegacySession: normalizeLegacySession,

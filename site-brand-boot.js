@@ -83,10 +83,22 @@
 
     global.__thejhonApplyPwaManifest = applyPwaManifest;
 
+    function authRead(key) {
+        try {
+            var v = localStorage.getItem(key);
+            if (v != null && v !== "") return v;
+        } catch (e) {}
+        try {
+            return sessionStorage.getItem(key) || "";
+        } catch (e2) {
+            return "";
+        }
+    }
+
     function usesStaffLogoRole() {
         try {
-            if (sessionStorage.getItem(AUTH_KEY) !== "1") return false;
-            var role = sessionStorage.getItem(ROLE_KEY) || "";
+            if (authRead(AUTH_KEY) !== "1") return false;
+            var role = authRead(ROLE_KEY) || "";
             return role === "admin" || role === "supervisor" || role === "vendor";
         } catch (e) {
             return false;
@@ -100,7 +112,7 @@
     }
 
     var branded = usesStaffLogoRole();
-    var customLogo = branded ? String(sessionStorage.getItem(LOGO_KEY) || "").trim() : "";
+    var customLogo = branded ? String(authRead(LOGO_KEY) || "").trim() : "";
     var faviconHref = customLogo || (branded ? "" : DEFAULT_FAVICON);
 
     if (branded) {
@@ -135,7 +147,7 @@
         if (!customLogo) return;
         var company = "";
         try {
-            company = sessionStorage.getItem("thejhon_company_name") || "";
+            company = authRead("thejhon_company_name") || "";
         } catch (e) {}
         applyPwaManifest(customLogo, company);
     }
