@@ -5,6 +5,7 @@ const { resolveFormLogin, findVendorByLoginId, findStaffByLoginId } = require(".
 const { toPublic, F: VF } = require("../lib/vendorFields");
 const { toPublic: toPublicStaff, staffOrderEnabledFromDoc } = require("../lib/staffFields");
 const { vendorCanPlaceOrders } = require("../lib/orderAccess");
+const { findStaffByRegisteredBy } = require("../lib/staffRegisteredBy");
 const { logStaffLogin, logVendorLogin } = require("../lib/accessLog");
 const {
     assertCanStartLogin,
@@ -108,7 +109,8 @@ router.post("/login", async (req, res) => {
             displayName: result.companyName || result.displayName || result.userId,
             vendorGrade: result.vendorGrade || "",
             vendorRegisteredBy: result.vendorRegisteredBy || "",
-            vendorRegisteredByName: result.vendorRegisteredByName || "",
+            vendorRegisteredByName: result.vendorRegisteredByName || result.brandCompanyName || "",
+            brandCompanyName: result.brandCompanyName || result.vendorRegisteredByName || "",
             vendorOrderEnabled: !!result.vendorOrderEnabled,
             staffOrderEnabled: !!result.staffOrderEnabled,
             vendorMgrName: result.vendorMgrName || "",
@@ -167,6 +169,11 @@ router.get("/staff-profile", requireRole("admin", "supervisor", "vendor"), async
             if (!staffLoginId) {
                 return res.status(404).json({ ok: false, error: "등록 담당 관리자 정보가 없습니다." });
             }
+            const staff = await findStaffByRegisteredBy(staffLoginId);
+            if (!staff) {
+                return res.status(404).json({ ok: false, error: "관리자 정보를 찾을 수 없습니다." });
+            }
+            return res.json({ ok: true, item: toPublicStaff(staff) });
         } else {
             staffLoginId = String(req.auth.userId || "").trim();
         }

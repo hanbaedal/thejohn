@@ -202,7 +202,10 @@
         if (!customLogo) return;
         var company = "";
         try {
-            company = authRead("thejhon_company_name") || "";
+            company =
+                authRead("thejhon_brand_company_name") ||
+                authRead("thejhon_company_name") ||
+                "";
         } catch (e) {}
         applyPwaManifest(customLogo, company);
     }

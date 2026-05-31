@@ -9,6 +9,7 @@ const {
 const { verifyStaffPassword, isStaffRole } = require("./staff");
 const { getCompanyName: getVendorCompanyName, parseGrade, F: VF } = require("./vendorFields");
 const { vendorCanPlaceOrders } = require("./orderAccess");
+const { findStaffByRegisteredBy } = require("./staffRegisteredBy");
 
 function vendorGradeFromDoc(vendor) {
     if (!vendor) return "1";
@@ -104,11 +105,13 @@ async function tryVendorLogin(vendor, loginId, password) {
 
     const regBy = String(vendor[VF.registeredBy] || "").trim();
     let stLogo = "";
+    let brandCompanyName = String(vendor[VF.registeredByName] || "").trim();
     if (regBy) {
-        const adminStaff = await findStaffByLoginId(regBy);
+        const adminStaff = await findStaffByRegisteredBy(regBy);
         if (adminStaff) {
             const legacy = fromLegacyDoc(adminStaff);
             stLogo = legacy ? String(legacy[SF.logo] || "").trim() : "";
+            brandCompanyName = getStaffCompanyName(adminStaff) || brandCompanyName;
         }
     }
     return {
@@ -119,7 +122,8 @@ async function tryVendorLogin(vendor, loginId, password) {
         displayName: getVendorCompanyName(vendor) || vendor.loginId || "",
         vendorGrade: vendorGradeFromDoc(vendor),
         vendorRegisteredBy: regBy,
-        vendorRegisteredByName: String(vendor[VF.registeredByName] || "").trim(),
+        vendorRegisteredByName: brandCompanyName,
+        brandCompanyName: brandCompanyName,
         vendorOrderEnabled: await vendorCanPlaceOrders(vendor),
         vendorMgrName: String(vendor[VF.mgrName] || "").trim(),
         vendorMgrTel: String(vendor[VF.mgrTel] || "").trim(),

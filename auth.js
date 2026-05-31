@@ -28,6 +28,7 @@
     var VENDOR_MGR_EMAIL_KEY = "thejhon_vendor_mgr_email";
     var STAFF_ORDER_ENABLED_KEY = "thejhon_staff_order_enabled";
     var STAFF_LOGO_KEY = "thejhon_staff_logo";
+    var BRAND_COMPANY_KEY = "thejhon_brand_company_name";
     var LOGIN_ID_HINT_KEY = "thejhon_login_id_hint";
 
     var store = global.THEJHON_AUTH_STORAGE;
@@ -47,7 +48,8 @@
         VENDOR_MGR_TEL_KEY,
         VENDOR_MGR_EMAIL_KEY,
         STAFF_ORDER_ENABLED_KEY,
-        STAFF_LOGO_KEY
+        STAFF_LOGO_KEY,
+        BRAND_COMPANY_KEY
     ];
 
     function authGet(key) {
@@ -184,6 +186,8 @@
             displayName: data.companyName || data.displayName || data.userId || "",
             vendorGrade: data.vendorGrade || "",
             vendorRegisteredBy: data.vendorRegisteredBy || "",
+            vendorRegisteredByName: data.vendorRegisteredByName || data.brandCompanyName || "",
+            brandCompanyName: data.brandCompanyName || data.vendorRegisteredByName || "",
             vendorOrderEnabled: !!data.vendorOrderEnabled,
             staffOrderEnabled: !!data.staffOrderEnabled,
             vendorMgrName: data.vendorMgrName || "",
@@ -206,9 +210,44 @@
         else authRemove(VENDOR_MGR_EMAIL_KEY);
     }
 
+    function getVendorCompanyName() {
+        return String(authGet(COMPANY_KEY) || "").trim();
+    }
+
+    function getBrandCompanyDisplayName() {
+        if (!isLoggedIn()) return "";
+        var brand = String(authGet(BRAND_COMPANY_KEY) || "").trim();
+        if (brand) return brand;
+        var role = getRole();
+        if (role === "supervisor" || role === "admin") {
+            return String(authGet(COMPANY_KEY) || "").trim() || "(주)더존";
+        }
+        return "";
+    }
+
+    function updateBrandFromStaffProfile(st) {
+        if (!st || !isLoggedIn()) return;
+        var company = String(st.st_company || "").trim();
+        var logo = String(st.st_logo || "").trim();
+        if (company) authSet(BRAND_COMPANY_KEY, company);
+        if (usesStaffLogoRole(getRole())) {
+            cacheStaffLogo(logo, company || getBrandCompanyDisplayName());
+        }
+        if (typeof global.__thejhonApplyHomeHeroCompany === "function") {
+            try {
+                global.__thejhonApplyHomeHeroCompany(getBrandCompanyDisplayName());
+            } catch (e) {}
+        }
+        if (typeof global.__thejhonRefreshHeaderCompany === "function") {
+            try {
+                global.__thejhonRefreshHeaderCompany();
+            } catch (e2) {}
+        }
+    }
+
     function getVendorOrderContact() {
         return {
-            company: getLoggedInCompanyDisplayName(),
+            company: getRole() === "vendor" ? getVendorCompanyName() : getBrandCompanyDisplayName(),
             mgrName: String(authGet(VENDOR_MGR_NAME_KEY) || "").trim(),
             mgrTel: String(authGet(VENDOR_MGR_TEL_KEY) || "").trim(),
             mgrEmail: String(authGet(VENDOR_MGR_EMAIL_KEY) || "").trim()
@@ -297,7 +336,8 @@
         vendorMgrTel,
         vendorMgrEmail,
         staffOrderEnabled,
-        staffLogo
+        staffLogo,
+        brandCompanyName
     ) {
         var prevUser = authGet(USER_ID_KEY);
         var hadToken =
@@ -343,23 +383,41 @@
             authRemove(STAFF_ORDER_ENABLED_KEY);
         }
         var label = companyName || "";
-        if (isStaffRole(role) || role === "vendor") {
+        var brandLabel = String(brandCompanyName || "").trim();
+        if (role === "vendor") {
+            if (label) {
+                authSet(COMPANY_KEY, label);
+            } else {
+                authRemove(COMPANY_KEY);
+            }
+            if (brandLabel) {
+                authSet(BRAND_COMPANY_KEY, brandLabel);
+                authSet(DISPLAY_KEY, brandLabel);
+            } else {
+                authRemove(BRAND_COMPANY_KEY);
+                if (label) authSet(DISPLAY_KEY, label);
+                else authRemove(DISPLAY_KEY);
+            }
+        } else if (isStaffRole(role)) {
             if (label) {
                 authSet(COMPANY_KEY, label);
                 authSet(DISPLAY_KEY, label);
+                authSet(BRAND_COMPANY_KEY, label);
             } else {
                 authRemove(COMPANY_KEY);
                 authRemove(DISPLAY_KEY);
+                authRemove(BRAND_COMPANY_KEY);
             }
         } else {
             if (companyName) authSet(COMPANY_KEY, companyName);
             else authRemove(COMPANY_KEY);
             if (displayName) authSet(DISPLAY_KEY, displayName);
             else authRemove(DISPLAY_KEY);
+            authRemove(BRAND_COMPANY_KEY);
         }
         if (global.THEJHON_API && THEJHON_API.setToken) THEJHON_API.setToken(token || "");
         if (usesStaffLogoRole(role)) {
-            cacheStaffLogo(staffLogo, label);
+            cacheStaffLogo(staffLogo, brandLabel || label);
         } else {
             clearStaffLogoCache();
         }
@@ -834,11 +892,10 @@
 
     function getLoggedInCompanyDisplayName() {
         if (!isLoggedIn()) return "";
+        var brand = getBrandCompanyDisplayName();
+        if (brand) return brand;
         var role = getRole();
-        var company = authGet(COMPANY_KEY);
-        if (company) return company;
-        if (role === "supervisor" || role === "admin") return "(주)더존";
-        if (role === "vendor") return getUserId();
+        if (role === "vendor") return getVendorCompanyName() || getUserId();
         return authGet(DISPLAY_KEY) || "";
     }
 
@@ -1102,6 +1159,9 @@
         refreshSessionPermissionsAsync: refreshSessionPermissionsAsync,
         VENDOR_GRADE_KEY: VENDOR_GRADE_KEY,
         getLoggedInCompanyDisplayName: getLoggedInCompanyDisplayName,
+        getBrandCompanyDisplayName: getBrandCompanyDisplayName,
+        getVendorCompanyName: getVendorCompanyName,
+        updateBrandFromStaffProfile: updateBrandFromStaffProfile,
         getVendorOrderContact: getVendorOrderContact,
         storeVendorOrderContact: storeVendorOrderContact,
         fetchVendorOrderContactAsync: fetchVendorOrderContactAsync,

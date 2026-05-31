@@ -357,9 +357,11 @@
         var noteEl = document.getElementById("vom-note");
         var note = noteEl ? String(noteEl.value || "").trim() : "";
         var body = {
-            vendorCompany: Auth.getLoggedInCompanyDisplayName
-                ? Auth.getLoggedInCompanyDisplayName()
-                : "",
+            vendorCompany: Auth.getVendorCompanyName
+                ? Auth.getVendorCompanyName()
+                : Auth.getLoggedInCompanyDisplayName
+                  ? Auth.getLoggedInCompanyDisplayName()
+                  : "",
             vendorGrade: Auth.getVendorPriceGrade ? Auth.getVendorPriceGrade() : "",
             note: note,
             orderContactConfirmed: true,

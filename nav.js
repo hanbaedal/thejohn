@@ -482,6 +482,9 @@
 
         function applyFromStaff(st) {
             if (!st) return;
+            if (Auth.updateBrandFromStaffProfile) {
+                Auth.updateBrandFromStaffProfile(st);
+            }
             applySiteLogo(st.st_logo, st.st_company || "");
             var grid = document.querySelector(".site-footer .site-footer-grid");
             if (grid) {
@@ -532,24 +535,31 @@
                 return;
             }
             applyHomeHeroCompany(
-                Auth.getLoggedInCompanyDisplayName && Auth.getLoggedInCompanyDisplayName()
+                Auth.getBrandCompanyDisplayName && Auth.getBrandCompanyDisplayName()
             );
             if (!Api.getStaffProfile) {
                 if (Auth.getCachedStaffLogo && Auth.getCachedStaffLogo()) {
-                    applySiteLogo(Auth.getCachedStaffLogo(), Auth.getLoggedInCompanyDisplayName && Auth.getLoggedInCompanyDisplayName());
+                    applySiteLogo(
+                        Auth.getCachedStaffLogo(),
+                        Auth.getBrandCompanyDisplayName && Auth.getBrandCompanyDisplayName()
+                    );
                 }
                 return;
             }
             Api.getStaffProfile()
                 .then(applyFromStaff)
                 .catch(function () {
-                    applyHomeHeroCompany(
-                        Auth.getLoggedInCompanyDisplayName && Auth.getLoggedInCompanyDisplayName()
-                    );
-                    if (Auth.getCachedStaffLogo && Auth.getCachedStaffLogo()) {
-                        applySiteLogo(Auth.getCachedStaffLogo(), Auth.getLoggedInCompanyDisplayName && Auth.getLoggedInCompanyDisplayName());
+                    var brandName =
+                        Auth.getBrandCompanyDisplayName && Auth.getBrandCompanyDisplayName();
+                    if (!brandName && Auth.getLoggedInCompanyDisplayName) {
+                        brandName = Auth.getLoggedInCompanyDisplayName();
+                    }
+                    applyHomeHeroCompany(brandName);
+                    var logo = Auth.getCachedStaffLogo && Auth.getCachedStaffLogo();
+                    if (logo) {
+                        applySiteLogo(logo, brandName);
                     } else {
-                        applySiteBrandDefaults();
+                        clearSiteBrandPending();
                     }
                 });
         }
