@@ -95,7 +95,7 @@
                 video.removeAttribute("poster");
             }
         }
-        document.documentElement.classList.remove("site-brand-pending");
+        document.documentElement.classList.remove("site-brand-pending", "site-brand-custom");
         if (window.__THEJHON_BRAND_BOOT && window.__THEJHON_BRAND_BOOT.clearPending) {
             window.__THEJHON_BRAND_BOOT.clearPending();
         }

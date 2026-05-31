@@ -116,8 +116,9 @@
     var branded = usesStaffLogoRole();
     var customLogo = branded ? String(authRead(LOGO_KEY) || "").trim() : "";
     var faviconHref = customLogo || (branded ? "" : DEFAULT_FAVICON);
+    var brandPending = branded && !customLogo;
 
-    if (branded) {
+    if (brandPending) {
         try {
             document.documentElement.classList.add("site-brand-pending");
         } catch (e) {
@@ -127,9 +128,19 @@
             "<style id=\"thejhon-brand-boot-css\">" +
                 "html.site-brand-pending .dz-logo," +
                 "html.site-brand-pending .dz-logo--compact{visibility:hidden!important}" +
-                "html.site-brand-pending .home-intro-video{opacity:0!important}" +
                 "</style>"
         );
+    } else if (branded) {
+        document.write(
+            "<style id=\"thejhon-brand-boot-css\">" +
+                "html.site-brand-custom .home-intro-video[poster*=\"logo.png\"]{opacity:0!important}" +
+                "</style>"
+        );
+        try {
+            document.documentElement.classList.add("site-brand-custom");
+        } catch (e2) {
+            document.documentElement.className += " site-brand-custom";
+        }
     }
 
     if (faviconHref) {
@@ -149,20 +160,20 @@
                 escScriptJson(customLogo) +
                 ";function stripPoster(v){if(!v)return;" +
                 "var p=v.getAttribute('poster')||'';" +
-                "if(p.indexOf('logo.png')>=0)v.removeAttribute('poster');}" +
+                "if(p.indexOf('logo.png')>=0){v.removeAttribute('poster');document.documentElement.classList.remove('site-brand-custom');}}" +
                 "function apply(){var imgs=document.querySelectorAll('.dz-logo-img');" +
                 "if(!imgs.length)return false;" +
                 "for(var i=0;i<imgs.length;i++)imgs[i].setAttribute('src',L);" +
                 "stripPoster(document.querySelector('.home-intro-video'));" +
-                "document.documentElement.classList.remove('site-brand-pending');" +
+                "document.documentElement.classList.remove('site-brand-pending','site-brand-custom');" +
                 "return true;}" +
                 "function boot(){stripPoster(document.querySelector('.home-intro-video'));apply();}" +
-                "if(!apply()){var obs=new MutationObserver(function(){" +
+                "boot();if(!apply()){var obs=new MutationObserver(function(){" +
                 "boot();if(document.querySelector('.dz-logo-img'))obs.disconnect();});" +
                 "obs.observe(document.documentElement,{childList:true,subtree:true});}" +
                 "})();<\/script>"
         );
-    } else if (branded) {
+    } else if (brandPending) {
         document.write(
             "<script>(function(){function strip(){var v=document.querySelector('.home-intro-video');" +
                 "if(!v)return;var p=v.getAttribute('poster')||'';" +
@@ -176,7 +187,7 @@
     }
 
     function clearPending() {
-        document.documentElement.classList.remove("site-brand-pending");
+        document.documentElement.classList.remove("site-brand-pending", "site-brand-custom");
     }
 
     function stripDeozonVideoPoster() {
@@ -185,6 +196,7 @@
         var poster = video.getAttribute("poster") || "";
         if (poster.indexOf("logo.png") >= 0) {
             video.removeAttribute("poster");
+            document.documentElement.classList.remove("site-brand-custom");
         }
     }
 
