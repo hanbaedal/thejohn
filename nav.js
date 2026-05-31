@@ -1,5 +1,6 @@
 (function () {
     if (window.THEJHON_AUTH) {
+        THEJHON_AUTH.enforceSiteLogin();
         THEJHON_AUTH.enforceRegisterPages();
         THEJHON_AUTH.applyNavRegisterVisibility();
         if (THEJHON_AUTH.trackPageViewIfNeeded) THEJHON_AUTH.trackPageViewIfNeeded();

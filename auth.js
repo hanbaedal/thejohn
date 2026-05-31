@@ -3,6 +3,7 @@
  *
  * 로그인·권한 정책
  * - 로그아웃 → login.html
+ * - 미로그인 방문 → login.html (아이디 로그인 또는 게스트 로그인 선택)
  * - 슈퍼바이저: 관리자(staff) 생성 · 전체 기능
  * - 관리자: 업체(vendors) 생성 · 주문 권한(st_order_enabled)은 슈퍼바이저 부여
  * - 업체: 담당 관리자 상품 등급가, 타 관리자 상품은 가격1 · 주문은 담당 관리자+주문권한 있을 때
@@ -703,6 +704,18 @@
             });
     }
 
+    (function bootSiteLoginGate() {
+        if (typeof document === "undefined") return;
+        function run() {
+            enforceSiteLogin();
+        }
+        if (document.readyState === "loading") {
+            document.addEventListener("DOMContentLoaded", run);
+        } else {
+            run();
+        }
+    })();
+
     (function bootBrandProfileRefresh() {
         if (typeof document === "undefined") return;
         function run() {
@@ -1061,6 +1074,18 @@
         } catch (e) {}
     }
 
+    function enforceSiteLogin() {
+        normalizeLegacySession();
+        var page = currentPageFile();
+        if (page === "login.html") return;
+        if (isLoggedIn()) return;
+        var next = window.location.pathname + window.location.search + window.location.hash;
+        if (!next || next === "/") next = "/index.html";
+        window.location.replace(
+            "login.html?next=" + encodeURIComponent(next)
+        );
+    }
+
     function enforceRegisterPages() {
         var page = currentPageFile();
         if (ORDER_MANAGE_PAGES.indexOf(page) >= 0) {
@@ -1289,6 +1314,7 @@
         fetchVendorOrderContactAsync: fetchVendorOrderContactAsync,
         isNotebookViewport: isNotebookViewport,
         enforceRegisterPages: enforceRegisterPages,
+        enforceSiteLogin: enforceSiteLogin,
         trackPageViewIfNeeded: trackPageViewIfNeeded,
         applyNavRegisterVisibility: applyNavRegisterVisibility,
         safeNextPath: safeNextPath,
