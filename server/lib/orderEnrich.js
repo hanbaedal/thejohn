@@ -136,9 +136,9 @@ async function prepareOrderForPdf(db, order) {
 
     const supplierLogin =
         str(o.vendorRegisteredBy) ||
-        (vendor ? await resolveSupplierStaffLoginId(vendor) : DEFAULT_STAFF_LOGIN);
+        (vendor ? await resolveSupplierStaffLoginId(vendor) : "");
     o.vendorRegisteredBy = supplierLogin;
-    if (!o.supplier || !str(o.supplier.name)) {
+    if (supplierLogin && (!o.supplier || !str(o.supplier.name))) {
         o.supplier = await staffSupplierFromLoginId(supplierLogin);
     }
     if (!str(o.vendorRegisteredByName)) {
@@ -161,7 +161,6 @@ async function prepareOrderForPdf(db, order) {
 }
 
 module.exports = {
-    DEFAULT_STAFF_LOGIN,
     staffSupplierFromLoginId,
     buildEnrichedOrder,
     prepareOrderForPdf,
