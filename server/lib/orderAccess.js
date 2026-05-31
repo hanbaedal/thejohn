@@ -1,7 +1,6 @@
-const { getDb } = require("../db");
-const { loginLookupFilter } = require("./loginAccount");
 const { F: VF, fromLegacyDoc: vendorFromLegacy } = require("./vendorFields");
 const { staffOrderEnabledFromDoc } = require("./staffFields");
+const { findStaffByRegisteredBy } = require("./staffRegisteredBy");
 
 function normalizeStaffLoginId(loginId) {
     return String(loginId || "")
@@ -15,11 +14,7 @@ function isStaffAuth(auth) {
 }
 
 async function staffOrderEnabledByLoginId(loginId) {
-    const key = String(loginId || "").trim();
-    if (!key) return false;
-    const staff = await getDb()
-        .collection("staff")
-        .findOne({ active: { $ne: false }, ...loginLookupFilter(key) });
+    const staff = await findStaffByRegisteredBy(loginId);
     return staffOrderEnabledFromDoc(staff);
 }
 
@@ -80,15 +75,18 @@ async function staffCanReadOrder(auth, order) {
     return normalizeStaffLoginId(order.vendorRegisteredBy) === normalizeStaffLoginId(auth.userId);
 }
 
-/** 상품 주문 가능 — 업체 담당과 상품 등록 담당이 같고, 그 관리자가 주문 권한 보유 */
+/** 상품 주문 가능 — 업체·상품 담당 관리자가 같고, 그 관리자가 주문 권한(st_order_enabled) 보유 */
 async function vendorProductAllowsOrderForVendor(productRegisteredBy, vendorDoc) {
     const v = vendorFromLegacy(vendorDoc) || {};
-    const vReg = normalizeStaffLoginId(v[VF.registeredBy]);
-    const pReg = normalizeStaffLoginId(productRegisteredBy);
-    if (!vReg || !pReg || vReg === "legacy" || pReg === "legacy" || vReg !== pReg) {
+    const vStaff = await findStaffByRegisteredBy(v[VF.registeredBy]);
+    const pStaff = await findStaffByRegisteredBy(productRegisteredBy);
+    if (!vStaff || !pStaff) return false;
+    if (
+        normalizeStaffLoginId(vStaff.loginId) !== normalizeStaffLoginId(pStaff.loginId)
+    ) {
         return false;
     }
-    return staffOrderEnabledByLoginId(vReg);
+    return staffOrderEnabledFromDoc(vStaff);
 }
 
 module.exports = {

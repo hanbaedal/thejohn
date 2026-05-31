@@ -1,15 +1,14 @@
 const { F: VF, fromLegacyDoc: vendorFromLegacy, parseGrade } = require("./vendorFields");
 const { F: PF, fromLegacyDoc: productFromLegacy } = require("./productFields");
 const { deptLabel } = require("./orderDeptLabels");
-const { findStaffByLoginId, findVendorByLoginId } = require("./loginResolve");
+const { findVendorByLoginId } = require("./loginResolve");
+const { findStaffByRegisteredBy } = require("./staffRegisteredBy");
 const {
     fromLegacyDoc: staffFromLegacy,
     getCompanyName: getStaffCompanyName,
     getCeoName: getStaffCeoName,
     F: SF
 } = require("./staffFields");
-
-const DEFAULT_STAFF_LOGIN = "aksangsa";
 
 function str(v) {
     return String(v ?? "").trim();
@@ -29,7 +28,7 @@ async function staffSupplierFromLoginId(loginId) {
     if (!id) {
         return { loginId: "", name: "", ceo: "", tel: "", addr: "" };
     }
-    const staff = await findStaffByLoginId(id);
+    const staff = await findStaffByRegisteredBy(id);
     if (!staff) {
         return { loginId: id, name: id, ceo: "", tel: "", addr: "" };
     }
@@ -46,8 +45,12 @@ async function staffSupplierFromLoginId(loginId) {
 async function resolveSupplierStaffLoginId(vendorDoc) {
     const v = vendorFromLegacy(vendorDoc) || {};
     const reg = str(v[VF.registeredBy]).toLowerCase();
-    if (reg && reg !== "legacy") return reg;
-    return str(process.env.ORDER_NOTIFY_STAFF_ID || DEFAULT_STAFF_LOGIN).toLowerCase();
+    if (reg && reg !== "legacy") {
+        const staff = await findStaffByRegisteredBy(reg);
+        if (staff && staff.loginId) return str(staff.loginId).toLowerCase();
+        return reg;
+    }
+    return "";
 }
 
 async function enrichOrderItems(db, rawItems) {

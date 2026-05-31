@@ -1,9 +1,7 @@
-const { findStaffByLoginId, findVendorByLoginId } = require("./loginResolve");
+const { findStaffByRegisteredBy } = require("./staffRegisteredBy");
 const { F } = require("./vendorFields");
 const { normalizeStaffLoginId } = require("./vendorAccess");
 const { isSolapiConfigured, sendSolapiSms } = require("./solapiSms");
-
-const DEFAULT_NOTIFY_LOGIN = "aksangsa";
 
 function normalizePhoneE164(phone) {
     var digits = String(phone || "").replace(/\D/g, "");
@@ -14,7 +12,7 @@ function normalizePhoneE164(phone) {
 }
 
 function phoneForStaffLoginId(loginId) {
-    return findStaffByLoginId(String(loginId || "").trim()).then(function (staff) {
+    return findStaffByRegisteredBy(String(loginId || "").trim()).then(function (staff) {
         if (staff && staff.st_ceo_tel) return normalizePhoneE164(staff.st_ceo_tel);
         return "";
     });
@@ -25,6 +23,7 @@ async function getAdminNotifyPhone(db, order) {
     var vendorLogin = String(order.vendorUserId || "").trim();
     if (vendorLogin) {
         try {
+            const { findVendorByLoginId } = require("./loginResolve");
             var vendor = await findVendorByLoginId(vendorLogin);
             var registrar = vendor && vendor[F.registeredBy];
             if (registrar && normalizeStaffLoginId(registrar) !== "legacy") {
@@ -48,11 +47,13 @@ async function getAdminNotifyPhone(db, order) {
     var fromEnv = String(process.env.ORDER_NOTIFY_PHONE || "").trim();
     if (fromEnv) return normalizePhoneE164(fromEnv);
 
-    return phoneForStaffLoginId(
-        String(process.env.ORDER_NOTIFY_STAFF_ID || DEFAULT_NOTIFY_LOGIN).trim()
-    ).then(function (tel) {
-        return tel || "+821047212333";
-    });
+    var notifyStaffId = String(process.env.ORDER_NOTIFY_STAFF_ID || "").trim();
+    if (notifyStaffId) {
+        var byEnv = await phoneForStaffLoginId(notifyStaffId);
+        if (byEnv) return byEnv;
+    }
+
+    return "";
 }
 
 async function getNotifyPhoneForOrder(db, order) {

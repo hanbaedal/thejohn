@@ -6,7 +6,7 @@
     var LOGIN_ID_MAX = 12;
     var PASSWORD_MIN = 8;
     var PASSWORD_MAX = 16;
-    var RESERVED_VENDOR_LOGIN_IDS = ["thejohn", "thejhon", "aksangsa"];
+    var RESERVED_VENDOR_LOGIN_IDS = ["thejohn", "thejhon"];
     var PARTNER_DEPT_IDS = ["jeongyuk", "driedfish", "frozen", "seafood", "grocery", "drink"];
     var DEPT_ALERT_MSG = "사업부문을 한개이상 선택하세요!";
 

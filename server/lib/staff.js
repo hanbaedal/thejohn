@@ -6,8 +6,8 @@ const {
     toDbDoc,
     getCompanyName,
     getCeoName,
-    staffOrderEnabledFromDoc,
-    DEFAULT_STAFF_IDS
+    DEFAULT_STAFF_IDS,
+    F: SF
 } = require("./staffFields");
 const { getStoredPassword } = require("./loginAccount");
 const { validateLoginIdLength } = require("./vendorFields");
@@ -16,6 +16,7 @@ const {
     propagateStaffLoginIdChange,
     loginIdsEquivalent
 } = require("./staffLoginIdMigration");
+const { appendPreviousLoginIds } = require("./staffRegisteredBy");
 
 function str(v) {
     return String(v ?? "").trim();
@@ -54,7 +55,7 @@ function isStaffRole(role) {
 
 function isReservedStaffLoginId(loginId) {
     const idn = normalizeLoginId(loginId);
-    return idn === "thejohn" || idn === "thejhon" || idn === "aksangsa";
+    return idn === "thejohn" || idn === "thejhon";
 }
 
 function canAssignStaffLoginId(loginId, existingStaff) {
@@ -264,13 +265,18 @@ async function updateStaffAccount(id, body, creatorRole) {
             orderEnabled:
                 picked.orderEnabled !== undefined
                     ? picked.orderEnabled
-                    : staffOrderEnabledFromDoc(existing)
+                    : existing
+                      ? existing.st_order_enabled === true || existing[SF.orderEnabled] === true
+                      : false
         },
         existing,
         nextLoginId,
         password
     );
     const doc = toDbDoc(existing.id, built, existing);
+    if (loginChanged) {
+        doc.previousLoginIds = appendPreviousLoginIds(existing, existing.loginId);
+    }
     await staffCol.replaceOne({ id: staffId }, doc);
 
     var migration = null;

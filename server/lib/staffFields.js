@@ -43,7 +43,7 @@ const DEFAULT_STAFF_ACCOUNTS = [
         id: "st_admin_aksangsa",
         loginId: "aksangsa",
         password: "kimjc2333!",
-        st_company: "(주)에이케이상사",
+        st_company: "(주)에이메이상사",
         st_ceo: "김종철",
         st_ceo_tel: "01047212333",
         role: "admin",
@@ -99,13 +99,7 @@ function normalizeStaffLoginId(loginId) {
 
 function staffOrderEnabledFromDoc(doc) {
     if (!doc || doc.role !== "admin") return false;
-    if (doc[F.orderEnabled] === true || doc.st_order_enabled === true) return true;
-    if (doc[F.orderEnabled] === false || doc.st_order_enabled === false) return false;
-    /** DB 마이그레이션 전: 기존 주문 담당(기본 aksangsa) 호환 */
-    var legacyId = normalizeStaffLoginId(
-        String(process.env.ORDER_VENDOR_STAFF_ID || "aksangsa").trim()
-    );
-    return normalizeStaffLoginId(doc.loginId) === legacyId;
+    return doc[F.orderEnabled] === true || doc.st_order_enabled === true;
 }
 
 function fromLegacyDoc(doc) {
@@ -240,7 +234,7 @@ function buildFromBody(body, existing, loginId, password) {
                     body.st_order_enabled === true
                   ? true
                   : existing
-                    ? staffOrderEnabledFromDoc(existing)
+                    ? existing[F.orderEnabled] === true || existing.st_order_enabled === true
                     : false
     };
 }
@@ -275,6 +269,9 @@ function toDbDoc(id, built, existing) {
     };
     if (existing?.createdAt) doc.createdAt = existing.createdAt;
     else doc.createdAt = Date.now();
+    if (Array.isArray(existing?.previousLoginIds) && existing.previousLoginIds.length) {
+        doc.previousLoginIds = existing.previousLoginIds.slice();
+    }
     if (built.loginEnabled !== false && existing) {
         var ids = [];
         if (Array.isArray(existing.activeSessionIds)) ids = existing.activeSessionIds.slice();
@@ -447,18 +444,17 @@ async function migrateStaffCollection(db) {
 }
 
 async function migrateStaffOrderEnabled(col) {
-    const legacyId = normalizeStaffLoginId(
-        String(process.env.ORDER_VENDOR_STAFF_ID || "aksangsa").trim()
-    );
     const docs = await col.find({ role: "admin" }).toArray();
     let n = 0;
     for (const doc of docs) {
         if (doc[F.orderEnabled] !== undefined || doc.st_order_enabled !== undefined) continue;
-        const enabled = normalizeStaffLoginId(doc.loginId) === legacyId;
-        await col.updateOne({ id: doc.id }, { $set: { [F.orderEnabled]: enabled, updatedAt: Date.now() } });
+        await col.updateOne(
+            { id: doc.id },
+            { $set: { [F.orderEnabled]: false, updatedAt: Date.now() } }
+        );
         n++;
     }
-    if (n) console.log("[staff] migrated st_order_enabled:", n);
+    if (n) console.log("[staff] migrated st_order_enabled (default off):", n);
 }
 
 async function findExpectedStaffInDb(db) {

@@ -6,7 +6,7 @@
 |---|------|------|
 | **0** | **슈퍼바이저** 로그인 → 모든 페이지·기능 (관리자 관리·접속통계·슈퍼바이저 주문 목록·엑셀 불러오기 등 포함) | `role: supervisor` — `canManageStaffAccounts`, `getSupervisorExcelImportAccess` 등 |
 | **1** | **관리자** 로그인 → 슈퍼바이저 **「관리자 관리」** 만 제외하고 전부 이용 | `role: admin` — `canShowAdminNavMenus` / `canManageRegisters`. `staff-manage*.html` 등은 슈퍼바이저 전용 |
-| **2** | 슈퍼바이저가 관리자 목록에서 **「주문」** 설정 → 그 관리자가 등록한 **업체**는 주문·장바구니 등 주문 관련 **전 기능** | DB `st_order_enabled` · `staffOrderEnabledFromDoc` · `vendorCanPlaceOrders` · `canPlaceVendorOrders` |
+| **2** | 슈퍼바이저가 관리자 목록에서 **「주문」** 설정 → DB `st_order_enabled` → 그 관리자 `loginId`로 등록된 **업체** 주문·장바구니 전 기능 | `staffOrderEnabledFromDoc` · `findStaffByRegisteredBy` · `vendorCanPlaceOrders` |
 | **3** | **새 탭**마다 **서로 다른 업체·관리자** 로그인 가능 (같은 Chrome 프로필) | `sessionStorage` 우선 — 탭별 독립 세션. 동시 접속·중복 로그인 차단 없음 |
 | **4** | **같은 기기·다른 기기** 간 로그인은 **서로 영향 없음** (독립) | 서버 단일 세션 강제 없음. A폰·B노트북은 각각 독립 JWT |
 | **5** | **한 업체 아이디**의 **여러 기기·여러 탭** 동시 로그인 **제한 없음** | `sessionControl.js` — `MAX_CONCURRENT_SESSIONS = Infinity`, `sessionEnforced` = false |
@@ -33,11 +33,11 @@
 1. 슈퍼바이저 → **관리자 등록·목록** → 해당 관리자 **「주문」** 버튼 ON  
 2. DB `staff.st_order_enabled = true` 저장  
 3. **관리자** 로그인 → **주문서관리** 메뉴 (`order-list-admin.html`)  
-4. 그 관리자가 등록한 **업체** (`vn_registered_by`) 로그인 →  
+4. 그 관리자가 등록한 **업체** (`vn_registered_by` = 해당 관리자 `loginId`) 로그인 →  
    - 담당 관리자가 등록한 **상품** (`pd_registered_by` 일치)만 주문·장바구니  
    - `vendorCanPlaceOrders` / `canPlaceVendorOrders` 로 판단  
 
-레거시: `st_order_enabled` 필드가 없고 `ORDER_VENDOR_STAFF_ID`(기본 `aksangsa`)와 아이디가 같으면 주문 권한 있는 것으로 간주 (마이그레이션 호환).
+관리자 **loginId 변경** 시 `vn_registered_by`·`pd_registered_by`는 서버가 자동 갱신합니다. 옛 아이디(`aksangsa` 등)가 남아 있으면 기동 시 `reconcileStaleRegisteredByReferences`로 맞춥니다.
 
 ## 로그인·세션 (규칙 3~5)
 
@@ -63,7 +63,7 @@
 | 권한·메뉴 | `auth.js` — `canShowAdminNavMenus`, `canShowOrderManageMenu`, `canPlaceVendorOrders`, `enforceRegisterPages` |
 | 세션 저장 (탭/PWA) | `auth-storage.js` — `THEJHON_AUTH_STORAGE` |
 | 세션 (무제한 동시) | `server/lib/sessionControl.js` |
-| 주문 권한 DB | `server/lib/staffFields.js` — `staffOrderEnabledFromDoc`, `server/lib/orderAccess.js` |
+| 주문 권한 DB | `server/lib/staffFields.js` — `st_order_enabled`, `server/lib/orderAccess.js`, `server/lib/staffRegisteredBy.js` |
 | 로그인 API | `server/routes/auth.js`, `server/lib/loginResolve.js` |
 | 메뉴 DOM | `admin-header.js`, `nav.js` |
 

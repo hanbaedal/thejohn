@@ -221,6 +221,8 @@ async function connectDbOnce() {
             await staff.ensureStaffIndexes(database);
             await ensureDefaultStaffSeeds(database);
             await migrateStaffCollection(database);
+            const { reconcileStaleRegisteredByReferences } = require("./lib/staffRegisteredBy");
+            await reconcileStaleRegisteredByReferences(database);
             const { migrateVendorsCollection } = require("./lib/vendorFields");
             await migrateVendorsCollection(database);
             const { ensureProspectIndexes } = require("./lib/vendorProspects");
