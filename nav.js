@@ -234,6 +234,7 @@
         var img = document.createElement("img");
         if (branded) {
             if (cached) img.src = cached;
+            else img.src = DEFAULT_SITE_LOGO;
         } else {
             img.src = DEFAULT_SITE_LOGO;
         }
@@ -244,6 +245,28 @@
         link.appendChild(img);
         start.insertBefore(link, start.firstChild);
     })();
+
+    function applyDefaultBrandedLogo(companyName) {
+        var imgs = document.querySelectorAll(".dz-logo-img");
+        for (var i = 0; i < imgs.length; i++) {
+            imgs[i].src = DEFAULT_SITE_LOGO;
+        }
+        applySiteFavicon(DEFAULT_SITE_FAVICON);
+        syncPwaManifest("", companyName || "");
+        var label = String(companyName || "").trim()
+            ? String(companyName).trim() + " 홈"
+            : "더존 홈";
+        var links = document.querySelectorAll(".dz-logo, .dz-logo--compact");
+        for (var j = 0; j < links.length; j++) {
+            links[j].setAttribute("aria-label", label);
+        }
+        document.documentElement.classList.add("site-brand-active", "site-brand-has-logo", "site-brand-video-ready");
+        if (String(companyName || "").trim()) {
+            document.documentElement.classList.add("site-brand-hero-ready");
+        }
+        clearSiteBrandPending();
+        markSiteBrandLogoReady();
+    }
 
     function applySiteLogo(logoSrc, companyName) {
         var Auth = window.THEJHON_AUTH;
@@ -269,7 +292,7 @@
                 clearSiteBrandPending();
                 markSiteBrandLogoReady();
             } else {
-                applySiteBrandDefaults();
+                applyDefaultBrandedLogo(companyName);
             }
             return;
         }
@@ -563,7 +586,7 @@
                     if (logo) {
                         applySiteLogo(logo, brandName);
                     } else {
-                        clearSiteBrandPending();
+                        applyDefaultBrandedLogo(brandName);
                     }
                 });
         }

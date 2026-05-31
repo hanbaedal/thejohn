@@ -6,6 +6,7 @@
     var ROLE_KEY = "thejhon_role";
     var LOGO_KEY = "thejhon_staff_logo";
     var DEFAULT_FAVICON = "img/icon-192.png";
+    var DEFAULT_SITE_LOGO = "img/logo.png";
     var DEFAULT_MANIFEST = "manifest.json";
     var DEFAULT_APP_NAME = "더존";
     var pwaManifestBlobUrl = "";
@@ -142,8 +143,8 @@
     var brandCompany = branded
         ? String(authRead("thejhon_brand_company_name") || authRead("thejhon_company_name") || "").trim()
         : "";
-    var faviconHref = customLogo || (branded ? "" : DEFAULT_FAVICON);
-    var brandPending = branded && !customLogo;
+    var faviconHref = customLogo || DEFAULT_FAVICON;
+    var brandedWithCustom = branded && !!customLogo;
 
     if (isHomePage) {
         try {
@@ -153,23 +154,27 @@
         }
     }
 
-    if (branded) {
+    if (brandedWithCustom) {
         try {
             document.documentElement.classList.add("site-brand-active");
-            if (customLogo) document.documentElement.classList.add("site-brand-has-logo");
+            document.documentElement.classList.add("site-brand-has-logo");
             if (brandCompany) document.documentElement.classList.add("site-brand-hero-ready");
         } catch (e0) {
-            document.documentElement.className += " site-brand-active";
-            if (customLogo) document.documentElement.className += " site-brand-has-logo";
+            document.documentElement.className += " site-brand-active site-brand-has-logo";
             if (brandCompany) document.documentElement.className += " site-brand-hero-ready";
         }
-    }
-
-    if (brandPending) {
+    } else if (branded) {
         try {
-            document.documentElement.classList.add("site-brand-pending");
-        } catch (e) {
-            document.documentElement.className += " site-brand-pending";
+            document.documentElement.classList.add(
+                "site-brand-active",
+                "site-brand-has-logo",
+                "site-brand-video-ready"
+            );
+            if (brandCompany) document.documentElement.classList.add("site-brand-hero-ready");
+        } catch (e0b) {
+            document.documentElement.className +=
+                " site-brand-active site-brand-has-logo site-brand-video-ready";
+            if (brandCompany) document.documentElement.className += " site-brand-hero-ready";
         }
     }
 
@@ -178,14 +183,12 @@
             "html.page-home-doc .home-intro-video[poster*=\"logo.png\"]{opacity:0!important;visibility:hidden!important}" +
             "html.page-home-doc:not(.site-brand-has-logo) .dz-logo-img[src*=\"logo.png\"]," +
             "html.page-home-doc:not(.site-brand-has-logo) .dz-logo-img{opacity:0!important;visibility:hidden!important}" +
-            "html.site-brand-active .dz-logo-img[src*=\"logo.png\"]," +
-            "html.site-brand-active .home-intro-video[poster*=\"logo.png\"]{opacity:0!important}" +
+            "html.site-brand-active:not(.site-brand-has-logo) .dz-logo-img[src*=\"logo.png\"]," +
+            "html.site-brand-active:not(.site-brand-has-logo) .home-intro-video[poster*=\"logo.png\"]{opacity:0!important}" +
             "html.site-brand-active.site-brand-has-logo .dz-logo-img{opacity:1!important;visibility:visible!important}" +
             "html.site-brand-active.site-brand-has-logo .dz-logo{visibility:visible!important}" +
             "html.site-brand-active.site-brand-has-logo .home-intro-video," +
             "html.site-brand-active.site-brand-video-ready .home-intro-video{opacity:1!important;visibility:visible!important}" +
-            "html.site-brand-pending .dz-logo," +
-            "html.site-brand-pending .dz-logo--compact{visibility:hidden!important}" +
             "html.site-brand-active:not(.site-brand-hero-ready) .company-hero," +
             "html.site-brand-active:not(.site-brand-hero-ready) #homeHeroTitle{visibility:hidden!important}" +
             "html.page-home-doc.site-brand-has-logo .company-hero," +
@@ -215,7 +218,7 @@
         );
     }
 
-    if (branded && customLogo) {
+    if (brandedWithCustom && customLogo) {
         document.write(
             "<script>(function(){var L=" +
                 escScriptJson(customLogo) +
@@ -233,17 +236,6 @@
                 "boot();if(!apply()){var obs=new MutationObserver(function(){" +
                 "boot();if(document.querySelector('.dz-logo-img'))obs.disconnect();});" +
                 "obs.observe(document.documentElement,{childList:true,subtree:true});}" +
-                "})();<\/script>"
-        );
-    } else if (brandPending) {
-        document.write(
-            "<script>(function(){function strip(){var v=document.querySelector('.home-intro-video');" +
-                "if(!v)return;var p=v.getAttribute('poster')||'';" +
-                "if(p.indexOf('logo.png')>=0)v.removeAttribute('poster');}" +
-                "function boot(){strip();}" +
-                "boot();var obs=new MutationObserver(function(){boot();});" +
-                "obs.observe(document.documentElement,{childList:true,subtree:true});" +
-                "document.addEventListener('DOMContentLoaded',function(){boot();obs.disconnect();});" +
                 "})();<\/script>"
         );
     }
@@ -296,17 +288,19 @@
 
     function applyEarlyHeaderLogo() {
         stripDeozonVideoPoster();
-        if (!customLogo) return;
+        var src = customLogo;
+        if (!src && branded) src = DEFAULT_SITE_LOGO;
+        if (!src) return;
         var imgs = document.querySelectorAll(".dz-logo-img");
         for (var i = 0; i < imgs.length; i++) {
-            imgs[i].src = customLogo;
+            imgs[i].src = src;
         }
         markBrandHasLogo();
         clearPending();
     }
 
     function bootPwaBrand() {
-        if (!customLogo) return;
+        if (!customLogo && !branded) return;
         var company = "";
         try {
             company =
@@ -314,7 +308,7 @@
                 authRead("thejhon_company_name") ||
                 "";
         } catch (e) {}
-        applyPwaManifest(customLogo, company);
+        applyPwaManifest(customLogo || "", company);
     }
 
     global.__THEJHON_BRAND_BOOT = {

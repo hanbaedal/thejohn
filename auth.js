@@ -439,6 +439,11 @@
         if (global.THEJHON_API && THEJHON_API.setToken) THEJHON_API.setToken(token || "");
         if (usesStaffLogoRole(role)) {
             cacheStaffLogo(staffLogo, brandLabel || label);
+            if (typeof global.__thejhonApplySiteLogo === "function") {
+                try {
+                    global.__thejhonApplySiteLogo(staffLogo, brandLabel || label);
+                } catch (eLogo) {}
+            }
         } else {
             clearStaffLogoCache();
         }
