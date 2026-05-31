@@ -82,18 +82,46 @@
         }
     }
 
+    function clearSiteBrandPending() {
+        document.documentElement.classList.remove("site-brand-pending");
+        if (window.__THEJHON_BRAND_BOOT && window.__THEJHON_BRAND_BOOT.clearPending) {
+            window.__THEJHON_BRAND_BOOT.clearPending();
+        }
+    }
+
+    function applySiteBrandDefaults() {
+        var imgs = document.querySelectorAll(".dz-logo-img");
+        for (var i = 0; i < imgs.length; i++) {
+            imgs[i].src = DEFAULT_SITE_LOGO;
+        }
+        applySiteFavicon(DEFAULT_SITE_FAVICON);
+        var links = document.querySelectorAll(".dz-logo, .dz-logo--compact");
+        for (var j = 0; j < links.length; j++) {
+            links[j].setAttribute("aria-label", "더존 홈");
+        }
+        clearSiteBrandPending();
+    }
+
     (function injectCompactHomeLogo() {
         if (document.body && document.body.classList.contains("page-home")) return;
         var start =
             document.querySelector(".site-header-brand") ||
             document.querySelector(".site-header-start");
         if (!start || start.querySelector(".dz-logo")) return;
+        var Auth = window.THEJHON_AUTH;
+        var branded = Auth && Auth.usesStaffLogoRole && Auth.usesStaffLogoRole();
+        var cached =
+            branded && Auth.getCachedStaffLogo ? Auth.getCachedStaffLogo() : "";
         var link = document.createElement("a");
         link.href = "index.html";
         link.className = "dz-logo dz-logo--compact";
         link.setAttribute("aria-label", "더존 홈");
         var img = document.createElement("img");
-        img.src = DEFAULT_SITE_LOGO;
+        if (branded) {
+            if (cached) img.src = cached;
+        } else {
+            img.src = DEFAULT_SITE_LOGO;
+        }
         img.alt = "";
         img.width = 32;
         img.height = 32;
@@ -103,21 +131,33 @@
     })();
 
     function applySiteLogo(logoSrc, companyName) {
+        var Auth = window.THEJHON_AUTH;
+        var branded = Auth && Auth.usesStaffLogoRole && Auth.usesStaffLogoRole();
         var custom = String(logoSrc || "").trim();
-        var headerSrc = custom || DEFAULT_SITE_LOGO;
-        var faviconSrc = custom || DEFAULT_SITE_FAVICON;
-        var imgs = document.querySelectorAll(".dz-logo-img");
-        for (var i = 0; i < imgs.length; i++) {
-            imgs[i].src = headerSrc;
+
+        if (branded) {
+            if (custom) {
+                if (Auth.cacheStaffLogo) Auth.cacheStaffLogo(custom, companyName);
+                var imgs = document.querySelectorAll(".dz-logo-img");
+                for (var i = 0; i < imgs.length; i++) {
+                    imgs[i].src = custom;
+                }
+                applySiteFavicon(custom);
+                var label = String(companyName || "").trim()
+                    ? String(companyName).trim() + " 홈"
+                    : "더존 홈";
+                var links = document.querySelectorAll(".dz-logo, .dz-logo--compact");
+                for (var j = 0; j < links.length; j++) {
+                    links[j].setAttribute("aria-label", label);
+                }
+                clearSiteBrandPending();
+            } else {
+                applySiteBrandDefaults();
+            }
+            return;
         }
-        applySiteFavicon(faviconSrc);
-        var links = document.querySelectorAll(".dz-logo, .dz-logo--compact");
-        var label = String(companyName || "").trim()
-            ? String(companyName).trim() + " 홈"
-            : "더존 홈";
-        for (var j = 0; j < links.length; j++) {
-            links[j].setAttribute("aria-label", label);
-        }
+
+        applySiteBrandDefaults();
     }
 
     window.__thejhonApplySiteLogo = applySiteLogo;
@@ -393,19 +433,28 @@
             var Auth = window.THEJHON_AUTH;
             var Api = window.THEJHON_API;
             if (!Auth || !Api || !Auth.isLoggedIn || !Auth.isLoggedIn()) {
-                applySiteLogo("", "");
+                applySiteBrandDefaults();
                 return;
             }
             var role = Auth.getRole ? Auth.getRole() : "";
             if (role !== "admin" && role !== "supervisor" && role !== "vendor") {
-                applySiteLogo("", "");
+                applySiteBrandDefaults();
                 return;
             }
-            if (!Api.getStaffProfile) return;
+            if (!Api.getStaffProfile) {
+                if (Auth.getCachedStaffLogo && Auth.getCachedStaffLogo()) {
+                    applySiteLogo(Auth.getCachedStaffLogo(), Auth.getLoggedInCompanyDisplayName && Auth.getLoggedInCompanyDisplayName());
+                }
+                return;
+            }
             Api.getStaffProfile()
                 .then(applyFromStaff)
                 .catch(function () {
-                    applySiteLogo("", "");
+                    if (Auth.getCachedStaffLogo && Auth.getCachedStaffLogo()) {
+                        applySiteLogo(Auth.getCachedStaffLogo(), Auth.getLoggedInCompanyDisplayName && Auth.getLoggedInCompanyDisplayName());
+                    } else {
+                        applySiteBrandDefaults();
+                    }
                 });
         }
 

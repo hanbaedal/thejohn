@@ -20,6 +20,34 @@
     var VENDOR_MGR_TEL_KEY = "thejhon_vendor_mgr_tel";
     var VENDOR_MGR_EMAIL_KEY = "thejhon_vendor_mgr_email";
     var STAFF_ORDER_ENABLED_KEY = "thejhon_staff_order_enabled";
+    var STAFF_LOGO_KEY = "thejhon_staff_logo";
+
+    function usesStaffLogoRole(role) {
+        var r = role != null ? role : sessionStorage.getItem(ROLE_KEY) || "";
+        return r === "admin" || r === "supervisor" || r === "vendor";
+    }
+
+    function cacheStaffLogo(logo, companyName) {
+        var src = String(logo || "").trim();
+        if (src) {
+            sessionStorage.setItem(STAFF_LOGO_KEY, src);
+            if (companyName) sessionStorage.setItem(COMPANY_KEY, String(companyName).trim());
+        } else {
+            sessionStorage.removeItem(STAFF_LOGO_KEY);
+        }
+    }
+
+    function getCachedStaffLogo() {
+        try {
+            return String(sessionStorage.getItem(STAFF_LOGO_KEY) || "").trim();
+        } catch (e) {
+            return "";
+        }
+    }
+
+    function clearStaffLogoCache() {
+        sessionStorage.removeItem(STAFF_LOGO_KEY);
+    }
 
     function normalizeId(s) {
         return String(s || "")
@@ -56,6 +84,7 @@
         sessionStorage.removeItem(VENDOR_MGR_TEL_KEY);
         sessionStorage.removeItem(VENDOR_MGR_EMAIL_KEY);
         sessionStorage.removeItem(STAFF_ORDER_ENABLED_KEY);
+        clearStaffLogoCache();
         if (global.THEJHON_API && THEJHON_API.setToken) THEJHON_API.setToken("");
     }
 
@@ -90,7 +119,8 @@
             staffOrderEnabled: !!data.staffOrderEnabled,
             vendorMgrName: data.vendorMgrName || "",
             vendorMgrTel: data.vendorMgrTel || "",
-            vendorMgrEmail: data.vendorMgrEmail || ""
+            vendorMgrEmail: data.vendorMgrEmail || "",
+            stLogo: data.stLogo || data.st_logo || ""
         };
     }
 
@@ -197,7 +227,8 @@
         vendorMgrName,
         vendorMgrTel,
         vendorMgrEmail,
-        staffOrderEnabled
+        staffOrderEnabled,
+        staffLogo
     ) {
         sessionStorage.setItem(AUTH_KEY, "1");
         sessionStorage.setItem(USER_ID_KEY, userId || "");
@@ -244,6 +275,11 @@
             else sessionStorage.removeItem(DISPLAY_KEY);
         }
         if (global.THEJHON_API && THEJHON_API.setToken) THEJHON_API.setToken(token || "");
+        if (usesStaffLogoRole(role)) {
+            cacheStaffLogo(staffLogo, label);
+        } else {
+            clearStaffLogoCache();
+        }
         if (typeof global.__thejhonRefreshFooterCompany === "function") {
             try {
                 global.__thejhonRefreshFooterCompany();
@@ -883,6 +919,10 @@
         setOAuthSession: setOAuthSession,
         clearSession: clearSession,
         logout: logout,
+        usesStaffLogoRole: usesStaffLogoRole,
+        cacheStaffLogo: cacheStaffLogo,
+        getCachedStaffLogo: getCachedStaffLogo,
+        clearStaffLogoCache: clearStaffLogoCache,
         handleSessionInvalid: handleSessionInvalid,
         normalizeLegacySession: normalizeLegacySession,
         isLoggedIn: isLoggedIn,

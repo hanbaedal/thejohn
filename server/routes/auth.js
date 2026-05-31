@@ -114,6 +114,7 @@ router.post("/login", async (req, res) => {
             vendorMgrName: result.vendorMgrName || "",
             vendorMgrTel: result.vendorMgrTel || "",
             vendorMgrEmail: result.vendorMgrEmail || "",
+            stLogo: result.stLogo || "",
             token
         });
     } catch (e) {

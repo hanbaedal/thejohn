@@ -15,7 +15,7 @@ function vendorGradeFromDoc(vendor) {
     const raw = vendor[VF.grade] != null ? vendor[VF.grade] : vendor.vn_grade;
     return parseGrade(raw) || "1";
 }
-const { getCompanyName: getStaffCompanyName, staffOrderEnabledFromDoc } = require("./staffFields");
+const { getCompanyName: getStaffCompanyName, staffOrderEnabledFromDoc, fromLegacyDoc, F: SF } = require("./staffFields");
 
 function normalizeId(s) {
     return String(s || "")
@@ -76,13 +76,16 @@ async function tryStaffLogin(staff, loginId, password) {
 
     const company = getStaffCompanyName(staff);
     const companyLabel = company || "";
+    const legacy = fromLegacyDoc(staff);
+    const stLogo = legacy ? String(legacy[SF.logo] || "").trim() : "";
     return {
         ok: true,
         role: staff.role || "admin",
         userId: staff.loginId,
         companyName: companyLabel,
         displayName: companyLabel || staff.loginId,
-        staffOrderEnabled: staffOrderEnabledFromDoc(staff)
+        staffOrderEnabled: staffOrderEnabledFromDoc(staff),
+        stLogo: stLogo
     };
 }
 
@@ -100,6 +103,14 @@ async function tryVendorLogin(vendor, loginId, password) {
     }
 
     const regBy = String(vendor[VF.registeredBy] || "").trim();
+    let stLogo = "";
+    if (regBy) {
+        const adminStaff = await findStaffByLoginId(regBy);
+        if (adminStaff) {
+            const legacy = fromLegacyDoc(adminStaff);
+            stLogo = legacy ? String(legacy[SF.logo] || "").trim() : "";
+        }
+    }
     return {
         ok: true,
         role: "vendor",
@@ -112,7 +123,8 @@ async function tryVendorLogin(vendor, loginId, password) {
         vendorOrderEnabled: await vendorCanPlaceOrders(vendor),
         vendorMgrName: String(vendor[VF.mgrName] || "").trim(),
         vendorMgrTel: String(vendor[VF.mgrTel] || "").trim(),
-        vendorMgrEmail: String(vendor[VF.mgrEmail] || "").trim()
+        vendorMgrEmail: String(vendor[VF.mgrEmail] || "").trim(),
+        stLogo: stLogo
     };
 }
 

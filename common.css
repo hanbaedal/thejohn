@@ -187,6 +187,10 @@ a.site-footer-social__btn:hover {
 .page-home a.dz-logo:hover {
     filter: brightness(0.98);
 }
+html.site-brand-pending .dz-logo,
+html.site-brand-pending .dz-logo--compact {
+    visibility: hidden;
+}
 .page-home {
     display: flex;
     flex-direction: column;
