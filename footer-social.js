@@ -1,7 +1,6 @@
 /**
  * 푸터 — 저작권 문구 + 소셜 아이콘(페이스북·인스타·네이버카페·유튜브·카카오)
- * - 페이스북·인스타·네이버카페·유튜브: 로그인(관리자·슈퍼바이저·업체) 시 staff-profile SNS, 비로그인 시 아래 공용 URL
- * - 카카오: 항상 공용 URL
+ * - 페이스북·인스타·네이버카페·유튜브·카카오: 로그인(관리자·슈퍼바이저·업체) 시 staff-profile, 비로그인 시 공용 URL
  */
 (function (global) {
     var KAKAO_CHAT_URL = "https://pf.kakao.com/_xavxlxjX/chat";
@@ -68,18 +67,6 @@
         return a;
     }
 
-    function btnKakao() {
-        var a = document.createElement("a");
-        a.href = KAKAO_CHAT_URL;
-        a.className = "site-footer-social__btn site-footer-social__btn--kakao";
-        a.target = "_blank";
-        a.rel = "noopener noreferrer";
-        a.title = "카카오톡 채널 채팅";
-        a.setAttribute("aria-label", "카카오톡 채널 채팅");
-        a.innerHTML = iconKakao();
-        return a;
-    }
-
     function replaceSocialBtn(nav, classMod, url, title) {
         if (!nav) return;
         var sel = ".site-footer-social__btn--" + classMod;
@@ -92,8 +79,11 @@
                   ? iconInstagram()
                   : classMod === "navercafe"
                     ? iconNaverCafe()
-                    : iconYoutube();
-        var neu = btnLink(classMod, url, title, title, inner);
+                    : classMod === "kakao"
+                      ? iconKakao()
+                      : iconYoutube();
+        var aria = classMod === "kakao" ? "카카오톡 채널 채팅" : title;
+        var neu = btnLink(classMod, url, title, aria, inner);
         nav.replaceChild(neu, old);
     }
 
@@ -105,6 +95,8 @@
         replaceSocialBtn(nav, "instagram", u.instagram, "인스타그램");
         replaceSocialBtn(nav, "navercafe", u.naverCafe, "네이버 카페");
         replaceSocialBtn(nav, "youtube", u.youtube, "유튜브");
+        var kakaoUrl = String(u.kakao || "").trim() || KAKAO_CHAT_URL;
+        replaceSocialBtn(nav, "kakao", kakaoUrl, "카카오톡 채널 채팅");
     }
 
     function getPublicUrls() {
@@ -112,7 +104,8 @@
             facebook: PUBLIC_FACEBOOK_URL,
             instagram: PUBLIC_INSTAGRAM_URL,
             naverCafe: PUBLIC_NAVER_CAFE_URL,
-            youtube: PUBLIC_YOUTUBE_URL
+            youtube: PUBLIC_YOUTUBE_URL,
+            kakao: KAKAO_CHAT_URL
         };
     }
 
@@ -122,7 +115,8 @@
             facebook: st.st_facebook || "",
             instagram: st.st_instagram || "",
             naverCafe: st.st_naver_cafe || "",
-            youtube: st.st_youtube || ""
+            youtube: st.st_youtube || "",
+            kakao: st.st_kakao || ""
         };
     }
 
@@ -175,7 +169,9 @@
             btnLink("navercafe", pub.naverCafe, "네이버 카페", "네이버 카페", iconNaverCafe())
         );
         nav.appendChild(btnLink("youtube", pub.youtube, "유튜브", "유튜브", iconYoutube()));
-        nav.appendChild(btnKakao());
+        nav.appendChild(
+            btnLink("kakao", pub.kakao, "카카오톡 채널 채팅", "카카오톡 채널 채팅", iconKakao())
+        );
 
         wrap.appendChild(copy);
         wrap.appendChild(nav);

@@ -81,6 +81,7 @@ function pickStaffBody(body) {
         st_instagram: body.st_instagram,
         st_naver_cafe: body.st_naver_cafe,
         st_youtube: body.st_youtube,
+        st_kakao: body.st_kakao,
         name: body.name,
         loginEnabled: body.loginEnabled,
         orderEnabled: body.orderEnabled
@@ -187,6 +188,7 @@ async function createStaffAccount(body, creatorRole) {
             st_instagram: picked.st_instagram,
             st_naver_cafe: picked.st_naver_cafe,
             st_youtube: picked.st_youtube,
+            st_kakao: picked.st_kakao,
             st_logo: picked.st_logo !== undefined ? picked.st_logo : "",
             role: "admin",
             loginEnabled: true,
@@ -252,6 +254,7 @@ async function updateStaffAccount(id, body, creatorRole) {
             st_instagram: picked.st_instagram,
             st_naver_cafe: picked.st_naver_cafe,
             st_youtube: picked.st_youtube,
+            ...(picked.st_kakao !== undefined ? { st_kakao: picked.st_kakao } : {}),
             ...(picked.st_logo !== undefined ? { st_logo: picked.st_logo } : {}),
             role: existing.role || "admin",
             loginEnabled:

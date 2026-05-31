@@ -169,7 +169,8 @@
             st_facebook: String(fd.get("st_facebook") || "").trim(),
             st_instagram: String(fd.get("st_instagram") || "").trim(),
             st_naver_cafe: String(fd.get("st_naver_cafe") || "").trim(),
-            st_youtube: String(fd.get("st_youtube") || "").trim()
+            st_youtube: String(fd.get("st_youtube") || "").trim(),
+            st_kakao: String(fd.get("st_kakao") || "").trim()
         };
         if (!body.password) delete body.password;
         return body;
@@ -192,6 +193,7 @@
             st_instagram: st.st_instagram || "",
             st_naver_cafe: st.st_naver_cafe || "",
             st_youtube: st.st_youtube || "",
+            st_kakao: st.st_kakao || "",
             loginEnabled: st.loginEnabled !== false,
             orderEnabled: st.orderEnabled === true
         };
@@ -229,6 +231,7 @@
         document.getElementById("sm-edit-st_instagram").value = st.st_instagram || "";
         document.getElementById("sm-edit-st_naver_cafe").value = st.st_naver_cafe || "";
         document.getElementById("sm-edit-st_youtube").value = st.st_youtube || "";
+        document.getElementById("sm-edit-st_kakao").value = st.st_kakao || "";
         pendingEditLogo = null;
         editLogoTouched = false;
         updateLogoPreview(

@@ -17,6 +17,7 @@ const F = {
     instagram: "st_instagram",
     naverCafe: "st_naver_cafe",
     youtube: "st_youtube",
+    kakao: "st_kakao",
     logo: "st_logo",
     orderEnabled: "st_order_enabled"
 };
@@ -117,6 +118,7 @@ function fromLegacyDoc(doc) {
     if (doc.st_instagram != null) d[F.instagram] = str(doc.st_instagram);
     if (doc.st_naver_cafe != null) d[F.naverCafe] = str(doc.st_naver_cafe);
     if (doc.st_youtube != null) d[F.youtube] = str(doc.st_youtube);
+    if (doc.st_kakao != null) d[F.kakao] = str(doc.st_kakao);
     if (doc.st_logo != null) d[F.logo] = String(doc.st_logo);
     return d;
 }
@@ -142,6 +144,7 @@ function toPublic(doc) {
         st_instagram: str(d[F.instagram]),
         st_naver_cafe: str(d[F.naverCafe]),
         st_youtube: str(d[F.youtube]),
+        st_kakao: str(d[F.kakao]),
         st_logo: String(d[F.logo] || ""),
         role: d.role || "admin",
         active: d.active !== false,
@@ -186,6 +189,7 @@ function buildFromBody(body, existing, loginId, password) {
         st_instagram: str(body.st_instagram != null ? body.st_instagram : prev[F.instagram]),
         st_naver_cafe: str(body.st_naver_cafe != null ? body.st_naver_cafe : prev[F.naverCafe]),
         st_youtube: str(body.st_youtube != null ? body.st_youtube : prev[F.youtube]),
+        st_kakao: str(body.st_kakao != null ? body.st_kakao : prev[F.kakao]),
         st_logo:
             body.st_logo !== undefined && body.st_logo !== null
                 ? String(body.st_logo)
@@ -238,6 +242,7 @@ function toDbDoc(id, built, existing) {
         [F.instagram]: built.st_instagram,
         [F.naverCafe]: built.st_naver_cafe,
         [F.youtube]: built.st_youtube,
+        [F.kakao]: built.st_kakao,
         [F.logo]: built.st_logo,
         role: built.role,
         active: existing?.active !== false,
@@ -404,6 +409,7 @@ async function migrateStaffCollection(db) {
                 st_instagram: doc[F.instagram] || doc.st_instagram,
                 st_naver_cafe: doc[F.naverCafe] || doc.st_naver_cafe,
                 st_youtube: doc[F.youtube] || doc.st_youtube,
+                st_kakao: doc[F.kakao] || doc.st_kakao,
                 role: doc.role
             },
             doc,
