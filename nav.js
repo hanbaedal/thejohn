@@ -89,6 +89,13 @@
     }
 
     function clearSiteBrandPending() {
+        var video = document.querySelector(".home-intro-video");
+        if (video) {
+            var poster = video.getAttribute("poster") || "";
+            if (poster.indexOf("logo.png") >= 0) {
+                video.removeAttribute("poster");
+            }
+        }
         document.documentElement.classList.remove("site-brand-pending");
         if (window.__THEJHON_BRAND_BOOT && window.__THEJHON_BRAND_BOOT.clearPending) {
             window.__THEJHON_BRAND_BOOT.clearPending();
