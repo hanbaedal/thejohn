@@ -83,16 +83,10 @@
 
     global.__thejhonApplyPwaManifest = applyPwaManifest;
 
+    var store = global.THEJHON_AUTH_STORAGE;
+
     function authRead(key) {
-        try {
-            var v = localStorage.getItem(key);
-            if (v != null && v !== "") return v;
-        } catch (e) {}
-        try {
-            return sessionStorage.getItem(key) || "";
-        } catch (e2) {
-            return "";
-        }
+        return store ? store.get(key) : "";
     }
 
     function usesStaffLogoRole() {

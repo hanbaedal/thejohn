@@ -274,4 +274,11 @@
     syncDeptActive();
     syncUrl();
     loadDeptProducts(0);
+
+    window.addEventListener("thejhon-auth-permissions-updated", function () {
+        if (lastItems.length) {
+            showList(lastItems);
+            bindCoverImages();
+        }
+    });
 })();

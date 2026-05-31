@@ -8,7 +8,6 @@
     function canShowAdminMenus() {
         var Auth = window.THEJHON_AUTH;
         if (!Auth) return false;
-        if (Auth.normalizeLegacySession) Auth.normalizeLegacySession();
         return !!(Auth.canManageRegisters && Auth.canManageRegisters());
     }
 
@@ -27,7 +26,6 @@
         var orderItem = "";
         var Auth = window.THEJHON_AUTH;
         if (Auth) {
-            if (Auth.normalizeLegacySession) Auth.normalizeLegacySession();
             if (Auth.canShowOrderManageMenu && Auth.canShowOrderManageMenu()) {
                 orderItem =
                     '<a href="order-list-admin.html" class="nav-dropdown-item" role="menuitem">주문서관리</a>';

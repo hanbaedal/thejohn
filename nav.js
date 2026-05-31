@@ -1,6 +1,5 @@
 (function () {
     if (window.THEJHON_AUTH) {
-        THEJHON_AUTH.normalizeLegacySession();
         THEJHON_AUTH.enforceRegisterPages();
         THEJHON_AUTH.applyNavRegisterVisibility();
         if (THEJHON_AUTH.trackPageViewIfNeeded) THEJHON_AUTH.trackPageViewIfNeeded();
@@ -311,12 +310,6 @@
             refreshVendorCartNav();
             if (window.THEJHON_AUTH && THEJHON_AUTH.applyNavRegisterVisibility) {
                 THEJHON_AUTH.applyNavRegisterVisibility();
-            }
-            if (
-                window.THEJHON_AUTH &&
-                THEJHON_AUTH.refreshSessionPermissionsAsync
-            ) {
-                THEJHON_AUTH.refreshSessionPermissionsAsync();
             }
         }
         syncAll();

@@ -1,22 +1,22 @@
 /**
- * 업체(vendor) 로그인 전용 장바구니 (localStorage)
+ * 업체(vendor) 로그인 전용 장바구니 (sessionStorage — 탭별)
  */
 (function (global) {
     var CART_KEY = "thejhon_vendor_cart_v1";
 
-    function canUseCart() {
-        return (
-            global.THEJHON_AUTH &&
-            THEJHON_AUTH.isLoggedIn &&
-            THEJHON_AUTH.isLoggedIn() &&
-            THEJHON_AUTH.getRole &&
-            THEJHON_AUTH.getRole() === "vendor"
-        );
+    function cartStorage() {
+        try {
+            return sessionStorage;
+        } catch (e) {
+            return null;
+        }
     }
 
     function readCart() {
         try {
-            var raw = localStorage.getItem(CART_KEY);
+            var store = cartStorage();
+            if (!store) return { items: [], updatedAt: 0 };
+            var raw = store.getItem(CART_KEY);
             if (!raw) return { items: [], updatedAt: 0 };
             var data = JSON.parse(raw);
             if (!data || !Array.isArray(data.items)) return { items: [], updatedAt: 0 };
@@ -28,10 +28,23 @@
 
     function writeCart(data) {
         data.updatedAt = Date.now();
-        localStorage.setItem(CART_KEY, JSON.stringify(data));
+        try {
+            var store = cartStorage();
+            if (store) store.setItem(CART_KEY, JSON.stringify(data));
+        } catch (e) {}
         try {
             global.dispatchEvent(new CustomEvent("thejhon-cart-updated"));
-        } catch (e) {}
+        } catch (e2) {}
+    }
+
+    function canUseCart() {
+        return (
+            global.THEJHON_AUTH &&
+            THEJHON_AUTH.isLoggedIn &&
+            THEJHON_AUTH.isLoggedIn() &&
+            THEJHON_AUTH.getRole &&
+            THEJHON_AUTH.getRole() === "vendor"
+        );
     }
 
     function findIndex(items, productId) {

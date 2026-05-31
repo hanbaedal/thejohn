@@ -14,7 +14,7 @@ function isSupervisorRole(role) {
     return role === "supervisor";
 }
 
-/** 동시 접속·세션 추적 없음 — 어디서든 동일 아이디로 로그인 허용 */
+/** 동시 접속·세션 추적 없음 — 정책 3~5: 동일 아이디·다중 기기 로그인 제한 없음 */
 function sessionEnforced(_role) {
     return false;
 }

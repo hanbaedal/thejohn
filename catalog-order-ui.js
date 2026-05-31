@@ -1,5 +1,5 @@
 /**
- * 사업부문 목록 카드 — 주문 목록에 담기 · 주문하기 (aksangsa 등록 상품만)
+ * 사업부문 목록 카드 — 주문 목록에 담기 · 주문하기 (담당 관리자 등록 상품)
  */
 (function (global) {
     function canShowCatalogOrder() {

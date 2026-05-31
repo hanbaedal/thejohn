@@ -1,51 +1,70 @@
 # 로그인·권한 정의
 
-## 슈퍼바이저 vs 관리자 (staff 컬렉션)
+## 정책 요약 (0~5)
 
-| 구분 | 계정 예 | 역할 필드 (`role`) | 비고 |
-|------|---------|-------------------|------|
-| **슈퍼바이저** | **`hanbaedal`** | `supervisor` | 총괄 계정 한 개. 전체 데이터 범위·`POST /api/staff`(관리자 추가) 등. |
-| **관리자** | `staff`에 등록된 로그인 아이디 각각 | `admin` | **현재 2명**이 시드로 들어 있고, **추가 관리자는 `staff`에 등록되는 대로 확장**(예: 2명 추가 예정 시 동일하게 `staff` 행 추가). |
+| # | 규칙 | 구현 |
+|---|------|------|
+| **0** | **슈퍼바이저** 로그인 → 모든 페이지·기능 (관리자 관리·접속통계·슈퍼바이저 주문 목록·엑셀 불러오기 등 포함) | `role: supervisor` — `canManageStaffAccounts`, `getSupervisorExcelImportAccess` 등 |
+| **1** | **관리자** 로그인 → 슈퍼바이저 **「관리자 관리」** 만 제외하고 전부 이용 | `role: admin` — `canShowAdminNavMenus` / `canManageRegisters`. `staff-manage*.html` 등은 슈퍼바이저 전용 |
+| **2** | 슈퍼바이저가 관리자 목록에서 **「주문」** 설정 → 그 관리자가 등록한 **업체**는 주문·장바구니 등 주문 관련 **전 기능** | DB `st_order_enabled` · `staffOrderEnabledFromDoc` · `vendorCanPlaceOrders` · `canPlaceVendorOrders` |
+| **3** | **새 탭**마다 **서로 다른 업체·관리자** 로그인 가능 (같은 Chrome 프로필) | `sessionStorage` 우선 — 탭별 독립 세션. 동시 접속·중복 로그인 차단 없음 |
+| **4** | **같은 기기·다른 기기** 간 로그인은 **서로 영향 없음** (독립) | 서버 단일 세션 강제 없음. A폰·B노트북은 각각 독립 JWT |
+| **5** | **한 업체 아이디**의 **여러 기기·여러 탭** 동시 로그인 **제한 없음** | `sessionControl.js` — `MAX_CONCURRENT_SESSIONS = Infinity`, `sessionEnforced` = false |
 
-자세한 필드·API: `deploy/STAFF-ACCOUNTS.md`
+### 같은 브라우저(프로필) 안에서
 
-## 상품관리 · 업체관리 메뉴 (비활성화 = 헤더에 메뉴가 안 보임)
+- **일반 Chrome·Edge**: 탭마다 `sessionStorage` → **탭별로 다른 업체** 로그인 가능 (어제까지와 동일).
+- **PWA(홈 화면 추가)**: `localStorage`도 사용 → 앱을 닫았다 열어도 로그인 유지. PWA 창 하나 = 계정 하나.
+- **로그인 아이디 힌트**만 `localStorage`에 저장 (로그인 폼 자동 입력용, 탭 간 공유).
 
-| 상태 | 메뉴 | 사업부문 가격 |
-|------|------|----------------|
-| **1. 관리자 또는 슈퍼바이저** (`staff` 컬렉션, 아래 표 참고) | **표시** (활성) | **가격1~3 + 구매가** |
-| **2. 업체** (업체등록 아이디·비밀번호) | **숨김** (비활성) | **aksangsa 등록 업체**: aksangsa 상품만·등급가 / **그 외 업체**: 담당 관리자 상품 조회만(주문 없음) |
-| **3. 미로그인** | **숨김** (비활성) | **가격 비표시** |
+---
+
+## 역할별 메뉴·기능
+
+| 역할 | 계정 | 상품·업체 관리 | 관리자 관리 | 주문서관리 | 업체 주문 |
+|------|------|----------------|-------------|------------|-----------|
+| 슈퍼바이저 | `hanbaedal` 등 `supervisor` | ○ | ○ | ○ (전체) | — |
+| 관리자 | `staff` · `admin` | ○ | ✕ | ○ (`st_order_enabled` 시) | — |
+| 업체 | `vendors` · `loginId` | ✕ | ✕ | — | ○ (담당 관리자가 주문 권한 + 본인 등록 상품) |
+| 미로그인 | — | ✕ | ✕ | ✕ | ✕ |
+
+## 주문 권한 (규칙 2)
+
+1. 슈퍼바이저 → **관리자 등록·목록** → 해당 관리자 **「주문」** 버튼 ON  
+2. DB `staff.st_order_enabled = true` 저장  
+3. **관리자** 로그인 → **주문서관리** 메뉴 (`order-list-admin.html`)  
+4. 그 관리자가 등록한 **업체** (`vn_registered_by`) 로그인 →  
+   - 담당 관리자가 등록한 **상품** (`pd_registered_by` 일치)만 주문·장바구니  
+   - `vendorCanPlaceOrders` / `canPlaceVendorOrders` 로 판단  
+
+레거시: `st_order_enabled` 필드가 없고 `ORDER_VENDOR_STAFF_ID`(기본 `aksangsa`)와 아이디가 같으면 주문 권한 있는 것으로 간주 (마이그레이션 호환).
+
+## 로그인·세션 (규칙 3~5)
+
+| 항목 | 동작 |
+|------|------|
+| 동시 접속 제한 | **없음** — 같은 아이디로 폰·PC·탭 여러 곳 동시 사용 가능 |
+| 서버 JWT | 기기마다 독립 발급, 타 기기 로그인이 다른 기기를 끊지 않음 |
+| 클라이언트 저장 | **탭**: `sessionStorage` (탭별 독립) · **PWA**: `localStorage`도 사용 (앱 종료 후 유지) |
+| 권한 갱신 | 페이지 로드 시 `GET /api/auth/session` — 주문 권한 등 DB 최신값 반영 → `thejhon-auth-permissions-updated` 이벤트 |
+| 계정 전환 (같은 탭) | 새 로그인 시 이전 세션·장바구니 정리 후 새 계정 적용 |
 
 ## 로그인 경로
 
-- **슈퍼바이저**: `staff` 컬렉션 — **`hanbaedal`** (`role: supervisor`)
-- **관리자**: `staff` 컬렉션 — `role: admin` 인 **모든 `loginId`**(현재 시드 2명, 인원 추가 시 행만 늘리면 됨)
-- **업체**: **업체등록**에서 저장한 `loginId` · `password` → `vendors` 컬렉션
+- **슈퍼바이저**: `staff` · `role: supervisor` (예: `hanbaedal`)
+- **관리자**: `staff` · `role: admin`
+- **업체**: **업체등록** `vendors` · `loginId` / `password`
 - 게스트 로그인 없음
 
-## 구현
+## 구현 파일
 
 | 기능 | 파일 |
 |------|------|
-| 메뉴 표시/숨김 | `auth.js` — `canShowAdminNavMenus`, `applyNavRegisterVisibility` |
-| 메뉴 DOM | `admin-header.js` — 스태프만 드롭다운 생성 |
-| 가격 HTML | `auth.js` — `buildProductPriceHtml` |
-| 사업부문 목록·상세 | `products.js`, `product-detail.js` |
-| 업체 주문·장바구니 | `products.js`, `catalog-order-ui.js`, `vendor-cart.js`, `cart.html` |
-| 주문 API·PDF·SMS | `server/routes/orders.js`, `server/lib/orderPdf.js`, `server/lib/orderNotify.js` |
-| 업체 등록 담당 | `vn_registered_by` — `deploy/VENDOR-REGISTRATION.md` |
+| 권한·메뉴 | `auth.js` — `canShowAdminNavMenus`, `canShowOrderManageMenu`, `canPlaceVendorOrders`, `enforceRegisterPages` |
+| 세션 저장 (탭/PWA) | `auth-storage.js` — `THEJHON_AUTH_STORAGE` |
+| 세션 (무제한 동시) | `server/lib/sessionControl.js` |
+| 주문 권한 DB | `server/lib/staffFields.js` — `staffOrderEnabledFromDoc`, `server/lib/orderAccess.js` |
+| 로그인 API | `server/routes/auth.js`, `server/lib/loginResolve.js` |
+| 메뉴 DOM | `admin-header.js`, `nav.js` |
 
-## 업체 주문 (aksangsa 전용)
-
-| 대상 | 조건 | 가능 기능 |
-|------|------|-----------|
-| **업체 주문** | `vn_registered_by` = **aksangsa** (`ORDER_VENDOR_STAFF_ID`) | 사업부문 **전체 상품 조회**(타 관리자 상품은 가격1). **주문·장바구니**는 **aksangsa** 등록 상품(`pd_registered_by`)만 |
-| **그 외 업체** | thejohn 등 다른 관리자가 등록 | 전체 상품 **조회·가격**(타 관리자 가격1). **주문 없음** |
-| **관리자 주문서관리** | 로그인 `aksangsa` | 업체관리 → 주문 리스트 |
-
-- 환경 변수 `ORDER_VENDOR_STAFF_ID=aksangsa` (Render·`.env`)
-- **업체(vendor)** 로그인 후 **사업부문 목록**에서 **주문 목록에 담기**·**주문하기** (상세 페이지는 설명만)
-- **관리자**: 업체관리 → **주문 리스트** (`order-list-admin.html`), 본인 등록 업체 주문(총괄은 전체)
-- 주문 저장 후 브라우저 PDF 다운로드(jsPDF), 서버 PDF: `GET /api/orders/:id/pdf`
-- SMS: **SOLAPI(솔라피)** 권장 — `SOLAPI_*` 설정 시 aksangsa `st_ceo_tel`로 간단 주문 알림
+관련: `deploy/STAFF-ACCOUNTS.md`, `deploy/VENDOR-REGISTRATION.md`

@@ -3,6 +3,7 @@
  */
 (function (global) {
     var TOKEN_KEY = "thejhon_api_token";
+    var store = global.THEJHON_AUTH_STORAGE;
 
     var config = {
         baseUrl: ""
@@ -22,33 +23,20 @@
     }
 
     function getToken() {
-        try {
-            var t = localStorage.getItem(TOKEN_KEY) || "";
-            if (t) return t;
-        } catch (e) {}
-        try {
-            var legacy = sessionStorage.getItem(TOKEN_KEY) || "";
-            if (legacy) {
-                localStorage.setItem(TOKEN_KEY, legacy);
-                sessionStorage.removeItem(TOKEN_KEY);
-                return legacy;
-            }
-        } catch (e2) {}
-        return "";
+        return store ? store.get(TOKEN_KEY) : "";
     }
 
     function setToken(token) {
-        try {
-            if (token) localStorage.setItem(TOKEN_KEY, token);
-            else localStorage.removeItem(TOKEN_KEY);
-        } catch (e) {}
-        try {
-            sessionStorage.removeItem(TOKEN_KEY);
-        } catch (e2) {}
+        if (store) store.set(TOKEN_KEY, token || "");
     }
 
-    function migrateTokenStorage() {
-        getToken();
+    function hydrateTokenFromLocalIfPwa() {
+        if (!store || !store.isPwaStandalone()) return;
+        store.hydrateSessionFromLocal([TOKEN_KEY]);
+    }
+
+    if (store && !store.isPwaStandalone()) {
+        store.clearLocalKeys([TOKEN_KEY]);
     }
 
     function headers() {
@@ -109,7 +97,7 @@
         TOKEN_KEY: TOKEN_KEY,
         getToken: getToken,
         setToken: setToken,
-        migrateTokenStorage: migrateTokenStorage,
+        hydrateTokenFromLocalIfPwa: hydrateTokenFromLocalIfPwa,
         get: function (path) {
             return request("GET", path);
         },
