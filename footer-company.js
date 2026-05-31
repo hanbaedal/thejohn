@@ -149,8 +149,19 @@
         loadStaffItem()
             .then(function (item) {
                 grid.innerHTML = renderStaffGrid(item);
-                if (window.__thejhonApplySiteLogo && item) {
-                    window.__thejhonApplySiteLogo(item.st_logo, item.st_company);
+                var Auth = global.THEJHON_AUTH;
+                var headerName =
+                    Auth && Auth.getLoggedInCompanyDisplayName
+                        ? Auth.getLoggedInCompanyDisplayName() || ""
+                        : "";
+                var logo =
+                    (item && item.st_logo) ||
+                    (Auth && Auth.getCachedStaffLogo ? Auth.getCachedStaffLogo() : "");
+                if (window.__thejhonApplySiteLogo && (logo || headerName)) {
+                    window.__thejhonApplySiteLogo(logo, headerName);
+                }
+                if (window.__thejhonRefreshHeaderCompany) {
+                    window.__thejhonRefreshHeaderCompany();
                 }
                 setMsg(msgEl, "", false);
             })

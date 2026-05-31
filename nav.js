@@ -541,10 +541,10 @@
 
         function applyFromStaff(st) {
             if (!st) return;
-            if (Auth.updateBrandFromStaffProfile) {
-                Auth.updateBrandFromStaffProfile(st);
+            var AuthRef = window.THEJHON_AUTH;
+            if (AuthRef && AuthRef.updateBrandFromStaffProfile) {
+                AuthRef.updateBrandFromStaffProfile(st);
             }
-            applySiteLogo(st.st_logo, st.st_company || "");
             var grid = document.querySelector(".site-footer .site-footer-grid");
             if (grid) {
                 setDdTextByLabel(grid, "상호", st.st_company || "");
@@ -577,7 +577,6 @@
                     gp.innerHTML = gp.dataset.companyGreetingTpl.split(defaultCo).join(company);
                 }
             }
-            applyHomeHeroCompany(st.st_company || "");
         }
 
         function run() {
@@ -598,13 +597,13 @@
                 return;
             }
             applyHomeHeroCompany(
-                Auth.getBrandCompanyDisplayName && Auth.getBrandCompanyDisplayName()
+                Auth.getLoggedInCompanyDisplayName && Auth.getLoggedInCompanyDisplayName()
             );
             if (!Api.getStaffProfile) {
                 if (Auth.getCachedStaffLogo && Auth.getCachedStaffLogo()) {
                     applySiteLogo(
                         Auth.getCachedStaffLogo(),
-                        Auth.getBrandCompanyDisplayName && Auth.getBrandCompanyDisplayName()
+                        Auth.getLoggedInCompanyDisplayName && Auth.getLoggedInCompanyDisplayName()
                     );
                 }
                 return;
@@ -613,9 +612,9 @@
                 .then(applyFromStaff)
                 .catch(function () {
                     var brandName =
-                        Auth.getBrandCompanyDisplayName && Auth.getBrandCompanyDisplayName();
-                    if (!brandName && Auth.getLoggedInCompanyDisplayName) {
-                        brandName = Auth.getLoggedInCompanyDisplayName();
+                        Auth.getLoggedInCompanyDisplayName && Auth.getLoggedInCompanyDisplayName();
+                    if (!brandName && Auth.getBrandCompanyDisplayName) {
+                        brandName = Auth.getBrandCompanyDisplayName();
                     }
                     applyHomeHeroCompany(brandName);
                     var logo = Auth.getCachedStaffLogo && Auth.getCachedStaffLogo();

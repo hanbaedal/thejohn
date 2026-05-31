@@ -2,6 +2,7 @@ const express = require("express");
 const { signToken, extractBearer, verifyToken, requireRole } = require("../middleware/auth");
 const { getDb, isDbReady } = require("../db");
 const { resolveFormLogin, findVendorByLoginId, findStaffByLoginId } = require("../lib/loginResolve");
+const { findStaffById } = require("../lib/staff");
 const { toPublic, F: VF } = require("../lib/vendorFields");
 const { toPublic: toPublicStaff, staffOrderEnabledFromDoc } = require("../lib/staffFields");
 const { vendorCanPlaceOrders } = require("../lib/orderAccess");
@@ -177,15 +178,13 @@ router.get("/staff-profile", requireRole("admin", "supervisor", "vendor"), async
             if (!staffLoginId) {
                 return res.status(404).json({ ok: false, error: "등록 담당 관리자 정보가 없습니다." });
             }
-            const staff = await findStaffByRegisteredBy(staffLoginId);
-            if (!staff) {
-                return res.status(404).json({ ok: false, error: "관리자 정보를 찾을 수 없습니다." });
-            }
-            return res.json({ ok: true, item: toPublicStaff(staff) });
         } else {
             staffLoginId = String(req.auth.userId || "").trim();
         }
-        const staff = await findStaffByLoginId(staffLoginId);
+
+        let staff = await findStaffById(staffLoginId);
+        if (!staff) staff = await findStaffByLoginId(staffLoginId);
+        if (!staff) staff = await findStaffByRegisteredBy(staffLoginId);
         if (!staff) {
             return res.status(404).json({ ok: false, error: "관리자 정보를 찾을 수 없습니다." });
         }

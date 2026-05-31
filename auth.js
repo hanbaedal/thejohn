@@ -126,8 +126,10 @@
         var src = String(logo || "").trim();
         if (src) authSet(STAFF_LOGO_KEY, src);
         else authRemove(STAFF_LOGO_KEY);
+        var role = authGet(ROLE_KEY) || "";
+        if (role === "vendor") return;
         var brand = String(brandCompanyName || "").trim();
-        if (brand && usesStaffLogoRole()) authSet(BRAND_COMPANY_KEY, brand);
+        if (brand && usesStaffLogoRole(role)) authSet(BRAND_COMPANY_KEY, brand);
     }
 
     function getCachedStaffLogo() {
@@ -240,20 +242,26 @@
         var company = String(st.st_company || "").trim();
         var logo = String(st.st_logo || "").trim();
         var role = getRole();
-        if (company) {
-            authSet(BRAND_COMPANY_KEY, company);
-            if (role === "vendor") authSet(DISPLAY_KEY, company);
-            else if (isStaffRole(role)) {
+        var headerName =
+            role === "vendor" ? getVendorCompanyName() : company;
+
+        if (isStaffRole(role)) {
+            if (company) {
+                authSet(BRAND_COMPANY_KEY, company);
                 authSet(COMPANY_KEY, company);
                 authSet(DISPLAY_KEY, company);
             }
         }
+
         if (usesStaffLogoRole(role)) {
-            cacheStaffLogo(logo, company || getBrandCompanyDisplayName());
+            cacheStaffLogo(logo, headerName || company || getBrandCompanyDisplayName());
         }
+
         if (typeof global.__thejhonApplyHomeHeroCompany === "function") {
             try {
-                global.__thejhonApplyHomeHeroCompany(getBrandCompanyDisplayName());
+                global.__thejhonApplyHomeHeroCompany(
+                    headerName || company || getBrandCompanyDisplayName()
+                );
             } catch (e) {}
         }
         if (typeof global.__thejhonRefreshHeaderCompany === "function") {
@@ -261,9 +269,9 @@
                 global.__thejhonRefreshHeaderCompany();
             } catch (e2) {}
         }
-        if (typeof global.__thejhonApplySiteLogo === "function") {
+        if (usesStaffLogoRole(role) && typeof global.__thejhonApplySiteLogo === "function") {
             try {
-                global.__thejhonApplySiteLogo(logo, company || getBrandCompanyDisplayName());
+                global.__thejhonApplySiteLogo(logo, headerName || company || "");
             } catch (e3) {}
         }
     }
@@ -419,16 +427,15 @@
         if (role === "vendor") {
             if (label) {
                 authSet(COMPANY_KEY, label);
+                authSet(DISPLAY_KEY, label);
             } else {
                 authRemove(COMPANY_KEY);
+                authRemove(DISPLAY_KEY);
             }
             if (brandLabel) {
                 authSet(BRAND_COMPANY_KEY, brandLabel);
-                authSet(DISPLAY_KEY, brandLabel);
             } else {
                 authRemove(BRAND_COMPANY_KEY);
-                if (label) authSet(DISPLAY_KEY, label);
-                else authRemove(DISPLAY_KEY);
             }
         } else if (isStaffRole(role)) {
             if (label) {
@@ -449,10 +456,11 @@
         }
         if (global.THEJHON_API && THEJHON_API.setToken) THEJHON_API.setToken(token || "");
         if (usesStaffLogoRole(role)) {
-            cacheStaffLogo(staffLogo, brandLabel || label);
+            var headerLabel = role === "vendor" ? label || brandLabel : brandLabel || label;
+            cacheStaffLogo(staffLogo, headerLabel);
             if (typeof global.__thejhonApplySiteLogo === "function") {
                 try {
-                    global.__thejhonApplySiteLogo(staffLogo, brandLabel || label);
+                    global.__thejhonApplySiteLogo(staffLogo, headerLabel);
                 } catch (eLogo) {}
             }
         } else {
@@ -1041,7 +1049,9 @@
 
     function getLoggedInCompanyDisplayName() {
         if (!isLoggedIn()) return "";
-        if (usesStaffLogoRole()) return getBrandCompanyDisplayName();
+        var role = getRole();
+        if (role === "vendor") return getVendorCompanyName();
+        if (isStaffRole(role)) return getBrandCompanyDisplayName();
         return authGet(DISPLAY_KEY) || "";
     }
 

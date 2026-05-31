@@ -327,12 +327,7 @@
                 var name = "";
                 var role = THEJHON_AUTH.getRole ? THEJHON_AUTH.getRole() : "";
                 if (THEJHON_AUTH.isLoggedIn()) {
-                    if (role === "admin" || role === "supervisor") {
-                        name = String(
-                            THEJHON_AUTH.getBrandCompanyDisplayName &&
-                                THEJHON_AUTH.getBrandCompanyDisplayName()
-                        ).trim();
-                    } else if (THEJHON_AUTH.getLoggedInCompanyDisplayName) {
+                    if (THEJHON_AUTH.getLoggedInCompanyDisplayName) {
                         name = String(THEJHON_AUTH.getLoggedInCompanyDisplayName() || "").trim();
                     }
                 }
@@ -358,7 +353,10 @@
                 if (Auth.usesStaffLogoRole && Auth.usesStaffLogoRole()) {
                     var logo = Auth.getCachedStaffLogo ? Auth.getCachedStaffLogo() : "";
                     var brand =
-                        Auth.getBrandCompanyDisplayName && Auth.getBrandCompanyDisplayName();
+                        Auth.getLoggedInCompanyDisplayName && Auth.getLoggedInCompanyDisplayName();
+                    if (!brand && Auth.getBrandCompanyDisplayName) {
+                        brand = Auth.getBrandCompanyDisplayName();
+                    }
                     if (window.__thejhonApplySiteLogo) {
                         window.__thejhonApplySiteLogo(logo, brand || "");
                     }
