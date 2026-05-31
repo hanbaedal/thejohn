@@ -67,11 +67,101 @@
         return a;
     }
 
+    function parseKakaoChannelPublicId(raw) {
+        var s = String(raw || "").trim();
+        if (!s) return "";
+        if (/^_[A-Za-z0-9]+$/.test(s)) return s;
+        var m = s.match(/(_[A-Za-z0-9]+)/);
+        return m ? m[1] : "";
+    }
+
+    function normalizeKakaoChatUrl(raw) {
+        var s = String(raw || "").trim();
+        if (!s) return "";
+        var id = parseKakaoChannelPublicId(s);
+        if (id) return "https://pf.kakao.com/" + id + "/chat";
+        if (/^https?:\/\//i.test(s) && /pf\.kakao\.com/i.test(s)) {
+            return s.replace(/\/+$/, "").replace(/\/chat$/i, "") + "/chat";
+        }
+        return s;
+    }
+
+    var kakaoSdkPromise = null;
+
+    function ensureKakaoSdk() {
+        if (kakaoSdkPromise) return kakaoSdkPromise;
+        kakaoSdkPromise = new Promise(function (resolve) {
+            var key = global.THEJHON_OAUTH && global.THEJHON_OAUTH.kakaoJsKey;
+            if (!key) {
+                resolve(null);
+                return;
+            }
+            if (global.Kakao && global.Kakao.isInitialized && global.Kakao.isInitialized()) {
+                resolve(global.Kakao);
+                return;
+            }
+            var s = document.createElement("script");
+            s.src = "https://t1.kakaocdn.net/kakao_js_sdk/2.7.4/kakao.min.js";
+            s.crossOrigin = "anonymous";
+            s.onload = function () {
+                try {
+                    if (!global.Kakao.isInitialized()) global.Kakao.init(key);
+                    resolve(global.Kakao);
+                } catch (e) {
+                    resolve(null);
+                }
+            };
+            s.onerror = function () {
+                resolve(null);
+            };
+            document.head.appendChild(s);
+        });
+        return kakaoSdkPromise;
+    }
+
+    function openKakaoChannelChat(chatUrl) {
+        var url = normalizeKakaoChatUrl(chatUrl);
+        var channelId = parseKakaoChannelPublicId(url);
+        if (!url) return;
+        ensureKakaoSdk().then(function (Kakao) {
+            if (Kakao && Kakao.Channel && typeof Kakao.Channel.chat === "function" && channelId) {
+                try {
+                    Kakao.Channel.chat({ channelPublicId: channelId });
+                    return;
+                } catch (e) {}
+            }
+            global.open(url, "_blank", "noopener,noreferrer");
+        });
+    }
+
+    function btnKakao(chatUrl) {
+        var url = normalizeKakaoChatUrl(chatUrl);
+        var channelId = parseKakaoChannelPublicId(url);
+        if (!url || !channelId) {
+            return btnLink("kakao", "", "카카오톡 채널 채팅", "카카오톡 채널 채팅", iconKakao());
+        }
+        var a = document.createElement("a");
+        a.href = url;
+        a.className = "site-footer-social__btn site-footer-social__btn--kakao";
+        a.title = "카카오톡 채널 채팅";
+        a.setAttribute("aria-label", "카카오톡 채널 채팅");
+        a.innerHTML = iconKakao();
+        a.addEventListener("click", function (e) {
+            e.preventDefault();
+            openKakaoChannelChat(url);
+        });
+        return a;
+    }
+
     function replaceSocialBtn(nav, classMod, url, title) {
         if (!nav) return;
         var sel = ".site-footer-social__btn--" + classMod;
         var old = nav.querySelector(sel);
         if (!old) return;
+        if (classMod === "kakao") {
+            nav.replaceChild(btnKakao(url), old);
+            return;
+        }
         var inner =
             classMod === "facebook"
                 ? iconFacebook()
@@ -79,11 +169,8 @@
                   ? iconInstagram()
                   : classMod === "navercafe"
                     ? iconNaverCafe()
-                    : classMod === "kakao"
-                      ? iconKakao()
-                      : iconYoutube();
-        var aria = classMod === "kakao" ? "카카오톡 채널 채팅" : title;
-        var neu = btnLink(classMod, url, title, aria, inner);
+                    : iconYoutube();
+        var neu = btnLink(classMod, url, title, title, inner);
         nav.replaceChild(neu, old);
     }
 
@@ -95,7 +182,7 @@
         replaceSocialBtn(nav, "instagram", u.instagram, "인스타그램");
         replaceSocialBtn(nav, "navercafe", u.naverCafe, "네이버 카페");
         replaceSocialBtn(nav, "youtube", u.youtube, "유튜브");
-        var kakaoUrl = String(u.kakao || "").trim() || KAKAO_CHAT_URL;
+        var kakaoUrl = normalizeKakaoChatUrl(String(u.kakao || "").trim() || KAKAO_CHAT_URL);
         replaceSocialBtn(nav, "kakao", kakaoUrl, "카카오톡 채널 채팅");
     }
 
@@ -169,9 +256,7 @@
             btnLink("navercafe", pub.naverCafe, "네이버 카페", "네이버 카페", iconNaverCafe())
         );
         nav.appendChild(btnLink("youtube", pub.youtube, "유튜브", "유튜브", iconYoutube()));
-        nav.appendChild(
-            btnLink("kakao", pub.kakao, "카카오톡 채널 채팅", "카카오톡 채널 채팅", iconKakao())
-        );
+        nav.appendChild(btnKakao(pub.kakao));
 
         wrap.appendChild(copy);
         wrap.appendChild(nav);

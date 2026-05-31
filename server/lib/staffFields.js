@@ -72,6 +72,27 @@ function str(v) {
     return String(v ?? "").trim();
 }
 
+/** 카카오 채널 ID·URL → 채팅 URL (https://pf.kakao.com/_ID/chat) */
+function normalizeKakaoChannelUrl(raw) {
+    const s = str(raw);
+    if (!s) return "";
+    if (/^_[A-Za-z0-9]+$/.test(s)) {
+        return `https://pf.kakao.com/${s}/chat`;
+    }
+    let m = s.match(/pf\.kakao\.com\/(_[A-Za-z0-9]+)/i);
+    if (m) return `https://pf.kakao.com/${m[1]}/chat`;
+    if (/^[A-Za-z0-9]{4,}$/.test(s) && !s.includes(".") && !s.includes("/")) {
+        return `https://pf.kakao.com/_${s}/chat`;
+    }
+    if (/^https?:\/\//i.test(s)) {
+        if (/pf\.kakao\.com\/_[A-Za-z0-9]+/i.test(s)) {
+            return s.replace(/\/+$/, "").replace(/\/chat$/i, "") + "/chat";
+        }
+        return s;
+    }
+    return s;
+}
+
 function normalizeStaffLoginId(loginId) {
     return str(loginId).toLowerCase();
 }
@@ -144,7 +165,7 @@ function toPublic(doc) {
         st_instagram: str(d[F.instagram]),
         st_naver_cafe: str(d[F.naverCafe]),
         st_youtube: str(d[F.youtube]),
-        st_kakao: str(d[F.kakao]),
+        st_kakao: normalizeKakaoChannelUrl(d[F.kakao]),
         st_logo: String(d[F.logo] || ""),
         role: d.role || "admin",
         active: d.active !== false,
@@ -189,7 +210,9 @@ function buildFromBody(body, existing, loginId, password) {
         st_instagram: str(body.st_instagram != null ? body.st_instagram : prev[F.instagram]),
         st_naver_cafe: str(body.st_naver_cafe != null ? body.st_naver_cafe : prev[F.naverCafe]),
         st_youtube: str(body.st_youtube != null ? body.st_youtube : prev[F.youtube]),
-        st_kakao: str(body.st_kakao != null ? body.st_kakao : prev[F.kakao]),
+        st_kakao: normalizeKakaoChannelUrl(
+            body.st_kakao != null ? body.st_kakao : prev[F.kakao]
+        ),
         st_logo:
             body.st_logo !== undefined && body.st_logo !== null
                 ? String(body.st_logo)
@@ -475,5 +498,6 @@ module.exports = {
     legacyStaffUnset,
     normalizeStaffLoginId,
     staffOrderEnabledFromDoc,
-    migrateStaffOrderEnabled
+    migrateStaffOrderEnabled,
+    normalizeKakaoChannelUrl
 };
