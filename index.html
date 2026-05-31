@@ -114,10 +114,15 @@
         .home-bgm-hint[hidden] {
             display: none !important;
         }
-        /* index — 회색 logo.png poster·플레이스홀더 비표시 */
-        html.page-home-doc:not(.site-brand-has-logo) .dz-logo-img {
+        /* index — 로그인 전 placeholder만 숨김 (게스트·관리자·슈퍼바이저 포함 로그인 시 표시) */
+        html.page-home-doc:not(.site-brand-has-logo):not(.site-brand-active) .dz-logo-img {
             opacity: 0;
             visibility: hidden;
+        }
+        html.page-home-doc.site-brand-active.site-brand-has-logo .dz-logo,
+        html.page-home-doc.site-brand-active.site-brand-has-logo .dz-logo-img {
+            opacity: 1 !important;
+            visibility: visible !important;
         }
         html.page-home-doc .home-intro-video {
             opacity: 1;
@@ -346,6 +351,42 @@
             }
             syncHomeHeroTitle();
             syncAuthUi();
+
+            function syncHomeHeaderLogo() {
+                var Auth = window.THEJHON_AUTH;
+                if (!Auth || !Auth.isLoggedIn || !Auth.isLoggedIn()) return;
+                if (Auth.usesStaffLogoRole && Auth.usesStaffLogoRole()) {
+                    var logo = Auth.getCachedStaffLogo ? Auth.getCachedStaffLogo() : "";
+                    var brand =
+                        Auth.getBrandCompanyDisplayName && Auth.getBrandCompanyDisplayName();
+                    if (window.__thejhonApplySiteLogo) {
+                        window.__thejhonApplySiteLogo(logo, brand || "");
+                    }
+                    return;
+                }
+                if (window.__thejhonApplyDefaultBrandedLogo) {
+                    window.__thejhonApplyDefaultBrandedLogo("");
+                    return;
+                }
+                if (window.__thejhonApplySiteLogo) {
+                    window.__thejhonApplySiteLogo("", "");
+                    return;
+                }
+                document.documentElement.classList.add(
+                    "site-brand-active",
+                    "site-brand-has-logo",
+                    "site-brand-video-ready"
+                );
+                var imgs = document.querySelectorAll(".dz-logo-img");
+                for (var li = 0; li < imgs.length; li++) imgs[li].src = "img/logo.png";
+            }
+
+            if (document.readyState === "loading") {
+                document.addEventListener("DOMContentLoaded", syncHomeHeaderLogo);
+            } else {
+                syncHomeHeaderLogo();
+            }
+            window.addEventListener("pageshow", syncHomeHeaderLogo);
 
             (function homeIntroMedia() {
                 var video = document.querySelector(".home-intro-video");

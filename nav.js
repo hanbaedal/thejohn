@@ -104,7 +104,11 @@
     }
 
     function markSiteBrandLogoReady() {
-        document.documentElement.classList.add("site-brand-has-logo", "site-brand-video-ready");
+        document.documentElement.classList.add(
+            "site-brand-active",
+            "site-brand-has-logo",
+            "site-brand-video-ready"
+        );
         document.documentElement.classList.remove("site-brand-pending");
         if (window.__THEJHON_BRAND_BOOT && window.__THEJHON_BRAND_BOOT.markBrandHasLogo) {
             window.__THEJHON_BRAND_BOOT.markBrandHasLogo();
@@ -272,11 +276,13 @@
     function applySiteLogo(logoSrc, companyName) {
         var Auth = window.THEJHON_AUTH;
         var branded = Auth && Auth.usesStaffLogoRole && Auth.usesStaffLogoRole();
+        var loggedIn = Auth && Auth.isLoggedIn && Auth.isLoggedIn();
         var custom = String(logoSrc || "").trim();
 
         if (branded) {
             if (custom) {
                 if (Auth.cacheStaffLogo) Auth.cacheStaffLogo(custom, companyName);
+                document.documentElement.classList.add("site-brand-active");
                 var imgs = document.querySelectorAll(".dz-logo-img");
                 for (var i = 0; i < imgs.length; i++) {
                     imgs[i].src = custom;
@@ -298,10 +304,16 @@
             return;
         }
 
+        if (loggedIn) {
+            applyDefaultBrandedLogo(companyName || "");
+            return;
+        }
+
         applySiteBrandDefaults();
     }
 
     window.__thejhonApplySiteLogo = applySiteLogo;
+    window.__thejhonApplyDefaultBrandedLogo = applyDefaultBrandedLogo;
 
     var AUTH_ICON_HTML = {
         login:
@@ -577,6 +589,10 @@
                 return;
             }
             var role = Auth.getRole ? Auth.getRole() : "";
+            if (role === "guest") {
+                applyDefaultBrandedLogo("");
+                return;
+            }
             if (role !== "admin" && role !== "supervisor" && role !== "vendor") {
                 applySiteBrandDefaults();
                 return;

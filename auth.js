@@ -508,10 +508,14 @@
         clearStaffLogoCache();
         authRemove(BRAND_COMPANY_KEY);
         authRemove(COMPANY_KEY);
-        if (typeof global.__thejhonApplySiteLogo === "function") {
+        if (typeof global.__thejhonApplyDefaultBrandedLogo === "function") {
+            try {
+                global.__thejhonApplyDefaultBrandedLogo("");
+            } catch (e) {}
+        } else if (typeof global.__thejhonApplySiteLogo === "function") {
             try {
                 global.__thejhonApplySiteLogo("", "");
-            } catch (e) {}
+            } catch (eLogo) {}
         }
         return guestId;
     }
@@ -696,7 +700,7 @@
         if (!THEJHON_API.getToken || !THEJHON_API.getToken()) return Promise.resolve(null);
         return THEJHON_API.getStaffProfile()
             .then(function (data) {
-                if (data && data.item) updateBrandFromStaffProfile(data.item);
+                if (data) updateBrandFromStaffProfile(data);
                 return data;
             })
             .catch(function () {

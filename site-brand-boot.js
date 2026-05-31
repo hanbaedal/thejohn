@@ -100,6 +100,14 @@
         }
     }
 
+    function isLoggedInSession() {
+        try {
+            return authRead(AUTH_KEY) === "1";
+        } catch (e) {
+            return false;
+        }
+    }
+
     function isStaffBrandRole() {
         try {
             if (authRead(AUTH_KEY) !== "1") return false;
@@ -175,6 +183,18 @@
             document.documentElement.className +=
                 " site-brand-active site-brand-has-logo site-brand-video-ready";
             if (brandCompany) document.documentElement.className += " site-brand-hero-ready";
+        }
+    } else if (isLoggedInSession()) {
+        /* 게스트 등 로그인 세션 — 기본 로고 표시 */
+        try {
+            document.documentElement.classList.add(
+                "site-brand-active",
+                "site-brand-has-logo",
+                "site-brand-video-ready"
+            );
+        } catch (eGuest) {
+            document.documentElement.className +=
+                " site-brand-active site-brand-has-logo site-brand-video-ready";
         }
     }
 
@@ -289,7 +309,7 @@
     function applyEarlyHeaderLogo() {
         stripDeozonVideoPoster();
         var src = customLogo;
-        if (!src && branded) src = DEFAULT_SITE_LOGO;
+        if (!src && (branded || isLoggedInSession())) src = DEFAULT_SITE_LOGO;
         if (!src) return;
         var imgs = document.querySelectorAll(".dz-logo-img");
         for (var i = 0; i < imgs.length; i++) {
@@ -320,12 +340,12 @@
 
     if (document.readyState === "loading") {
         document.addEventListener("DOMContentLoaded", function () {
-            if (branded) stripDeozonVideoPoster();
+            if (branded || isLoggedInSession()) stripDeozonVideoPoster();
             applyEarlyHeaderLogo();
             bootPwaBrand();
         });
     } else {
-        if (branded) stripDeozonVideoPoster();
+        if (branded || isLoggedInSession()) stripDeozonVideoPoster();
         applyEarlyHeaderLogo();
         bootPwaBrand();
     }
