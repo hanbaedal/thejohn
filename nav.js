@@ -114,7 +114,93 @@
             links[j].setAttribute("aria-label", "더존 홈");
         }
         clearSiteBrandPending();
+        applyHomeHeroCompany("");
     }
+
+    function applyHomeHeroCompany(companyName) {
+        if (!document.body || !document.body.classList.contains("page-home")) return;
+        var el = document.querySelector(".home-intro-copy .company-hero");
+        if (!el) return;
+        if (!el.dataset.heroDefault) {
+            el.dataset.heroDefault = el.textContent.trim();
+        }
+        var defaultText = el.dataset.heroDefault;
+        var name = String(companyName || "").trim();
+        el.textContent = name ? defaultText.replace(/더존/g, name) : defaultText;
+        scheduleFitHomeHeroTitle();
+    }
+
+    function fitHomeHeroTitle() {
+        var el = document.querySelector(".home-intro-copy .company-hero, #homeHeroTitle");
+        if (!el) return;
+        var wrap = el.closest(".company-hero-wrap");
+        if (!wrap) return;
+
+        el.style.fontSize = "";
+        var maxSize = parseFloat(window.getComputedStyle(el).fontSize);
+        if (!isFinite(maxSize) || maxSize <= 0) return;
+
+        var available = wrap.clientWidth;
+        if (available <= 0) return;
+
+        if (el.scrollWidth <= available) return;
+
+        var minSize = 12;
+        var lo = minSize;
+        var hi = Math.floor(maxSize);
+        var best = minSize;
+
+        while (lo <= hi) {
+            var mid = Math.floor((lo + hi) / 2);
+            el.style.fontSize = mid + "px";
+            if (el.scrollWidth <= available) {
+                best = mid;
+                lo = mid + 1;
+            } else {
+                hi = mid - 1;
+            }
+        }
+        el.style.fontSize = best + "px";
+    }
+
+    var fitHomeHeroTitleScheduled = 0;
+    function scheduleFitHomeHeroTitle() {
+        if (fitHomeHeroTitleScheduled) cancelAnimationFrame(fitHomeHeroTitleScheduled);
+        fitHomeHeroTitleScheduled = requestAnimationFrame(function () {
+            fitHomeHeroTitleScheduled = 0;
+            fitHomeHeroTitle();
+        });
+    }
+
+    window.__thejhonApplyHomeHeroCompany = applyHomeHeroCompany;
+    window.__thejhonFitHomeHeroTitle = fitHomeHeroTitle;
+
+    (function bootHomeHeroTitleFit() {
+        if (!document.body || !document.body.classList.contains("page-home")) return;
+        var wrap = document.querySelector(".company-hero-wrap");
+        if (!wrap || wrap.dataset.heroFitBound === "1") return;
+        wrap.dataset.heroFitBound = "1";
+
+        scheduleFitHomeHeroTitle();
+
+        if (typeof ResizeObserver !== "undefined") {
+            var ro = new ResizeObserver(function () {
+                scheduleFitHomeHeroTitle();
+            });
+            ro.observe(wrap);
+            var copy = document.querySelector(".home-intro-copy");
+            if (copy && copy !== wrap) ro.observe(copy);
+        }
+
+        window.addEventListener("resize", scheduleFitHomeHeroTitle);
+        window.addEventListener("orientationchange", function () {
+            setTimeout(scheduleFitHomeHeroTitle, 120);
+        });
+
+        if (document.fonts && document.fonts.ready) {
+            document.fonts.ready.then(scheduleFitHomeHeroTitle).catch(function () {});
+        }
+    })();
 
     (function injectCompactHomeLogo() {
         if (document.body && document.body.classList.contains("page-home")) return;
@@ -441,6 +527,7 @@
                     gp.innerHTML = gp.dataset.companyGreetingTpl.split(defaultCo).join(company);
                 }
             }
+            applyHomeHeroCompany(st.st_company || "");
         }
 
         function run() {
@@ -456,6 +543,9 @@
                 applySiteBrandDefaults();
                 return;
             }
+            applyHomeHeroCompany(
+                Auth.getLoggedInCompanyDisplayName && Auth.getLoggedInCompanyDisplayName()
+            );
             if (!Api.getStaffProfile) {
                 if (Auth.getCachedStaffLogo && Auth.getCachedStaffLogo()) {
                     applySiteLogo(Auth.getCachedStaffLogo(), Auth.getLoggedInCompanyDisplayName && Auth.getLoggedInCompanyDisplayName());
@@ -465,6 +555,9 @@
             Api.getStaffProfile()
                 .then(applyFromStaff)
                 .catch(function () {
+                    applyHomeHeroCompany(
+                        Auth.getLoggedInCompanyDisplayName && Auth.getLoggedInCompanyDisplayName()
+                    );
                     if (Auth.getCachedStaffLogo && Auth.getCachedStaffLogo()) {
                         applySiteLogo(Auth.getCachedStaffLogo(), Auth.getLoggedInCompanyDisplayName && Auth.getLoggedInCompanyDisplayName());
                     } else {

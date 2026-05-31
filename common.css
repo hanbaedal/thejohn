@@ -596,10 +596,7 @@ a.btn-login {
     max-width: 100%;
     display: flex;
     justify-content: center;
-    overflow-x: auto;
-    overflow-y: hidden;
-    -webkit-overflow-scrolling: touch;
-    scrollbar-width: none;
+    overflow: hidden;
 }
 .company-hero-wrap::-webkit-scrollbar {
     display: none;
@@ -613,6 +610,8 @@ a.btn-login {
     line-height: 1.15;
     letter-spacing: -0.045em;
     white-space: nowrap;
+    max-width: 100%;
+    box-sizing: border-box;
     font-size: clamp(1.75rem, 5vw + 1rem, 3.25rem);
 }
 .company-hero-stack {

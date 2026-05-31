@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
@@ -154,7 +154,7 @@
             <div class="home-intro-copy">
                 <div class="company-hero-stack">
                     <div class="company-hero-wrap">
-                        <p class="company-hero">믿음을 주는 더존</p>
+                        <p class="company-hero" id="homeHeroTitle">믿음을 주는 더존</p>
                     </div>
                     <div class="company-taglines">
                         <p>신선함의 품격, 신뢰의 약속</p>
@@ -206,6 +206,24 @@
                     location.reload();
                 });
             }
+            function syncHomeHeroTitle() {
+                var el = document.getElementById("homeHeroTitle");
+                if (!el || !window.THEJHON_AUTH) return;
+                if (!el.dataset.heroDefault) {
+                    el.dataset.heroDefault = el.textContent.trim();
+                }
+                var name = "";
+                if (THEJHON_AUTH.isLoggedIn() && THEJHON_AUTH.getLoggedInCompanyDisplayName) {
+                    name = String(THEJHON_AUTH.getLoggedInCompanyDisplayName() || "").trim();
+                }
+                el.textContent = name
+                    ? el.dataset.heroDefault.replace(/더존/g, name)
+                    : el.dataset.heroDefault;
+                if (window.__thejhonFitHomeHeroTitle) {
+                    window.__thejhonFitHomeHeroTitle();
+                }
+            }
+            syncHomeHeroTitle();
             syncAuthUi();
 
             (function homeIntroMedia() {
