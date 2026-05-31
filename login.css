@@ -1,12 +1,31 @@
-/* login.html */
+/* login.html — 로그인 전용 레이아웃 */
+.page-login {
+    display: flex;
+    flex-direction: column;
+    min-height: 100dvh;
+    margin: 0;
+    background: #f4f6f9;
+}
+
+.page-login .login-header {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem 1rem 0.5rem;
+}
+
+.page-login .login-header .dz-logo {
+    display: inline-flex;
+}
+
 .page-login .login-page {
     display: flex;
+    flex: 1;
     flex-direction: column;
     align-items: center;
     justify-content: center;
     width: 100%;
-    min-height: calc(100dvh - 11rem);
-    padding: 1rem 1rem 1.5rem;
+    padding: 1rem 1rem 2rem;
     box-sizing: border-box;
 }
 
@@ -108,28 +127,6 @@
 
 .page-login .login-guest:hover {
     background: #e8eef6;
-}
-
-.page-login .login-persist-hint {
-    margin: 0.85rem 0 0;
-    font-size: 0.82rem;
-    color: #5a6d7e;
-    line-height: 1.45;
-    text-align: center;
-}
-
-.page-login .login-back-link {
-    display: block;
-    margin-top: 1rem;
-    padding: 0.45rem;
-    text-align: center;
-    font-size: 0.9rem;
-    color: var(--dz-blue);
-    text-decoration: none;
-}
-
-.page-login .login-back-link:hover {
-    text-decoration: underline;
 }
 
 .login-busy-modal {

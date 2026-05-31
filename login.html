@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <script src="auth-storage.js"></script>
-    <script src="site-brand-boot.js"></script>
+    <link rel="icon" href="img/icon-192.png" sizes="192x192" type="image/png">
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#0a4d9c">
     <meta name="apple-mobile-web-app-capable" content="yes">
@@ -15,35 +15,12 @@
     <script src="api-config.js"></script>
     <script src="thejhon-api.js"></script>
     <script src="auth.js"></script>
-    <script src="admin-header.js"></script>
-    <script src="nav.js" defer></script>
 </head>
 <body class="page-login">
-    <header class="site-header">
-        <div class="site-header-start">
-            <a href="index.html" class="dz-logo dz-logo--compact" aria-label="더존 홈">
-                <img src="img/logo.png" alt="" width="72" height="72" class="dz-logo-img">
-            </a>
-            <nav class="site-header-nav" aria-label="주요 메뉴">
-                <a href="company.html" class="header-nav-link">회사소개</a>
-                <a href="products.html" class="header-nav-link">사업부문</a>
-                <a href="product-register.html" class="header-nav-link">상품등록</a>
-                <a href="vendor-register.html" class="header-nav-link">업체등록</a>
-                <div class="nav-dropdown" data-nav-dropdown="support">
-                    <a href="support.html" class="header-nav-link nav-dropdown-trigger" aria-haspopup="true" aria-expanded="false" aria-controls="supportSubmenu">고객센터</a>
-                    <div id="supportSubmenu" class="nav-dropdown-panel" role="menu" aria-label="고객센터 하위 메뉴">
-                        <a href="support-partners.html" class="nav-dropdown-item" role="menuitem">파트너회사 소개</a>
-                        <a href="support-library.html" class="nav-dropdown-item" role="menuitem">최근소식</a>
-                        <a href="support-qna.html" class="nav-dropdown-item" role="menuitem">자유게시판</a>
-                        <a href="support-inquiry.html" class="nav-dropdown-item" role="menuitem">문의사항</a>
-                    </div>
-                </div>
-            </nav>
-        </div>
-        <nav class="site-header-actions" aria-label="계정">
-            <time class="header-date" id="headerToday" datetime=""></time>
-            <button type="button" class="btn btn-auth-icon btn-logout" id="btnLogout" hidden aria-label="로그아웃" title="로그아웃"></button>
-        </nav>
+    <header class="login-header">
+        <a href="index.html" class="dz-logo dz-logo--compact" aria-label="더존 홈">
+            <img src="img/logo.png" alt="" width="72" height="72" class="dz-logo-img">
+        </a>
     </header>
 
     <main class="login-page">
@@ -63,8 +40,6 @@
                     <a href="index.html" class="login-guest">게스트</a>
                 </div>
             </form>
-            <p class="login-persist-hint">PWA(홈 화면 추가)로 열면 로그아웃 전까지 로그인 상태가 유지됩니다.</p>
-            <a href="index.html" class="login-back-link">← 홈으로</a>
         </div>
     </main>
 
@@ -75,13 +50,6 @@
             <p id="loginBusyTimer" class="login-busy-modal__timer" aria-live="polite"></p>
         </div>
     </div>
-
-    <footer class="site-footer">
-        <div class="site-footer-inner">
-            <dl class="site-footer-grid" id="siteFooterCompanyGrid" aria-live="polite"></dl>
-            <p class="site-footer-company-msg" id="siteFooterCompanyMsg" hidden></p>
-        </div>
-    </footer>
 
     <script src="login.js"></script>
 </body>

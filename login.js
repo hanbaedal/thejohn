@@ -1,27 +1,11 @@
 /**
- * login.html — 폼 로그인 · 게스트(홈) · 로그인 후 이동
+ * login.html — 아이디·비밀번호 로그인, 게스트(홈)
  */
 (function (global) {
     var params = new URLSearchParams(global.location.search);
 
     function $(id) {
         return document.getElementById(id);
-    }
-
-    function initHeaderDate() {
-        var todayEl = $("headerToday");
-        if (!todayEl) return;
-        var now = new Date();
-        var y = now.getFullYear();
-        var m = String(now.getMonth() + 1).padStart(2, "0");
-        var d = String(now.getDate()).padStart(2, "0");
-        todayEl.dateTime = y + "-" + m + "-" + d;
-        todayEl.textContent = now.toLocaleDateString("ko-KR", {
-            year: "numeric",
-            month: "long",
-            day: "numeric",
-            weekday: "long"
-        });
     }
 
     function initGuest() {
@@ -41,17 +25,6 @@
         });
     }
 
-    function speakWarning(text) {
-        if (!global.speechSynthesis || !text) return;
-        try {
-            global.speechSynthesis.cancel();
-            var u = new SpeechSynthesisUtterance(text);
-            u.lang = "ko-KR";
-            u.rate = 0.95;
-            global.speechSynthesis.speak(u);
-        } catch (e) {}
-    }
-
     function showBusyModal(message) {
         return new Promise(function (resolve) {
             var modal = $("loginBusyModal");
@@ -64,7 +37,6 @@
             }
             if (msgEl) msgEl.textContent = text;
             modal.hidden = false;
-            speakWarning(text);
             var left = 5;
             if (timerEl) timerEl.textContent = left + "초 후 닫힙니다.";
             var iv = setInterval(function () {
@@ -72,7 +44,6 @@
                 if (left <= 0) {
                     clearInterval(iv);
                     modal.hidden = true;
-                    if (global.speechSynthesis) global.speechSynthesis.cancel();
                     resolve();
                     return;
                 }
@@ -117,9 +88,6 @@
             ok.stLogo,
             ok.brandCompanyName || ok.vendorRegisteredByName
         );
-        if (THEJHON_AUTH.applyNavRegisterVisibility) {
-            THEJHON_AUTH.applyNavRegisterVisibility();
-        }
     }
 
     function initLoginForm() {
@@ -191,7 +159,6 @@
     }
 
     function boot() {
-        initHeaderDate();
         initGuest();
         initLoginForm();
     }
