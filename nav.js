@@ -73,6 +73,14 @@
     })();
 
     var DEFAULT_SITE_LOGO = "img/logo.png";
+    var DEFAULT_SITE_FAVICON = "img/icon-192.png";
+
+    function applySiteFavicon(href) {
+        var links = document.querySelectorAll('link[rel="icon"], link[rel="apple-touch-icon"]');
+        for (var i = 0; i < links.length; i++) {
+            links[i].href = href;
+        }
+    }
 
     (function injectCompactHomeLogo() {
         if (document.body && document.body.classList.contains("page-home")) return;
@@ -95,11 +103,14 @@
     })();
 
     function applySiteLogo(logoSrc, companyName) {
-        var src = String(logoSrc || "").trim() || DEFAULT_SITE_LOGO;
+        var custom = String(logoSrc || "").trim();
+        var headerSrc = custom || DEFAULT_SITE_LOGO;
+        var faviconSrc = custom || DEFAULT_SITE_FAVICON;
         var imgs = document.querySelectorAll(".dz-logo-img");
         for (var i = 0; i < imgs.length; i++) {
-            imgs[i].src = src;
+            imgs[i].src = headerSrc;
         }
+        applySiteFavicon(faviconSrc);
         var links = document.querySelectorAll(".dz-logo, .dz-logo--compact");
         var label = String(companyName || "").trim()
             ? String(companyName).trim() + " 홈"
