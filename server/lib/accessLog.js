@@ -76,6 +76,15 @@ async function logVendorLogin(db, userId, vendorRegisteredBy, label) {
     });
 }
 
+async function logGuestLogin(db, guestId) {
+    return logAccessEvent(db, {
+        kind: "guest_login",
+        role: "guest",
+        userId: String(guestId || "").trim(),
+        label: "게스트"
+    });
+}
+
 async function logPageView(db, auth, page) {
     var role = (auth && auth.role) || "guest";
     var userId = (auth && auth.userId) || "";
@@ -93,6 +102,7 @@ function categorizeLog(doc) {
     var kind = String(doc.kind || "");
     if (kind === "staff_login") return "staff";
     if (kind === "vendor_login") return "vendor";
+    if (kind === "guest_login") return "guest";
     if (kind === "page_view") {
         var role = String(doc.role || "");
         if (role === "admin" || role === "supervisor") return "staff";
@@ -176,6 +186,7 @@ module.exports = {
     logAccessEvent,
     logStaffLogin,
     logVendorLogin,
+    logGuestLogin,
     logPageView,
     queryAccessStats,
     parseYmdToMs,

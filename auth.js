@@ -6,7 +6,7 @@
  * - 슈퍼바이저: 관리자(staff) 생성 · 전체 기능
  * - 관리자: 업체(vendors) 생성 · 주문 권한(st_order_enabled)은 슈퍼바이저 부여
  * - 업체: 담당 관리자 상품 등급가, 타 관리자 상품은 가격1 · 주문은 담당 관리자+주문권한 있을 때
- * - 게스트(미로그인): 상품 내용만, 가격 비표시
+ * - 게스트 로그인: 상품 열람(가격 없음) · 외부 접속 통계(guest_login·page_view)
  */
 (function (global) {
     var AUTH_KEY = "thejhon_logged_in";
@@ -24,6 +24,7 @@
     var STAFF_LOGO_KEY = "thejhon_staff_logo";
     var BRAND_COMPANY_KEY = "thejhon_brand_company_name";
     var LOGIN_ID_HINT_KEY = "thejhon_login_id_hint";
+    var GUEST_ID_KEY = "thejhon_guest_id";
 
     var store = global.THEJHON_AUTH_STORAGE;
 
@@ -43,7 +44,8 @@
         VENDOR_MGR_EMAIL_KEY,
         STAFF_ORDER_ENABLED_KEY,
         STAFF_LOGO_KEY,
-        BRAND_COMPANY_KEY
+        BRAND_COMPANY_KEY,
+        GUEST_ID_KEY
     ];
 
     function authGet(key) {
@@ -155,7 +157,12 @@
         }
         var role = authGet(ROLE_KEY);
         if (role === "guest") {
-            clearSession();
+            var gid = String(authGet(GUEST_ID_KEY) || authGet(USER_ID_KEY) || "").trim();
+            if (gid) {
+                if (!authGet(GUEST_ID_KEY)) authSet(GUEST_ID_KEY, gid);
+                if (!authGet(USER_ID_KEY)) authSet(USER_ID_KEY, gid);
+            }
+            if (!authGet(DISPLAY_KEY)) authSet(DISPLAY_KEY, "게스트");
             return;
         }
         if (role === "vendor") {
@@ -466,6 +473,72 @@
         authRemove(VENDOR_MGR_NAME_KEY);
         authRemove(VENDOR_MGR_TEL_KEY);
         authRemove(VENDOR_MGR_EMAIL_KEY);
+    }
+
+    function isGuest() {
+        return getRole() === "guest";
+    }
+
+    function getGuestId() {
+        if (!isGuest()) return "";
+        return String(authGet(GUEST_ID_KEY) || authGet(USER_ID_KEY) || "").trim();
+    }
+
+    function newGuestId() {
+        return (
+            "guest_" +
+            Date.now().toString(36) +
+            "_" +
+            Math.random().toString(36).slice(2, 8)
+        );
+    }
+
+    /** 게스트 로그인 세션 — 접속 통계용 (가격·관리 메뉴 없음) */
+    function setGuestSession() {
+        clearAuthStorageLocal();
+        clearVendorCartIfAny();
+        var guestId = newGuestId();
+        authSet(GUEST_ID_KEY, guestId);
+        authSet(AUTH_KEY, "1");
+        authSet(ROLE_KEY, "guest");
+        authSet(USER_ID_KEY, guestId);
+        authSet("thejhon_auth_provider", "guest");
+        authSet(DISPLAY_KEY, "게스트");
+        clearStaffLogoCache();
+        authRemove(BRAND_COMPANY_KEY);
+        authRemove(COMPANY_KEY);
+        if (typeof global.__thejhonApplySiteLogo === "function") {
+            try {
+                global.__thejhonApplySiteLogo("", "");
+            } catch (e) {}
+        }
+        return guestId;
+    }
+
+    function enterGuestSessionAsync() {
+        var hadToken =
+            global.THEJHON_API &&
+            THEJHON_API.getToken &&
+            !!THEJHON_API.getToken();
+        function finish() {
+            var guestId = setGuestSession();
+            if (!global.THEJHON_API || !THEJHON_API.logGuestLogin) {
+                return Promise.resolve(guestId);
+            }
+            return THEJHON_API.logGuestLogin(guestId)
+                .catch(function () {
+                    return null;
+                })
+                .then(function () {
+                    return guestId;
+                });
+        }
+        if (hadToken && THEJHON_API.logoutAsync) {
+            return THEJHON_API.logoutAsync()
+                .catch(function () {})
+                .then(finish);
+        }
+        return finish();
     }
 
     function isLoggedIn() {
@@ -981,6 +1054,7 @@
     function trackPageViewIfNeeded() {
         try {
             if (!global.THEJHON_API || !THEJHON_API.trackPageView) return;
+            if (!isLoggedIn()) return;
             var page = currentPageFile();
             if (!page || page === "login.html") return;
             THEJHON_API.trackPageView(page).catch(function () {});
@@ -1217,6 +1291,10 @@
         enforceRegisterPages: enforceRegisterPages,
         trackPageViewIfNeeded: trackPageViewIfNeeded,
         applyNavRegisterVisibility: applyNavRegisterVisibility,
-        safeNextPath: safeNextPath
+        safeNextPath: safeNextPath,
+        isGuest: isGuest,
+        getGuestId: getGuestId,
+        setGuestSession: setGuestSession,
+        enterGuestSessionAsync: enterGuestSessionAsync
     };
 })(typeof window !== "undefined" ? window : this);

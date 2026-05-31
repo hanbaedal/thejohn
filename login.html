@@ -33,6 +33,7 @@
     <main class="login-page">
         <div class="login-card">
             <h1>로그인</h1>
+            <p class="login-intro">관리자·업체는 아이디로 로그인합니다. 외부 방문은 <strong>게스트 로그인</strong>을 이용해 주세요.</p>
             <form id="loginForm" action="login.html" method="post" novalidate>
                 <div class="login-field">
                     <label for="userId">아이디</label>
@@ -44,7 +45,7 @@
                 </div>
                 <div class="login-actions">
                     <button type="submit" class="login-submit">로그인</button>
-                    <a href="index.html" class="login-guest">게스트</a>
+                    <button type="button" class="login-guest">게스트 로그인</button>
                 </div>
             </form>
         </div>

@@ -47,11 +47,24 @@
 }
 
 .page-login .login-card h1 {
-    margin: 0 0 1.25rem;
+    margin: 0 0 0.65rem;
     font-size: 1.25rem;
     font-weight: 700;
     color: #1a2b3c;
     text-align: center;
+}
+
+.page-login .login-intro {
+    margin: 0 0 1.15rem;
+    font-size: 0.82rem;
+    line-height: 1.5;
+    color: #5a6d7e;
+    text-align: center;
+}
+
+.page-login .login-intro strong {
+    color: #3d5166;
+    font-weight: 700;
 }
 
 .page-login .login-field {
@@ -130,6 +143,12 @@
     border: 1px solid #c5d0dc;
     border-radius: 6px;
     box-sizing: border-box;
+    cursor: pointer;
+}
+
+.page-login .login-guest--busy {
+    opacity: 0.65;
+    cursor: wait;
 }
 
 .page-login .login-guest:hover {

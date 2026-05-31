@@ -17,7 +17,7 @@
     function catLabel(c) {
         if (c === "staff") return "관리자";
         if (c === "vendor") return "업체";
-        return "비로그인";
+        return "게스트";
     }
     function catClass(c) {
         return "shub-cat--" + (c || "guest");
@@ -62,7 +62,7 @@
                         "건</span>" +
                         '<span class="' +
                         catClass("guest") +
-                        '"><strong>비로그인</strong> ' +
+                        '"><strong>게스트</strong> ' +
                         escapeHtml(String(sum.guest || 0)) +
                         "건</span>";
                 }
@@ -71,7 +71,7 @@
                     byDayEl.innerHTML = '<p class="am-list-empty">해당 기간 기록이 없습니다.</p>';
                 } else {
                     byDayEl.innerHTML =
-                        '<table class="shub-table"><thead><tr><th>날짜</th><th>관리자</th><th>업체</th><th>비로그인</th></tr></thead><tbody>' +
+                        '<table class="shub-table"><thead><tr><th>날짜</th><th>관리자</th><th>업체</th><th>게스트</th></tr></thead><tbody>' +
                         byDay
                             .map(function (row) {
                                 return (
@@ -100,7 +100,11 @@
                                 var label =
                                     it.label ||
                                     it.userId ||
-                                    (it.kind === "page_view" ? "방문" : "");
+                                    (it.kind === "guest_login"
+                                        ? "게스트 로그인"
+                                        : it.kind === "page_view"
+                                          ? "페이지 방문"
+                                          : "");
                                 return (
                                     "<tr><td>" +
                                     escapeHtml(it.date) +

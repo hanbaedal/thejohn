@@ -1,5 +1,5 @@
 /**
- * login.html — 아이디·비밀번호 로그인, 게스트(홈)
+ * login.html — 아이디·비밀번호 로그인 / 게스트 로그인(접속 통계)
  */
 (function (global) {
     var params = new URLSearchParams(global.location.search);
@@ -8,20 +8,34 @@
         return document.getElementById(id);
     }
 
+    function goNext() {
+        var Auth = global.THEJHON_AUTH;
+        var next =
+            Auth && Auth.safeNextPath
+                ? Auth.safeNextPath(params.get("next"))
+                : "index.html";
+        global.location.href = next || "index.html";
+    }
+
     function initGuest() {
         var guestBtn = document.querySelector(".login-guest");
         if (!guestBtn) return;
         guestBtn.addEventListener("click", function (e) {
             e.preventDefault();
-            if (global.THEJHON_AUTH && THEJHON_AUTH.clearSession) {
-                THEJHON_AUTH.clearSession();
-            }
             var Auth = global.THEJHON_AUTH;
-            var next =
-                Auth && Auth.safeNextPath
-                    ? Auth.safeNextPath(params.get("next"))
-                    : "index.html";
-            global.location.href = next || "index.html";
+            if (!Auth || !Auth.enterGuestSessionAsync) {
+                goNext();
+                return;
+            }
+            guestBtn.setAttribute("aria-busy", "true");
+            guestBtn.classList.add("login-guest--busy");
+            Auth.enterGuestSessionAsync()
+                .then(function () {
+                    goNext();
+                })
+                .catch(function () {
+                    goNext();
+                });
         });
     }
 
@@ -54,11 +68,10 @@
 
     function goAfterLogin(ok) {
         var Auth = global.THEJHON_AUTH;
-        var next = Auth.safeNextPath(params.get("next"));
         var role = ok && ok.role;
 
         function navigate() {
-            global.location.href = next;
+            goNext();
         }
 
         if (
@@ -94,7 +107,12 @@
         var Auth = global.THEJHON_AUTH;
         if (!Auth) return;
 
-        if (Auth.isLoggedIn && Auth.isLoggedIn()) {
+        var role = Auth.getRole ? Auth.getRole() : "";
+        if (
+            Auth.isLoggedIn &&
+            Auth.isLoggedIn() &&
+            (role === "admin" || role === "supervisor" || role === "vendor")
+        ) {
             global.location.replace(Auth.safeNextPath(params.get("next")));
             return;
         }

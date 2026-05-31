@@ -358,7 +358,16 @@
             return request("GET", "/api/supervisor/db-stats");
         },
         trackPageView: function (page) {
-            return request("POST", "/api/access/page-view", { page: page });
+            var body = { page: page };
+            var Auth = global.THEJHON_AUTH;
+            if (Auth && Auth.getRole && Auth.getRole() === "guest" && Auth.getGuestId) {
+                var gid = Auth.getGuestId();
+                if (gid) body.guestId = gid;
+            }
+            return request("POST", "/api/access/page-view", body);
+        },
+        logGuestLogin: function (guestId) {
+            return request("POST", "/api/access/guest-login", { guestId: guestId });
         },
         getOrder: function (orderId) {
             return request("GET", "/api/orders/" + encodeURIComponent(orderId)).then(function (d) {
