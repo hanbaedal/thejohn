@@ -299,25 +299,12 @@
         var actions = document.querySelector(".site-header-actions");
         if (!actions) return;
         var loginBtn = document.getElementById("btnLogin");
+        if (loginBtn) loginBtn.remove();
         var logoutBtn = document.getElementById("btnLogout");
         if (logoutBtn) applyAuthIconButton(logoutBtn, "logout");
-        if (!loginBtn) {
-            loginBtn = document.createElement("a");
-            loginBtn.href = "login.html?next=" + encodeURIComponent(window.location.href);
-            loginBtn.id = "btnLogin";
-            applyAuthIconButton(loginBtn, "login");
-            if (logoutBtn) actions.insertBefore(loginBtn, logoutBtn);
-            else actions.appendChild(loginBtn);
-        } else {
-            applyAuthIconButton(loginBtn, "login");
-        }
         function sync() {
             var loggedIn = window.THEJHON_AUTH && THEJHON_AUTH.isLoggedIn();
-            if (loginBtn) loginBtn.hidden = !!loggedIn;
             if (logoutBtn) logoutBtn.hidden = !loggedIn;
-            if (!loggedIn && loginBtn) {
-                loginBtn.href = "login.html?next=" + encodeURIComponent(window.location.href);
-            }
         }
         sync();
         function syncAll() {

@@ -1,18 +1,22 @@
 const { F: VF, parseGrade } = require("./vendorFields");
 const { F: PF, readPricesFromDoc } = require("./productFields");
-const { normalizeStaffLoginId, LEGACY_REGISTERED_BY } = require("./vendorAccess");
+const {
+    trimStaffLoginId,
+    staffLoginIdsEqual,
+    isLegacyRegisteredBy
+} = require("./staffLoginId");
 
 /**
  * 업체 거래처(등록 담당)와 상품 등록 담당이 같을 때만 등급별 가격.
  * 그 외(타 관리자 상품)는 무조건 가격1.
  */
 function vendorOwnsProductPricing(vendorRegisteredBy, productRegisteredBy) {
-    const v = normalizeStaffLoginId(vendorRegisteredBy);
-    const p = normalizeStaffLoginId(productRegisteredBy);
-    if (!v || v === LEGACY_REGISTERED_BY || !p || p === LEGACY_REGISTERED_BY) {
+    const v = trimStaffLoginId(vendorRegisteredBy);
+    const p = trimStaffLoginId(productRegisteredBy);
+    if (!v || isLegacyRegisteredBy(v) || !p || isLegacyRegisteredBy(p)) {
         return false;
     }
-    return v === p;
+    return staffLoginIdsEqual(v, p);
 }
 
 function priceKeyForGrade(grade) {
@@ -51,10 +55,10 @@ function resolveVendorUnitPrice(productDoc, vendorDoc) {
 
 /** @deprecated vendorProductAllowsOrderForVendor(productRegisteredBy, vendorDoc) 사용 */
 function vendorProductAllowsOrder(productRegisteredBy, vendorRegisteredBy) {
-    const p = normalizeStaffLoginId(productRegisteredBy);
-    const v = normalizeStaffLoginId(vendorRegisteredBy);
-    if (!p || !v || p === LEGACY_REGISTERED_BY || v === LEGACY_REGISTERED_BY) return false;
-    return p === v;
+    const p = trimStaffLoginId(productRegisteredBy);
+    const v = trimStaffLoginId(vendorRegisteredBy);
+    if (!p || !v || isLegacyRegisteredBy(p) || isLegacyRegisteredBy(v)) return false;
+    return staffLoginIdsEqual(p, v);
 }
 
 module.exports = {

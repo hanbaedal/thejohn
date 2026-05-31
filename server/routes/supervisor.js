@@ -5,6 +5,7 @@ const { queryAccessStats, parseYmdToMs } = require("../lib/accessLog");
 const { F: PF } = require("../lib/productFields");
 const { F: VF } = require("../lib/vendorFields");
 const { normalizeStaffLoginId } = require("../lib/orderAccess");
+const { registeredByInFilter } = require("../lib/staffLoginId");
 
 const router = express.Router();
 
@@ -146,7 +147,7 @@ router.get("/order-stats", requireRole("supervisor"), async function (req, res) 
         }
 
         var query = {};
-        if (adminStaffId) query.vendorRegisteredBy = adminStaffId;
+        if (adminStaffId) query.vendorRegisteredBy = registeredByInFilter(adminStaffId);
         if (fromMs || toMs) {
             query.createdAt = {};
             if (fromMs) query.createdAt.$gte = fromMs;

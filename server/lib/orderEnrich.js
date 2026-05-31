@@ -3,6 +3,7 @@ const { F: PF, fromLegacyDoc: productFromLegacy } = require("./productFields");
 const { deptLabel } = require("./orderDeptLabels");
 const { findVendorByLoginId } = require("./loginResolve");
 const { findStaffByRegisteredBy } = require("./staffRegisteredBy");
+const { trimStaffLoginId, isLegacyRegisteredBy } = require("./staffLoginId");
 const {
     fromLegacyDoc: staffFromLegacy,
     getCompanyName: getStaffCompanyName,
@@ -24,18 +25,18 @@ function gradeLabel(grade) {
  * 추후 st_addr, 업종·업태 등 필드 추가 예정
  */
 async function staffSupplierFromLoginId(loginId) {
-    const id = str(loginId).toLowerCase();
-    if (!id) {
+    const raw = str(loginId);
+    if (!raw) {
         return { loginId: "", name: "", ceo: "", tel: "", addr: "" };
     }
-    const staff = await findStaffByRegisteredBy(id);
+    const staff = await findStaffByRegisteredBy(raw);
     if (!staff) {
-        return { loginId: id, name: id, ceo: "", tel: "", addr: "" };
+        return { loginId: raw, name: raw, ceo: "", tel: "", addr: "" };
     }
     const d = staffFromLegacy(staff) || {};
     return {
-        loginId: str(staff.loginId) || id,
-        name: getStaffCompanyName(staff) || id,
+        loginId: str(staff.loginId) || raw,
+        name: getStaffCompanyName(staff) || raw,
         ceo: getStaffCeoName(staff) || "",
         tel: str(d[SF.ceoTel]),
         addr: str(d[SF.address] || staff.st_address)
@@ -44,10 +45,10 @@ async function staffSupplierFromLoginId(loginId) {
 
 async function resolveSupplierStaffLoginId(vendorDoc) {
     const v = vendorFromLegacy(vendorDoc) || {};
-    const reg = str(v[VF.registeredBy]).toLowerCase();
-    if (reg && reg !== "legacy") {
+    const reg = trimStaffLoginId(v[VF.registeredBy]);
+    if (reg && !isLegacyRegisteredBy(reg)) {
         const staff = await findStaffByRegisteredBy(reg);
-        if (staff && staff.loginId) return str(staff.loginId).toLowerCase();
+        if (staff && staff.loginId) return trimStaffLoginId(staff.loginId);
         return reg;
     }
     return "";

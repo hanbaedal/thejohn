@@ -1,4 +1,12 @@
 const { buildLoginFields, getStoredPassword } = require("./loginAccount");
+const {
+    trimStaffLoginId,
+    staffLoginIdKey,
+    staffLoginIdsEqual,
+    loginIdValues,
+    registeredByInFilter,
+    isLegacyRegisteredBy
+} = require("./staffLoginId");
 
 /** staff 컬렉션 — vendors와 같은 개념의 로그인·업체 정보 */
 const F = {
@@ -99,8 +107,9 @@ function normalizeKakaoChannelUrl(raw) {
     return s;
 }
 
+/** 저장·표시용 — loginId 원문(대소문자 유지). 비교는 staffLoginIdsEqual / staffLoginIdKey */
 function normalizeStaffLoginId(loginId) {
-    return str(loginId).toLowerCase();
+    return trimStaffLoginId(loginId);
 }
 
 function staffOrderEnabledFromDoc(doc) {
@@ -313,7 +322,7 @@ async function removeStaffLoginIdConflicts(col, seed) {
     if (!canonicalLoginId) return;
 
     const loginIds = [canonicalLoginId];
-    const idn = normalizeStaffLoginId(canonicalLoginId);
+    const idn = staffLoginIdKey(canonicalLoginId);
     if (idn === "thejohn" || idn === "thejhon") {
         loginIds.push("thejohn", "thejhon");
     }
@@ -541,6 +550,12 @@ module.exports = {
     staffSeedAccountsOk,
     legacyStaffUnset,
     normalizeStaffLoginId,
+    trimStaffLoginId,
+    staffLoginIdKey,
+    staffLoginIdsEqual,
+    loginIdValues,
+    registeredByInFilter,
+    isLegacyRegisteredBy,
     staffOrderEnabledFromDoc,
     migrateStaffOrderEnabled,
     normalizeKakaoChannelUrl

@@ -1,18 +1,7 @@
 const { normalizeLoginId } = require("./loginAccount");
 const { F: VF } = require("./vendorFields");
 const { F: PF } = require("./productFields");
-const { normalizeStaffLoginId } = require("./staffFields");
-
-function loginIdValues(oldLoginId) {
-    const raw = String(oldLoginId || "").trim();
-    const norm = normalizeStaffLoginId(raw);
-    const vals = [];
-    if (raw) vals.push(raw);
-    if (norm && vals.indexOf(norm) < 0) vals.push(norm);
-    if (norm === "thejohn") vals.push("thejhon");
-    if (norm === "thejhon") vals.push("thejohn");
-    return vals;
-}
+const { trimStaffLoginId, loginIdValues } = require("./staffLoginId");
 
 function fieldInFilter(field, oldLoginId) {
     const vals = loginIdValues(oldLoginId);
@@ -22,11 +11,12 @@ function fieldInFilter(field, oldLoginId) {
 
 /**
  * 관리자 loginId 변경 시 loginId 문자열을 참조하는 컬렉션 일괄 갱신
+ * vn/pd_registered_by 등은 staff.loginId 원문(대소문자)으로 저장
  */
 async function propagateStaffLoginIdChange(db, oldLoginId, newLoginId, newDisplayName) {
-    const newReg = normalizeStaffLoginId(newLoginId);
-    const newUser = String(newLoginId || "").trim();
-    if (!newReg || !newUser) return { updated: {} };
+    const newStored = trimStaffLoginId(newLoginId);
+    const newUser = trimStaffLoginId(newLoginId);
+    if (!newStored || !newUser) return { updated: {} };
 
     const now = Date.now();
     const counts = {};
@@ -38,7 +28,7 @@ async function propagateStaffLoginIdChange(db, oldLoginId, newLoginId, newDispla
     }
 
     const vendorFilter = fieldInFilter(VF.registeredBy, oldLoginId);
-    const vendorSet = { [VF.registeredBy]: newReg, updatedAt: now };
+    const vendorSet = { [VF.registeredBy]: newStored, updatedAt: now };
     if (newDisplayName) vendorSet[VF.registeredByName] = String(newDisplayName).trim();
 
     for (const col of ["vendors", "vendor_new", "vendor_prospects"]) {
@@ -47,7 +37,7 @@ async function propagateStaffLoginIdChange(db, oldLoginId, newLoginId, newDispla
 
     const productFilter = fieldInFilter(PF.registeredBy, oldLoginId);
     const productSet = {
-        [PF.registeredBy]: newReg,
+        [PF.registeredBy]: newStored,
         updatedAt: now
     };
     if (newDisplayName) productSet[PF.registeredByName] = String(newDisplayName).trim();
@@ -57,7 +47,7 @@ async function propagateStaffLoginIdChange(db, oldLoginId, newLoginId, newDispla
         "orders",
         fieldInFilter("vendorRegisteredBy", oldLoginId),
         {
-            vendorRegisteredBy: newReg,
+            vendorRegisteredBy: newStored,
             updatedAt: now,
             ...(newDisplayName ? { vendorRegisteredByName: String(newDisplayName).trim() } : {})
         }
@@ -77,7 +67,7 @@ async function propagateStaffLoginIdChange(db, oldLoginId, newLoginId, newDispla
     await bump(
         "access_logs",
         fieldInFilter("vendorRegisteredBy", oldLoginId),
-        { vendorRegisteredBy: newReg }
+        { vendorRegisteredBy: newStored }
     );
 
     await bump(
@@ -106,7 +96,7 @@ async function propagateStaffLoginIdChange(db, oldLoginId, newLoginId, newDispla
         { si_reply_by: newUser, updatedAt: now }
     );
 
-    return { updated: counts, newLoginId: newUser, newRegisteredBy: newReg };
+    return { updated: counts, newLoginId: newUser, newRegisteredBy: newStored };
 }
 
 function loginIdsEquivalent(a, b) {

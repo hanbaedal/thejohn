@@ -1,7 +1,7 @@
 const { findStaffByRegisteredBy } = require("./staffRegisteredBy");
 const { phoneFromOrderEnabledStaff } = require("./staffOrderEnabled");
 const { F } = require("./vendorFields");
-const { normalizeStaffLoginId } = require("./vendorAccess");
+const { isLegacyRegisteredBy } = require("./staffLoginId");
 const { isSolapiConfigured, sendSolapiSms } = require("./solapiSms");
 
 function normalizePhoneE164(phone) {
@@ -27,7 +27,7 @@ async function getAdminNotifyPhone(db, order) {
             const { findVendorByLoginId } = require("./loginResolve");
             var vendor = await findVendorByLoginId(vendorLogin);
             var registrar = vendor && vendor[F.registeredBy];
-            if (registrar && normalizeStaffLoginId(registrar) !== "legacy") {
+            if (registrar && !isLegacyRegisteredBy(registrar)) {
                 var byRegistrar = await phoneForStaffLoginId(registrar);
                 if (byRegistrar) return byRegistrar;
             }

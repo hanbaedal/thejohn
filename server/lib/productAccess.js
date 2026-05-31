@@ -1,5 +1,9 @@
 const { F } = require("./productFields");
 const {
+    trimStaffLoginId,
+    staffLoginIdsEqual,
+    isLegacyRegisteredBy,
+    registeredByInFilter,
     normalizeStaffLoginId,
     isStaffAuth,
     isSupervisorAuth,
@@ -12,36 +16,32 @@ function vendorRegistrarFromDoc(vendorDoc, auth) {
     var reg = "";
     if (vendorDoc) {
         var v = vendorFromLegacy(vendorDoc) || vendorDoc;
-        reg = normalizeStaffLoginId(v[VF.registeredBy]);
+        reg = trimStaffLoginId(v[VF.registeredBy]);
     }
     if (!reg && auth && auth.vendorRegisteredBy) {
-        reg = normalizeStaffLoginId(auth.vendorRegisteredBy);
+        reg = trimStaffLoginId(auth.vendorRegisteredBy);
     }
     return reg;
 }
 
-/** 업체 카탈로그 — 사업부문(?dept=)만 필터, 등록 관리자(pd_registered_by)로는 제한하지 않음 */
 function buildVendorCatalogProductQuery(_vendorDoc, _auth) {
     return {};
 }
 
-/** 업체 상품 조회(목록·상세·썸네일) — 전체 허용. 가격은 vendorPricing, 주문은 별도 검증 */
 function vendorCanAccessProduct(_vendorDoc, _productDoc, _auth) {
     return true;
 }
 
 function isSharedLegacyProduct(doc) {
     if (!doc) return false;
-    const by = normalizeStaffLoginId(doc[F.registeredBy]);
-    return !by || by === LEGACY_REGISTERED_BY;
+    return isLegacyRegisteredBy(doc[F.registeredBy]);
 }
 
 function productOwnedBy(doc, staffLoginId) {
     if (!doc) return false;
-    return normalizeStaffLoginId(doc[F.registeredBy]) === normalizeStaffLoginId(staffLoginId);
+    return staffLoginIdsEqual(doc[F.registeredBy], staffLoginId);
 }
 
-/** 사업부문·상세 조회는 공개. 수정·삭제만 담당 관리자 제한(canWriteProduct) */
 function canReadProduct() {
     return true;
 }
@@ -54,14 +54,13 @@ function canWriteProduct(auth, doc) {
     return productOwnedBy(doc, auth.userId);
 }
 
-/** 슈퍼바이저: 전체, 관리자: 본인 등록 + legacy */
 function buildProductListQuery(auth) {
     if (!auth || !isStaffAuth(auth)) return {};
     if (isSupervisorAuth(auth)) return {};
-    const me = normalizeStaffLoginId(auth.userId);
+    const me = trimStaffLoginId(auth.userId);
     return {
         $or: [
-            { [F.registeredBy]: me },
+            { [F.registeredBy]: registeredByInFilter(me) },
             { [F.registeredBy]: LEGACY_REGISTERED_BY },
             { [F.registeredBy]: { $exists: false } },
             { [F.registeredBy]: "" }
@@ -70,7 +69,7 @@ function buildProductListQuery(auth) {
 }
 
 async function stampNewProductRegistration(doc, auth) {
-    const me = normalizeStaffLoginId(auth && auth.userId);
+    const me = trimStaffLoginId(auth && auth.userId);
     doc[F.registeredBy] = me;
     doc[F.registeredByName] = await staffDisplayName(me);
     doc[F.registeredAt] = Date.now();

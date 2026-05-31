@@ -2,6 +2,7 @@ const express = require("express");
 const nodemailer = require("nodemailer");
 const { getDb } = require("../db");
 const { requireRole } = require("../middleware/auth");
+const { registeredByInFilter } = require("../lib/staffLoginId");
 
 const router = express.Router();
 const HISTORY_COLLECTION = "vendor_email_history";
@@ -92,7 +93,7 @@ async function collectRecipients(db, opts, senderId) {
     const set = new Set();
     const toList = [];
     const counts = { vendors: 0, vendorNew: 0 };
-    const registerFilter = senderId ? { vn_registered_by: senderId } : {};
+    const registerFilter = senderId ? { vn_registered_by: registeredByInFilter(senderId) } : {};
     const useManager = String(opts.recipientMode || "company") === "manager";
 
     if (opts.includeVendors) {

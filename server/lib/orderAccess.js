@@ -1,11 +1,15 @@
 const { F: VF, fromLegacyDoc: vendorFromLegacy } = require("./vendorFields");
 const { staffOrderEnabledFromDoc } = require("./staffFields");
 const { findStaffByRegisteredBy } = require("./staffRegisteredBy");
+const {
+    trimStaffLoginId,
+    staffLoginIdsEqual,
+    isLegacyRegisteredBy,
+    registeredByInFilter
+} = require("./staffLoginId");
 
 function normalizeStaffLoginId(loginId) {
-    return String(loginId || "")
-        .trim()
-        .toLowerCase();
+    return trimStaffLoginId(loginId);
 }
 
 function isStaffAuth(auth) {
@@ -22,8 +26,8 @@ async function staffOrderEnabledByLoginId(loginId) {
 async function vendorCanPlaceOrders(vendorDoc) {
     if (!vendorDoc) return false;
     const v = vendorFromLegacy(vendorDoc) || {};
-    const reg = normalizeStaffLoginId(v[VF.registeredBy]);
-    if (!reg || reg === "legacy") return false;
+    const reg = trimStaffLoginId(v[VF.registeredBy]);
+    if (!reg || isLegacyRegisteredBy(reg)) return false;
     return staffOrderEnabledByLoginId(reg);
 }
 
@@ -36,21 +40,19 @@ async function staffCanAccessOrderManage(auth) {
 
 async function buildOrderListQuery(auth) {
     if (!(await staffCanAccessOrderManage(auth))) return { id: "__none__" };
-    return { vendorRegisteredBy: normalizeStaffLoginId(auth.userId) };
+    return { vendorRegisteredBy: registeredByInFilter(auth.userId) };
 }
 
 function buildVendorOrderListQuery(auth) {
-    const uid = String((auth && auth.userId) || "").trim();
+    const uid = trimStaffLoginId(auth && auth.userId);
     if (!uid) return { id: "__none__" };
-    const idn = normalizeStaffLoginId(uid);
-    if (uid === idn) return { vendorUserId: uid };
-    return { $or: [{ vendorUserId: uid }, { vendorUserId: idn }] };
+    return { vendorUserId: uid };
 }
 
 function vendorOwnsOrder(auth, order) {
     if (!auth || auth.role !== "vendor" || !order) return false;
-    const mine = normalizeStaffLoginId(auth.userId);
-    const theirs = normalizeStaffLoginId(order.vendorUserId);
+    const mine = trimStaffLoginId(auth.userId);
+    const theirs = trimStaffLoginId(order.vendorUserId);
     return !!mine && mine === theirs;
 }
 
@@ -60,8 +62,8 @@ function supervisorCanAccessAllOrders(auth) {
 
 function buildSupervisorOrderListQuery(auth, adminStaffId) {
     if (!supervisorCanAccessAllOrders(auth)) return { id: "__none__" };
-    var reg = normalizeStaffLoginId(adminStaffId);
-    if (reg) return { vendorRegisteredBy: reg };
+    const reg = trimStaffLoginId(adminStaffId);
+    if (reg) return { vendorRegisteredBy: registeredByInFilter(reg) };
     return {};
 }
 
@@ -72,7 +74,7 @@ async function staffCanReadOrder(auth, order) {
     }
     if (supervisorCanAccessAllOrders(auth)) return true;
     if (!(await staffCanAccessOrderManage(auth))) return false;
-    return normalizeStaffLoginId(order.vendorRegisteredBy) === normalizeStaffLoginId(auth.userId);
+    return staffLoginIdsEqual(order.vendorRegisteredBy, auth.userId);
 }
 
 /** 상품 주문 가능 — 업체·상품 담당 관리자가 같고, 그 관리자가 주문 권한(st_order_enabled) 보유 */
@@ -81,16 +83,15 @@ async function vendorProductAllowsOrderForVendor(productRegisteredBy, vendorDoc)
     const vStaff = await findStaffByRegisteredBy(v[VF.registeredBy]);
     const pStaff = await findStaffByRegisteredBy(productRegisteredBy);
     if (!vStaff || !pStaff) return false;
-    if (
-        normalizeStaffLoginId(vStaff.loginId) !== normalizeStaffLoginId(pStaff.loginId)
-    ) {
-        return false;
-    }
+    if (!staffLoginIdsEqual(vStaff.loginId, pStaff.loginId)) return false;
     return staffOrderEnabledFromDoc(vStaff);
 }
 
 module.exports = {
     normalizeStaffLoginId,
+    trimStaffLoginId,
+    staffLoginIdsEqual,
+    isStaffAuth,
     staffOrderEnabledByLoginId,
     vendorCanPlaceOrders,
     staffCanAccessOrderManage,

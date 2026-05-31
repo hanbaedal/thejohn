@@ -380,7 +380,7 @@
         authSet("thejhon_auth_provider", "form");
         if (role === "vendor") {
             authSet(VENDOR_GRADE_KEY, parseVendorGrade(vendorGrade));
-            var regBy = String(vendorRegisteredBy || "").trim().toLowerCase();
+            var regBy = String(vendorRegisteredBy || "").trim();
             if (regBy) authSet(VENDOR_REGISTERED_BY_KEY, regBy);
             else authRemove(VENDOR_REGISTERED_BY_KEY);
             if (vendorOrderEnabled) authSet(VENDOR_ORDER_ENABLED_KEY, "1");
@@ -564,7 +564,7 @@
             if (sess.vendorRegisteredBy) {
                 authSet(
                     VENDOR_REGISTERED_BY_KEY,
-                    String(sess.vendorRegisteredBy).trim().toLowerCase()
+                    String(sess.vendorRegisteredBy).trim()
                 );
             }
             if (sess.vendorOrderEnabled) {
@@ -665,24 +665,27 @@
         return authGet(VENDOR_ORDER_ENABLED_KEY) === "1";
     }
 
+    function staffLoginIdsEqualClient(a, b) {
+        var ka = String(a || "").trim().toLowerCase();
+        var kb = String(b || "").trim().toLowerCase();
+        if (!ka || !kb) return ka === kb;
+        return ka === kb;
+    }
+
     function getVendorRegisteredBy() {
         if (getRole() !== "vendor") return "";
-        return String(authGet(VENDOR_REGISTERED_BY_KEY) || "")
-            .trim()
-            .toLowerCase();
+        return String(authGet(VENDOR_REGISTERED_BY_KEY) || "").trim();
     }
 
     /** 업체 거래처(등록 담당)와 상품 등록 담당이 같을 때만 등급가 적용 */
     function vendorProductUsesGradePrice(it) {
         if (!it || getRole() !== "vendor") return false;
         var mine = getVendorRegisteredBy();
-        var productOwner = String(it.pd_registered_by || "")
-            .trim()
-            .toLowerCase();
-        if (!mine || mine === "legacy" || !productOwner || productOwner === "legacy") {
+        var productOwner = String(it.pd_registered_by || "").trim();
+        if (!mine || mine.toLowerCase() === "legacy" || !productOwner || productOwner.toLowerCase() === "legacy") {
             return false;
         }
-        return mine === productOwner;
+        return staffLoginIdsEqualClient(mine, productOwner);
     }
 
     /** 주문·장바구니 — 담당 관리자가 등록한 상품만 */
@@ -690,11 +693,11 @@
         if (!it || getRole() !== "vendor") return false;
         if (!isVendorOrderEnabled()) return false;
         var mine = getVendorRegisteredBy();
-        var owner = String(it.pd_registered_by || "")
-            .trim()
-            .toLowerCase();
-        if (!mine || !owner || owner === "legacy" || mine === "legacy") return false;
-        return mine === owner;
+        var owner = String(it.pd_registered_by || "").trim();
+        if (!mine || !owner || owner.toLowerCase() === "legacy" || mine.toLowerCase() === "legacy") {
+            return false;
+        }
+        return staffLoginIdsEqualClient(mine, owner);
     }
 
     /**
@@ -1202,6 +1205,7 @@
         getVendorUnitPriceForProduct: getVendorUnitPriceForProduct,
         syncVendorGradeFromSessionApi: syncVendorGradeFromSessionApi,
         refreshSessionPermissionsAsync: refreshSessionPermissionsAsync,
+        refreshBrandFromStaffProfileAsync: refreshBrandFromStaffProfileAsync,
         VENDOR_GRADE_KEY: VENDOR_GRADE_KEY,
         getLoggedInCompanyDisplayName: getLoggedInCompanyDisplayName,
         getBrandCompanyDisplayName: getBrandCompanyDisplayName,

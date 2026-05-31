@@ -112,6 +112,15 @@
         .home-bgm-hint[hidden] {
             display: none !important;
         }
+        /* index — 회색 logo.png poster·플레이스홀더 비표시 */
+        html.page-home-doc:not(.site-brand-has-logo) .dz-logo-img {
+            opacity: 0;
+            visibility: hidden;
+        }
+        html.page-home-doc .home-intro-video {
+            opacity: 1;
+            visibility: visible;
+        }
     </style>
     <script src="api-config.js"></script>
     <script src="thejhon-api.js"></script>
@@ -147,7 +156,7 @@
     <main class="company-main company-main--home">
         <section class="home-intro" aria-label="더존 소개">
             <div class="home-intro-media" aria-hidden="true">
-                <video class="home-intro-video" autoplay muted loop playsinline preload="metadata" poster="img/logo.png">
+                <video class="home-intro-video" autoplay muted loop playsinline preload="auto">
                     <source src="img/intro.mp4" type="video/mp4">
                 </video>
             </div>
@@ -174,6 +183,7 @@
         </section>
         <audio id="homeBgm" src="img/intro-music.mp3" loop preload="auto" aria-label="인트로 배경음악"></audio>
     </main>
+
         <footer class="site-footer">
         <div class="site-footer-inner">
             <dl class="site-footer-grid" id="siteFooterCompanyGrid" aria-live="polite"></dl>
@@ -214,12 +224,26 @@
                     el.dataset.heroDefault = el.textContent.trim();
                 }
                 var name = "";
-                if (THEJHON_AUTH.isLoggedIn() && THEJHON_AUTH.getLoggedInCompanyDisplayName) {
-                    name = String(THEJHON_AUTH.getLoggedInCompanyDisplayName() || "").trim();
+                var role = THEJHON_AUTH.getRole ? THEJHON_AUTH.getRole() : "";
+                if (THEJHON_AUTH.isLoggedIn()) {
+                    if (role === "admin" || role === "supervisor") {
+                        name = String(
+                            THEJHON_AUTH.getBrandCompanyDisplayName &&
+                                THEJHON_AUTH.getBrandCompanyDisplayName()
+                        ).trim();
+                    } else if (THEJHON_AUTH.getLoggedInCompanyDisplayName) {
+                        name = String(THEJHON_AUTH.getLoggedInCompanyDisplayName() || "").trim();
+                    }
                 }
                 el.textContent = name
                     ? el.dataset.heroDefault.replace(/더존/g, name)
                     : el.dataset.heroDefault;
+                if (name) {
+                    document.documentElement.classList.add("site-brand-hero-ready");
+                    if (role === "admin" || role === "supervisor") {
+                        document.title = name;
+                    }
+                }
                 if (window.__thejhonFitHomeHeroTitle) {
                     window.__thejhonFitHomeHeroTitle();
                 }

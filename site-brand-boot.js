@@ -99,6 +99,29 @@
         }
     }
 
+    function isStaffBrandRole() {
+        try {
+            if (authRead(AUTH_KEY) !== "1") return false;
+            var role = authRead(ROLE_KEY) || "";
+            return role === "admin" || role === "supervisor";
+        } catch (e) {
+            return false;
+        }
+    }
+
+    var isHomePage = (function () {
+        try {
+            var p = String(global.location.pathname || "")
+                .replace(/\\/g, "/")
+                .toLowerCase();
+            if (!p || p === "/") return true;
+            var seg = p.split("/").pop() || "";
+            return seg === "" || seg === "index.html";
+        } catch (e) {
+            return false;
+        }
+    })();
+
     function escAttr(s) {
         return String(s || "")
             .replace(/&/g, "&amp;")
@@ -114,12 +137,21 @@
     }
 
     var branded = usesStaffLogoRole();
+    var staffBranded = isStaffBrandRole();
     var customLogo = branded ? String(authRead(LOGO_KEY) || "").trim() : "";
     var brandCompany = branded
-        ? String(authRead("thejhon_brand_company_name") || "").trim()
+        ? String(authRead("thejhon_brand_company_name") || authRead("thejhon_company_name") || "").trim()
         : "";
     var faviconHref = customLogo || (branded ? "" : DEFAULT_FAVICON);
     var brandPending = branded && !customLogo;
+
+    if (isHomePage) {
+        try {
+            document.documentElement.classList.add("page-home-doc");
+        } catch (eHome) {
+            document.documentElement.className += " page-home-doc";
+        }
+    }
 
     if (branded) {
         try {
@@ -143,17 +175,34 @@
 
     document.write(
         "<style id=\"thejhon-brand-boot-css\">" +
+            "html.page-home-doc .home-intro-video[poster*=\"logo.png\"]{opacity:0!important;visibility:hidden!important}" +
+            "html.page-home-doc:not(.site-brand-has-logo) .dz-logo-img[src*=\"logo.png\"]," +
+            "html.page-home-doc:not(.site-brand-has-logo) .dz-logo-img{opacity:0!important;visibility:hidden!important}" +
             "html.site-brand-active .dz-logo-img[src*=\"logo.png\"]," +
             "html.site-brand-active .home-intro-video[poster*=\"logo.png\"]{opacity:0!important}" +
             "html.site-brand-active.site-brand-has-logo .dz-logo-img{opacity:1!important;visibility:visible!important}" +
+            "html.site-brand-active.site-brand-has-logo .dz-logo{visibility:visible!important}" +
             "html.site-brand-active.site-brand-has-logo .home-intro-video," +
-            "html.site-brand-active.site-brand-video-ready .home-intro-video{opacity:1!important}" +
+            "html.site-brand-active.site-brand-video-ready .home-intro-video{opacity:1!important;visibility:visible!important}" +
             "html.site-brand-pending .dz-logo," +
             "html.site-brand-pending .dz-logo--compact{visibility:hidden!important}" +
             "html.site-brand-active:not(.site-brand-hero-ready) .company-hero," +
             "html.site-brand-active:not(.site-brand-hero-ready) #homeHeroTitle{visibility:hidden!important}" +
+            "html.page-home-doc.site-brand-has-logo .company-hero," +
+            "html.page-home-doc.site-brand-has-logo #homeHeroTitle{visibility:visible!important}" +
             "</style>"
     );
+
+    if (isHomePage) {
+        document.write(
+            "<script>(function(){function stripHomePoster(){var v=document.querySelector('.home-intro-video');" +
+                "if(!v)return;v.removeAttribute('poster');" +
+                "document.documentElement.classList.add('site-brand-video-ready');}" +
+                "function boot(){stripHomePoster();}" +
+                "boot();document.addEventListener('DOMContentLoaded',boot);" +
+                "})();<\/script>"
+        );
+    }
 
     if (faviconHref) {
         document.write(
@@ -222,6 +271,9 @@
             el.textContent =
                 def.indexOf("더존") >= 0 ? def.replace(/더존/g, brandCompany) : brandCompany;
             document.documentElement.classList.add("site-brand-hero-ready");
+            if (staffBranded && brandCompany) {
+                document.title = brandCompany;
+            }
             return true;
         }
         if (document.body && run()) return;

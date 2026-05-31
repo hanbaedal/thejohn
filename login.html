@@ -11,49 +11,7 @@
     <meta name="apple-mobile-web-app-title" content="더존">
     <title>로그인 — 더존</title>
     <link rel="stylesheet" href="common.css">
-    <style>
-        .login-busy-modal {
-            position: fixed;
-            inset: 0;
-            z-index: 10050;
-            background: rgba(5, 42, 77, 0.55);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 1rem;
-        }
-        .login-busy-modal[hidden] { display: none !important; }
-        .login-busy-panel {
-            width: min(100%, 22rem);
-            background: #fff;
-            border-radius: 12px;
-            padding: 1.35rem 1.25rem 1.15rem;
-            box-shadow: 0 16px 38px rgba(0, 0, 0, 0.2);
-            text-align: center;
-        }
-        .login-busy-panel h2 {
-            margin: 0 0 0.65rem;
-            font-size: 1.05rem;
-            color: #a12c2c;
-        }
-        .login-busy-panel p {
-            margin: 0;
-            font-size: 0.95rem;
-            color: #2a4a5e;
-            line-height: 1.5;
-        }
-        .login-busy-timer {
-            margin-top: 0.85rem !important;
-            font-size: 0.88rem !important;
-            color: #5a6d7e !important;
-        }
-        .login-persist-hint {
-            margin: 0.75rem 0 0;
-            font-size: 0.82rem;
-            color: #5a6d7e;
-            line-height: 1.45;
-        }
-    </style>
+    <link rel="stylesheet" href="login.css">
     <script src="api-config.js"></script>
     <script src="thejhon-api.js"></script>
     <script src="auth.js"></script>
@@ -63,7 +21,9 @@
 <body class="page-login">
     <header class="site-header">
         <div class="site-header-start">
-            <a href="index.html" class="dz-logo dz-logo--compact" aria-label="더존 홈"><img src="img/logo.png" alt="" width="72" height="72" class="dz-logo-img"></a>
+            <a href="index.html" class="dz-logo dz-logo--compact" aria-label="더존 홈">
+                <img src="img/logo.png" alt="" width="72" height="72" class="dz-logo-img">
+            </a>
             <nav class="site-header-nav" aria-label="주요 메뉴">
                 <a href="company.html" class="header-nav-link">회사소개</a>
                 <a href="products.html" class="header-nav-link">사업부문</a>
@@ -85,199 +45,44 @@
             <button type="button" class="btn btn-auth-icon btn-logout" id="btnLogout" hidden aria-label="로그아웃" title="로그아웃"></button>
         </nav>
     </header>
-    <div class="login-page">
+
+    <main class="login-page">
         <div class="login-card">
             <h1>로그인</h1>
             <form id="loginForm" action="login.html" method="post" novalidate>
-                <div class="field">
+                <div class="login-field">
                     <label for="userId">아이디</label>
                     <input id="userId" name="userId" type="text" autocomplete="username" required>
                 </div>
-                <div class="field">
+                <div class="login-field">
                     <label for="password">비밀번호</label>
                     <input id="password" name="password" type="password" autocomplete="current-password" required spellcheck="false">
                 </div>
-                <p class="login-persist-hint" id="loginPersistHint">앱(홈 화면)으로 열어도 로그아웃 전까지 로그인 상태가 유지됩니다.</p>
-                <button type="submit" class="login-submit">로그인</button>
+                <div class="login-actions">
+                    <button type="submit" class="login-submit">로그인</button>
+                    <a href="index.html" class="login-guest">게스트</a>
+                </div>
             </form>
+            <p class="login-persist-hint">PWA(홈 화면 추가)로 열면 로그아웃 전까지 로그인 상태가 유지됩니다.</p>
+            <a href="index.html" class="login-back-link">← 홈으로</a>
         </div>
-    </div>
+    </main>
+
     <div id="loginBusyModal" class="login-busy-modal" hidden role="alertdialog" aria-modal="true" aria-labelledby="loginBusyTitle">
-        <div class="login-busy-panel">
+        <div class="login-busy-modal__panel">
             <h2 id="loginBusyTitle">로그인 불가</h2>
             <p id="loginBusyMsg">다른곳에서 로그인해서 사용중입니다!</p>
-            <p id="loginBusyTimer" class="login-busy-timer" aria-live="polite"></p>
+            <p id="loginBusyTimer" class="login-busy-modal__timer" aria-live="polite"></p>
         </div>
     </div>
-        <footer class="site-footer">
+
+    <footer class="site-footer">
         <div class="site-footer-inner">
             <dl class="site-footer-grid" id="siteFooterCompanyGrid" aria-live="polite"></dl>
             <p class="site-footer-company-msg" id="siteFooterCompanyMsg" hidden></p>
-</div>
+        </div>
     </footer>
-    <script>
-        (function () {
-            var todayEl = document.getElementById("headerToday");
-            if (todayEl) {
-                var now = new Date();
-                var y = now.getFullYear();
-                var m = String(now.getMonth() + 1).padStart(2, "0");
-                var d = String(now.getDate()).padStart(2, "0");
-                todayEl.dateTime = y + "-" + m + "-" + d;
-                todayEl.textContent = now.toLocaleDateString("ko-KR", {
-                    year: "numeric",
-                    month: "long",
-                    day: "numeric",
-                    weekday: "long"
-                });
-            }
-            var logoutBtn = document.getElementById("btnLogout");
-            function syncAuthUi() {
-                var loggedIn = window.THEJHON_AUTH && THEJHON_AUTH.isLoggedIn();
-                if (logoutBtn) logoutBtn.hidden = !loggedIn;
-            }
-            if (logoutBtn) {
-                logoutBtn.addEventListener("click", function () {
-                    if (window.THEJHON_AUTH) THEJHON_AUTH.clearSession();
-                    location.reload();
-                });
-            }
-            syncAuthUi();
-        })();
-    </script>
-    <script>
-        (function () {
-            var params = new URLSearchParams(window.location.search);
 
-            if (window.THEJHON_AUTH && THEJHON_AUTH.isLoggedIn()) {
-                window.location.replace(THEJHON_AUTH.safeNextPath(params.get("next")));
-                return;
-            }
-
-            var userIdInput = document.getElementById("userId");
-            if (userIdInput && window.THEJHON_AUTH && THEJHON_AUTH.getSavedLoginIdHint) {
-                var savedId = THEJHON_AUTH.getSavedLoginIdHint();
-                if (savedId) userIdInput.value = savedId;
-            }
-
-            var form = document.getElementById("loginForm");
-
-            function goAfterLogin() {
-                window.location.href = THEJHON_AUTH.safeNextPath(params.get("next"));
-            }
-
-            if (!form) return;
-
-            function speakWarning(text) {
-                if (!window.speechSynthesis || !text) return;
-                try {
-                    window.speechSynthesis.cancel();
-                    var u = new SpeechSynthesisUtterance(text);
-                    u.lang = "ko-KR";
-                    u.rate = 0.95;
-                    window.speechSynthesis.speak(u);
-                } catch (speakErr) {}
-            }
-
-            function showBusyModal(message) {
-                return new Promise(function (resolve) {
-                    var modal = document.getElementById("loginBusyModal");
-                    var msgEl = document.getElementById("loginBusyMsg");
-                    var timerEl = document.getElementById("loginBusyTimer");
-                    var text = message || "다른곳에서 로그인해서 사용중입니다!";
-                    if (!modal) {
-                        resolve();
-                        return;
-                    }
-                    if (msgEl) msgEl.textContent = text;
-                    modal.hidden = false;
-                    speakWarning(text);
-                    var left = 5;
-                    if (timerEl) timerEl.textContent = left + "초 후 닫힙니다.";
-                    var iv = setInterval(function () {
-                        left -= 1;
-                        if (left <= 0) {
-                            clearInterval(iv);
-                            modal.hidden = true;
-                            if (window.speechSynthesis) window.speechSynthesis.cancel();
-                            resolve();
-                            return;
-                        }
-                        if (timerEl) timerEl.textContent = left + "초 후 닫힙니다.";
-                    }, 1000);
-                });
-            }
-
-            form.addEventListener("submit", function (e) {
-                e.preventDefault();
-                var id = document.getElementById("userId").value.trim();
-                var pw = String(document.getElementById("password").value || "").trim();
-                if (!id || !pw) {
-                    alert("아이디와 비밀번호를 입력해 주세요.");
-                    return;
-                }
-                if (!window.THEJHON_AUTH) {
-                    alert("인증 스크립트(auth.js)를 불러오지 못했습니다.");
-                    return;
-                }
-
-                var submitBtn = form.querySelector(".login-submit");
-                if (submitBtn) submitBtn.disabled = true;
-
-                THEJHON_AUTH.verifyFormCredentialsAsync(id, pw)
-                    .then(function (ok) {
-                        if (!ok) {
-                            if (submitBtn) submitBtn.disabled = false;
-                            alert("아이디 또는 비밀번호가 올바르지 않습니다.");
-                            return;
-                        }
-                        THEJHON_AUTH.setFormSession(
-                            ok.userId,
-                            ok.role,
-                            ok.token,
-                            ok.companyName,
-                            ok.displayName,
-                            ok.vendorGrade,
-                            ok.vendorRegisteredBy,
-                            ok.vendorOrderEnabled,
-                            ok.vendorMgrName,
-                            ok.vendorMgrTel,
-                            ok.vendorMgrEmail,
-                            ok.staffOrderEnabled,
-                            ok.stLogo,
-                            ok.brandCompanyName || ok.vendorRegisteredByName
-                        );
-                        if (THEJHON_AUTH.applyNavRegisterVisibility) {
-                            THEJHON_AUTH.applyNavRegisterVisibility();
-                        }
-                        goAfterLogin();
-                    })
-                    .catch(function (err) {
-                        if (submitBtn) submitBtn.disabled = false;
-                        if (err && err.code === "NOT_REGISTERED") {
-                            alert(
-                                (err && err.message) ||
-                                    "등록되지 않은 아이디입니다. 업체등록 후 로그인해 주세요."
-                            );
-                            return;
-                        }
-                        if (err && err.code === "ALREADY_LOGGED_IN") {
-                            showBusyModal(
-                                err.message || "다른곳에서 로그인해서 사용중입니다!"
-                            );
-                            return;
-                        }
-                        if (err && err.code === "LOGIN_DISABLED") {
-                            alert(err.message || "접속이 비활성화된 관리자 계정입니다.");
-                            return;
-                        }
-                        alert(
-                            (err && err.message) ||
-                                "아이디 또는 비밀번호가 올바르지 않습니다. 업체등록 시 입력한 비밀번호(8~16자)를 확인해 주세요."
-                        );
-                    });
-            });
-        })();
-    </script>
+    <script src="login.js"></script>
 </body>
 </html>

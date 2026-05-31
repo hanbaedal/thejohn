@@ -2,6 +2,7 @@ const {
     normalizeDeptForStorage,
     readDeptFromDoc
 } = require("./productDept");
+const { registeredByInFilter } = require("./staffLoginId");
 
 /** products 컬렉션 필드명 (Atlas 레코드 키) */
 const F = {
@@ -305,9 +306,7 @@ async function findDuplicateProductByName(db, name, excludeId, dept, registeredB
         $or: [{ [F.name]: nameRe }, { title: nameRe }]
     };
     if (registeredBy) {
-        filter[F.registeredBy] = String(registeredBy || "")
-            .trim()
-            .toLowerCase();
+        filter[F.registeredBy] = registeredByInFilter(registeredBy);
     }
     if (excludeId) filter.id = { $ne: String(excludeId) };
     return db.collection("products").findOne(filter);

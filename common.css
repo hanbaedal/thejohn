@@ -191,9 +191,19 @@ html.site-brand-pending .dz-logo,
 html.site-brand-pending .dz-logo--compact {
     visibility: hidden;
 }
-html.site-brand-active .dz-logo-img[src*="logo.png"],
-html.site-brand-active .home-intro-video[poster*="logo.png"] {
+html.page-home-doc:not(.site-brand-has-logo) .dz-logo-img[src*="logo.png"],
+html.page-home-doc:not(.site-brand-has-logo) .dz-logo-img {
     opacity: 0;
+    visibility: hidden;
+}
+html.page-home-doc .home-intro-video[poster*="logo.png"] {
+    opacity: 0;
+    visibility: hidden;
+}
+html.page-home-doc.site-brand-video-ready .home-intro-video,
+html.page-home-doc .home-intro-video:not([poster]) {
+    opacity: 1;
+    visibility: visible;
 }
 html.site-brand-active.site-brand-has-logo .dz-logo-img {
     opacity: 1;
