@@ -113,8 +113,14 @@ router.get("/", async (req, res) => {
         const vendorDoc = await resolveVendorForAuth(auth);
         const query = await buildListFindQuery(auth, req.query, vendorDoc);
         const catalogByDept = !!req.query.dept && !req.query.registeredBy;
-        const writeChecker =
-            auth && isStaffAuth(auth) ? await createProductWriteChecker(auth) : null;
+        let writeChecker = null;
+        if (auth && isStaffAuth(auth)) {
+            try {
+                writeChecker = await createProductWriteChecker(auth);
+            } catch (checkerErr) {
+                console.error("GET /api/products writeChecker", checkerErr.message);
+            }
+        }
         const items = await getDb()
             .collection("products")
             .find(query, { projection: { [F.image]: 0, pd_image: 0, image: 0 } })
@@ -125,7 +131,14 @@ router.get("/", async (req, res) => {
             try {
                 const row = toPublicListItem(doc);
                 if (row) {
-                    if (writeChecker) row.canWrite = writeChecker(doc);
+                    if (writeChecker) {
+                        try {
+                            row.canWrite = writeChecker(doc);
+                        } catch (writeErr) {
+                            console.error("GET /api/products canWrite", doc && doc.id, writeErr.message);
+                            row.canWrite = false;
+                        }
+                    }
                     rows.push(row);
                 }
             } catch (mapErr) {

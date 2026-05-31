@@ -2,7 +2,6 @@ const { F } = require("./productFields");
 const {
     trimStaffLoginId,
     staffLoginIdsEqual,
-    isLegacyRegisteredBy,
     registeredByInFilter,
     normalizeStaffLoginId,
     isStaffAuth,
@@ -11,8 +10,8 @@ const {
     staffDisplayName
 } = require("./vendorAccess");
 const { F: VF, fromLegacyDoc: vendorFromLegacy } = require("./vendorFields");
-const { findStaffById } = require("./staff");
-const { loginIdValues, staffLoginIdKey } = require("./staffLoginId");
+const { findStaffByRegisteredBy } = require("./staffRegisteredBy");
+const { loginIdValues, staffLoginIdKey, isLegacyRegisteredBy } = require("./staffLoginId");
 
 function vendorRegistrarFromDoc(vendorDoc, auth) {
     var reg = "";
@@ -85,7 +84,7 @@ async function createProductWriteChecker(auth) {
     if (isSupervisorAuth(auth)) {
         return buildProductWriteChecker(auth, null);
     }
-    const staff = await findStaffById(trimStaffLoginId(auth.userId));
+    const staff = await findStaffByRegisteredBy(trimStaffLoginId(auth.userId));
     return buildProductWriteChecker(auth, staff);
 }
 
@@ -134,7 +133,7 @@ async function buildProductListQueryAsync(auth) {
     }
 
     addLoginId(me);
-    const staff = await findStaffById(me);
+    const staff = await findStaffByRegisteredBy(me);
     if (staff && Array.isArray(staff.previousLoginIds)) {
         staff.previousLoginIds.forEach(addLoginId);
     }
