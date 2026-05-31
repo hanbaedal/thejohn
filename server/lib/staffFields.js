@@ -27,7 +27,7 @@ const F = {
  * 로그인은 항상 DB 조회(loginResolve.js). 슈퍼바이저는 hanbaedal 하나,
  * 관리자(admin)는 staff 컬렉션의 모든 해당 행이며 시드 외 추가는 POST /api/staff(슈퍼바이저) 등으로 확장합니다.
  */
-const DEFAULT_STAFF_ACCOUNTS = [
+const CORE_STAFF_ACCOUNTS = [
     {
         id: "st_admin_thejohn",
         loginId: "thejohn",
@@ -40,16 +40,6 @@ const DEFAULT_STAFF_ACCOUNTS = [
         role: "admin"
     },
     {
-        id: "st_admin_aksangsa",
-        loginId: "aksangsa",
-        password: "kimjc2333!",
-        st_company: "(주)에이메이상사",
-        st_ceo: "김종철",
-        st_ceo_tel: "01047212333",
-        role: "admin",
-        st_order_enabled: true
-    },
-    {
         id: "st_supervisor_hanbaedal",
         loginId: "hanbaedal",
         password: "haesoo.3346!",
@@ -60,11 +50,27 @@ const DEFAULT_STAFF_ACCOUNTS = [
     }
 ];
 
-const DEFAULT_STAFF_IDS = DEFAULT_STAFF_ACCOUNTS.map(function (s) {
-    return s.id;
-});
+/** 구 MongoDB 문서 id (loginId 아님) — 기존 DB 삭제 방지·registered_by 정리용 */
+const LEGACY_PROTECTED_STAFF_DOC_IDS = ["st_admin_aksangsa"];
 
-const EXPECTED_STAFF_LOGIN_IDS = DEFAULT_STAFF_ACCOUNTS.map(function (s) {
+const OPTIONAL_ORDER_ADMIN_SEED_ID = "st_admin_aemae";
+
+function getDefaultStaffAccounts() {
+    return CORE_STAFF_ACCOUNTS.slice();
+}
+
+function getProtectedStaffSeedIds() {
+    return CORE_STAFF_ACCOUNTS.map(function (s) {
+        return s.id;
+    }).concat(LEGACY_PROTECTED_STAFF_DOC_IDS, [OPTIONAL_ORDER_ADMIN_SEED_ID]);
+}
+
+/** @deprecated — getDefaultStaffAccounts() 사용 */
+const DEFAULT_STAFF_ACCOUNTS = getDefaultStaffAccounts();
+
+const DEFAULT_STAFF_IDS = getProtectedStaffSeedIds();
+
+const EXPECTED_STAFF_LOGIN_IDS = CORE_STAFF_ACCOUNTS.map(function (s) {
     return s.loginId;
 });
 
@@ -360,7 +366,7 @@ async function ensureDefaultStaffSeeds(db) {
     await col.deleteOne({ id: "st_supervisor_thejohn" });
     await col.deleteOne({ id: "st_supervisor_thejhon" });
 
-    for (const seed of DEFAULT_STAFF_ACCOUNTS) {
+    for (const seed of CORE_STAFF_ACCOUNTS) {
         await removeStaffLoginIdConflicts(col, seed);
 
         const existing = await col.findOne({ id: seed.id });
@@ -401,6 +407,43 @@ async function ensureDefaultStaffSeeds(db) {
         await col.insertOne(doc);
         console.log("[staff] seed created:", doc.loginId, doc.role, doc.id);
     }
+
+    await ensureOptionalOrderAdminSeed(col);
+}
+
+/** 환경 변수로만 선택 시드 — 주문 권한 관리자 (loginId는 DB·슈퍼바이저 화면에서 관리) */
+async function ensureOptionalOrderAdminSeed(col) {
+    const loginId = String(process.env.SEED_ORDER_ADMIN_LOGIN || "").trim();
+    const password = String(process.env.SEED_ORDER_ADMIN_PASSWORD || "").trim();
+    if (!loginId || !password) return;
+
+    let existing = await col.findOne({ id: OPTIONAL_ORDER_ADMIN_SEED_ID });
+    if (!existing) {
+        for (let i = 0; i < LEGACY_PROTECTED_STAFF_DOC_IDS.length; i++) {
+            existing = await col.findOne({ id: LEGACY_PROTECTED_STAFF_DOC_IDS[i] });
+            if (existing) break;
+        }
+    }
+    if (existing) {
+        console.log("[staff] order admin seed skipped (existing doc):", existing.loginId, existing.id);
+        return;
+    }
+
+    const built = buildFromBody(
+        {
+            st_company: String(process.env.SEED_ORDER_ADMIN_COMPANY || "(주)에이메이상사").trim(),
+            st_ceo: String(process.env.SEED_ORDER_ADMIN_CEO || "").trim(),
+            st_ceo_tel: String(process.env.SEED_ORDER_ADMIN_CEO_TEL || "").trim(),
+            role: "admin",
+            orderEnabled: true
+        },
+        null,
+        loginId,
+        password
+    );
+    const doc = toDbDoc(OPTIONAL_ORDER_ADMIN_SEED_ID, built, null);
+    await col.insertOne(doc);
+    console.log("[staff] order admin seed created:", doc.loginId, doc.id);
 }
 
 async function migrateStaffCollection(db) {
@@ -469,9 +512,9 @@ async function findExpectedStaffInDb(db) {
 }
 
 function staffSeedAccountsOk(docs) {
-    return DEFAULT_STAFF_IDS.every(function (sid) {
+    return CORE_STAFF_ACCOUNTS.every(function (seed) {
         return (docs || []).some(function (d) {
-            return d.id === sid;
+            return d.id === seed.id;
         });
     });
 }
@@ -482,6 +525,11 @@ module.exports = {
     DEFAULT_STAFF_ACCOUNTS,
     DEFAULT_STAFF_IDS,
     EXPECTED_STAFF_LOGIN_IDS,
+    CORE_STAFF_ACCOUNTS,
+    getDefaultStaffAccounts,
+    getProtectedStaffSeedIds,
+    LEGACY_PROTECTED_STAFF_DOC_IDS,
+    OPTIONAL_ORDER_ADMIN_SEED_ID,
     toPublic,
     buildFromBody,
     toDbDoc,

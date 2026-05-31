@@ -37,7 +37,7 @@
    - 담당 관리자가 등록한 **상품** (`pd_registered_by` 일치)만 주문·장바구니  
    - `vendorCanPlaceOrders` / `canPlaceVendorOrders` 로 판단  
 
-관리자 **loginId 변경** 시 `vn_registered_by`·`pd_registered_by`는 서버가 자동 갱신합니다. 옛 아이디(`aksangsa` 등)가 남아 있으면 기동 시 `reconcileStaleRegisteredByReferences`로 맞춥니다.
+관리자 **loginId 변경** 시 `vn_registered_by`·`pd_registered_by`는 서버가 자동 갱신합니다. 옛 loginId가 남아 있으면 기동 시 `reconcileStaleRegisteredByReferences`로 맞춥니다.
 
 ## 로그인·세션 (규칙 3~5)
 

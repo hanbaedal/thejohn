@@ -6,7 +6,7 @@
 
 | 구분 | 필드 | 의미 |
 |------|------|------|
-| 업체 | `vn_registered_by` | 이 업체 **거래처(담당)** 관리자 (`aksangsa` 등) |
+| 업체 | `vn_registered_by` | 이 업체 **거래처(담당)** 관리자 loginId |
 | 상품 | `pd_registered_by` | 이 상품을 **등록한** 관리자 (사업 영역) |
 | 업체 구분 | `vn_record_type` | `partner` / `new` |
 | 상품 구분 | `pd_record_type` | `catalog` / `new` |
@@ -23,15 +23,16 @@
 - 화면: `auth.js` — `vendorProductUsesGradePrice`, `buildProductPriceHtml`
 - 주문: `server/lib/vendorPricing.js` — 서버가 동일 규칙으로 금액 재계산 (조작 방지)
 
-## 업체 주문 (aksangsa 전용)
+## 업체 주문 (st_order_enabled)
 
 | | |
 |---|---|
-| **주문 가능 업체** | `vn_registered_by` = **aksangsa** 인 업체만 |
-| **주문 가능 상품** | `pd_registered_by` = **aksangsa** 인 상품만 |
+| **주문 가능 업체** | `vn_registered_by` 담당 관리자의 `staff.st_order_enabled = true` |
+| **주문 가능 상품** | `pd_registered_by`가 업체 담당 관리자와 **동일**하고, 그 관리자가 **주문 권한** 보유 |
 | **그 외 관리자 업체** | 해당 관리자 상품 **조회만**, 주문·장바구니 **불가** |
 
-환경 변수: `ORDER_VENDOR_STAFF_ID=aksangsa` (기본값 동일)
+슈퍼바이저 → **관리자 관리** → 해당 관리자 **「주문」** ON 으로 권한 부여.  
+서버: `server/lib/orderAccess.js`, `server/lib/staffOrderEnabled.js`
 
 ## 관리자 권한
 
@@ -47,7 +48,7 @@
 |--------|------|------|
 | **미로그인** | 사업부문별 전체 | 숨김 |
 | **업체** | 사업부문별 **전체 상품** | 담당 관리자와 같으면 **등급가**, 타 관리자 상품은 **가격1** |
-| **주문·장바구니** | — | **`pd_registered_by` = aksangsa** 상품만 (업체는 `vn_registered_by` = aksangsa) |
+| **주문·장바구니** | — | 담당 관리자 **주문 권한 ON** + `pd_registered_by` 일치 상품만 |
 
 ## 상품명 중복
 
@@ -56,4 +57,6 @@
 
 ## 주문 SMS
 
-업체 `vn_registered_by` → 해당 관리자 `staff.st_ceo_tel` (SOLAPI SMS).
+1. 업체 `vn_registered_by` → 해당 관리자 `staff.st_ceo_tel`
+2. 없으면 `ORDER_NOTIFY_PHONE` / `ORDER_NOTIFY_STAFF_ID` 환경 변수
+3. 없으면 `st_order_enabled` 관리자 연락처 순회 (SOLAPI SMS)

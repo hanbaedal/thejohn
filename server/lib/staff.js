@@ -129,7 +129,7 @@ async function checkStaffLoginId(loginId, excludeStaffId) {
     if (excludeStaffId) {
         existing = await findStaffById(excludeStaffId);
     }
-    // 신규 등록만 예약 아이디(thejohn·aksangsa 등) 차단 — 수정은 슈퍼바이저가 자유롭게 변경
+    // 신규 등록만 예약 아이디(thejohn 등) 차단 — 수정은 슈퍼바이저가 자유롭게 변경
     if (!excludeStaffId && !canAssignStaffLoginId(id, existing)) {
         return { duplicate: true, reserved: true, error: "사용할 수 없는 아이디입니다." };
     }

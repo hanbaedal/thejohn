@@ -1,7 +1,7 @@
 const { getDb } = require("../db");
 const { findStaffByLoginId } = require("./loginResolve");
 const {
-    DEFAULT_STAFF_ACCOUNTS,
+    LEGACY_PROTECTED_STAFF_DOC_IDS,
     normalizeStaffLoginId,
     getCompanyName
 } = require("./staffFields");
@@ -11,11 +11,22 @@ const {
     propagateStaffLoginIdChange
 } = require("./staffLoginIdMigration");
 
-function seedDefaultLoginIdForStaffId(staffId) {
-    const seed = DEFAULT_STAFF_ACCOUNTS.find(function (s) {
-        return s.id === staffId;
-    });
-    return seed ? normalizeStaffLoginId(seed.loginId) : "";
+async function findLegacyStaffByRegisteredBy(db, vals) {
+    for (let i = 0; i < LEGACY_PROTECTED_STAFF_DOC_IDS.length; i++) {
+        const legacyId = LEGACY_PROTECTED_STAFF_DOC_IDS[i];
+        const doc = await db.collection("staff").findOne({
+            id: legacyId,
+            active: { $ne: false }
+        });
+        if (!doc) continue;
+        const aliases = [normalizeStaffLoginId(doc.loginId)]
+            .concat((doc.previousLoginIds || []).map(normalizeStaffLoginId))
+            .filter(Boolean);
+        for (let j = 0; j < vals.length; j++) {
+            if (aliases.indexOf(vals[j]) >= 0) return doc;
+        }
+    }
+    return null;
 }
 
 /** 업체·상품 vn/pd_registered_by → staff(admin) 조회 (아이디 변경·이전 loginId 포함) */
@@ -38,19 +49,7 @@ async function findStaffByRegisteredBy(registeredBy) {
     });
     if (staff) return staff;
 
-    for (let i = 0; i < DEFAULT_STAFF_ACCOUNTS.length; i++) {
-        const seed = DEFAULT_STAFF_ACCOUNTS[i];
-        if (seed.role !== "admin") continue;
-        const seedLogin = normalizeStaffLoginId(seed.loginId);
-        if (vals.indexOf(seedLogin) < 0) continue;
-        const doc = await db.collection("staff").findOne({
-            id: seed.id,
-            active: { $ne: false }
-        });
-        if (doc) return doc;
-    }
-
-    return null;
+    return findLegacyStaffByRegisteredBy(db, vals);
 }
 
 async function registeredByResolvesToStaffLoginId(registeredBy) {
@@ -70,7 +69,7 @@ function appendPreviousLoginIds(existing, oldLoginId) {
     return prevIds;
 }
 
-/** 서버 기동 — 관리자 loginId 변경 후 남은 aksangsa 등 옛 registered_by 일괄 갱신 */
+/** 서버 기동 — 관리자 loginId 변경 후 남은 옛 registered_by 일괄 갱신 */
 async function reconcileStaleRegisteredByReferences(db) {
     const col = db.collection("staff");
     const admins = await col.find({ role: "admin", active: { $ne: false } }).toArray();
@@ -89,8 +88,6 @@ async function reconcileStaleRegisteredByReferences(db) {
         }
 
         (staff.previousLoginIds || []).forEach(addAlias);
-        const seedLogin = seedDefaultLoginIdForStaffId(staff.id);
-        if (seedLogin) addAlias(seedLogin);
 
         const aliasKeys = Object.keys(aliasMap);
         for (let i = 0; i < aliasKeys.length; i++) {
