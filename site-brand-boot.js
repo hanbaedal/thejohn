@@ -6,6 +6,82 @@
     var ROLE_KEY = "thejhon_role";
     var LOGO_KEY = "thejhon_staff_logo";
     var DEFAULT_FAVICON = "img/icon-192.png";
+    var DEFAULT_MANIFEST = "manifest.json";
+    var DEFAULT_APP_NAME = "더존";
+    var pwaManifestBlobUrl = "";
+
+    function iconMime(src) {
+        var s = String(src || "");
+        if (s.indexOf("data:image/jpeg") === 0 || s.indexOf("data:image/jpg") === 0) {
+            return "image/jpeg";
+        }
+        if (s.indexOf("data:image/webp") === 0) return "image/webp";
+        if (s.indexOf("data:image/gif") === 0) return "image/gif";
+        return "image/png";
+    }
+
+    function setAppleWebAppTitle(name) {
+        var title = String(name || "").trim() || DEFAULT_APP_NAME;
+        var meta = document.querySelector('meta[name="apple-mobile-web-app-title"]');
+        if (!meta) {
+            meta = document.createElement("meta");
+            meta.name = "apple-mobile-web-app-title";
+            document.head.appendChild(meta);
+        }
+        meta.setAttribute("content", title);
+    }
+
+    function applyPwaManifest(logoSrc, companyName) {
+        var link = document.querySelector('link[rel="manifest"]');
+        if (!link) return;
+
+        var custom = String(logoSrc || "").trim();
+        if (!custom) {
+            if (pwaManifestBlobUrl) {
+                try {
+                    URL.revokeObjectURL(pwaManifestBlobUrl);
+                } catch (e) {}
+                pwaManifestBlobUrl = "";
+            }
+            link.href = DEFAULT_MANIFEST;
+            setAppleWebAppTitle(DEFAULT_APP_NAME);
+            return;
+        }
+
+        var name = String(companyName || "").trim() || DEFAULT_APP_NAME;
+        var shortName = name.length > 12 ? name.slice(0, 12) : name;
+        var mime = iconMime(custom);
+        var manifest = {
+            name: name,
+            short_name: shortName,
+            description: name,
+            id: "/",
+            start_url: "/index.html",
+            scope: "/",
+            display: "standalone",
+            background_color: "#f4f6f9",
+            theme_color: "#0a4d9c",
+            lang: "ko",
+            icons: [
+                { src: custom, sizes: "192x192", type: mime, purpose: "any" },
+                { src: custom, sizes: "512x512", type: mime, purpose: "any" },
+                { src: custom, sizes: "512x512", type: mime, purpose: "maskable" }
+            ]
+        };
+
+        if (pwaManifestBlobUrl) {
+            try {
+                URL.revokeObjectURL(pwaManifestBlobUrl);
+            } catch (e2) {}
+        }
+        pwaManifestBlobUrl = URL.createObjectURL(
+            new Blob([JSON.stringify(manifest)], { type: "application/manifest+json" })
+        );
+        link.href = pwaManifestBlobUrl;
+        setAppleWebAppTitle(shortName);
+    }
+
+    global.__thejhonApplyPwaManifest = applyPwaManifest;
 
     function usesStaffLogoRole() {
         try {
@@ -55,6 +131,15 @@
         clearPending();
     }
 
+    function bootPwaBrand() {
+        if (!customLogo) return;
+        var company = "";
+        try {
+            company = sessionStorage.getItem("thejhon_company_name") || "";
+        } catch (e) {}
+        applyPwaManifest(customLogo, company);
+    }
+
     global.__THEJHON_BRAND_BOOT = {
         branded: branded,
         customLogo: customLogo,
@@ -62,8 +147,12 @@
     };
 
     if (document.readyState === "loading") {
-        document.addEventListener("DOMContentLoaded", applyEarlyHeaderLogo);
+        document.addEventListener("DOMContentLoaded", function () {
+            applyEarlyHeaderLogo();
+            bootPwaBrand();
+        });
     } else {
         applyEarlyHeaderLogo();
+        bootPwaBrand();
     }
 })(typeof window !== "undefined" ? window : this);

@@ -82,6 +82,12 @@
         }
     }
 
+    function syncPwaManifest(logoSrc, companyName) {
+        if (window.__thejhonApplyPwaManifest) {
+            window.__thejhonApplyPwaManifest(logoSrc, companyName);
+        }
+    }
+
     function clearSiteBrandPending() {
         document.documentElement.classList.remove("site-brand-pending");
         if (window.__THEJHON_BRAND_BOOT && window.__THEJHON_BRAND_BOOT.clearPending) {
@@ -95,6 +101,7 @@
             imgs[i].src = DEFAULT_SITE_LOGO;
         }
         applySiteFavicon(DEFAULT_SITE_FAVICON);
+        syncPwaManifest("", "");
         var links = document.querySelectorAll(".dz-logo, .dz-logo--compact");
         for (var j = 0; j < links.length; j++) {
             links[j].setAttribute("aria-label", "더존 홈");
@@ -143,6 +150,7 @@
                     imgs[i].src = custom;
                 }
                 applySiteFavicon(custom);
+                syncPwaManifest(custom, companyName);
                 var label = String(companyName || "").trim()
                     ? String(companyName).trim() + " 홈"
                     : "더존 홈";
