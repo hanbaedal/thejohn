@@ -32,6 +32,111 @@
     return String(company || "").indexOf("우일푸드") !== -1;
   }
 
+  var AEK_LOGIN_IDS = ["aksangsa", "aemae", "st_admin_aksangsa", "st_admin_aemae"];
+
+  function normalizeCompanyKey(company) {
+    return String(company || "")
+      .replace(/\s+/g, "")
+      .replace(/\(주\)/gi, "")
+      .toLowerCase();
+  }
+
+  function staffCompanyName(st) {
+    if (!st) return "";
+    return String(st.st_company || st.companyName || "").trim();
+  }
+
+  function matchesAkSangsaByLoginId(loginId) {
+    var id = String(loginId || "")
+      .trim()
+      .toLowerCase();
+    if (!id) return false;
+    for (var i = 0; i < AEK_LOGIN_IDS.length; i++) {
+      if (id === AEK_LOGIN_IDS[i]) return true;
+    }
+    return false;
+  }
+
+  function matchesAkSangsaByCompany(company) {
+    var c = normalizeCompanyKey(company);
+    if (!c) return false;
+    return c.indexOf("에이케이") !== -1 || c.indexOf("에이메이") !== -1;
+  }
+
+  /** (주)에이케이상사 — 회사명 또는 aksangsa·aemae 로그인 */
+  function matchesAkSangsa(stOrCompany, loginId) {
+    if (stOrCompany && typeof stOrCompany === "object") {
+      if (matchesAkSangsaByCompany(staffCompanyName(stOrCompany))) return true;
+      if (matchesAkSangsaByLoginId(stOrCompany.loginId || stOrCompany.id)) return true;
+      return false;
+    }
+    if (matchesAkSangsaByCompany(stOrCompany)) return true;
+    return matchesAkSangsaByLoginId(loginId);
+  }
+
+  var AEK_GALLERY_COUNT = 12;
+  var AEK_GALLERY_BASE = "img/company-intro/aek/";
+
+  function akGallerySection() {
+    return document.getElementById("companyIntroGalleryAek");
+  }
+
+  function bindAkGalleryScroll(track, pageEl) {
+    if (!track || track.dataset.scrollBound) return;
+    track.dataset.scrollBound = "1";
+    function updatePage() {
+      if (!pageEl) return;
+      var w = track.clientWidth || 1;
+      var idx = Math.round(track.scrollLeft / w) + 1;
+      if (idx < 1) idx = 1;
+      if (idx > AEK_GALLERY_COUNT) idx = AEK_GALLERY_COUNT;
+      pageEl.textContent = idx + " / " + AEK_GALLERY_COUNT;
+    }
+    track.addEventListener("scroll", updatePage, { passive: true });
+    updatePage();
+  }
+
+  function buildAkGallery() {
+    var section = akGallerySection();
+    var track = document.getElementById("companyIntroGalleryAekTrack");
+    if (!section || !track || track.dataset.built) return;
+    track.dataset.built = "1";
+    var html = "";
+    for (var n = 1; n <= AEK_GALLERY_COUNT; n++) {
+      html +=
+        '<figure class="company-intro-gallery__slide" role="listitem">' +
+        '<img src="' +
+        AEK_GALLERY_BASE +
+        n +
+        '.png" alt="회사소개 ' +
+        n +
+        '번" width="800" height="600" loading="' +
+        (n === 1 ? "eager" : "lazy") +
+        '">' +
+        "</figure>";
+    }
+    track.innerHTML = html;
+    bindAkGalleryScroll(track, document.getElementById("companyIntroGalleryAekPage"));
+    track.scrollLeft = 0;
+  }
+
+  function setAkGalleryVisible(show) {
+    var section = akGallerySection();
+    if (!section) return;
+    if (!show) {
+      section.hidden = true;
+      return;
+    }
+    buildAkGallery();
+    section.hidden = false;
+    var track = document.getElementById("companyIntroGalleryAekTrack");
+    if (track) {
+      track.scrollLeft = 0;
+      var pageEl = document.getElementById("companyIntroGalleryAekPage");
+      if (pageEl) pageEl.textContent = "1 / " + AEK_GALLERY_COUNT;
+    }
+  }
+
   function greetingParas() {
     var body = document.querySelector(".company-greeting-body");
     if (!body) return null;
@@ -61,6 +166,7 @@
 
   function applyDefaultGreeting(subject) {
     setWooilPhilosophyVisible(false);
+    setAkGalleryVisible(false);
     var name = stripTrailingTopicParticle(subject || COMPANY_GREETING_SUBJECT);
     var eu = josaEunNeun(name);
     var paras = greetingParas();
@@ -96,6 +202,7 @@
 
   function applyWooilFoodGreeting(company) {
     var name = String(company || "(주)우일푸드").trim();
+    setAkGalleryVisible(false);
     setWooilPhilosophyVisible(true, name);
     var paras = greetingParas();
     if (!paras || paras.length < 6) return;
@@ -117,14 +224,26 @@
     }
   }
 
+  function applyAkSangsaIntro(company) {
+    var name = String(company || "(주)에이케이상사").trim() || "(주)에이케이상사";
+    setWooilPhilosophyVisible(false);
+    setAkGalleryVisible(true);
+    applyDefaultGreeting(name);
+  }
+
   function applyForStaff(st) {
     if (!st) return false;
-    var company = String(st.st_company || "").trim();
-    if (!company) return false;
+    var company = staffCompanyName(st);
+    var loginId = st.loginId || st.id || "";
     if (matchesWooilFood(company)) {
       applyWooilFoodGreeting(company);
       return true;
     }
+    if (matchesAkSangsa(st)) {
+      applyAkSangsaIntro(company || "(주)에이케이상사");
+      return true;
+    }
+    if (!company) return false;
     applyDefaultGreeting(company);
     return true;
   }
@@ -132,14 +251,22 @@
   function run() {
     var Auth = global.THEJHON_AUTH;
     if (Auth && Auth.isLoggedIn && Auth.isLoggedIn()) {
+      var userId = Auth.getUserId && Auth.getUserId();
       var cached =
         Auth.getLoggedInCompanyDisplayName && Auth.getLoggedInCompanyDisplayName();
       if (cached && matchesWooilFood(cached)) {
         applyWooilFoodGreeting(cached);
         return;
       }
+      if (matchesAkSangsa(cached, userId)) {
+        applyAkSangsaIntro(
+          matchesAkSangsaByCompany(cached) ? cached : "(주)에이케이상사"
+        );
+        return;
+      }
     }
     setWooilPhilosophyVisible(false);
+    setAkGalleryVisible(false);
     applyDefaultGreeting(COMPANY_GREETING_SUBJECT);
   }
 
@@ -147,8 +274,16 @@
     applyForStaff: applyForStaff,
     applyDefaultGreeting: applyDefaultGreeting,
     applyWooilFoodGreeting: applyWooilFoodGreeting,
+    applyAkSangsaIntro: applyAkSangsaIntro,
     matchesWooilFood: matchesWooilFood,
-    setWooilPhilosophyVisible: setWooilPhilosophyVisible
+    matchesAkSangsa: matchesAkSangsa,
+    setWooilPhilosophyVisible: setWooilPhilosophyVisible,
+    setAkGalleryVisible: setAkGalleryVisible
+  };
+
+  global.__thejhonRefreshCompanyGreeting = function (st) {
+    if (st && applyForStaff(st)) return;
+    run();
   };
 
   if (document.readyState === "loading") {
