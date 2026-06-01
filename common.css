@@ -869,20 +869,23 @@ a.company-division-card p {
     margin-bottom: 0;
 }
 .company-philosophy-heading {
-    margin: 0 0 1rem;
+    margin: 0 0 2.25rem;
     font-size: 1.05rem;
     font-weight: 800;
     letter-spacing: 0.04em;
     color: #7cb342;
     line-height: 1.35;
+    text-align: center;
 }
 .company-philosophy-heading-ko {
     font-weight: 700;
 }
 .company-philosophy-lines {
     list-style: none;
-    margin: 0;
+    margin: 0 auto;
     padding: 0;
+    max-width: 36rem;
+    text-align: center;
 }
 .company-philosophy-lines li {
     margin: 0 0 0.85rem;
@@ -890,6 +893,7 @@ a.company-division-card p {
     line-height: 1.75;
     color: #3d5166;
     word-break: keep-all;
+    text-align: center;
 }
 .company-philosophy-lines li:last-child {
     margin-bottom: 0;
@@ -899,24 +903,27 @@ a.company-division-card p {
     font-weight: 700;
 }
 .company-philosophy-text {
-    margin: 0;
+    margin: 0 auto;
+    max-width: 36rem;
     font-size: 0.92rem;
     line-height: 1.8;
     color: #3d5166;
     word-break: keep-all;
+    text-align: center;
 }
 .company-philosophy-roman {
+    display: inline-block;
     margin: 0 auto;
     padding: 0;
     list-style: none;
-    max-width: 14rem;
-    text-align: left;
+    text-align: center;
 }
 .company-philosophy-roman li {
     margin: 0 0 0.35rem;
     font-size: 0.92rem;
     line-height: 1.65;
     color: #3d5166;
+    text-align: center;
 }
 .company-philosophy-roman li::before {
     font-weight: 700;
