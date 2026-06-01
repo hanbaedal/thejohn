@@ -76,12 +76,16 @@
             pd_size: item.pd_size || "",
             unitPrice: Number(item.unitPrice) || 0,
             priceLabel: item.priceLabel || "",
-            quantity: qty
+            quantity: qty,
+            pd_image: item.pd_image ? String(item.pd_image) : "",
+            pd_has_image: item.pd_has_image === true || !!item.pd_image
         };
         if (idx >= 0) {
             cart.items[idx].quantity += qty;
             cart.items[idx].unitPrice = row.unitPrice;
             cart.items[idx].priceLabel = row.priceLabel;
+            if (row.pd_image) cart.items[idx].pd_image = row.pd_image;
+            if (row.pd_has_image) cart.items[idx].pd_has_image = true;
         } else {
             cart.items.push(row);
         }

@@ -113,55 +113,99 @@
     overflow: hidden;
 }
 .vendor-order-modal .vom-cart-item {
-    padding: 0.55rem 0.65rem;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 0.55rem;
     border-bottom: 1px solid #e8edf2;
     font-size: 0.88rem;
 }
 .vendor-order-modal .vom-cart-item:last-child {
     border-bottom: none;
 }
-.vendor-order-modal .vom-cart-item__line {
+/* [썸네일] [상품명·수량·금액] [규격·단가·삭제] */
+.vendor-order-modal .vom-cart-item__thumb {
+    flex: 0 0 2.75rem;
+    width: 2.75rem;
+    height: 2.75rem;
+    align-self: center;
+    border-radius: 8px;
+    overflow: hidden;
+    background: #eef2f6;
+    border: 1px solid #c5d8eb;
+}
+.vendor-order-modal .vom-cart-item__thumb img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+.vendor-order-modal .vom-cart-item__thumb-ph {
+    display: block;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(135deg, #e8edf2 0%, #f4f7fb 100%);
+}
+.vendor-order-modal .vom-cart-item__main {
+    flex: 1 1 0;
+    min-width: 0;
     display: flex;
-    flex-wrap: wrap;
+    flex-direction: row;
     align-items: center;
-    gap: 0.25rem 0.5rem;
-}
-.vendor-order-modal .vom-cart-item__line--head {
-    margin-bottom: 0.35rem;
-    color: #052a4d;
-    line-height: 1.35;
-}
-.vendor-order-modal .vom-cart-item__line--qty {
-    margin-bottom: 0.3rem;
-}
-.vendor-order-modal .vom-cart-item__line--foot {
     justify-content: space-between;
-    gap: 0.5rem;
+    gap: 0.4rem;
+}
+.vendor-order-modal .vom-cart-item__center {
+    flex: 1 1 auto;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    gap: 0.22rem;
+}
+.vendor-order-modal .vom-cart-item__side {
+    flex: 0 0 auto;
+    max-width: 42%;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    justify-content: center;
+    text-align: right;
+    gap: 0.22rem;
 }
 .vendor-order-modal .vom-cart-item__name {
     font-weight: 700;
-    flex: 1 1 auto;
-    min-width: 0;
+    color: #052a4d;
+    line-height: 1.3;
+    word-break: keep-all;
+    overflow-wrap: break-word;
+}
+.vendor-order-modal .vom-cart-item__qty {
+    display: flex;
+    justify-content: center;
 }
 .vendor-order-modal .vom-cart-item__spec {
     color: #5a6d7e;
-    font-size: 0.82rem;
-}
-.vendor-order-modal .vom-cart-item__spec::before {
-    content: "·";
-    margin: 0 0.15rem;
-    color: #9aa8b5;
+    font-size: 0.8rem;
+    line-height: 1.3;
 }
 .vendor-order-modal .vom-cart-item__price {
-    margin-left: auto;
-    font-size: 0.82rem;
+    font-size: 0.8rem;
     color: #2a4a5e;
     white-space: nowrap;
+    line-height: 1.3;
 }
 .vendor-order-modal .vom-cart-item__total {
     font-weight: 700;
     font-size: 0.9rem;
     color: var(--dz-blue, #0a4d9c);
+    line-height: 1.3;
+}
+.vendor-order-modal .vom-cart-item__side .btn-remove {
+    margin-top: 0.05rem;
 }
 .vendor-order-modal .vom-cart-qty-stepper.qty-stepper,
 .vendor-order-modal .vom-cart-item .qty-stepper {
@@ -275,22 +319,32 @@
 }
 .vendor-order-modal .vom-submit-order,
 .vendor-order-modal .vom-continue-shop {
-    min-height: 48px;
-    padding: 0.65rem 1.1rem;
-    font-size: 1rem;
+    flex: 0 0 auto;
+    min-height: 34px;
+    padding: 0.35rem 0.7rem;
+    font-size: 0.82rem;
+    line-height: 1.25;
     touch-action: manipulation;
 }
 .vendor-order-modal .vom-submit-order {
-    flex: 1 1 auto;
-    min-width: min(100%, 10rem);
+    min-width: 0;
 }
 .vendor-order-modal .cart-total {
     width: 100%;
     flex: 1 1 100%;
     font-weight: 700;
-    font-size: 1.05rem;
-    color: var(--dz-blue, #0a4d9c);
     text-align: right;
+    line-height: 1.3;
+}
+.vendor-order-modal .cart-total__label {
+    font-size: 0.88rem;
+    color: #3d5166;
+    font-weight: 600;
+}
+.vendor-order-modal .cart-total__amount {
+    font-size: 1.2rem;
+    color: #c62828;
+    font-weight: 800;
 }
 @media (min-width: 721px) {
     .vendor-order-modal .cart-total {

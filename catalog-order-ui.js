@@ -129,7 +129,9 @@
                     pd_size: it.pd_size,
                     unitPrice: info.unitPrice,
                     priceLabel: info.priceLabel,
-                    quantity: 1
+                    quantity: 1,
+                    pd_image: it.pd_image || "",
+                    pd_has_image: !!it.pd_has_image || !!it.pd_image
                 });
                 if (!res.ok && res.error) {
                     window.alert(res.error);
@@ -151,7 +153,9 @@
                 pd_size: it.pd_size,
                 unitPrice: info.unitPrice,
                 priceLabel: info.priceLabel,
-                quantity: 1
+                quantity: 1,
+                pd_image: it.pd_image || "",
+                pd_has_image: !!it.pd_has_image || !!it.pd_image
             });
             if (!res.ok && res.error) {
                 window.alert(res.error);

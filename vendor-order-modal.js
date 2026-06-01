@@ -68,6 +68,55 @@
         global.location.href = "products.html";
     }
 
+    function cartItemThumbHtml(it) {
+        var src = String((it && it.pd_image) || "").trim();
+        if (src) {
+            return (
+                '<div class="vom-cart-item__thumb">' +
+                '<img src="' +
+                escapeHtml(src) +
+                '" alt="">' +
+                "</div>"
+            );
+        }
+        if (it && it.pd_has_image === false) {
+            return (
+                '<div class="vom-cart-item__thumb vom-cart-item__thumb--empty">' +
+                '<span class="vom-cart-item__thumb-ph" aria-hidden="true"></span></div>'
+            );
+        }
+        return (
+            '<div class="vom-cart-item__thumb vom-cart-item__thumb--load" data-vom-cover="' +
+            escapeHtml(it.productId) +
+            '"><img alt="" hidden></div>'
+        );
+    }
+
+    function loadCartThumbnails() {
+        var Api = getApi();
+        if (!bodyEl || !Api || !Api.get) return;
+        bodyEl.querySelectorAll(".vom-cart-item__thumb--load[data-vom-cover]").forEach(function (wrap) {
+            var pid = wrap.getAttribute("data-vom-cover");
+            var img = wrap.querySelector("img");
+            if (!pid || !img || img.src) return;
+            Api.get("api/products/" + encodeURIComponent(pid) + "/cover")
+                .then(function (data) {
+                    if (!data || !data.pd_image) {
+                        wrap.classList.remove("vom-cart-item__thumb--load");
+                        wrap.classList.add("vom-cart-item__thumb--empty");
+                        return;
+                    }
+                    img.src = data.pd_image;
+                    img.hidden = false;
+                    wrap.classList.remove("vom-cart-item__thumb--load");
+                })
+                .catch(function () {
+                    wrap.classList.remove("vom-cart-item__thumb--load");
+                    wrap.classList.add("vom-cart-item__thumb--empty");
+                });
+        });
+    }
+
     function ensureShell() {
         if (modalEl) return;
         modalEl = document.createElement("div");
@@ -234,13 +283,9 @@
 
         var rows = cart.items
             .map(function (it) {
-                var specPart = it.pd_size
-                    ? '<span class="vom-cart-item__spec">' + escapeHtml(it.pd_size) + "</span>"
-                    : "";
-                var pricePart =
-                    '<span class="vom-cart-item__price">' +
-                    escapeHtml((it.priceLabel ? it.priceLabel + " " : "") + formatWon(it.unitPrice)) +
-                    "</span>";
+                var specText = String(it.pd_size || "").trim() || "—";
+                var priceText =
+                    (it.priceLabel ? it.priceLabel + " " : "") + formatWon(it.unitPrice);
                 var qtyHtml =
                     window.THEJHON_QTY_STEPPER && THEJHON_QTY_STEPPER.html
                         ? THEJHON_QTY_STEPPER.html(it.quantity, {
@@ -253,21 +298,27 @@
                     '<div class="vom-cart-item" data-product-id="' +
                     escapeHtml(it.productId) +
                     '">' +
-                    '<div class="vom-cart-item__line vom-cart-item__line--head">' +
-                    '<span class="vom-cart-item__name">' +
+                    cartItemThumbHtml(it) +
+                    '<div class="vom-cart-item__main">' +
+                    '<div class="vom-cart-item__center">' +
+                    '<div class="vom-cart-item__name">' +
                     escapeHtml(it.productName) +
-                    "</span>" +
-                    specPart +
-                    pricePart +
                     "</div>" +
-                    '<div class="vom-cart-item__line vom-cart-item__line--qty">' +
+                    '<div class="vom-cart-item__qty">' +
                     qtyHtml +
                     "</div>" +
-                    '<div class="vom-cart-item__line vom-cart-item__line--foot">' +
-                    '<span class="vom-cart-item__total cart-line-total">' +
+                    '<div class="vom-cart-item__total cart-line-total">' +
                     escapeHtml(formatWon(Cart.lineTotal(it))) +
-                    '</span><button type="button" class="btn-remove">삭제</button>' +
-                    "</div></div>"
+                    "</div></div>" +
+                    '<div class="vom-cart-item__side">' +
+                    '<div class="vom-cart-item__spec">' +
+                    escapeHtml(specText) +
+                    "</div>" +
+                    '<div class="vom-cart-item__price">' +
+                    escapeHtml(priceText) +
+                    "</div>" +
+                    '<button type="button" class="btn-remove">삭제</button>' +
+                    "</div></div></div>"
                 );
             })
             .join("");
@@ -286,9 +337,9 @@
             '<div class="cart-actions-row">' +
             '<button type="button" class="btn btn-primary vom-submit-order" id="vomSubmitOrder" disabled>주문하기</button>' +
             '<button type="button" class="btn vom-continue-shop" id="vomContinueShop">쇼핑 계속</button>' +
-            '<span class="cart-total">합계: ' +
+            '<span class="cart-total"><span class="cart-total__label">주문 합계 : </span><span class="cart-total__amount">' +
             escapeHtml(formatWon(Cart.cartTotal(cart))) +
-            "</span></div>" +
+            "</span></span></div>" +
             '<div id="vom-status-msg" class="cart-msg" hidden></div></div>';
 
         applyFormState(savedForm);
@@ -369,6 +420,7 @@
                 window.location.href = "products.html";
             });
         }
+        loadCartThumbnails();
         bindContactConfirm();
     }
 
