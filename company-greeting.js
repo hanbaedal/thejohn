@@ -32,7 +32,13 @@
     return String(company || "").indexOf("우일푸드") !== -1;
   }
 
-  var AEK_LOGIN_IDS = ["aksangsa", "aemae", "st_admin_aksangsa", "st_admin_aemae"];
+  var AEK_LOGIN_IDS = [
+    "ak20140516",
+    "aksangsa",
+    "aemae",
+    "st_admin_aksangsa",
+    "st_admin_aemae"
+  ];
 
   function normalizeCompanyKey(company) {
     return String(company || "")
@@ -63,7 +69,7 @@
     return c.indexOf("에이케이") !== -1 || c.indexOf("에이메이") !== -1;
   }
 
-  /** (주)에이케이상사 — 회사명 또는 aksangsa·aemae 로그인 */
+  /** (주)에이케이상사 — 회사명 또는 AK20140516 등 관리자 로그인 */
   function matchesAkSangsa(stOrCompany, loginId) {
     if (stOrCompany && typeof stOrCompany === "object") {
       if (matchesAkSangsaByCompany(staffCompanyName(stOrCompany))) return true;
