@@ -572,17 +572,25 @@
             if (orgRoot && st.st_company) {
                 orgRoot.textContent = st.st_company;
             }
-            var greetingBody = document.querySelector(".company-greeting-body");
-            if (greetingBody && st.st_company) {
-                var defaultCo = "(주)더존";
-                var company = String(st.st_company);
-                var paras = greetingBody.querySelectorAll("p");
-                for (var g = 0; g < paras.length; g++) {
-                    var gp = paras[g];
-                    if (!gp.dataset.companyGreetingTpl) {
-                        gp.dataset.companyGreetingTpl = gp.innerHTML;
+            if (
+                st.st_company &&
+                window.THEJHON_COMPANY_GREETING &&
+                THEJHON_COMPANY_GREETING.applyForStaff(st)
+            ) {
+                /* 회사별 인사문(우일푸드 등) */
+            } else {
+                var greetingBody = document.querySelector(".company-greeting-body");
+                if (greetingBody && st.st_company) {
+                    var defaultCo = "(주)더존";
+                    var company = String(st.st_company);
+                    var paras = greetingBody.querySelectorAll("p");
+                    for (var g = 0; g < paras.length; g++) {
+                        var gp = paras[g];
+                        if (!gp.dataset.companyGreetingTpl) {
+                            gp.dataset.companyGreetingTpl = gp.innerHTML;
+                        }
+                        gp.innerHTML = gp.dataset.companyGreetingTpl.split(defaultCo).join(company);
                     }
-                    gp.innerHTML = gp.dataset.companyGreetingTpl.split(defaultCo).join(company);
                 }
             }
         }
