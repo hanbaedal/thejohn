@@ -161,9 +161,7 @@
     section.hidden = false;
   }
 
-  function applyDefaultGreeting(subject) {
-    setWooilPhilosophyVisible(false);
-    setAkGalleryVisible(false);
+  function fillDefaultGreetingContent(subject) {
     var name = stripTrailingTopicParticle(subject || COMPANY_GREETING_SUBJECT);
     var eu = josaEunNeun(name);
     var paras = greetingParas();
@@ -197,6 +195,12 @@
     }
   }
 
+  function applyDefaultGreeting(subject) {
+    setWooilPhilosophyVisible(false);
+    setAkGalleryVisible(false);
+    fillDefaultGreetingContent(subject);
+  }
+
   function applyWooilFoodGreeting(company) {
     var name = String(company || "(주)우일푸드").trim();
     setAkGalleryVisible(false);
@@ -224,8 +228,8 @@
   function applyAkSangsaIntro(company) {
     var name = String(company || "(주)에이케이상사").trim() || "(주)에이케이상사";
     setWooilPhilosophyVisible(false);
+    fillDefaultGreetingContent(name);
     setAkGalleryVisible(true);
-    applyDefaultGreeting(name);
   }
 
   function applyForStaff(st) {
