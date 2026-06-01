@@ -853,9 +853,10 @@ a.company-division-card p {
     width: 100%;
     margin: 0 0 2.5rem;
     padding: 1.75rem 1.35rem 2rem;
-    background: #0c0c0c;
+    background: #fff;
+    border: 1px solid #e0e6ed;
     border-radius: 10px;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.18);
+    box-shadow: 0 2px 12px rgba(10, 77, 156, 0.06);
 }
 .company-philosophy--wooil[hidden] {
     display: none !important;
@@ -887,7 +888,7 @@ a.company-division-card p {
     margin: 0 0 0.85rem;
     font-size: 0.92rem;
     line-height: 1.75;
-    color: #b0b0b0;
+    color: #3d5166;
     word-break: keep-all;
 }
 .company-philosophy-lines li:last-child {
@@ -901,7 +902,7 @@ a.company-division-card p {
     margin: 0;
     font-size: 0.92rem;
     line-height: 1.8;
-    color: #b0b0b0;
+    color: #3d5166;
     word-break: keep-all;
 }
 .company-philosophy-roman {
@@ -915,11 +916,11 @@ a.company-division-card p {
     margin: 0 0 0.35rem;
     font-size: 0.92rem;
     line-height: 1.65;
-    color: #b0b0b0;
+    color: #3d5166;
 }
 .company-philosophy-roman li::before {
     font-weight: 700;
-    color: #9e9e9e;
+    color: #5a6d7e;
 }
 .company-philosophy-roman li:nth-child(1)::before {
     content: "Ⅰ. ";
