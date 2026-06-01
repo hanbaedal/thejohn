@@ -15,12 +15,18 @@
     function openDetailModal() {
         if (!historyModalEl) return;
         historyModalEl.hidden = false;
+        historyModalEl.classList.add("is-open");
+        document.body.classList.add("cart-detail-modal-open");
         document.body.style.overflow = "hidden";
     }
 
     function closeDetailModal() {
-        if (historyModalEl) historyModalEl.hidden = true;
+        if (historyModalEl) {
+            historyModalEl.hidden = true;
+            historyModalEl.classList.remove("is-open");
+        }
         if (historyDetailEl) historyDetailEl.innerHTML = "";
+        document.body.classList.remove("cart-detail-modal-open");
         document.body.style.overflow = "";
     }
 

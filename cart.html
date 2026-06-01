@@ -44,8 +44,8 @@
         .cart-detail-modal {
             position: fixed;
             inset: 0;
-            z-index: 10000;
-            display: flex;
+            z-index: 10050;
+            display: none;
             align-items: center;
             justify-content: center;
             padding: 0.75rem;
@@ -54,8 +54,14 @@
             touch-action: manipulation;
             -webkit-tap-highlight-color: transparent;
         }
+        .cart-detail-modal.is-open {
+            display: flex !important;
+        }
         .cart-detail-modal[hidden] {
             display: none !important;
+        }
+        body.cart-detail-modal-open {
+            overflow: hidden;
         }
         .cart-history-detail-panel {
             width: min(100%, 40rem);
@@ -122,12 +128,30 @@
             border: 1px solid #e0e6ed;
             border-radius: 8px;
         }
-        .order-detail-table { width: 100%; border-collapse: collapse; font-size: 0.88rem; }
-        .order-detail-table th,
-        .order-detail-table td {
-            padding: 0.5rem 0.6rem;
+        .cart-history-detail-panel .order-detail-table {
+            width: 100%;
+            border-collapse: collapse;
+            border-spacing: 0;
+            font-size: 0.88rem;
+            table-layout: fixed;
+            display: table !important;
+        }
+        .cart-history-detail-panel .order-detail-table thead {
+            display: table-header-group !important;
+        }
+        .cart-history-detail-panel .order-detail-table tbody {
+            display: table-row-group !important;
+        }
+        .cart-history-detail-panel .order-detail-table tr {
+            display: table-row !important;
+        }
+        .cart-history-detail-panel .order-detail-table th,
+        .cart-history-detail-panel .order-detail-table td {
+            display: table-cell !important;
+            padding: 0.5rem 0.35rem;
             border-bottom: 1px solid #e8edf2;
             text-align: left;
+            vertical-align: middle;
         }
         .order-detail-table th {
             background: #f4f7fb;
@@ -135,28 +159,41 @@
             text-align: center;
             white-space: nowrap;
         }
-        .order-detail-table td:nth-child(1),
-        .order-detail-table th:nth-child(1) {
+        .cart-history-detail-panel .order-detail-table th:nth-child(1),
+        .cart-history-detail-panel .order-detail-table td:nth-child(1) {
             text-align: center;
-            width: 2rem;
+            width: 7%;
         }
-        .order-detail-table td:nth-child(3),
-        .order-detail-table th:nth-child(3),
-        .order-detail-table td:nth-child(5),
-        .order-detail-table th:nth-child(5) {
+        .cart-history-detail-panel .order-detail-table th:nth-child(2),
+        .cart-history-detail-panel .order-detail-table td:nth-child(2) {
+            width: 26%;
+            white-space: normal;
+            word-break: keep-all;
+            overflow-wrap: break-word;
+        }
+        .cart-history-detail-panel .order-detail-table th:nth-child(3),
+        .cart-history-detail-panel .order-detail-table td:nth-child(3) {
+            width: 12%;
             text-align: center;
             white-space: nowrap;
         }
-        .order-detail-table td:nth-child(4),
-        .order-detail-table th:nth-child(4),
-        .order-detail-table td:nth-child(6),
-        .order-detail-table th:nth-child(6) {
+        .cart-history-detail-panel .order-detail-table th:nth-child(4),
+        .cart-history-detail-panel .order-detail-table td:nth-child(4) {
+            width: 22%;
             text-align: right;
             white-space: nowrap;
         }
-        .order-detail-table td:nth-child(2) {
-            white-space: normal;
-            min-width: 5rem;
+        .cart-history-detail-panel .order-detail-table th:nth-child(5),
+        .cart-history-detail-panel .order-detail-table td:nth-child(5) {
+            width: 10%;
+            text-align: center;
+            white-space: nowrap;
+        }
+        .cart-history-detail-panel .order-detail-table th:nth-child(6),
+        .cart-history-detail-panel .order-detail-table td:nth-child(6) {
+            width: 18%;
+            text-align: right;
+            white-space: nowrap;
         }
         .order-detail-total { margin: 0.75rem 0 0; text-align: right; font-size: 1rem; }
         .cart-actions-row { margin-top: 0.75rem; display: flex; gap: 0.5rem; flex-wrap: wrap; }
@@ -203,7 +240,7 @@
         }
         @media (max-width: 720px) {
             .cart-detail-modal {
-                padding: 0.5rem;
+                padding: 0.35rem;
             }
             .cart-history-detail-panel {
                 width: 100%;
@@ -211,53 +248,34 @@
                 max-height: min(94dvh, 44rem);
             }
             .cart-detail-title {
-                font-size: 0.9rem;
+                font-size: 0.88rem;
             }
-            #cart-history-detail .order-detail-meta {
-                font-size: 0.72rem;
-                gap: 0.12rem 0.45rem;
-                margin-bottom: 0.45rem;
-                line-height: 1.35;
-            }
-            #cart-history-detail .order-detail-meta dt {
+            .cart-history-detail-panel .order-detail-meta {
                 font-size: 0.7rem;
+                gap: 0.1rem 0.4rem;
+                margin-bottom: 0.4rem;
             }
-            #cart-history-detail .cart-detail-items-scroll {
-                overflow-x: auto;
-                -webkit-overflow-scrolling: touch;
+            .cart-history-detail-panel .order-detail-table {
+                font-size: 0.62rem;
             }
-            #cart-history-detail .order-detail-table-wrap {
-                overflow-x: visible;
-                min-width: min(100%, 100%);
+            .cart-history-detail-panel .order-detail-table th,
+            .cart-history-detail-panel .order-detail-table td {
+                padding: 0.3rem 0.15rem;
+                line-height: 1.25;
             }
-            #cart-history-detail .order-detail-table {
-                font-size: 0.72rem;
-                width: 100%;
-                min-width: 26rem;
+            .cart-history-detail-panel .order-detail-table th {
+                font-size: 0.6rem;
             }
-            #cart-history-detail .order-detail-table th,
-            #cart-history-detail .order-detail-table td {
-                padding: 0.4rem 0.35rem;
-                line-height: 1.35;
-                vertical-align: middle;
+            .cart-history-detail-panel .order-detail-table small {
+                font-size: 0.58rem;
             }
-            #cart-history-detail .order-detail-table th {
-                font-size: 0.7rem;
+            .cart-history-detail-panel .order-detail-total {
+                font-size: 0.82rem;
             }
-            #cart-history-detail .order-detail-table small {
-                font-size: 0.66rem;
-            }
-            #cart-history-detail .order-detail-total {
-                font-size: 0.85rem;
-            }
-            #cart-history-detail .cart-actions-row {
-                margin-top: 0.45rem;
-                gap: 0.35rem;
-            }
-            #cart-history-detail .cart-actions-row .btn {
+            .cart-history-detail-panel .cart-actions-row .btn {
                 min-height: 32px;
-                padding: 0.3rem 0.55rem;
-                font-size: 0.74rem;
+                padding: 0.3rem 0.5rem;
+                font-size: 0.72rem;
             }
         }
     </style>
@@ -301,6 +319,12 @@
         <div id="cart-access-msg" aria-live="polite"></div>
         <div id="cart-history-list"></div>
     </main>
+    <footer class="site-footer">
+        <div class="site-footer-inner">
+            <dl class="site-footer-grid" id="siteFooterCompanyGrid" aria-live="polite"></dl>
+            <p class="site-footer-company-msg" id="siteFooterCompanyMsg" hidden></p>
+        </div>
+    </footer>
     <div
         id="cart-history-detail-modal"
         class="cart-detail-modal"
@@ -311,11 +335,5 @@
     >
         <div id="cart-history-detail" class="cart-history-detail-panel" aria-live="polite"></div>
     </div>
-        <footer class="site-footer">
-        <div class="site-footer-inner">
-            <dl class="site-footer-grid" id="siteFooterCompanyGrid" aria-live="polite"></dl>
-            <p class="site-footer-company-msg" id="siteFooterCompanyMsg" hidden></p>
-</div>
-    </footer>
 </body>
 </html>
