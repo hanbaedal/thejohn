@@ -129,7 +129,35 @@
             border-bottom: 1px solid #e8edf2;
             text-align: left;
         }
-        .order-detail-table th { background: #f4f7fb; }
+        .order-detail-table th {
+            background: #f4f7fb;
+            font-weight: 700;
+            text-align: center;
+            white-space: nowrap;
+        }
+        .order-detail-table td:nth-child(1),
+        .order-detail-table th:nth-child(1) {
+            text-align: center;
+            width: 2rem;
+        }
+        .order-detail-table td:nth-child(3),
+        .order-detail-table th:nth-child(3),
+        .order-detail-table td:nth-child(5),
+        .order-detail-table th:nth-child(5) {
+            text-align: center;
+            white-space: nowrap;
+        }
+        .order-detail-table td:nth-child(4),
+        .order-detail-table th:nth-child(4),
+        .order-detail-table td:nth-child(6),
+        .order-detail-table th:nth-child(6) {
+            text-align: right;
+            white-space: nowrap;
+        }
+        .order-detail-table td:nth-child(2) {
+            white-space: normal;
+            min-width: 5rem;
+        }
         .order-detail-total { margin: 0.75rem 0 0; text-align: right; font-size: 1rem; }
         .cart-actions-row { margin-top: 0.75rem; display: flex; gap: 0.5rem; flex-wrap: wrap; }
         .cart-detail-head {
@@ -194,20 +222,33 @@
             #cart-history-detail .order-detail-meta dt {
                 font-size: 0.7rem;
             }
+            #cart-history-detail .cart-detail-items-scroll {
+                overflow-x: auto;
+                -webkit-overflow-scrolling: touch;
+            }
+            #cart-history-detail .order-detail-table-wrap {
+                overflow-x: visible;
+                min-width: min(100%, 100%);
+            }
             #cart-history-detail .order-detail-table {
-                font-size: 0.66rem;
+                font-size: 0.72rem;
+                width: 100%;
+                min-width: 26rem;
             }
             #cart-history-detail .order-detail-table th,
             #cart-history-detail .order-detail-table td {
-                padding: 0.25rem 0.3rem;
-                line-height: 1.3;
+                padding: 0.4rem 0.35rem;
+                line-height: 1.35;
+                vertical-align: middle;
+            }
+            #cart-history-detail .order-detail-table th {
+                font-size: 0.7rem;
             }
             #cart-history-detail .order-detail-table small {
-                font-size: 0.62rem;
+                font-size: 0.66rem;
             }
             #cart-history-detail .order-detail-total {
-                font-size: 0.8rem;
-                margin-top: 0.4rem;
+                font-size: 0.85rem;
             }
             #cart-history-detail .cart-actions-row {
                 margin-top: 0.45rem;
@@ -217,34 +258,6 @@
                 min-height: 32px;
                 padding: 0.3rem 0.55rem;
                 font-size: 0.74rem;
-            }
-            #cart-history-detail .order-detail-table thead {
-                display: none;
-            }
-            #cart-history-detail .order-detail-table tbody tr {
-                display: block;
-                padding: 0.35rem 0.4rem;
-                border-bottom: 1px solid #e8edf2;
-            }
-            #cart-history-detail .order-detail-table tbody tr:last-child {
-                border-bottom: none;
-            }
-            #cart-history-detail .order-detail-table td {
-                display: block;
-                padding: 0.1rem 0;
-                border: none;
-            }
-            #cart-history-detail .order-detail-table td::before {
-                content: attr(data-label);
-                display: inline-block;
-                font-weight: 700;
-                color: #5a6d7e;
-                min-width: 2.4rem;
-                margin-right: 0.25rem;
-                font-size: 0.62rem;
-            }
-            #cart-history-detail .order-detail-table td:first-child::before {
-                content: "#";
             }
         }
     </style>
