@@ -51,17 +51,38 @@
     }
 
     var ORDER_SUCCESS_SPEECH = "정상적으로 상품을 주문했습니다";
-    var ORDER_SUCCESS_REDIRECT_MS = 1800;
+    /** TTS 미지원·onend 미호출 시 최대 대기 */
+    var ORDER_SUCCESS_REDIRECT_FALLBACK_MS = 5000;
+    /** 음성 종료 후 잠깐 여유 */
+    var ORDER_SUCCESS_REDIRECT_BUFFER_MS = 600;
 
-    function speakOrderSuccess() {
-        if (!global.speechSynthesis) return;
+    function speakOrderSuccess(onDone) {
+        var finished = false;
+        function done() {
+            if (finished) return;
+            finished = true;
+            if (typeof onDone === "function") onDone();
+        }
+        if (!global.speechSynthesis) {
+            setTimeout(done, ORDER_SUCCESS_REDIRECT_FALLBACK_MS);
+            return;
+        }
         try {
             global.speechSynthesis.cancel();
             var utter = new SpeechSynthesisUtterance(ORDER_SUCCESS_SPEECH);
             utter.lang = "ko-KR";
             utter.rate = 0.95;
+            utter.onend = function () {
+                setTimeout(done, ORDER_SUCCESS_REDIRECT_BUFFER_MS);
+            };
+            utter.onerror = function () {
+                setTimeout(done, ORDER_SUCCESS_REDIRECT_BUFFER_MS);
+            };
             global.speechSynthesis.speak(utter);
-        } catch (e) {}
+            setTimeout(done, ORDER_SUCCESS_REDIRECT_FALLBACK_MS);
+        } catch (e) {
+            setTimeout(done, ORDER_SUCCESS_REDIRECT_FALLBACK_MS);
+        }
     }
 
     function goToProductsHome() {
@@ -504,9 +525,8 @@
                 Cart.clearCart();
                 window.dispatchEvent(new CustomEvent("thejhon-orders-updated"));
 
-                speakOrderSuccess();
                 close();
-                setTimeout(goToProductsHome, ORDER_SUCCESS_REDIRECT_MS);
+                speakOrderSuccess(goToProductsHome);
             })
             .catch(function (err) {
                 if (submitBtn) submitBtn.disabled = false;
