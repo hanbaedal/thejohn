@@ -77,9 +77,8 @@
                     escapeHtml(String(idx + 1)) +
                     '</td><td data-label="상품">' +
                     escapeHtml(it.productName || "") +
-                    (it.pd_size ? "<br><small>" + escapeHtml(it.pd_size) + "</small>" : "") +
-                    '</td><td data-label="부문">' +
-                    escapeHtml(it.pd_dept_label || it.pd_dept || "") +
+                    '</td><td data-label="규격">' +
+                    escapeHtml(String(it.pd_size || "").trim() || "—") +
                     '</td><td data-label="단가">' +
                     escapeHtml(it.priceLabel || "") +
                     " " +
@@ -94,7 +93,7 @@
             .join("");
         return (
             '<div class="order-detail-table-wrap"><table class="order-detail-table"><thead><tr>' +
-            "<th>#</th><th>상품</th><th>부문</th><th>단가</th><th>수량</th><th>금액</th>" +
+            "<th>#</th><th>상품</th><th>규격</th><th>단가</th><th>수량</th><th>금액</th>" +
             "</tr></thead><tbody>" +
             (rows || '<tr><td colspan="6">품목 없음</td></tr>') +
             "</tbody></table></div>"

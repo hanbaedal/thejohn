@@ -2,16 +2,17 @@
     var api = window.THEJHON_API;
     var Auth = window.THEJHON_AUTH;
     var OrderUI = window.THEJHON_ORDER_UI;
+    var DetailModal = window.THEJHON_ORDER_DETAIL_MODAL;
     var statusEl = document.getElementById("sol-status");
     var summaryEl = document.getElementById("sol-summary");
     var byAdminEl = document.getElementById("sol-by-admin");
     var listEl = document.getElementById("sol-list");
-    var detailEl = document.getElementById("ol-detail");
     var dateFromEl = document.getElementById("sol-date-from");
     var dateToEl = document.getElementById("sol-date-to");
     var adminEl = document.getElementById("sol-admin");
     var searchBtn = document.getElementById("sol-search");
     var selectedId = "";
+    var detailModal = null;
 
     function escapeHtml(s) {
         return OrderUI ? OrderUI.escapeHtml(s) : String(s);
@@ -85,26 +86,31 @@
     }
 
     function showDetail(order) {
-        if (!detailEl || !OrderUI) return;
+        if (!detailModal) return;
         if (!order) {
-            detailEl.hidden = true;
-            detailEl.innerHTML = "";
+            detailModal.dismiss();
             return;
         }
-        detailEl.hidden = false;
-        detailEl.innerHTML =
-            '<h2 class="ol-detail-title">발주 상세</h2>' +
-            OrderUI.renderOrderDetailHtml(order, { showVendor: true }) +
-            '<div class="ol-detail-actions"><button type="button" class="btn btn-primary" id="ol-detail-pdf">PDF</button>' +
-            '<button type="button" class="btn" id="ol-detail-close">닫기</button></div>';
-        document.getElementById("ol-detail-close").addEventListener("click", function () {
-            selectedId = "";
-            showDetail(null);
-        });
-        document.getElementById("ol-detail-pdf").addEventListener("click", function () {
-            OrderUI.downloadOrderPdfWithAuth(api, order.id, order.orderNo, order).catch(function (err) {
-                alert((err && err.message) || "PDF 저장 실패");
-            });
+        detailModal.show(order, {
+            title: "발주 상세",
+            showVendor: true,
+            actions: [
+                {
+                    id: "sol-detail-pdf",
+                    label: "PDF",
+                    primary: true,
+                    onClick: function (ord, btn) {
+                        btn.disabled = true;
+                        OrderUI.downloadOrderPdfWithAuth(api, ord.id, ord.orderNo, ord)
+                            .catch(function (err) {
+                                alert((err && err.message) || "PDF 저장 실패");
+                            })
+                            .finally(function () {
+                                btn.disabled = false;
+                            });
+                    }
+                }
+            ]
         });
     }
 
@@ -141,15 +147,22 @@
         listEl.querySelectorAll(".ol-admin-item").forEach(function (li) {
             li.addEventListener("click", function () {
                 var id = li.getAttribute("data-order-id");
+                if (selectedId === id) {
+                    selectedId = "";
+                    showDetail(null);
+                    return;
+                }
                 selectedId = id;
                 listEl.querySelectorAll(".ol-admin-item").forEach(function (x) {
                     x.classList.toggle("is-selected", x.getAttribute("data-order-id") === id);
                 });
-                detailEl.hidden = false;
-                detailEl.innerHTML = '<p>불러오는 중…</p>';
-                api.getOrder(id).then(showDetail).catch(function (err) {
-                    detailEl.innerHTML = "<p>" + escapeHtml((err && err.message) || "오류") + "</p>";
-                });
+                if (!detailModal) return;
+                detailModal.showLoading("불러오는 중…");
+                api.getOrder(id)
+                    .then(showDetail)
+                    .catch(function (err) {
+                        detailModal.showError((err && err.message) || "오류");
+                    });
             });
         });
     }
@@ -166,10 +179,7 @@
         var opts = { dateFrom: dateFrom, dateTo: dateTo };
         if (adminStaffId) opts.adminStaffId = adminStaffId;
 
-        Promise.all([
-            api.getSupervisorOrderStats(opts),
-            api.listOrders(opts)
-        ])
+        Promise.all([api.getSupervisorOrderStats(opts), api.listOrders(opts)])
             .then(function (results) {
                 var stats = results[0] || {};
                 var items = results[1] || [];
@@ -200,6 +210,18 @@
     if (!Auth.getStaffManageAccess().allowed) {
         setStatus("슈퍼바이저만 이용할 수 있습니다.", true);
         return;
+    }
+
+    if (DetailModal && DetailModal.create) {
+        detailModal = DetailModal.create({
+            modalId: "sol-detail-modal",
+            panelId: "sol-detail-panel",
+            listEl: listEl,
+            itemSelector: ".ol-admin-item",
+            onDismiss: function () {
+                selectedId = "";
+            }
+        });
     }
 
     defaultDates();

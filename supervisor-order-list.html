@@ -11,6 +11,7 @@
     <link rel="stylesheet" href="common.css">
     <link rel="stylesheet" href="admin-manage.css">
     <link rel="stylesheet" href="staff-hub.css">
+    <link rel="stylesheet" href="order-detail-modal.css">
     <style>
         .ol-admin-list { list-style: none; margin: 0; padding: 0; }
         .ol-list-scroll { max-height: 19rem; overflow-y: auto; }
@@ -23,13 +24,12 @@
         .ol-admin-main { flex: 1; min-width: 12rem; }
         .ol-admin-name { display: block; font-weight: 700; color: #052a4d; }
         .ol-admin-meta { font-size: 0.85rem; color: #5a6d7e; }
-        #ol-detail { margin-top: 1rem; padding: 1rem; background: #f8fafc; border: 1px solid #d4e2f0; border-radius: 12px; }
-        #ol-detail[hidden] { display: none !important; }
     </style>
     <script src="api-config.js"></script>
     <script src="thejhon-api.js"></script>
     <script src="auth.js"></script>
     <script src="order-ui.js"></script>
+    <script src="order-detail-modal.js"></script>
     <script src="admin-header.js"></script>
     <script src="nav.js" defer></script>
 </head>
@@ -79,7 +79,6 @@
             <div id="sol-summary" class="shub-summary" hidden></div>
             <div id="sol-by-admin" class="shub-table-wrap shub-list-scroll" hidden></div>
             <div id="sol-list" class="ol-list-scroll"></div>
-            <div id="ol-detail" hidden aria-live="polite"></div>
         </section>
     </main>
     <footer class="site-footer">
@@ -88,6 +87,16 @@
             <p class="site-footer-company-msg" id="siteFooterCompanyMsg" hidden></p>
         </div>
     </footer>
+    <div
+        id="sol-detail-modal"
+        class="odm-modal"
+        hidden
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="odm-detail-title"
+    >
+        <div id="sol-detail-panel" class="odm-panel" aria-live="polite"></div>
+    </div>
     <script src="supervisor-order-list.js"></script>
 </body>
 </html>

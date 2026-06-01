@@ -2,8 +2,8 @@
     var api = window.THEJHON_API;
     var Auth = window.THEJHON_AUTH;
     var OrderUI = window.THEJHON_ORDER_UI;
+    var DetailModal = window.THEJHON_ORDER_DETAIL_MODAL;
     var listEl = document.getElementById("ol-list");
-    var detailEl = document.getElementById("ol-detail");
     var statusEl = document.getElementById("ol-status");
     var hintEl = document.getElementById("ol-hint");
     var dateFromEl = document.getElementById("ol-date-from");
@@ -17,6 +17,7 @@
     var selectedId = "";
     var selectedVendorName = "";
     var allVendors = [];
+    var detailModal = null;
 
     function escapeHtml(s) {
         return OrderUI ? OrderUI.escapeHtml(s) : String(s);
@@ -83,11 +84,13 @@
         }
         api.listVendors()
             .then(function (items) {
-                allVendors = (items || []).map(function (it) {
-                    return { companyName: String((it && it.vn_company) || "").trim() };
-                }).filter(function (it) {
-                    return !!it.companyName;
-                });
+                allVendors = (items || [])
+                    .map(function (it) {
+                        return { companyName: String((it && it.vn_company) || "").trim() };
+                    })
+                    .filter(function (it) {
+                        return !!it.companyName;
+                    });
                 renderVendorList("");
                 if (vendorSearchEl) vendorSearchEl.focus();
             })
@@ -108,44 +111,32 @@
     }
 
     function showDetail(order) {
-        if (!detailEl || !OrderUI) return;
+        if (!detailModal) return;
         if (!order) {
-            detailEl.hidden = true;
-            detailEl.innerHTML = "";
+            detailModal.dismiss();
             return;
         }
-        detailEl.hidden = false;
-        detailEl.innerHTML =
-            '<h2 class="ol-detail-title">주문 상세</h2>' +
-            OrderUI.renderOrderDetailHtml(order, { showVendor: true }) +
-            '<div class="ol-detail-actions">' +
-            '<button type="button" class="btn btn-primary" id="ol-detail-pdf">PDF 저장</button>' +
-            '<button type="button" class="btn" id="ol-detail-close">닫기</button>' +
-            "</div>";
-
-        var closeBtn = document.getElementById("ol-detail-close");
-        if (closeBtn) {
-            closeBtn.addEventListener("click", function () {
-                selectedId = "";
-                listEl.querySelectorAll(".ol-admin-item").forEach(function (li) {
-                    li.classList.remove("is-selected");
-                });
-                showDetail(null);
-            });
-        }
-        var pdfBtn = document.getElementById("ol-detail-pdf");
-        if (pdfBtn) {
-            pdfBtn.addEventListener("click", function () {
-                pdfBtn.disabled = true;
-                OrderUI.downloadOrderPdfWithAuth(api, order.id, order.orderNo, order)
-                    .catch(function (err) {
-                        alert((err && err.message) || "PDF 저장에 실패했습니다.");
-                    })
-                    .finally(function () {
-                        pdfBtn.disabled = false;
-                    });
-            });
-        }
+        detailModal.show(order, {
+            title: "주문 상세",
+            showVendor: true,
+            actions: [
+                {
+                    id: "ol-detail-pdf",
+                    label: "PDF 저장",
+                    primary: true,
+                    onClick: function (ord, btn) {
+                        btn.disabled = true;
+                        OrderUI.downloadOrderPdfWithAuth(api, ord.id, ord.orderNo, ord)
+                            .catch(function (err) {
+                                alert((err && err.message) || "PDF 저장에 실패했습니다.");
+                            })
+                            .finally(function () {
+                                btn.disabled = false;
+                            });
+                    }
+                }
+            ]
+        });
     }
 
     function selectOrder(id) {
@@ -153,18 +144,14 @@
         listEl.querySelectorAll(".ol-admin-item").forEach(function (li) {
             li.classList.toggle("is-selected", li.getAttribute("data-order-id") === id);
         });
-        if (!detailEl) return;
-        detailEl.hidden = false;
-        detailEl.innerHTML = '<p class="ol-detail-loading">주문 내용을 불러오는 중…</p>';
+        if (!detailModal) return;
+        detailModal.showLoading("주문 내용을 불러오는 중…");
         api.getOrder(id)
             .then(function (order) {
                 showDetail(order);
             })
             .catch(function (err) {
-                detailEl.innerHTML =
-                    '<p class="order-detail-empty">' +
-                    escapeHtml((err && err.message) || "주문을 불러오지 못했습니다.") +
-                    "</p>";
+                detailModal.showError((err && err.message) || "주문을 불러오지 못했습니다.");
             });
     }
 
@@ -206,9 +193,21 @@
         return;
     }
 
+    if (DetailModal && DetailModal.create) {
+        detailModal = DetailModal.create({
+            modalId: "ol-detail-modal",
+            panelId: "ol-detail-panel",
+            listEl: listEl,
+            itemSelector: ".ol-admin-item",
+            onDismiss: function () {
+                selectedId = "";
+            }
+        });
+    }
+
     if (hintEl) {
         hintEl.textContent =
-            "목록을 클릭하면 주문 품목·금액이 아래에 표시됩니다. 담당 거래처의 회사명 기준으로 주문 목록이 표시됩니다.";
+            "목록을 클릭하면 주문 품목·금액이 화면 중앙 모달로 표시됩니다. 담당 거래처의 회사명 기준으로 주문 목록이 표시됩니다.";
         hintEl.hidden = false;
     }
 
@@ -223,46 +222,46 @@
         setStatus("불러오는 중…");
         api.listOrders({ dateFrom: dateFrom, dateTo: dateTo, vendorName: vendorName })
             .then(function (items) {
-            if (!items.length) {
-                listEl.innerHTML = '<p class="am-list-empty">접수된 주문이 없습니다.</p>';
-                showDetail(null);
-                setStatus("0건");
-                return;
-            }
-            listEl.innerHTML =
-                '<ul class="ol-admin-list">' +
-                items
-                    .map(function (it) {
-                        return (
-                            '<li class="ol-admin-item" data-order-id="' +
-                            escapeHtml(it.id) +
-                            '" role="button" tabindex="0">' +
-                            '<div class="ol-admin-main">' +
-                            '<span class="ol-admin-name">' +
-                            escapeHtml(it.orderNo || it.id) +
-                            " · " +
-                            escapeHtml(it.vendorCompany || "(회사명 없음)") +
-                            "</span>" +
-                            '<span class="ol-admin-meta">' +
-                            escapeHtml(formatDate(it.createdAt)) +
-                            " · " +
-                            escapeHtml(formatWon(it.totalAmount)) +
-                            " · 품목 " +
-                            escapeHtml(String(it.itemCount || 0)) +
-                            "건" +
-                            (it.vendorRegisteredByName
-                                ? " · 담당 " + escapeHtml(it.vendorRegisteredByName)
-                                : "") +
-                            "</span></div>" +
-                            '<div class="ol-admin-actions">' +
-                            '<button type="button" class="btn btn-primary ol-btn-pdf">PDF</button>' +
-                            "</div></li>"
-                        );
-                    })
-                    .join("") +
-                "</ul>";
-            bindListEvents(items);
-            setStatus(items.length + "건 — 항목을 클릭해 상세를 확인하세요.");
+                if (!items.length) {
+                    listEl.innerHTML = '<p class="am-list-empty">접수된 주문이 없습니다.</p>';
+                    showDetail(null);
+                    setStatus("0건");
+                    return;
+                }
+                listEl.innerHTML =
+                    '<ul class="ol-admin-list">' +
+                    items
+                        .map(function (it) {
+                            return (
+                                '<li class="ol-admin-item" data-order-id="' +
+                                escapeHtml(it.id) +
+                                '" role="button" tabindex="0">' +
+                                '<div class="ol-admin-main">' +
+                                '<span class="ol-admin-name">' +
+                                escapeHtml(it.orderNo || it.id) +
+                                " · " +
+                                escapeHtml(it.vendorCompany || "(회사명 없음)") +
+                                "</span>" +
+                                '<span class="ol-admin-meta">' +
+                                escapeHtml(formatDate(it.createdAt)) +
+                                " · " +
+                                escapeHtml(formatWon(it.totalAmount)) +
+                                " · 품목 " +
+                                escapeHtml(String(it.itemCount || 0)) +
+                                "건" +
+                                (it.vendorRegisteredByName
+                                    ? " · 담당 " + escapeHtml(it.vendorRegisteredByName)
+                                    : "") +
+                                "</span></div>" +
+                                '<div class="ol-admin-actions">' +
+                                '<button type="button" class="btn btn-primary ol-btn-pdf">PDF</button>' +
+                                "</div></li>"
+                            );
+                        })
+                        .join("") +
+                    "</ul>";
+                bindListEvents(items);
+                setStatus(items.length + "건 — 항목을 클릭해 상세를 확인하세요.");
             })
             .catch(function (err) {
                 setStatus(err.message || "목록을 불러오지 못했습니다.", true);

@@ -2,16 +2,17 @@
     var api = window.THEJHON_API;
     var Auth = window.THEJHON_AUTH;
     var OrderUI = window.THEJHON_ORDER_UI;
+    var DetailModal = window.THEJHON_ORDER_DETAIL_MODAL;
     var statusEl = document.getElementById("stl-status");
     var summaryEl = document.getElementById("stl-summary");
     var listEl = document.getElementById("stl-list");
-    var detailEl = document.getElementById("stl-detail");
     var dateFromEl = document.getElementById("stl-date-from");
     var dateToEl = document.getElementById("stl-date-to");
     var adminEl = document.getElementById("stl-admin");
     var searchBtn = document.getElementById("stl-search");
     var selectedId = "";
     var listItems = [];
+    var detailModal = null;
 
     function escapeHtml(s) {
         return OrderUI ? OrderUI.escapeHtml(s) : String(s);
@@ -60,57 +61,47 @@
     }
 
     function showDetail(order) {
-        if (!detailEl || !OrderUI) return;
+        if (!detailModal) return;
         if (!order) {
-            detailEl.hidden = true;
-            detailEl.innerHTML = "";
+            detailModal.dismiss();
             return;
         }
-        detailEl.hidden = false;
-        detailEl.innerHTML =
-            '<h2 class="ol-detail-title">거래명세서 상세</h2>' +
-            OrderUI.renderOrderDetailHtml(order, { showVendor: true }) +
-            '<div class="ol-detail-actions">' +
-            '<button type="button" class="btn btn-primary" id="stl-detail-print">인쇄</button>' +
-            '<button type="button" class="btn" id="stl-detail-pdf">PDF 저장</button>' +
-            '<button type="button" class="btn" id="stl-detail-close">닫기</button>' +
-            "</div>";
-
-        document.getElementById("stl-detail-close").addEventListener("click", function () {
-            selectedId = "";
-            showDetail(null);
-            listEl.querySelectorAll(".ol-admin-item").forEach(function (x) {
-                x.classList.remove("is-selected");
-            });
+        detailModal.show(order, {
+            title: "거래명세서 상세",
+            showVendor: true,
+            actions: [
+                {
+                    id: "stl-detail-print",
+                    label: "인쇄",
+                    primary: true,
+                    onClick: function (ord, btn) {
+                        btn.disabled = true;
+                        OrderUI.printTransactionPdfWithAuth(api, ord.id)
+                            .catch(function (err) {
+                                alert((err && err.message) || "인쇄 준비 실패");
+                            })
+                            .finally(function () {
+                                btn.disabled = false;
+                            });
+                    }
+                },
+                {
+                    id: "stl-detail-pdf",
+                    label: "PDF 저장",
+                    primary: false,
+                    onClick: function (ord, btn) {
+                        btn.disabled = true;
+                        OrderUI.downloadTransactionPdfWithAuth(api, ord.id, ord)
+                            .catch(function (err) {
+                                alert((err && err.message) || "PDF 저장 실패");
+                            })
+                            .finally(function () {
+                                btn.disabled = false;
+                            });
+                    }
+                }
+            ]
         });
-
-        var pdfBtn = document.getElementById("stl-detail-pdf");
-        if (pdfBtn) {
-            pdfBtn.addEventListener("click", function () {
-                pdfBtn.disabled = true;
-                OrderUI.downloadTransactionPdfWithAuth(api, order.id, order)
-                    .catch(function (err) {
-                        alert((err && err.message) || "PDF 저장 실패");
-                    })
-                    .finally(function () {
-                        pdfBtn.disabled = false;
-                    });
-            });
-        }
-
-        var printBtn = document.getElementById("stl-detail-print");
-        if (printBtn) {
-            printBtn.addEventListener("click", function () {
-                printBtn.disabled = true;
-                OrderUI.printTransactionPdfWithAuth(api, order.id)
-                    .catch(function (err) {
-                        alert((err && err.message) || "인쇄 준비 실패");
-                    })
-                    .finally(function () {
-                        printBtn.disabled = false;
-                    });
-            });
-        }
     }
 
     function renderList(items) {
@@ -150,15 +141,22 @@
             var id = li.getAttribute("data-order-id");
             li.addEventListener("click", function (e) {
                 if (e.target.closest(".ol-admin-actions")) return;
+                if (selectedId === id) {
+                    selectedId = "";
+                    showDetail(null);
+                    return;
+                }
                 selectedId = id;
                 listEl.querySelectorAll(".ol-admin-item").forEach(function (x) {
                     x.classList.toggle("is-selected", x.getAttribute("data-order-id") === id);
                 });
-                detailEl.hidden = false;
-                detailEl.innerHTML = "<p>불러오는 중…</p>";
-                api.getOrder(id).then(showDetail).catch(function (err) {
-                    detailEl.innerHTML = "<p>" + escapeHtml((err && err.message) || "오류") + "</p>";
-                });
+                if (!detailModal) return;
+                detailModal.showLoading("불러오는 중…");
+                api.getOrder(id)
+                    .then(showDetail)
+                    .catch(function (err) {
+                        detailModal.showError((err && err.message) || "오류");
+                    });
             });
             var row = listItems.find(function (it) {
                 return it.id === id;
@@ -203,10 +201,7 @@
         var opts = { dateFrom: dateFrom, dateTo: dateTo };
         if (adminStaffId) opts.adminStaffId = adminStaffId;
 
-        Promise.all([
-            api.getSupervisorOrderStats(opts),
-            api.listOrders(opts)
-        ])
+        Promise.all([api.getSupervisorOrderStats(opts), api.listOrders(opts)])
             .then(function (results) {
                 var stats = results[0] || {};
                 var items = results[1] || [];
@@ -236,6 +231,18 @@
     if (!Auth.getStaffManageAccess().allowed) {
         setStatus("슈퍼바이저만 이용할 수 있습니다.", true);
         return;
+    }
+
+    if (DetailModal && DetailModal.create) {
+        detailModal = DetailModal.create({
+            modalId: "stl-detail-modal",
+            panelId: "stl-detail-panel",
+            listEl: listEl,
+            itemSelector: ".ol-admin-item",
+            onDismiss: function () {
+                selectedId = "";
+            }
+        });
     }
 
     defaultDates();

@@ -12,6 +12,7 @@
     <title>주문서관리 — 더존</title>
     <link rel="stylesheet" href="common.css">
     <link rel="stylesheet" href="admin-manage.css">
+    <link rel="stylesheet" href="order-detail-modal.css">
     <style>
         .ol-admin-list { list-style: none; margin: 0; padding: 0; }
         .ol-list-scroll {
@@ -51,42 +52,7 @@
             box-shadow: 0 0 0 2px rgba(10, 77, 156, 0.15);
         }
         .ol-admin-item:focus-visible { outline: 2px solid var(--dz-blue, #0a4d9c); outline-offset: 2px; }
-        #ol-detail {
-            margin-top: 1.25rem;
-            padding: 1rem 1.1rem;
-            background: #f8fafc;
-            border: 1px solid #d4e2f0;
-            border-radius: 12px;
-        }
-        #ol-detail[hidden] { display: none !important; }
         .ol-detail-title { margin: 0 0 0.75rem; font-size: 1.1rem; color: #052a4d; }
-        .ol-detail-loading { margin: 0; color: #3d5166; }
-        .ol-detail-actions { margin-top: 1rem; display: flex; gap: 0.5rem; flex-wrap: wrap; }
-        .order-detail-meta {
-            display: grid;
-            grid-template-columns: auto 1fr;
-            gap: 0.3rem 1rem;
-            margin: 0 0 1rem;
-            font-size: 0.92rem;
-        }
-        .order-detail-meta dt { font-weight: 700; color: #2a4a5e; margin: 0; }
-        .order-detail-meta dd { margin: 0; }
-        .order-detail-table-wrap {
-            overflow-x: auto;
-            background: #fff;
-            border: 1px solid #e0e6ed;
-            border-radius: 8px;
-        }
-        .order-detail-table { width: 100%; border-collapse: collapse; font-size: 0.88rem; }
-        .order-detail-table th,
-        .order-detail-table td {
-            padding: 0.5rem 0.6rem;
-            border-bottom: 1px solid #e8edf2;
-            text-align: left;
-        }
-        .order-detail-table th { background: #f4f7fb; }
-        .order-detail-total { margin: 0.75rem 0 0; text-align: right; font-size: 1rem; }
-        .order-detail-empty { margin: 0; color: #5a6d7e; }
         .ol-date-input { min-width: 10rem; }
         .ol-vendor-input { min-width: 14rem; cursor: pointer; background: #fff; }
         .ol-filter-row {
@@ -158,6 +124,7 @@
     <script src="thejhon-api.js"></script>
     <script src="auth.js"></script>
     <script src="order-ui.js"></script>
+    <script src="order-detail-modal.js"></script>
     <script src="admin-header.js"></script>
     <script src="nav.js" defer></script>
 </head>
@@ -209,7 +176,6 @@
             <input type="date" id="ol-date-to" class="ol-date-input">
         </div>
         <div id="ol-list" class="ol-list-scroll"></div>
-        <div id="ol-detail" hidden aria-live="polite"></div>
         <div id="ol-vendor-modal" class="ol-picker-modal" hidden role="dialog" aria-modal="true" aria-labelledby="ol-vendor-modal-title">
             <div class="ol-picker-panel">
                 <h2 id="ol-vendor-modal-title" class="ol-detail-title">업체 선택</h2>
@@ -228,6 +194,16 @@
             <p class="site-footer-company-msg" id="siteFooterCompanyMsg" hidden></p>
 </div>
     </footer>
+    <div
+        id="ol-detail-modal"
+        class="odm-modal"
+        hidden
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="odm-detail-title"
+    >
+        <div id="ol-detail-panel" class="odm-panel" aria-live="polite"></div>
+    </div>
     <script src="order-list-admin.js"></script>
 </body>
 </html>
