@@ -78,19 +78,63 @@
     return document.getElementById("companyIntroGalleryAek");
   }
 
-  function bindAkGalleryScroll(track, pageEl) {
-    if (!track || track.dataset.scrollBound) return;
-    track.dataset.scrollBound = "1";
-    function updatePage() {
-      if (!pageEl) return;
-      var w = track.clientWidth || 1;
-      var idx = Math.round(track.scrollLeft / w) + 1;
-      if (idx < 1) idx = 1;
-      if (idx > AEK_GALLERY_COUNT) idx = AEK_GALLERY_COUNT;
-      pageEl.textContent = idx + " / " + AEK_GALLERY_COUNT;
+  function akGallerySlideWidth(track) {
+    return track.clientWidth || 1;
+  }
+
+  function akGalleryCurrentIndex(track) {
+    var idx = Math.round(track.scrollLeft / akGallerySlideWidth(track)) + 1;
+    if (idx < 1) idx = 1;
+    if (idx > AEK_GALLERY_COUNT) idx = AEK_GALLERY_COUNT;
+    return idx;
+  }
+
+  function akGalleryGoTo(track, index) {
+    var idx = Math.max(1, Math.min(AEK_GALLERY_COUNT, index));
+    var left = (idx - 1) * akGallerySlideWidth(track);
+    if (track.scrollTo) {
+      track.scrollTo({ left: left, behavior: "smooth" });
+    } else {
+      track.scrollLeft = left;
     }
-    track.addEventListener("scroll", updatePage, { passive: true });
-    updatePage();
+  }
+
+  function bindAkGalleryControls(track, pageEl) {
+    if (!track || track.dataset.controlsBound) return;
+    track.dataset.controlsBound = "1";
+    var prevBtn = document.getElementById("companyIntroGalleryAekPrev");
+    var nextBtn = document.getElementById("companyIntroGalleryAekNext");
+
+    function refreshGalleryUi() {
+      var idx = akGalleryCurrentIndex(track);
+      if (pageEl) pageEl.textContent = idx + " / " + AEK_GALLERY_COUNT;
+      if (prevBtn) prevBtn.disabled = idx <= 1;
+      if (nextBtn) nextBtn.disabled = idx >= AEK_GALLERY_COUNT;
+    }
+
+    track.addEventListener("scroll", refreshGalleryUi, { passive: true });
+    window.addEventListener(
+      "resize",
+      function () {
+        refreshGalleryUi();
+      },
+      { passive: true }
+    );
+
+    if (prevBtn) {
+      prevBtn.hidden = false;
+      prevBtn.addEventListener("click", function () {
+        akGalleryGoTo(track, akGalleryCurrentIndex(track) - 1);
+      });
+    }
+    if (nextBtn) {
+      nextBtn.hidden = false;
+      nextBtn.addEventListener("click", function () {
+        akGalleryGoTo(track, akGalleryCurrentIndex(track) + 1);
+      });
+    }
+
+    refreshGalleryUi();
   }
 
   function buildAkGallery() {
@@ -113,7 +157,7 @@
         "</figure>";
     }
     track.innerHTML = html;
-    bindAkGalleryScroll(track, document.getElementById("companyIntroGalleryAekPage"));
+    bindAkGalleryControls(track, document.getElementById("companyIntroGalleryAekPage"));
     track.scrollLeft = 0;
   }
 
@@ -122,6 +166,10 @@
     if (!section) return;
     if (!show) {
       section.hidden = true;
+      var prevHide = document.getElementById("companyIntroGalleryAekPrev");
+      var nextHide = document.getElementById("companyIntroGalleryAekNext");
+      if (prevHide) prevHide.hidden = true;
+      if (nextHide) nextHide.hidden = true;
       return;
     }
     buildAkGallery();
