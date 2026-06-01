@@ -1,10 +1,11 @@
-/* 주문서·발주서·거래명세서 — 조회 필터 */
+/* 주문서·발주서·거래명세서 — 조회 필터 (관리자 주문서관리와 동일 레이아웃) */
 .ol-query-filters {
     margin: 0 0 1rem;
     padding: 0.85rem 1rem;
     background: #f8fafc;
     border: 1px solid #d4e2f0;
     border-radius: 10px;
+    box-sizing: border-box;
 }
 .ol-query-filters__section {
     margin: 0;
@@ -32,10 +33,6 @@
 .ol-query-filters__row:last-child {
     margin-bottom: 0;
 }
-.ol-query-filters__row--actions {
-    justify-content: flex-end;
-    margin-top: 0.15rem;
-}
 .ol-query-filters__row label {
     flex: 0 0 4.75rem;
     font-size: 0.85rem;
@@ -58,6 +55,40 @@
     cursor: pointer;
     background: #fff;
 }
-.shub-panel .ol-query-filters {
-    margin-bottom: 0.85rem;
+/* 업체·담당 관리자 + 조회 버튼 한 줄 (관리자 주문서관리와 동일) */
+.ol-query-filters__row--query .ol-vendor-input,
+.ol-query-filters__row--query select {
+    flex: 1 1 8rem;
+}
+.ol-query-filters__row--query .btn {
+    flex: 0 0 auto;
+    white-space: nowrap;
+}
+.shub-page .ol-query-filters {
+    margin-bottom: 1rem;
+}
+
+@media (max-width: 720px) {
+    .ol-query-filters {
+        padding: 0.75rem 0.85rem;
+    }
+    .ol-query-filters__heading {
+        font-size: 0.88rem;
+    }
+    .ol-query-filters__row label {
+        flex: 0 0 4.25rem;
+        font-size: 0.82rem;
+    }
+    .ol-query-filters__row input[type="date"],
+    .ol-query-filters__row select,
+    .ol-query-filters__row .ol-vendor-input {
+        flex: 1 1 calc(100% - 5rem);
+        min-height: 2.5rem;
+        font-size: 16px;
+    }
+    .ol-query-filters__row--query .btn {
+        min-height: 2.5rem;
+        padding-left: 0.85rem;
+        padding-right: 0.85rem;
+    }
 }

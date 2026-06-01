@@ -66,8 +66,8 @@
         <p class="shub-subnav"><a href="staff-manage-hub.html">← 관리자관리</a></p>
         <h1>거래명세서</h1>
         <p id="stl-status" class="shub-status" role="status" aria-live="polite"></p>
-        <section class="shub-panel">
-            <section class="ol-query-filters" aria-labelledby="stl-filter-period-heading">
+        <div class="ol-query-filters" aria-label="거래명세서 조회 조건">
+            <section class="ol-query-filters__section" aria-labelledby="stl-filter-period-heading">
                 <h2 id="stl-filter-period-heading" class="ol-query-filters__heading">기간으로조회</h2>
                 <div class="ol-query-filters__row">
                     <label for="stl-date-from">시작일</label>
@@ -77,16 +77,19 @@
                     <label for="stl-date-to">종료일</label>
                     <input type="date" id="stl-date-to">
                 </div>
-                <div class="ol-query-filters__row">
+            </section>
+            <section class="ol-query-filters__section" aria-labelledby="stl-filter-admin-heading">
+                <h2 id="stl-filter-admin-heading" class="ol-query-filters__heading">담당관리자조회</h2>
+                <div class="ol-query-filters__row ol-query-filters__row--query">
                     <label for="stl-admin">담당 관리자</label>
                     <select id="stl-admin">
                         <option value="">전체</option>
                     </select>
-                </div>
-                <div class="ol-query-filters__row ol-query-filters__row--actions">
                     <button type="button" class="btn btn-primary" id="stl-search">조회</button>
                 </div>
             </section>
+        </div>
+        <section class="shub-panel">
             <div id="stl-summary" class="shub-summary" hidden></div>
             <div id="stl-list" class="ol-list-scroll"></div>
         </section>
