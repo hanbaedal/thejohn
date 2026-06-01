@@ -32,13 +32,7 @@
     return String(company || "").indexOf("우일푸드") !== -1;
   }
 
-  var AEK_LOGIN_IDS = [
-    "ak20140516",
-    "aksangsa",
-    "aemae",
-    "st_admin_aksangsa",
-    "st_admin_aemae"
-  ];
+  var AEK_LOGIN_ID = "ak20140516";
 
   function normalizeCompanyKey(company) {
     return String(company || "")
@@ -53,14 +47,11 @@
   }
 
   function matchesAkSangsaByLoginId(loginId) {
-    var id = String(loginId || "")
-      .trim()
-      .toLowerCase();
-    if (!id) return false;
-    for (var i = 0; i < AEK_LOGIN_IDS.length; i++) {
-      if (id === AEK_LOGIN_IDS[i]) return true;
-    }
-    return false;
+    return (
+      String(loginId || "")
+        .trim()
+        .toLowerCase() === AEK_LOGIN_ID
+    );
   }
 
   function matchesAkSangsaByCompany(company) {
