@@ -1,6 +1,7 @@
 /**
  * 푸터 — 저작권 문구 + 소셜 아이콘(페이스북·인스타·네이버카페·유튜브·카카오)
- * - 페이스북·인스타·네이버카페·유튜브·카카오: 로그인(관리자·슈퍼바이저·업체) 시 staff-profile, 비로그인 시 공용 URL
+ * - 페이스북·인스타·네이버카페·유튜브: 로그인 시 staff-profile, 비로그인 시 공용 URL
+ * - 카카오톡 채널 채팅: 항상 (주)더존 고정 URL (staff st_kakao 무시)
  */
 (function (global) {
     var KAKAO_CHAT_URL = "https://pf.kakao.com/_xavxlxjX/chat";
@@ -124,8 +125,7 @@
         replaceSocialBtn(nav, "instagram", u.instagram, "인스타그램");
         replaceSocialBtn(nav, "navercafe", u.naverCafe, "네이버 카페");
         replaceSocialBtn(nav, "youtube", u.youtube, "유튜브");
-        var kakaoUrl = normalizeKakaoChatUrl(String(u.kakao || "").trim() || KAKAO_CHAT_URL);
-        replaceSocialBtn(nav, "kakao", kakaoUrl, "카카오톡 채널 채팅");
+        replaceSocialBtn(nav, "kakao", KAKAO_CHAT_URL, "카카오톡 채널 채팅");
     }
 
     function getPublicUrls() {
@@ -145,7 +145,7 @@
             instagram: st.st_instagram || "",
             naverCafe: st.st_naver_cafe || "",
             youtube: st.st_youtube || "",
-            kakao: st.st_kakao || ""
+            kakao: KAKAO_CHAT_URL
         };
     }
 
