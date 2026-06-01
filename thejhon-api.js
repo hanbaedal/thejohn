@@ -398,6 +398,22 @@
                 return res.blob();
             });
         },
+        fetchTransactionPdfBlob: function (orderId) {
+            var url = apiUrl("/api/orders/" + encodeURIComponent(orderId) + "/transaction-pdf");
+            return fetch(url, { method: "GET", headers: headers() }).then(function (res) {
+                if (!res.ok) {
+                    return res.text().then(function (text) {
+                        var msg = "거래명세서 PDF를 불러오지 못했습니다.";
+                        try {
+                            var data = JSON.parse(text);
+                            if (data && data.error) msg = data.error;
+                        } catch (e) {}
+                        throw new Error(msg);
+                    });
+                }
+                return res.blob();
+            });
+        },
         listSupportNews: function (opts) {
             var q = "";
             if (opts && opts.dept) {

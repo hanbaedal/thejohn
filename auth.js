@@ -600,7 +600,9 @@
     var STAFF_MANAGE_PAGES = [
         "staff-manage-hub.html",
         "staff-manage.html",
+        "staff-list-admin.html",
         "supervisor-order-list.html",
+        "supervisor-transaction-list.html",
         "supervisor-access-stats.html",
         "supervisor-db-stats.html"
     ];

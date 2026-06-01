@@ -5,7 +5,8 @@ const { buildOrderPdfBuffer } = require("../lib/orderPdf");
 const { notifyOrderAdmin } = require("../lib/orderNotify");
 const { findVendorByLoginId } = require("../lib/loginResolve");
 const { resolveVendorUnitPrice } = require("../lib/vendorPricing");
-const { buildEnrichedOrder, prepareOrderForPdf } = require("../lib/orderEnrich");
+const { buildEnrichedOrder, prepareOrderForPdf, prepareOrderForTransactionPdf } = require("../lib/orderEnrich");
+const { buildTransactionPdfBuffer } = require("../lib/transactionPdf");
 const { deptLabel } = require("../lib/orderDeptLabels");
 const { F: PF } = require("../lib/productFields");
 const {
@@ -341,6 +342,33 @@ router.post("/", requireRole("vendor"), async function (req, res) {
     } catch (e) {
         console.error("POST /api/orders", e);
         return res.status(500).json({ ok: false, error: "주문 처리 중 오류가 발생했습니다." });
+    }
+});
+
+router.get("/:id/transaction-pdf", requireRole("vendor", "admin", "supervisor"), async function (req, res) {
+    try {
+        const id = String(req.params.id || "");
+        const order = await getDb().collection("orders").findOne({ id: id });
+        if (!order) {
+            return res.status(404).json({ ok: false, error: "주문을 찾을 수 없습니다." });
+        }
+        if (!(await staffCanReadOrder(req.auth, order))) {
+            return res.status(403).json({ ok: false, error: "권한이 없습니다." });
+        }
+        const pdfOrder = await prepareOrderForTransactionPdf(getDb(), order);
+        const buf = await buildTransactionPdfBuffer(pdfOrder);
+        const company = safeFilePart(pdfOrder.vendorCompany || "거래명세서");
+        const date = ymd(pdfOrder.createdAt);
+        const fname = "거래명세서_" + company + "_" + date + ".pdf";
+        res.setHeader("Content-Type", "application/pdf");
+        res.setHeader(
+            "Content-Disposition",
+            'attachment; filename="' + encodeURIComponent(fname) + '"; filename*=UTF-8\'\'' + encodeURIComponent(fname)
+        );
+        res.send(buf);
+    } catch (e) {
+        console.error("GET order transaction-pdf", e);
+        return res.status(500).json({ ok: false, error: "거래명세서 PDF 생성에 실패했습니다." });
     }
 });
 

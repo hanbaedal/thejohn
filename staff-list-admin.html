@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="auth-storage.js"></script>
+    <script src="site-brand-boot.js"></script>
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#0a4d9c">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-title" content="더존">
+    <title>관리자 리스트 — 더존</title>
+    <link rel="stylesheet" href="common.css">
+    <link rel="stylesheet" href="admin-manage.css">
+    <link rel="stylesheet" href="address-fields.css">
+    <link rel="stylesheet" href="staff-manage.css">
+    <script src="api-config.js"></script>
+    <script src="thejhon-api.js"></script>
+    <script src="auth.js"></script>
+    <script src="admin-header.js"></script>
+    <script src="nav.js" defer></script>
+</head>
+<body>
+    <header class="site-header">
+        <div class="site-header-start">
+            <a href="index.html" class="dz-logo dz-logo--compact" aria-label="더존 홈"><img src="img/logo.png" alt="" width="72" height="72" class="dz-logo-img"></a>
+            <nav class="site-header-nav" aria-label="주요 메뉴">
+                <a href="company.html" class="header-nav-link">회사소개</a>
+                <a href="products.html" class="header-nav-link">사업부문</a>
+                <a href="staff-manage-hub.html" class="header-nav-link is-current">관리자관리</a>
+                <a href="product-register.html" class="header-nav-link">상품등록</a>
+                <a href="vendor-register.html" class="header-nav-link">업체등록</a>
+                <div class="nav-dropdown" data-nav-dropdown="support">
+                    <a href="support.html" class="header-nav-link nav-dropdown-trigger" aria-haspopup="true" aria-expanded="false" aria-controls="supportSubmenu">고객센터</a>
+                    <div id="supportSubmenu" class="nav-dropdown-panel" role="menu" aria-label="고객센터 하위 메뉴">
+                        <a href="support-partners.html" class="nav-dropdown-item" role="menuitem">파트너회사 소개</a>
+                        <a href="support-library.html" class="nav-dropdown-item" role="menuitem">최근소식</a>
+                        <a href="support-qna.html" class="nav-dropdown-item" role="menuitem">자유게시판</a>
+                        <a href="support-inquiry.html" class="nav-dropdown-item" role="menuitem">문의사항</a>
+                    </div>
+                </div>
+            </nav>
+        </div>
+        <nav class="site-header-actions" aria-label="계정">
+            <time class="header-date" id="headerToday" datetime=""></time>
+            <button type="button" class="btn btn-auth-icon btn-logout" id="btnLogout" hidden aria-label="로그아웃" title="로그아웃"></button>
+        </nav>
+    </header>
+    <main class="page-main page-main--hide-scrollbar sm-page">
+        <p class="am-subnav"><a href="staff-manage-hub.html">← 관리자관리</a></p>
+        <h1>관리자 리스트</h1>
+        <p class="sm-intro">슈퍼바이저 전용 — 목록에서 선택해 수정·삭제·접속·주문 권한을 설정합니다. 신규 등록은 <a href="staff-manage.html">관리자 등록</a>에서 합니다.</p>
+        <p id="sm-status" class="sm-status" role="status" aria-live="polite"></p>
+        <div id="sm-list"></div>
+    </main>
+
+    <div id="sm-edit-modal" class="sm-modal" hidden role="dialog" aria-modal="true" aria-labelledby="sm-edit-title">
+        <div class="sm-modal__panel">
+            <div class="sm-modal__head">
+                <h2 id="sm-edit-title" class="sm-modal__title">관리자 수정</h2>
+                <button type="button" class="sm-modal__close" id="sm-edit-close" aria-label="닫기">×</button>
+            </div>
+            <form id="sm-edit-form" class="sm-grid" novalidate>
+                <input type="hidden" id="sm-edit-id" name="id">
+                <div class="sm-field sm-field--full">
+                    <label for="sm-edit-loginId">아이디</label>
+                    <input type="text" id="sm-edit-loginId" name="loginId" autocomplete="username" required minlength="6" maxlength="12" pattern="[a-zA-Z0-9_-]+">
+                    <p class="sm-field-hint">최초 등록 후 변경 시 6~12자(영문·숫자·_·-). 변경 시 이 관리자가 담당한 업체·상품·주문·게시글 등 연동 정보가 함께 갱신됩니다.</p>
+                </div>
+                <div class="sm-field sm-field--full">
+                    <label for="sm-edit-password">비밀번호 <small>(변경 시에만 입력)</small></label>
+                    <input type="password" id="sm-edit-password" name="password" autocomplete="new-password" placeholder="비워 두면 유지">
+                </div>
+                <div class="sm-field">
+                    <label for="sm-edit-st_company">회사명</label>
+                    <input type="text" id="sm-edit-st_company" name="st_company" required>
+                </div>
+                <div class="sm-field sm-field--full pr-photo-field">
+                    <span class="pr-photo-label" id="sm-edit-logo-label">회사 로고</span>
+                    <input type="file" id="sm-edit-logo-gallery" class="pr-photo-file-input" accept="image/*,.heic,.heif">
+                    <input type="file" id="sm-edit-logo-camera" class="pr-photo-file-input" accept="image/*" capture="environment">
+                    <div class="pr-photo-actions" role="group" aria-labelledby="sm-edit-logo-label">
+                        <button type="button" class="pr-photo-btn" id="sm-edit-logo-gallery-btn">앨범·파일에서 선택</button>
+                        <button type="button" class="pr-photo-btn pr-photo-btn--camera" id="sm-edit-logo-camera-btn">카메라로 촬영</button>
+                        <button type="button" class="btn btn-secondary sm-logo-clear-btn" id="sm-edit-logo-clear" hidden>로고 제거</button>
+                    </div>
+                    <p class="sm-field-hint">로그인 시 사이트 헤더·앱 아이콘으로 표시됩니다. 어떤 크기든 512×512px로 자동 맞춤 저장됩니다.</p>
+                    <img id="sm-edit-logo-preview" class="sm-logo-preview pr-photo-preview tj-image-preview" alt="로고 미리보기" width="96" height="96" hidden>
+                </div>
+                <div class="sm-field">
+                    <label for="sm-edit-st_biz_no">사업자등록번호</label>
+                    <input type="text" id="sm-edit-st_biz_no" name="st_biz_no" inputmode="numeric">
+                </div>
+                <div class="sm-field">
+                    <label for="sm-edit-st_ceo">대표자명</label>
+                    <input type="text" id="sm-edit-st_ceo" name="st_ceo">
+                </div>
+                <div class="sm-field">
+                    <label for="sm-edit-st_ceo_tel">대표 연락처</label>
+                    <input type="tel" id="sm-edit-st_ceo_tel" name="st_ceo_tel">
+                </div>
+                <div class="sm-field">
+                    <label for="sm-edit-st_phone">회사전화</label>
+                    <input type="tel" id="sm-edit-st_phone" name="st_phone" autocomplete="tel">
+                </div>
+                <div class="sm-field">
+                    <label for="sm-edit-st_fax">회사팩스</label>
+                    <input type="tel" id="sm-edit-st_fax" name="st_fax" inputmode="tel">
+                </div>
+                <div class="sm-field">
+                    <label for="sm-edit-st_web">홈페이지</label>
+                    <input type="url" id="sm-edit-st_web" name="st_web" placeholder="https://">
+                </div>
+                <div class="sm-field">
+                    <label for="sm-edit-st_email">이메일</label>
+                    <input type="email" id="sm-edit-st_email" name="st_email" autocomplete="email">
+                </div>
+                <div class="sm-field">
+                    <label for="sm-edit-st_biz_type">업태</label>
+                    <input type="text" id="sm-edit-st_biz_type" name="st_biz_type">
+                </div>
+                <div class="sm-field">
+                    <label for="sm-edit-st_biz_item">업종</label>
+                    <input type="text" id="sm-edit-st_biz_item" name="st_biz_item">
+                </div>
+                <div class="sm-field sm-field--full" id="sm-edit-address-mount"></div>
+                <div class="sm-field sm-field--full">
+                    <p class="sm-section-label">푸터 SNS (페이스북·인스타·네이버카페·유튜브·카카오)</p>
+                </div>
+                <div class="sm-field">
+                    <label for="sm-edit-st_facebook">페이스북</label>
+                    <input type="url" id="sm-edit-st_facebook" name="st_facebook" placeholder="https://">
+                </div>
+                <div class="sm-field">
+                    <label for="sm-edit-st_instagram">인스타그램</label>
+                    <input type="url" id="sm-edit-st_instagram" name="st_instagram" placeholder="https://">
+                </div>
+                <div class="sm-field">
+                    <label for="sm-edit-st_naver_cafe">네이버 카페</label>
+                    <input type="url" id="sm-edit-st_naver_cafe" name="st_naver_cafe" placeholder="https://">
+                </div>
+                <div class="sm-field">
+                    <label for="sm-edit-st_youtube">유튜브</label>
+                    <input type="url" id="sm-edit-st_youtube" name="st_youtube" placeholder="https://">
+                </div>
+                <div class="sm-field sm-field--full">
+                    <label for="sm-edit-st_kakao">카카오톡 채널 (채팅 URL)</label>
+                    <input type="text" id="sm-edit-st_kakao" name="st_kakao" placeholder="https://pf.kakao.com/_채널ID/chat 또는 _채널ID" autocomplete="off">
+                    <p class="sm-field-hint">채널 관리자센터(center-pf.kakao.com) → 1:1 채팅 → <strong>사용함</strong> 설정 후, 채널 정보의 <strong>채팅 URL</strong>을 입력하세요.</p>
+                </div>
+                <div class="sm-field sm-field--full sm-actions">
+                    <button type="submit" class="btn btn-primary">저장</button>
+                    <button type="button" class="btn" id="sm-edit-cancel">취소</button>
+                    <button type="button" class="btn sm-btn--danger" id="sm-edit-delete" hidden>삭제</button>
+                </div>
+            </form>
+            <p id="sm-edit-msg" class="sm-status" hidden></p>
+        </div>
+    </div>
+
+    <footer class="site-footer">
+        <div class="site-footer-inner">
+            <dl class="site-footer-grid" id="siteFooterCompanyGrid" aria-live="polite"></dl>
+            <p class="site-footer-company-msg" id="siteFooterCompanyMsg" hidden></p>
+        </div>
+    </footer>
+    <script src="product-form-shared.js"></script>
+    <script src="address-fields.js"></script>
+    <script src="staff-list-admin.js"></script>
+    <script>
+        (function () {
+            var todayEl = document.getElementById("headerToday");
+            if (todayEl) {
+                var now = new Date();
+                todayEl.dateTime = now.toISOString().slice(0, 10);
+                todayEl.textContent = now.toLocaleDateString("ko-KR", {
+                    year: "numeric",
+                    month: "long",
+                    day: "numeric",
+                    weekday: "long"
+                });
+            }
+            var logoutBtn = document.getElementById("btnLogout");
+            if (logoutBtn) {
+                logoutBtn.hidden = !(window.THEJHON_AUTH && THEJHON_AUTH.isLoggedIn());
+            }
+        })();
+    </script>
+</body>
+</html>
