@@ -7,9 +7,32 @@
     var OrderUI = window.THEJHON_ORDER_UI;
     var accessMsgEl = document.getElementById("cart-access-msg");
     var historyListEl = document.getElementById("cart-history-list");
+    var historyModalEl = document.getElementById("cart-history-detail-modal");
     var historyDetailEl = document.getElementById("cart-history-detail");
     var historyStatusEl = document.getElementById("cart-history-status");
     var selectedHistoryId = "";
+
+    function openDetailModal() {
+        if (!historyModalEl) return;
+        historyModalEl.hidden = false;
+        document.body.style.overflow = "hidden";
+    }
+
+    function closeDetailModal() {
+        if (historyModalEl) historyModalEl.hidden = true;
+        if (historyDetailEl) historyDetailEl.innerHTML = "";
+        document.body.style.overflow = "";
+    }
+
+    function dismissHistoryDetail() {
+        selectedHistoryId = "";
+        if (historyListEl) {
+            historyListEl.querySelectorAll(".cart-history-item").forEach(function (li) {
+                li.classList.remove("is-selected");
+            });
+        }
+        closeDetailModal();
+    }
 
     function escapeHtml(s) {
         return String(s)
@@ -23,7 +46,7 @@
         if (!accessMsgEl) return;
         accessMsgEl.innerHTML = html;
         if (historyListEl) historyListEl.innerHTML = "";
-        if (historyDetailEl) historyDetailEl.hidden = true;
+        dismissHistoryDetail();
         if (historyStatusEl) historyStatusEl.textContent = "";
     }
 
@@ -50,18 +73,33 @@
     function showHistoryDetail(order) {
         if (!historyDetailEl || !OrderUI) return;
         if (!order) {
-            historyDetailEl.hidden = true;
-            historyDetailEl.innerHTML = "";
+            closeDetailModal();
             return;
         }
-        historyDetailEl.hidden = false;
+        openDetailModal();
         historyDetailEl.innerHTML =
-            '<h2 class="cart-section-title" style="margin:0 0 0.75rem;font-size:1.05rem">주문 상세</h2>' +
-            OrderUI.renderOrderDetailHtml(order, { showVendor: false }) +
+            '<div class="cart-detail-head">' +
+            '<h2 id="cart-detail-title" class="cart-detail-title">주문 상세</h2>' +
+            '<button type="button" class="cart-detail-modal__close" id="cart-history-head-close" aria-label="닫기">×</button>' +
+            "</div>" +
+            '<div class="cart-detail-layout">' +
+            '<div class="cart-detail-meta-wrap">' +
+            OrderUI.renderOrderDetailMetaHtml(order, { showVendor: false }) +
+            "</div>" +
+            '<div class="cart-detail-items-scroll" tabindex="0" aria-label="주문 품목 목록">' +
+            OrderUI.renderOrderDetailItemsHtml(order) +
+            "</div>" +
+            '<div class="cart-detail-foot">' +
+            OrderUI.renderOrderDetailTotalHtml(order) +
             '<div class="cart-actions-row">' +
             '<button type="button" class="btn btn-primary" id="cart-history-pdf">PDF 저장</button>' +
             '<button type="button" class="btn" id="cart-history-delete">삭제</button>' +
-            "</div>";
+            '<button type="button" class="btn" id="cart-history-close-btn">닫기</button>' +
+            "</div></div></div>";
+        var closeBtn = document.getElementById("cart-history-close-btn");
+        if (closeBtn) closeBtn.addEventListener("click", dismissHistoryDetail);
+        var headCloseBtn = document.getElementById("cart-history-head-close");
+        if (headCloseBtn) headCloseBtn.addEventListener("click", dismissHistoryDetail);
         var pdfBtn = document.getElementById("cart-history-pdf");
         if (pdfBtn) {
             pdfBtn.addEventListener("click", function () {
@@ -87,8 +125,7 @@
                 delBtn.disabled = true;
                 Api.deleteOrder(order.id)
                     .then(function () {
-                        selectedHistoryId = "";
-                        showHistoryDetail(null);
+                        dismissHistoryDetail();
                         renderOrderHistory();
                     })
                     .catch(function (err) {
@@ -109,8 +146,8 @@
             });
         }
         if (!historyDetailEl) return;
-        historyDetailEl.hidden = false;
-        historyDetailEl.innerHTML = '<p class="cart-empty">불러오는 중…</p>';
+        openDetailModal();
+        historyDetailEl.innerHTML = '<p class="cart-empty" style="padding:1rem">불러오는 중…</p>';
         Api.getOrder(id)
             .then(function (order) {
                 showHistoryDetail(order);
@@ -163,9 +200,7 @@
                     li.addEventListener("click", function () {
                         var oid = li.getAttribute("data-order-id");
                         if (selectedHistoryId === oid) {
-                            selectedHistoryId = "";
-                            li.classList.remove("is-selected");
-                            showHistoryDetail(null);
+                            dismissHistoryDetail();
                             return;
                         }
                         selectHistoryOrder(oid);
@@ -184,6 +219,22 @@
                 }
             });
     }
+
+    if (historyDetailEl) {
+        historyDetailEl.addEventListener("click", function (e) {
+            e.stopPropagation();
+        });
+    }
+    if (historyModalEl) {
+        historyModalEl.addEventListener("click", function (e) {
+            if (e.target === historyModalEl) dismissHistoryDetail();
+        });
+    }
+    document.addEventListener("keydown", function (e) {
+        if (e.key === "Escape" && historyModalEl && !historyModalEl.hidden) {
+            dismissHistoryDetail();
+        }
+    });
 
     renderOrderHistory();
     window.addEventListener("thejhon-orders-updated", renderOrderHistory);

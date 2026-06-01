@@ -25,29 +25,17 @@
         opts = opts || {};
         if (!order) return '<p class="order-detail-empty">주문 정보가 없습니다.</p>';
 
-        var rows = (order.items || [])
-            .map(function (it, idx) {
-                return (
-                    "<tr><td>" +
-                    escapeHtml(String(idx + 1)) +
-                    "</td><td>" +
-                    escapeHtml(it.productName || "") +
-                    (it.pd_size ? "<br><small>" + escapeHtml(it.pd_size) + "</small>" : "") +
-                    "</td><td>" +
-                    escapeHtml(it.pd_dept_label || it.pd_dept || "") +
-                    "</td><td>" +
-                    escapeHtml(it.priceLabel || "") +
-                    " " +
-                    escapeHtml(formatWon(it.unitPrice)) +
-                    "</td><td>" +
-                    escapeHtml(String(it.quantity || 0)) +
-                    "</td><td>" +
-                    escapeHtml(formatWon(it.lineTotal)) +
-                    "</td></tr>"
-                );
-            })
-            .join("");
+        return (
+            '<div class="order-detail-panel">' +
+            renderOrderDetailMetaHtml(order, opts) +
+            renderOrderDetailItemsHtml(order) +
+            renderOrderDetailTotalHtml(order) +
+            "</div>"
+        );
+    }
 
+    function buildOrderDetailMeta(order, opts) {
+        opts = opts || {};
         var meta = [];
         meta.push("<dt>주문번호</dt><dd>" + escapeHtml(order.orderNo || order.id || "") + "</dd>");
         meta.push("<dt>주문일시</dt><dd>" + escapeHtml(formatDate(order.createdAt)) + "</dd>");
@@ -72,21 +60,53 @@
         if (order.note) {
             meta.push("<dt>비고</dt><dd>" + escapeHtml(order.note) + "</dd>");
         }
+        return meta;
+    }
 
+    function renderOrderDetailMetaHtml(order, opts) {
+        if (!order) return "";
+        return '<dl class="order-detail-meta">' + buildOrderDetailMeta(order, opts).join("") + "</dl>";
+    }
+
+    function renderOrderDetailItemsHtml(order) {
+        if (!order) return "";
+        var rows = (order.items || [])
+            .map(function (it, idx) {
+                return (
+                    "<tr><td data-label=\"#\">" +
+                    escapeHtml(String(idx + 1)) +
+                    '</td><td data-label="상품">' +
+                    escapeHtml(it.productName || "") +
+                    (it.pd_size ? "<br><small>" + escapeHtml(it.pd_size) + "</small>" : "") +
+                    '</td><td data-label="부문">' +
+                    escapeHtml(it.pd_dept_label || it.pd_dept || "") +
+                    '</td><td data-label="단가">' +
+                    escapeHtml(it.priceLabel || "") +
+                    " " +
+                    escapeHtml(formatWon(it.unitPrice)) +
+                    '</td><td data-label="수량">' +
+                    escapeHtml(String(it.quantity || 0)) +
+                    '</td><td data-label="금액">' +
+                    escapeHtml(formatWon(it.lineTotal)) +
+                    "</td></tr>"
+                );
+            })
+            .join("");
         return (
-            '<div class="order-detail-panel">' +
-            '<dl class="order-detail-meta">' +
-            meta.join("") +
-            "</dl>" +
             '<div class="order-detail-table-wrap"><table class="order-detail-table"><thead><tr>' +
             "<th>#</th><th>상품</th><th>부문</th><th>단가</th><th>수량</th><th>금액</th>" +
             "</tr></thead><tbody>" +
             (rows || '<tr><td colspan="6">품목 없음</td></tr>') +
-            "</tbody></table></div>" +
+            "</tbody></table></div>"
+        );
+    }
+
+    function renderOrderDetailTotalHtml(order) {
+        if (!order) return "";
+        return (
             '<p class="order-detail-total">합계: <strong>' +
             escapeHtml(formatWon(order.totalAmount)) +
-            "</strong></p>" +
-            "</div>"
+            "</strong></p>"
         );
     }
 
@@ -180,6 +200,9 @@
         formatWon: formatWon,
         formatDate: formatDate,
         renderOrderDetailHtml: renderOrderDetailHtml,
+        renderOrderDetailMetaHtml: renderOrderDetailMetaHtml,
+        renderOrderDetailItemsHtml: renderOrderDetailItemsHtml,
+        renderOrderDetailTotalHtml: renderOrderDetailTotalHtml,
         // 내부 상태: downloadOrderPdfWithAuth 저장명 생성에 사용
         _lastOrderForPdf: null,
         downloadOrderPdfWithAuth: downloadOrderPdfWithAuth,

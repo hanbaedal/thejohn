@@ -40,14 +40,72 @@
         }
         .cart-history-name { display: block; font-weight: 700; color: #052a4d; }
         .cart-history-meta { font-size: 0.85rem; color: #5a6d7e; }
-        #cart-history-detail {
-            margin-top: 1rem;
-            padding: 1rem;
+        /* 주문 상세 — 화면 중앙 모달 (PC·스마트폰 공통) */
+        .cart-detail-modal {
+            position: fixed;
+            inset: 0;
+            z-index: 10000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0.75rem;
+            box-sizing: border-box;
+            background: rgba(5, 42, 77, 0.45);
+            touch-action: manipulation;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .cart-detail-modal[hidden] {
+            display: none !important;
+        }
+        .cart-history-detail-panel {
+            width: min(100%, 40rem);
+            max-height: min(92vh, 44rem);
+            max-height: min(92dvh, 44rem);
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
             background: #f8fafc;
             border: 1px solid #d4e2f0;
-            border-radius: 12px;
+            border-radius: 14px;
+            box-shadow: 0 12px 40px rgba(10, 77, 156, 0.22);
         }
-        #cart-history-detail[hidden] { display: none !important; }
+        .cart-detail-layout {
+            display: flex;
+            flex-direction: column;
+            min-height: 0;
+        }
+        .cart-detail-meta-wrap {
+            flex-shrink: 0;
+        }
+        .cart-detail-meta-wrap .order-detail-meta {
+            margin-bottom: 0.5rem;
+        }
+        .cart-detail-items-scroll {
+            flex: 1 1 auto;
+            min-height: 0;
+            overflow-x: auto;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+            margin-bottom: 0;
+            border: 1px solid #e0e6ed;
+            border-radius: 8px;
+            background: #fff;
+        }
+        .cart-detail-items-scroll .order-detail-table-wrap {
+            border: none;
+            border-radius: 0;
+            margin: 0;
+        }
+        .cart-detail-foot {
+            flex-shrink: 0;
+        }
+        .cart-detail-foot .order-detail-total {
+            margin-top: 0;
+            margin-bottom: 0.45rem;
+        }
         #cart-history-status { margin: 0 0 0.75rem; font-size: 0.88rem; color: #3d5166; }
         .order-detail-meta {
             display: grid;
@@ -74,6 +132,121 @@
         .order-detail-table th { background: #f4f7fb; }
         .order-detail-total { margin: 0.75rem 0 0; text-align: right; font-size: 1rem; }
         .cart-actions-row { margin-top: 0.75rem; display: flex; gap: 0.5rem; flex-wrap: wrap; }
+        .cart-detail-head {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 0.5rem;
+            flex-shrink: 0;
+            padding: 0.75rem 0.85rem 0.4rem;
+            margin-bottom: 0;
+        }
+        .cart-detail-title {
+            margin: 0;
+            font-size: 1.05rem;
+            color: #052a4d;
+        }
+        .cart-detail-modal__close {
+            flex-shrink: 0;
+            border: none;
+            background: transparent;
+            font-size: 1.6rem;
+            line-height: 1;
+            color: #5a6d7e;
+            cursor: pointer;
+            padding: 0.2rem 0.45rem;
+            min-width: 40px;
+            min-height: 40px;
+        }
+        .cart-detail-modal__close:hover {
+            color: #052a4d;
+        }
+        .cart-history-detail-panel .cart-detail-layout {
+            flex: 1 1 auto;
+            min-height: 0;
+            padding: 0 0.85rem;
+        }
+        .cart-history-detail-panel .cart-detail-foot {
+            flex-shrink: 0;
+            padding: 0.4rem 0.85rem;
+            padding-bottom: max(0.65rem, env(safe-area-inset-bottom, 0));
+            background: #f8fafc;
+            border-top: 1px solid #e8edf2;
+        }
+        @media (max-width: 720px) {
+            .cart-detail-modal {
+                padding: 0.5rem;
+            }
+            .cart-history-detail-panel {
+                width: 100%;
+                max-height: min(94vh, 44rem);
+                max-height: min(94dvh, 44rem);
+            }
+            .cart-detail-title {
+                font-size: 0.9rem;
+            }
+            #cart-history-detail .order-detail-meta {
+                font-size: 0.72rem;
+                gap: 0.12rem 0.45rem;
+                margin-bottom: 0.45rem;
+                line-height: 1.35;
+            }
+            #cart-history-detail .order-detail-meta dt {
+                font-size: 0.7rem;
+            }
+            #cart-history-detail .order-detail-table {
+                font-size: 0.66rem;
+            }
+            #cart-history-detail .order-detail-table th,
+            #cart-history-detail .order-detail-table td {
+                padding: 0.25rem 0.3rem;
+                line-height: 1.3;
+            }
+            #cart-history-detail .order-detail-table small {
+                font-size: 0.62rem;
+            }
+            #cart-history-detail .order-detail-total {
+                font-size: 0.8rem;
+                margin-top: 0.4rem;
+            }
+            #cart-history-detail .cart-actions-row {
+                margin-top: 0.45rem;
+                gap: 0.35rem;
+            }
+            #cart-history-detail .cart-actions-row .btn {
+                min-height: 32px;
+                padding: 0.3rem 0.55rem;
+                font-size: 0.74rem;
+            }
+            #cart-history-detail .order-detail-table thead {
+                display: none;
+            }
+            #cart-history-detail .order-detail-table tbody tr {
+                display: block;
+                padding: 0.35rem 0.4rem;
+                border-bottom: 1px solid #e8edf2;
+            }
+            #cart-history-detail .order-detail-table tbody tr:last-child {
+                border-bottom: none;
+            }
+            #cart-history-detail .order-detail-table td {
+                display: block;
+                padding: 0.1rem 0;
+                border: none;
+            }
+            #cart-history-detail .order-detail-table td::before {
+                content: attr(data-label);
+                display: inline-block;
+                font-weight: 700;
+                color: #5a6d7e;
+                min-width: 2.4rem;
+                margin-right: 0.25rem;
+                font-size: 0.62rem;
+            }
+            #cart-history-detail .order-detail-table td:first-child::before {
+                content: "#";
+            }
+        }
     </style>
     <script src="api-config.js"></script>
     <script src="thejhon-api.js"></script>
@@ -114,8 +287,17 @@
         <p id="cart-history-status" role="status" aria-live="polite"></p>
         <div id="cart-access-msg" aria-live="polite"></div>
         <div id="cart-history-list"></div>
-        <div id="cart-history-detail" hidden aria-live="polite"></div>
     </main>
+    <div
+        id="cart-history-detail-modal"
+        class="cart-detail-modal"
+        hidden
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="cart-detail-title"
+    >
+        <div id="cart-history-detail" class="cart-history-detail-panel" aria-live="polite"></div>
+    </div>
         <footer class="site-footer">
         <div class="site-footer-inner">
             <dl class="site-footer-grid" id="siteFooterCompanyGrid" aria-live="polite"></dl>
