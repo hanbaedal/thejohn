@@ -12,6 +12,7 @@
     <link rel="stylesheet" href="admin-manage.css">
     <link rel="stylesheet" href="staff-hub.css">
     <link rel="stylesheet" href="order-detail-modal.css">
+    <link rel="stylesheet" href="order-list-filters.css">
     <style>
         .ol-admin-list { list-style: none; margin: 0; padding: 0; }
         .ol-list-scroll { max-height: 19rem; overflow-y: auto; }
@@ -26,15 +27,6 @@
         .ol-admin-meta { font-size: 0.85rem; color: #5a6d7e; }
         .ol-admin-actions { display: flex; gap: 0.35rem; flex-wrap: wrap; }
         .ol-admin-actions .btn { font-size: 0.8rem; padding: 0.3rem 0.65rem; }
-        .stl-print-hint {
-            margin: 0 0 1rem;
-            padding: 0.65rem 0.85rem;
-            background: #f4f8fc;
-            border: 1px solid #d4e2f0;
-            border-radius: 8px;
-            font-size: 0.88rem;
-            color: #3d556d;
-        }
     </style>
     <script src="api-config.js"></script>
     <script src="thejhon-api.js"></script>
@@ -73,21 +65,28 @@
     <main class="page-main page-main--hide-scrollbar shub-page">
         <p class="shub-subnav"><a href="staff-manage-hub.html">← 관리자관리</a></p>
         <h1>거래명세서</h1>
-        <p class="shub-intro">A4 양식(공급받는자·공급자 2부)으로 PDF를 만들고 BT D100 등 프린터로 인쇄합니다.</p>
-        <p class="stl-print-hint">「인쇄」는 PDF를 연 뒤 브라우저 인쇄 대화상자를 엽니다. 프린터에서 <strong>A4</strong>·<strong>100% 배율</strong>을 선택하세요.</p>
         <p id="stl-status" class="shub-status" role="status" aria-live="polite"></p>
         <section class="shub-panel">
-            <div class="shub-filters">
-                <label for="stl-date-from">시작일</label>
-                <input type="date" id="stl-date-from">
-                <label for="stl-date-to">종료일</label>
-                <input type="date" id="stl-date-to">
-                <label for="stl-admin">담당 관리자</label>
-                <select id="stl-admin">
-                    <option value="">전체</option>
-                </select>
-                <button type="button" class="btn btn-primary" id="stl-search">조회</button>
-            </div>
+            <section class="ol-query-filters" aria-labelledby="stl-filter-period-heading">
+                <h2 id="stl-filter-period-heading" class="ol-query-filters__heading">기간으로조회</h2>
+                <div class="ol-query-filters__row">
+                    <label for="stl-date-from">시작일</label>
+                    <input type="date" id="stl-date-from">
+                </div>
+                <div class="ol-query-filters__row">
+                    <label for="stl-date-to">종료일</label>
+                    <input type="date" id="stl-date-to">
+                </div>
+                <div class="ol-query-filters__row">
+                    <label for="stl-admin">담당 관리자</label>
+                    <select id="stl-admin">
+                        <option value="">전체</option>
+                    </select>
+                </div>
+                <div class="ol-query-filters__row ol-query-filters__row--actions">
+                    <button type="button" class="btn btn-primary" id="stl-search">조회</button>
+                </div>
+            </section>
             <div id="stl-summary" class="shub-summary" hidden></div>
             <div id="stl-list" class="ol-list-scroll"></div>
         </section>

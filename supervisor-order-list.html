@@ -12,6 +12,7 @@
     <link rel="stylesheet" href="admin-manage.css">
     <link rel="stylesheet" href="staff-hub.css">
     <link rel="stylesheet" href="order-detail-modal.css">
+    <link rel="stylesheet" href="order-list-filters.css">
     <style>
         .ol-admin-list { list-style: none; margin: 0; padding: 0; }
         .ol-list-scroll { max-height: 19rem; overflow-y: auto; }
@@ -62,20 +63,28 @@
     <main class="page-main page-main--hide-scrollbar shub-page">
         <p class="shub-subnav"><a href="staff-manage-hub.html">← 관리자관리</a></p>
         <h1>발주서 관리</h1>
-        <p class="shub-intro">시작일·종료일로 조회합니다. 담당 관리자를 선택하지 않으면 전체 발주서가 표시됩니다.</p>
         <p id="sol-status" class="shub-status" role="status"></p>
         <section class="shub-panel">
-            <div class="shub-filters">
-                <label for="sol-date-from">시작일</label>
-                <input type="date" id="sol-date-from">
-                <label for="sol-date-to">종료일</label>
-                <input type="date" id="sol-date-to">
-                <label for="sol-admin">담당 관리자</label>
-                <select id="sol-admin">
-                    <option value="">전체</option>
-                </select>
-                <button type="button" class="btn btn-primary" id="sol-search">조회</button>
-            </div>
+            <section class="ol-query-filters" aria-labelledby="sol-filter-period-heading">
+                <h2 id="sol-filter-period-heading" class="ol-query-filters__heading">기간으로조회</h2>
+                <div class="ol-query-filters__row">
+                    <label for="sol-date-from">시작일</label>
+                    <input type="date" id="sol-date-from">
+                </div>
+                <div class="ol-query-filters__row">
+                    <label for="sol-date-to">종료일</label>
+                    <input type="date" id="sol-date-to">
+                </div>
+                <div class="ol-query-filters__row">
+                    <label for="sol-admin">담당 관리자</label>
+                    <select id="sol-admin">
+                        <option value="">전체</option>
+                    </select>
+                </div>
+                <div class="ol-query-filters__row ol-query-filters__row--actions">
+                    <button type="button" class="btn btn-primary" id="sol-search">조회</button>
+                </div>
+            </section>
             <div id="sol-summary" class="shub-summary" hidden></div>
             <div id="sol-by-admin" class="shub-table-wrap shub-list-scroll" hidden></div>
             <div id="sol-list" class="ol-list-scroll"></div>

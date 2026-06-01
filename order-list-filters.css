@@ -1,0 +1,63 @@
+/* 주문서·발주서·거래명세서 — 조회 필터 */
+.ol-query-filters {
+    margin: 0 0 1rem;
+    padding: 0.85rem 1rem;
+    background: #f8fafc;
+    border: 1px solid #d4e2f0;
+    border-radius: 10px;
+}
+.ol-query-filters__section {
+    margin: 0;
+}
+.ol-query-filters__section + .ol-query-filters__section {
+    margin-top: 0.85rem;
+    padding-top: 0.85rem;
+    border-top: 1px solid #e0e6ed;
+}
+.ol-query-filters__heading {
+    margin: 0 0 0.55rem;
+    padding: 0;
+    font-size: 0.92rem;
+    font-weight: 700;
+    color: #052a4d;
+    line-height: 1.35;
+}
+.ol-query-filters__row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.45rem 0.65rem;
+    margin-bottom: 0.5rem;
+}
+.ol-query-filters__row:last-child {
+    margin-bottom: 0;
+}
+.ol-query-filters__row--actions {
+    justify-content: flex-end;
+    margin-top: 0.15rem;
+}
+.ol-query-filters__row label {
+    flex: 0 0 4.75rem;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #2a4a5e;
+}
+.ol-query-filters__row input[type="date"],
+.ol-query-filters__row select,
+.ol-query-filters__row .ol-vendor-input {
+    flex: 1 1 10rem;
+    min-width: 0;
+    max-width: 100%;
+    padding: 0.4rem 0.55rem;
+    border: 1px solid #c5d0dc;
+    border-radius: 8px;
+    font: inherit;
+    box-sizing: border-box;
+}
+.ol-query-filters__row .ol-vendor-input {
+    cursor: pointer;
+    background: #fff;
+}
+.shub-panel .ol-query-filters {
+    margin-bottom: 0.85rem;
+}

@@ -5,11 +5,10 @@
     var DetailModal = window.THEJHON_ORDER_DETAIL_MODAL;
     var listEl = document.getElementById("ol-list");
     var statusEl = document.getElementById("ol-status");
-    var hintEl = document.getElementById("ol-hint");
     var dateFromEl = document.getElementById("ol-date-from");
     var dateToEl = document.getElementById("ol-date-to");
     var vendorNameEl = document.getElementById("ol-vendor-name");
-    var vendorClearBtn = document.getElementById("ol-vendor-clear-btn");
+    var searchBtn = document.getElementById("ol-search-btn");
     var vendorModal = document.getElementById("ol-vendor-modal");
     var vendorModalCloseBtn = document.getElementById("ol-vendor-modal-close");
     var vendorSearchEl = document.getElementById("ol-vendor-search");
@@ -47,11 +46,18 @@
             var name = String((v && v.companyName) || "").toLowerCase();
             return !q || name.indexOf(q) >= 0;
         });
+        var listHtml =
+            '<li><button type="button" class="ol-picker-item-btn ol-picker-item-btn--all" data-vendor-name="">전체</button></li>';
         if (!items.length) {
-            vendorListEl.innerHTML = '<li><p class="am-list-empty" style="margin:0;padding:0.7rem">표시할 업체가 없습니다.</p></li>';
+            vendorListEl.innerHTML =
+                listHtml +
+                '<li><p class="am-list-empty" style="margin:0;padding:0.7rem">표시할 업체가 없습니다.</p></li>';
+            bindVendorPickerButtons();
             return;
         }
-        vendorListEl.innerHTML = items
+        vendorListEl.innerHTML =
+            listHtml +
+            items
             .map(function (v) {
                 var name = escapeHtml(v.companyName || "");
                 return (
@@ -63,12 +69,19 @@
                 );
             })
             .join("");
+        bindVendorPickerButtons();
+    }
+
+    function bindVendorPickerButtons() {
+        if (!vendorListEl) return;
         vendorListEl.querySelectorAll("[data-vendor-name]").forEach(function (btn) {
             btn.addEventListener("click", function () {
-                selectedVendorName = String(btn.getAttribute("data-vendor-name") || "");
-                if (vendorNameEl) vendorNameEl.value = selectedVendorName;
+                selectedVendorName = String(btn.getAttribute("data-vendor-name") || "").trim();
+                if (vendorNameEl) {
+                    vendorNameEl.value = selectedVendorName || "";
+                    vendorNameEl.placeholder = selectedVendorName ? "" : "업체 선택";
+                }
                 if (vendorModal) vendorModal.hidden = true;
-                loadOrders();
             });
         });
     }
@@ -205,12 +218,6 @@
         });
     }
 
-    if (hintEl) {
-        hintEl.textContent =
-            "목록을 클릭하면 주문 품목·금액이 화면 중앙 모달로 표시됩니다. 담당 거래처의 회사명 기준으로 주문 목록이 표시됩니다.";
-        hintEl.hidden = false;
-    }
-
     function loadOrders() {
         var dateFrom = String((dateFromEl && dateFromEl.value) || "").trim();
         var dateTo = String((dateToEl && dateToEl.value) || "").trim();
@@ -268,18 +275,12 @@
             });
     }
 
+    if (searchBtn) searchBtn.addEventListener("click", loadOrders);
     if (dateFromEl) dateFromEl.addEventListener("change", loadOrders);
     if (dateToEl) dateToEl.addEventListener("change", loadOrders);
     bindDatePickerOpen(dateFromEl);
     bindDatePickerOpen(dateToEl);
     if (vendorNameEl) vendorNameEl.addEventListener("click", openVendorModal);
-    if (vendorClearBtn) {
-        vendorClearBtn.addEventListener("click", function () {
-            selectedVendorName = "";
-            if (vendorNameEl) vendorNameEl.value = "";
-            loadOrders();
-        });
-    }
     if (vendorModalCloseBtn) {
         vendorModalCloseBtn.addEventListener("click", function () {
             if (vendorModal) vendorModal.hidden = true;
