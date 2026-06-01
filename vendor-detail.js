@@ -118,7 +118,16 @@
         rows.push(contactRow("회사 전화", telLink(it.vn_phone) || "—"));
         rows.push(contactRow("회사 이메일", mailLink(it.vn_email) || "—"));
         rows.push(contactRow("홈페이지", webLink(it.vn_web) || "—"));
-        if (it.vn_addr && String(it.vn_addr).trim()) {
+        if (it.vn_zip || it.vn_addr || it.vn_addr_detail) {
+            var AF = window.THEJHON_ADDRESS_FIELDS;
+            var fullAddr =
+                AF && AF.formatFullAddress
+                    ? AF.formatFullAddress(it.vn_zip, it.vn_addr, it.vn_addr_detail)
+                    : [it.vn_zip, it.vn_addr, it.vn_addr_detail].filter(Boolean).join(" ");
+            if (fullAddr) rows.push(contactRow("우편번호", escapeHtml(String(it.vn_zip || "").trim() || "—")));
+            if (it.vn_addr) rows.push(contactRow("주소", escapeMultiline(String(it.vn_addr).trim())));
+            if (it.vn_addr_detail) rows.push(contactRow("상세주소", escapeMultiline(String(it.vn_addr_detail).trim())));
+        } else if (it.vn_addr && String(it.vn_addr).trim()) {
             rows.push(contactRow("주소", escapeMultiline(String(it.vn_addr).trim())));
         }
         rows.push(contactRow("담당자", escapeHtml(it.vn_mgr_name || "—")));

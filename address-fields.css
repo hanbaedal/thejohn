@@ -1,0 +1,48 @@
+/* 우편번호·주소·상세주소 (다음 우편번호 검색) */
+.tj-addr-fields {
+    display: flex;
+    flex-direction: column;
+    gap: 0.65rem;
+    width: 100%;
+}
+.tj-addr-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.45rem;
+}
+.tj-addr-row > label {
+    flex: 0 0 5.5rem;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: #3d5166;
+}
+.tj-addr-row--zip .tj-addr-zip {
+    flex: 0 1 6.5rem;
+    min-width: 5rem;
+    max-width: 8rem;
+}
+.tj-addr-row--zip .tj-addr-search {
+    flex: 0 0 auto;
+    font-size: 0.85rem;
+    padding: 0.45rem 0.75rem;
+    min-height: 2.35rem;
+}
+.tj-addr-row .tj-addr-road {
+    flex: 1 1 12rem;
+    min-width: 0;
+}
+.tj-addr-row .tj-addr-detail {
+    flex: 1 1 12rem;
+    min-width: 0;
+}
+.tj-addr-fields input[readonly] {
+    background: #f4f7fa;
+    color: #3d5166;
+}
+.tj-addr-hint {
+    margin: 0;
+    font-size: 0.75rem;
+    color: #6b7c8f;
+    line-height: 1.45;
+}

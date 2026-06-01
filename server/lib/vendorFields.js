@@ -6,6 +6,7 @@ const {
     normalizeLoginId,
     normalizePasswordInput
 } = require("./loginAccount");
+const { hydrateAddressFields, pickAddressFromBody } = require("./addressFormat");
 
 /** vendors 컬렉션 필드 */
 /** 상품 카탈로그 6부문 + 신규업체용 미계약 */
@@ -34,7 +35,9 @@ const F = {
     web: "vn_web",
     email: "vn_email",
     phone: "vn_phone",
+    zip: "vn_zip",
     addr: "vn_addr",
+    addrDetail: "vn_addr_detail",
     mgrName: "vn_mgr_name",
     mgrTel: "vn_mgr_tel",
     mgrEmail: "vn_mgr_email",
@@ -145,7 +148,15 @@ function fromLegacyDoc(doc) {
     if (!d[F.web] && doc.website) d[F.web] = String(doc.website).trim();
     if (!d[F.email] && doc.email) d[F.email] = String(doc.email).trim();
     if (!d[F.phone] && doc.phone) d[F.phone] = String(doc.phone).trim();
+    if (doc.vn_zip != null) d[F.zip] = str(doc.vn_zip);
     if (!d[F.addr] && doc.address) d[F.addr] = String(doc.address).trim();
+    if (doc.vn_addr_detail != null) d[F.addrDetail] = str(doc.vn_addr_detail);
+    hydrateAddressFields(d, {
+        zip: F.zip,
+        addr: F.addr,
+        detail: F.addrDetail,
+        legacy: null
+    });
     if (!d[F.mgrName] && doc.manager) d[F.mgrName] = String(doc.manager).trim();
     if (!d[F.mgrTel] && doc.managerPhone) d[F.mgrTel] = String(doc.managerPhone).trim();
     if (!d[F.mgrEmail] && doc.mgrEmail) d[F.mgrEmail] = String(doc.mgrEmail).trim();
@@ -186,7 +197,9 @@ function toPublic(doc) {
         vn_web: str(d[F.web]),
         vn_email: str(d[F.email]),
         vn_phone: str(d[F.phone]),
+        vn_zip: str(d[F.zip]),
         vn_addr: str(d[F.addr]),
+        vn_addr_detail: str(d[F.addrDetail]),
         vn_mgr_name: str(d[F.mgrName]),
         vn_mgr_tel: str(d[F.mgrTel]),
         vn_mgr_email: str(d[F.mgrEmail]),
@@ -214,6 +227,13 @@ function buildFromBody(body, existing, loginId, password) {
     const loginFields = buildLoginFields(loginId, "");
     const passwordPlain = resolvePasswordPlain(existing, loginId, password);
 
+    const addrParts = pickAddressFromBody(body, prev, {
+        zip: "vn_zip",
+        addr: "vn_addr",
+        detail: "vn_addr_detail",
+        legacy: null
+    });
+
     const built = {
         loginId: loginFields.loginId,
         loginIdNorm: normalizeLoginId(loginFields.loginId),
@@ -229,7 +249,9 @@ function buildFromBody(body, existing, loginId, password) {
         vn_web: str(body.vn_web != null ? body.vn_web : body.website),
         vn_email: str(body.vn_email != null ? body.vn_email : body.email),
         vn_phone: str(body.vn_phone != null ? body.vn_phone : body.phone),
-        vn_addr: str(body.vn_addr != null ? body.vn_addr : body.address),
+        vn_zip: addrParts.vn_zip,
+        vn_addr: addrParts.vn_addr,
+        vn_addr_detail: addrParts.vn_addr_detail,
         vn_mgr_name: str(body.vn_mgr_name != null ? body.vn_mgr_name : body.manager),
         vn_mgr_tel: str(body.vn_mgr_tel != null ? body.vn_mgr_tel : body.managerPhone),
         vn_mgr_email: str(body.vn_mgr_email != null ? body.vn_mgr_email : body.mgrEmail),
@@ -265,7 +287,9 @@ function toDbDoc(id, built, existing) {
         [F.web]: built.vn_web,
         [F.email]: built.vn_email,
         [F.phone]: built.vn_phone,
+        [F.zip]: built.vn_zip,
         [F.addr]: built.vn_addr,
+        [F.addrDetail]: built.vn_addr_detail,
         [F.mgrName]: built.vn_mgr_name,
         [F.mgrTel]: built.vn_mgr_tel,
         [F.mgrEmail]: built.vn_mgr_email,

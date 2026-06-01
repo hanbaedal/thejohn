@@ -554,7 +554,15 @@
                 setTelByLabel(grid, "전화", st.st_phone || "");
                 setDdTextByLabel(grid, "팩스", st.st_fax || "");
                 setDdTextByLabel(grid, "사업자등록번호", st.st_biz_no || "");
-                setDdTextByLabel(grid, "주소", st.st_address || "");
+                setDdTextByLabel(
+                    grid,
+                    "주소",
+                    (window.THEJHON_ADDRESS_FIELDS && THEJHON_ADDRESS_FIELDS.formatFullAddress
+                        ? THEJHON_ADDRESS_FIELDS.formatFullAddress(st.st_zip, st.st_addr, st.st_addr_detail)
+                        : "") ||
+                        st.st_address ||
+                        ""
+                );
             }
             var sign = document.querySelector(".company-greeting-sign");
             if (sign && st.st_ceo) {

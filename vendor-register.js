@@ -20,7 +20,17 @@
     var webInput = document.getElementById("vr-web");
     var emailInput = document.getElementById("vr-email");
     var phoneInput = document.getElementById("vr-phone");
-    var addrInput = document.getElementById("vr-addr");
+    var AF = window.THEJHON_ADDRESS_FIELDS;
+    var addrPicker =
+        AF && AF.mount
+            ? AF.mount(document.getElementById("vr-address-mount"), {
+                  idPrefix: "vr-",
+                  zipName: "vn_zip",
+                  addrName: "vn_addr",
+                  detailName: "vn_addr_detail",
+                  label: "회사 주소"
+              })
+            : null;
     var mgrNameInput = document.getElementById("vr-mgr-name");
     var mgrTelInput = document.getElementById("vr-mgr-tel");
     var mgrEmailInput = document.getElementById("vr-mgr-email");
@@ -120,6 +130,14 @@
             }
         }
 
+        if (addrPicker) {
+            var addrErr = addrPicker.validate();
+            if (addrErr) {
+                setStatus(addrErr, true);
+                return;
+            }
+        }
+
         var body = {
             loginId: loginIdInput.value.trim(),
             password: passwordInput ? String(passwordInput.value || "").trim() : "",
@@ -132,7 +150,6 @@
             vn_web: webInput.value.trim(),
             vn_email: emailInput.value.trim(),
             vn_phone: phoneInput.value.trim(),
-            vn_addr: addrInput.value.trim(),
             vn_mgr_name: mgrNameInput.value.trim(),
             vn_mgr_tel: mgrTelInput.value.trim(),
             vn_mgr_email: mgrEmailInput.value.trim(),
@@ -140,6 +157,7 @@
             vn_note: noteInput.value.trim(),
             vn_record_type: "partner"
         };
+        if (addrPicker) addrPicker.applyToBody(body);
 
         var err = VF ? VF.validateVendorFields(body, { requirePassword: true }) : "";
         if (err) {
@@ -157,6 +175,7 @@
                     if (idDupCheck) idDupCheck.reset();
                     updateLogoPreview("");
                     clearSelectedDepts();
+                    if (addrPicker && addrPicker.clear) addrPicker.clear();
                     if (gradeSelect) gradeSelect.value = "1";
                     setStatus("저장했습니다. 계속 등록하거나 업체 수정·협력업체 목록에서 확인하세요.");
                 })

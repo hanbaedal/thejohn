@@ -20,7 +20,17 @@
     var webInput = document.getElementById("vr-web");
     var emailInput = document.getElementById("vr-email");
     var phoneInput = document.getElementById("vr-phone");
-    var addrInput = document.getElementById("vr-addr");
+    var AF = window.THEJHON_ADDRESS_FIELDS;
+    var addrPicker =
+        AF && AF.mount
+            ? AF.mount(document.getElementById("vr-address-mount"), {
+                  idPrefix: "vr-",
+                  zipName: "vn_zip",
+                  addrName: "vn_addr",
+                  detailName: "vn_addr_detail",
+                  label: "회사 주소"
+              })
+            : null;
     var mgrNameInput = document.getElementById("vr-mgr-name");
     var mgrTelInput = document.getElementById("vr-mgr-tel");
     var mgrEmailInput = document.getElementById("vr-mgr-email");
@@ -130,7 +140,14 @@
         webInput.value = it.vn_web || "";
         emailInput.value = it.vn_email || "";
         phoneInput.value = it.vn_phone || "";
-        addrInput.value = it.vn_addr || "";
+        phoneInput.value = it.vn_phone || "";
+        if (addrPicker) {
+            addrPicker.setValues({
+                zip: it.vn_zip,
+                addr: it.vn_addr || "",
+                detail: it.vn_addr_detail || ""
+            });
+        }
         mgrNameInput.value = it.vn_mgr_name || "";
         mgrTelInput.value = it.vn_mgr_tel || "";
         mgrEmailInput.value = it.vn_mgr_email || "";
@@ -249,6 +266,14 @@
             }
         }
 
+        if (addrPicker) {
+            var addrErr = addrPicker.validate();
+            if (addrErr) {
+                setStatus(addrErr, true);
+                return;
+            }
+        }
+
         var body = {
             loginId: loginIdInput.value.trim(),
             password: passwordInput ? String(passwordInput.value || "").trim() : "",
@@ -261,7 +286,6 @@
             vn_web: webInput.value.trim(),
             vn_email: emailInput.value.trim(),
             vn_phone: phoneInput.value.trim(),
-            vn_addr: addrInput.value.trim(),
             vn_mgr_name: mgrNameInput.value.trim(),
             vn_mgr_tel: mgrTelInput.value.trim(),
             vn_mgr_email: mgrEmailInput.value.trim(),
@@ -269,6 +293,7 @@
             vn_note: noteInput.value.trim(),
             vn_record_type: "new"
         };
+        if (addrPicker) addrPicker.applyToBody(body);
 
         var prospectSourceId = prospectIdInput ? prospectIdInput.value.trim() : "";
         if (prospectSourceId) body.prospectId = prospectSourceId;

@@ -74,7 +74,13 @@
         var s = staff || {};
         var company = escapeHtml(String(s.st_company || "").trim() || "—");
         var ceo = escapeHtml(String(s.st_ceo || "").trim() || "—");
-        var addr = escapeHtml(String(s.st_address || "").trim() || "—");
+        var addr = escapeHtml(
+            (AF && AF.formatFullAddress
+                ? AF.formatFullAddress(s.st_zip, s.st_addr, s.st_addr_detail)
+                : "") ||
+                String(s.st_address || "").trim() ||
+                "—"
+        );
 
         var emailRaw = String(s.st_email || "").trim();
         var emailDd = emailRaw

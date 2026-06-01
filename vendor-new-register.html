@@ -12,6 +12,7 @@
     <title>신규업체 등록 — 더존</title>
     <link rel="stylesheet" href="common.css">
     <link rel="stylesheet" href="admin-manage.css">
+    <link rel="stylesheet" href="address-fields.css">
     <link rel="stylesheet" href="vendor-prospect-picker.css">
     <style>
         .vr-form { max-width: min(100%, 56rem); margin: 0 auto 1.5rem; padding: 0.85rem 0.75rem; background: #fff; border: 1px solid #e0e6ed; border-radius: 8px; box-shadow: 0 1px 8px rgba(10, 77, 156, 0.05); }
@@ -239,6 +240,7 @@
     <script src="product-form-shared.js"></script>
     <script src="product-catalog.js"></script>
     <script src="vendor-prospect-picker.js"></script>
+    <script src="address-fields.js"></script>
     <script src="nav.js" defer></script>
 </head>
 <body>
@@ -357,10 +359,7 @@
                     <input type="tel" id="vr-phone" name="vn_phone" maxlength="30" inputmode="tel" placeholder="회사 전화">
                 </div>
             </div>
-            <div class="vr-field">
-                <label for="vr-addr">회사 주소</label>
-                <input type="text" id="vr-addr" name="vn_addr" maxlength="500" placeholder="회사 주소">
-            </div>
+            <div class="vr-field vr-field--address" id="vr-address-mount"></div>
             <div class="vr-row vr-row--3">
                 <div class="vr-slot">
                     <label for="vr-mgr-name">담당자 이름</label>

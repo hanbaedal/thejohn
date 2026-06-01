@@ -1,3 +1,4 @@
+const { formatFullAddress } = require("./addressFormat");
 const { F: VF, fromLegacyDoc: vendorFromLegacy, parseGrade } = require("./vendorFields");
 const { F: PF, fromLegacyDoc: productFromLegacy } = require("./productFields");
 const { deptLabel } = require("./orderDeptLabels");
@@ -39,7 +40,7 @@ async function staffSupplierFromLoginId(loginId) {
         name: getStaffCompanyName(staff) || raw,
         ceo: getStaffCeoName(staff) || "",
         tel: str(d[SF.ceoTel]),
-        addr: str(d[SF.address] || staff.st_address)
+        addr: formatFullAddress(d[SF.zip], d[SF.addr], d[SF.addrDetail]) || str(d[SF.address] || staff.st_address)
     };
 }
 
@@ -97,7 +98,11 @@ async function buildEnrichedOrder(db, vendorDoc, items, extras) {
         vendorCompany: str(v[VF.company]) || str(extras.vendorCompany),
         vendorGrade: grade,
         vendorGradeLabel: gradeLabel(grade),
-        vendorAddr: str(v[VF.addr]),
+        vendorAddr:
+            formatFullAddress(v[VF.zip], v[VF.addr], v[VF.addrDetail]) || str(v[VF.addr]),
+        vendorZip: str(v[VF.zip]),
+        vendorAddrRoad: str(v[VF.addr]),
+        vendorAddrDetail: str(v[VF.addrDetail]),
         vendorPhone: str(v[VF.phone]),
         vendorCeo: str(v[VF.ceo]),
         vendorCeoTel: str(v[VF.ceoTel]),
@@ -127,7 +132,13 @@ async function prepareOrderForPdf(db, order) {
     const v = vendorFromLegacy(vendor) || {};
 
     if (!str(o.vendorCompany)) o.vendorCompany = str(v[VF.company]);
-    if (!str(o.vendorAddr)) o.vendorAddr = str(v[VF.addr]);
+    if (!str(o.vendorAddr)) {
+        o.vendorAddr =
+            formatFullAddress(v[VF.zip], v[VF.addr], v[VF.addrDetail]) || str(v[VF.addr]);
+    }
+    if (!str(o.vendorZip)) o.vendorZip = str(v[VF.zip]);
+    if (!str(o.vendorAddrRoad)) o.vendorAddrRoad = str(v[VF.addr]);
+    if (!str(o.vendorAddrDetail)) o.vendorAddrDetail = str(v[VF.addrDetail]);
     if (!str(o.vendorPhone)) o.vendorPhone = str(v[VF.phone]);
     if (!str(o.vendorMgrName)) o.vendorMgrName = str(v[VF.mgrName]);
     if (!str(o.vendorMgrTel)) o.vendorMgrTel = str(v[VF.mgrTel]);

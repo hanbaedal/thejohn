@@ -1,5 +1,10 @@
 const { buildLoginFields, getStoredPassword } = require("./loginAccount");
 const {
+    formatFullAddress,
+    hydrateAddressFields,
+    pickAddressFromBody
+} = require("./addressFormat");
+const {
     trimStaffLoginId,
     staffLoginIdKey,
     staffLoginIdsEqual,
@@ -20,6 +25,9 @@ const F = {
     bizNo: "st_biz_no",
     bizType: "st_biz_type",
     bizItem: "st_biz_item",
+    zip: "st_zip",
+    addr: "st_addr",
+    addrDetail: "st_addr_detail",
     address: "st_address",
     facebook: "st_facebook",
     instagram: "st_instagram",
@@ -142,8 +150,17 @@ function fromLegacyDoc(doc) {
     if (doc.st_biz_no != null) d[F.bizNo] = str(doc.st_biz_no);
     if (doc.st_biz_type != null) d[F.bizType] = str(doc.st_biz_type);
     if (doc.st_biz_item != null) d[F.bizItem] = str(doc.st_biz_item);
+    if (doc.st_zip != null) d[F.zip] = str(doc.st_zip);
+    if (doc.st_addr != null) d[F.addr] = str(doc.st_addr);
+    if (doc.st_addr_detail != null) d[F.addrDetail] = str(doc.st_addr_detail);
     if (doc.st_address != null) d[F.address] = str(doc.st_address);
     else if (!d[F.address] && doc.address) d[F.address] = str(doc.address);
+    hydrateAddressFields(d, {
+        zip: F.zip,
+        addr: F.addr,
+        detail: F.addrDetail,
+        legacy: F.address
+    });
     if (doc.st_facebook != null) d[F.facebook] = str(doc.st_facebook);
     if (doc.st_instagram != null) d[F.instagram] = str(doc.st_instagram);
     if (doc.st_naver_cafe != null) d[F.naverCafe] = str(doc.st_naver_cafe);
@@ -169,6 +186,9 @@ function toPublic(doc) {
         st_biz_no: str(d[F.bizNo]),
         st_biz_type: str(d[F.bizType]),
         st_biz_item: str(d[F.bizItem]),
+        st_zip: str(d[F.zip]),
+        st_addr: str(d[F.addr]),
+        st_addr_detail: str(d[F.addrDetail]),
         st_address: str(d[F.address]),
         st_facebook: str(d[F.facebook]),
         st_instagram: str(d[F.instagram]),
@@ -201,6 +221,13 @@ function buildFromBody(body, existing, loginId, password) {
         password || (existing ? getStoredPassword(existing) : "")
     );
 
+    const addrParts = pickAddressFromBody(body, prev, {
+        zip: "st_zip",
+        addr: "st_addr",
+        detail: "st_addr_detail",
+        legacy: "st_address"
+    });
+
     return {
         loginId: loginFields.loginId,
         loginIdNorm: loginFields.loginIdNorm,
@@ -214,7 +241,10 @@ function buildFromBody(body, existing, loginId, password) {
         st_biz_no: str(body.st_biz_no != null ? body.st_biz_no : prev[F.bizNo]),
         st_biz_type: str(body.st_biz_type != null ? body.st_biz_type : prev[F.bizType]),
         st_biz_item: str(body.st_biz_item != null ? body.st_biz_item : prev[F.bizItem]),
-        st_address: str(body.st_address != null ? body.st_address : prev[F.address]),
+        st_zip: addrParts.st_zip,
+        st_addr: addrParts.st_addr,
+        st_addr_detail: addrParts.st_addr_detail,
+        st_address: addrParts.st_address,
         st_facebook: str(body.st_facebook != null ? body.st_facebook : prev[F.facebook]),
         st_instagram: str(body.st_instagram != null ? body.st_instagram : prev[F.instagram]),
         st_naver_cafe: str(body.st_naver_cafe != null ? body.st_naver_cafe : prev[F.naverCafe]),
@@ -269,6 +299,9 @@ function toDbDoc(id, built, existing) {
         [F.bizNo]: built.st_biz_no,
         [F.bizType]: built.st_biz_type,
         [F.bizItem]: built.st_biz_item,
+        [F.zip]: built.st_zip,
+        [F.addr]: built.st_addr,
+        [F.addrDetail]: built.st_addr_detail,
         [F.address]: built.st_address,
         [F.facebook]: built.st_facebook,
         [F.instagram]: built.st_instagram,

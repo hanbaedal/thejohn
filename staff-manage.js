@@ -16,6 +16,22 @@
     var pendingEditLogo = null;
     var editLogoTouched = false;
     var PF = window.THEJHON_PRODUCT_FORM;
+    var AF = window.THEJHON_ADDRESS_FIELDS;
+
+    var regAddrPicker =
+        AF && AF.mount
+            ? AF.mount(document.getElementById("sm-reg-address-mount"), {
+                  idPrefix: "sm-reg-",
+                  label: "사업장소재지"
+              })
+            : null;
+    var editAddrPicker =
+        AF && AF.mount
+            ? AF.mount(document.getElementById("sm-edit-address-mount"), {
+                  idPrefix: "sm-edit-",
+                  label: "사업장소재지"
+              })
+            : null;
     var STAFF_LOGO_PROCESS_OPTIONS =
         PF && PF.STAFF_LOGO_PROCESS_OPTIONS
             ? PF.STAFF_LOGO_PROCESS_OPTIONS
@@ -155,7 +171,7 @@
         return role === "supervisor" ? "sm-role sm-role--supervisor" : "sm-role";
     }
 
-    function readForm(form) {
+    function readForm(form, addrPicker) {
         var fd = new FormData(form);
         var body = {
             loginId: String(fd.get("loginId") || "").trim(),
@@ -170,7 +186,6 @@
             st_biz_no: String(fd.get("st_biz_no") || "").trim(),
             st_biz_type: String(fd.get("st_biz_type") || "").trim(),
             st_biz_item: String(fd.get("st_biz_item") || "").trim(),
-            st_address: String(fd.get("st_address") || "").trim(),
             st_facebook: String(fd.get("st_facebook") || "").trim(),
             st_instagram: String(fd.get("st_instagram") || "").trim(),
             st_naver_cafe: String(fd.get("st_naver_cafe") || "").trim(),
@@ -179,6 +194,12 @@
         };
         var orderEl = form.querySelector('[name="orderEnabled"]');
         body.orderEnabled = !!(orderEl && orderEl.checked);
+        if (addrPicker) {
+            var addrErr = addrPicker.validate();
+            if (addrErr) return { error: addrErr };
+            addrPicker.applyToBody(body);
+            body.st_address = addrPicker.getValues().formatted;
+        }
         if (!body.password) delete body.password;
         return body;
     }
@@ -195,6 +216,9 @@
             st_biz_no: st.st_biz_no || "",
             st_biz_type: st.st_biz_type || "",
             st_biz_item: st.st_biz_item || "",
+            st_zip: st.st_zip || "",
+            st_addr: st.st_addr || "",
+            st_addr_detail: st.st_addr_detail || "",
             st_address: st.st_address || "",
             st_facebook: st.st_facebook || "",
             st_instagram: st.st_instagram || "",
@@ -233,7 +257,13 @@
         document.getElementById("sm-edit-st_biz_no").value = st.st_biz_no || "";
         document.getElementById("sm-edit-st_biz_type").value = st.st_biz_type || "";
         document.getElementById("sm-edit-st_biz_item").value = st.st_biz_item || "";
-        document.getElementById("sm-edit-st_address").value = st.st_address || "";
+        if (editAddrPicker) {
+            editAddrPicker.setValues({
+                zip: st.st_zip,
+                addr: st.st_addr || st.st_address || "",
+                detail: st.st_addr_detail || ""
+            });
+        }
         document.getElementById("sm-edit-st_facebook").value = st.st_facebook || "";
         document.getElementById("sm-edit-st_instagram").value = st.st_instagram || "";
         document.getElementById("sm-edit-st_naver_cafe").value = st.st_naver_cafe || "";
@@ -540,7 +570,11 @@
     if (regForm) {
         regForm.addEventListener("submit", function (e) {
             e.preventDefault();
-            var body = readForm(regForm);
+            var body = readForm(regForm, regAddrPicker);
+            if (body.error) {
+                setStatus(body.error, "err");
+                return;
+            }
             if (!body.loginId) {
                 setStatus("아이디를 입력해 주세요.", "err");
                 return;
@@ -565,7 +599,7 @@
                         document.getElementById("sm-reg-logo-clear"),
                         ""
                     );
-                    if (regLogoPicker && regLogoPicker.clear) regLogoPicker.clear();
+                    if (regAddrPicker && regAddrPicker.clear) regAddrPicker.clear();
                     setStatus("관리자를 등록했습니다.", "ok");
                     loadList();
                 })
@@ -584,7 +618,11 @@
             }
             var id = document.getElementById("sm-edit-id").value;
             var loginInput = document.getElementById("sm-edit-loginId");
-            var body = readForm(editForm);
+            var body = readForm(editForm, editAddrPicker);
+            if (body.error) {
+                setEditMsg(body.error, "err");
+                return;
+            }
             if (!body.loginId) {
                 setEditMsg("아이디를 입력해 주세요.", "err");
                 return;
