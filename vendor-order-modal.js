@@ -50,6 +50,24 @@
         return global.THEJHON_API;
     }
 
+    var ORDER_SUCCESS_SPEECH = "정상적으로 상품을 주문했습니다";
+    var ORDER_SUCCESS_REDIRECT_MS = 1800;
+
+    function speakOrderSuccess() {
+        if (!global.speechSynthesis) return;
+        try {
+            global.speechSynthesis.cancel();
+            var utter = new SpeechSynthesisUtterance(ORDER_SUCCESS_SPEECH);
+            utter.lang = "ko-KR";
+            utter.rate = 0.95;
+            global.speechSynthesis.speak(utter);
+        } catch (e) {}
+    }
+
+    function goToProductsHome() {
+        global.location.href = "products.html";
+    }
+
     function ensureShell() {
         if (modalEl) return;
         modalEl = document.createElement("div");
@@ -216,34 +234,49 @@
 
         var rows = cart.items
             .map(function (it) {
-                return (
-                    "<tr data-product-id=\"" +
-                    escapeHtml(it.productId) +
-                    '"><td data-label="">' +
-                    escapeHtml(it.productName) +
-                    (it.pd_size ? "<br><small>" + escapeHtml(it.pd_size) + "</small>" : "") +
-                    '</td><td data-label="단가">' +
-                    escapeHtml(it.priceLabel || "") +
-                    " " +
-                    escapeHtml(formatWon(it.unitPrice)) +
-                    '</td><td data-label="수량">' +
-                    (window.THEJHON_QTY_STEPPER && THEJHON_QTY_STEPPER.html
-                        ? THEJHON_QTY_STEPPER.html(it.quantity, { className: "cart-qty-stepper" })
+                var specPart = it.pd_size
+                    ? '<span class="vom-cart-item__spec">' + escapeHtml(it.pd_size) + "</span>"
+                    : "";
+                var pricePart =
+                    '<span class="vom-cart-item__price">' +
+                    escapeHtml((it.priceLabel ? it.priceLabel + " " : "") + formatWon(it.unitPrice)) +
+                    "</span>";
+                var qtyHtml =
+                    window.THEJHON_QTY_STEPPER && THEJHON_QTY_STEPPER.html
+                        ? THEJHON_QTY_STEPPER.html(it.quantity, {
+                              className: "cart-qty-stepper vom-cart-qty-stepper"
+                          })
                         : '<input type="number" class="cart-qty" min="1" step="1" inputmode="numeric" value="' +
                           escapeHtml(String(it.quantity)) +
-                          '" aria-label="수량">') +
-                    '</td><td class="cart-line-total" data-label="금액">' +
+                          '" aria-label="수량">';
+                return (
+                    '<div class="vom-cart-item" data-product-id="' +
+                    escapeHtml(it.productId) +
+                    '">' +
+                    '<div class="vom-cart-item__line vom-cart-item__line--head">' +
+                    '<span class="vom-cart-item__name">' +
+                    escapeHtml(it.productName) +
+                    "</span>" +
+                    specPart +
+                    pricePart +
+                    "</div>" +
+                    '<div class="vom-cart-item__line vom-cart-item__line--qty">' +
+                    qtyHtml +
+                    "</div>" +
+                    '<div class="vom-cart-item__line vom-cart-item__line--foot">' +
+                    '<span class="vom-cart-item__total cart-line-total">' +
                     escapeHtml(formatWon(Cart.lineTotal(it))) +
-                    '</td><td data-label=""><button type="button" class="btn-remove">삭제</button></td></tr>'
+                    '</span><button type="button" class="btn-remove">삭제</button>' +
+                    "</div></div>"
                 );
             })
             .join("");
 
         bodyEl.innerHTML =
             '<div class="vendor-order-modal__scroll">' +
-            '<div class="cart-table-wrap"><table class="cart-table"><thead><tr><th>상품</th><th>단가</th><th>수량</th><th>금액</th><th></th></tr></thead><tbody>' +
+            '<div class="vom-cart-list">' +
             rows +
-            "</tbody></table></div>" +
+            "</div>" +
             contactInfoHtml(vendorContact) +
             "</div>" +
             '<div class="vendor-order-modal__footer">' +
@@ -264,16 +297,16 @@
             bodyEl.querySelectorAll(".qty-stepper").forEach(function (el) {
                 THEJHON_QTY_STEPPER.bind(el, {
                     onChange: function (q) {
-                        var tr = el.closest("tr");
-                        var pid = tr && tr.getAttribute("data-product-id");
+                        var row = el.closest(".vom-cart-item");
+                        var pid = row && row.getAttribute("data-product-id");
                         if (pid) Cart.setQuantity(pid, q);
                         renderBody();
                     },
                     onInput: function (q) {
-                        var tr = el.closest("tr");
-                        var pid = tr && tr.getAttribute("data-product-id");
+                        var row = el.closest(".vom-cart-item");
+                        var pid = row && row.getAttribute("data-product-id");
                         if (!pid) return;
-                        var lineEl = tr.querySelector(".cart-line-total");
+                        var lineEl = row.querySelector(".cart-line-total");
                         var item = null;
                         var items = Cart.readCart().items;
                         for (var i = 0; i < items.length; i++) {
@@ -293,8 +326,8 @@
         } else {
             bodyEl.querySelectorAll(".cart-qty").forEach(function (inp) {
                 function commitQty() {
-                    var tr = inp.closest("tr");
-                    var pid = tr && tr.getAttribute("data-product-id");
+                    var row = inp.closest(".vom-cart-item");
+                    var pid = row && row.getAttribute("data-product-id");
                     if (pid) Cart.setQuantity(pid, inp.value);
                     renderBody();
                 }
@@ -304,8 +337,8 @@
         }
         bodyEl.querySelectorAll(".btn-remove").forEach(function (btn) {
             btn.addEventListener("click", function () {
-                var tr = btn.closest("tr");
-                var pid = tr && tr.getAttribute("data-product-id");
+                var row = btn.closest(".vom-cart-item");
+                var pid = row && row.getAttribute("data-product-id");
                 if (pid) Cart.removeItem(pid);
                 renderBody();
             });
@@ -415,13 +448,13 @@
                     ).catch(function () {});
                 }
 
-                renderOrderSuccess(order);
+                orderSuccessPending = true;
                 Cart.clearCart();
                 window.dispatchEvent(new CustomEvent("thejhon-orders-updated"));
 
-                setTimeout(function () {
-                    close();
-                }, 2800);
+                speakOrderSuccess();
+                close();
+                setTimeout(goToProductsHome, ORDER_SUCCESS_REDIRECT_MS);
             })
             .catch(function (err) {
                 if (submitBtn) submitBtn.disabled = false;
@@ -470,27 +503,6 @@
                 renderBody();
             });
         });
-    }
-
-    function renderOrderSuccess(order) {
-        if (!bodyEl) return;
-        orderSuccessPending = true;
-        var orderNo = escapeHtml((order && (order.orderNo || order.id)) || "");
-        bodyEl.innerHTML =
-            '<div class="vendor-order-modal__scroll">' +
-            '<p class="cart-msg cart-msg--ok" role="status">' +
-            "주문이 접수되었습니다. 주문번호: <strong>" +
-            orderNo +
-            "</strong>.<br>" +
-            '<a href="cart.html">주문서 보기</a>에서 확인할 수 있습니다.' +
-            "</p></div>" +
-            '<div class="vendor-order-modal__footer">' +
-            '<div class="cart-actions-row">' +
-            '<a href="cart.html" class="btn btn-primary">주문서 보기</a>' +
-            '<button type="button" class="btn" id="vomSuccessClose">닫기</button>' +
-            "</div></div>";
-        var closeBtn = document.getElementById("vomSuccessClose");
-        if (closeBtn) closeBtn.addEventListener("click", close);
     }
 
     function close() {

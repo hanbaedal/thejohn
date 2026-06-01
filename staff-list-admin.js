@@ -147,7 +147,9 @@
             st_kakao: String(fd.get("st_kakao") || "").trim()
         };
         var orderEl = form.querySelector('[name="orderEnabled"]');
-        body.orderEnabled = !!(orderEl && orderEl.checked);
+        if (orderEl) {
+            body.orderEnabled = orderEl.checked === true;
+        }
         if (addrPicker) {
             var addrErr = addrPicker.validate();
             if (addrErr) return { error: addrErr };
@@ -548,9 +550,11 @@
 
             function saveUpdate() {
                 if (editLogoTouched) body.st_logo = pendingEditLogo || "";
+                var st = staffByKey[id] || staffByKey[origLoginId];
+                var payload = st ? staffToUpdateBody(st, body) : body;
                 setEditMsg("저장 중…");
                 api
-                    .updateStaff(id, body)
+                    .updateStaff(id, payload)
                     .then(function (result) {
                         var msg = "저장했습니다.";
                         if (result && result.loginIdChanged) {

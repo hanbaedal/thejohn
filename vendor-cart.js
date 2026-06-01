@@ -133,6 +133,11 @@
         return n;
     }
 
+    function hasProduct(productId) {
+        if (!productId) return false;
+        return findIndex(readCart().items, productId) >= 0;
+    }
+
     global.THEJHON_VENDOR_CART = {
         CART_KEY: CART_KEY,
         canUseCart: canUseCart,
@@ -144,6 +149,7 @@
         clearCart: clearCart,
         lineTotal: lineTotal,
         cartTotal: cartTotal,
-        itemCount: itemCount
+        itemCount: itemCount,
+        hasProduct: hasProduct
     };
 })(typeof window !== "undefined" ? window : this);

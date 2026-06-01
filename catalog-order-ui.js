@@ -2,6 +2,9 @@
  * 사업부문 목록 카드 — 목록에 담기 · 주문하기 (담당 관리자 등록 상품)
  */
 (function (global) {
+    var ADD_LABEL = "목록에 담기";
+    var ADDED_LABEL = "목록에 담음";
+
     function canShowCatalogOrder() {
         if (!global.THEJHON_AUTH) return false;
         if (!global.THEJHON_AUTH.canPlaceVendorOrders) return false;
@@ -14,6 +17,50 @@
         return !!global.THEJHON_AUTH.vendorProductCanOrder(it);
     }
 
+    function escapeAttr(s) {
+        return String(s)
+            .replace(/&/g, "&amp;")
+            .replace(/"/g, "&quot;");
+    }
+
+    function speakAdded() {
+        if (!global.speechSynthesis) return;
+        try {
+            global.speechSynthesis.cancel();
+            var utter = new SpeechSynthesisUtterance("목록에 담았습니다");
+            utter.lang = "ko-KR";
+            utter.rate = 0.95;
+            global.speechSynthesis.speak(utter);
+        } catch (e) {}
+    }
+
+    function productInCart(productId) {
+        var Cart = global.THEJHON_VENDOR_CART;
+        if (!Cart || !productId) return false;
+        if (Cart.hasProduct) return Cart.hasProduct(productId);
+        var cart = Cart.readCart();
+        var items = (cart && cart.items) || [];
+        for (var i = 0; i < items.length; i++) {
+            if (items[i].productId === productId) return true;
+        }
+        return false;
+    }
+
+    function updateAddButton(btn, productId) {
+        if (!btn || !productId) return;
+        var inCart = productInCart(productId);
+        btn.classList.toggle("ps-add-cart--added", inCart);
+        btn.setAttribute("aria-pressed", inCart ? "true" : "false");
+        btn.textContent = inCart ? ADDED_LABEL : ADD_LABEL;
+    }
+
+    function refreshAllAddButtons() {
+        if (!canShowCatalogOrder()) return;
+        document.querySelectorAll(".ps-add-cart[data-product-id]").forEach(function (btn) {
+            updateAddButton(btn, btn.getAttribute("data-product-id"));
+        });
+    }
+
     function renderOrderSection(it) {
         if (!canOrderProduct(it)) {
             return "";
@@ -21,8 +68,11 @@
         return (
             '<section class="ps-order" aria-label="주문" data-ps-order>' +
             '<div class="ps-order-actions">' +
-            '<button type="button" class="btn btn-primary ps-add-cart" data-ps-add>목록에 담기</button>' +
-            '<button type="button" class="btn ps-open-order" data-ps-order-open>주문하기</button>' +
+            '<button type="button" class="btn btn-primary ps-add-cart" data-ps-add data-product-id="' +
+            escapeAttr(it.id) +
+            '">' +
+            ADD_LABEL +
+            '</button><button type="button" class="btn ps-open-order" data-ps-order-open>주문하기</button>' +
             "</div>" +
             "</section>"
         );
@@ -45,9 +95,18 @@
         var orderSec = cardEl.querySelector("[data-ps-order]");
         if (!orderSec) return;
 
+        if (orderSec.dataset.psBound === "1") {
+            var existingBtn = orderSec.querySelector("[data-ps-add]");
+            if (existingBtn) updateAddButton(existingBtn, it.id);
+            return;
+        }
+        orderSec.dataset.psBound = "1";
+
         var addBtn = orderSec.querySelector("[data-ps-add]");
         var openBtn = orderSec.querySelector("[data-ps-order-open]");
         if (!addBtn) return;
+
+        addBtn.setAttribute("data-product-id", it.id);
 
         function unitInfo() {
             if (global.THEJHON_AUTH && global.THEJHON_AUTH.getVendorUnitPriceForProduct) {
@@ -55,6 +114,8 @@
             }
             return { unitPrice: 0, priceLabel: "" };
         }
+
+        updateAddButton(addBtn, it.id);
 
         if (openBtn) {
             openBtn.addEventListener("click", function (e) {
@@ -74,6 +135,7 @@
                     window.alert(res.error);
                     return;
                 }
+                updateAddButton(addBtn, it.id);
                 openOrderModal();
             });
         }
@@ -93,7 +155,10 @@
             });
             if (!res.ok && res.error) {
                 window.alert(res.error);
+                return;
             }
+            speakAdded();
+            updateAddButton(addBtn, it.id);
         });
     }
 
@@ -102,6 +167,12 @@
         canOrderProduct: canOrderProduct,
         renderSection: renderOrderSection,
         bind: bindOrderSection,
-        openOrderModal: openOrderModal
+        openOrderModal: openOrderModal,
+        refreshAddButtons: refreshAllAddButtons
     };
+
+    if (typeof global.addEventListener === "function") {
+        global.addEventListener("thejhon-cart-updated", refreshAllAddButtons);
+        global.addEventListener("DOMContentLoaded", refreshAllAddButtons);
+    }
 })(typeof window !== "undefined" ? window : this);
