@@ -32,14 +32,8 @@
                 p.hidden = !on;
             }
         }
-        if (headerNav) {
-            var tabs = headerNav.querySelectorAll("[data-hmh-tab]");
-            for (var t = 0; t < tabs.length; t++) {
-                var tab = tabs[t];
-                var active = tab.getAttribute("data-hmh-tab") === section;
-                tab.classList.toggle("is-current", active);
-                tab.setAttribute("aria-current", active ? "page" : "false");
-            }
+        if (headerNav && Auth.syncHmhManageHomeTabCurrent) {
+            Auth.syncHmhManageHomeTabCurrent(headerNav, section);
         }
         try {
             if (history.replaceState) {
@@ -109,17 +103,21 @@
         }
 
         if (Auth.setStaffNavMode) Auth.setStaffNavMode("manage-home");
-        if (Auth.applyStaffNavMode) Auth.applyStaffNavMode("manage-home");
+
+        function refreshHeader() {
+            if (Auth.applyStaffNavMode) Auth.applyStaffNavMode("manage-home");
+        }
 
         applyCardPermissions();
         bindCards();
         bindTabs();
         showSection(currentSection());
+        refreshHeader();
 
         if (Auth.refreshSessionPermissionsAsync) {
             Auth.refreshSessionPermissionsAsync().then(function () {
                 applyCardPermissions();
-                if (Auth.applyStaffNavMode) Auth.applyStaffNavMode("manage-home");
+                refreshHeader();
             });
         }
 
@@ -128,7 +126,7 @@
         });
         window.addEventListener("thejhon-auth-permissions-updated", function () {
             applyCardPermissions();
-            if (Auth.applyStaffNavMode) Auth.applyStaffNavMode("manage-home");
+            refreshHeader();
         });
     }
 

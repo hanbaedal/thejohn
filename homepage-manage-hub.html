@@ -23,7 +23,12 @@
     <header class="site-header">
         <div class="site-header-start">
             <a href="work-hub.html" class="dz-logo dz-logo--compact" aria-label="업무관리"><img src="img/logo.png" alt="" width="72" height="72" class="dz-logo-img"></a>
-            <nav class="site-header-nav" id="hmhHeaderNav" aria-label="홈페이지 관리 메뉴"></nav>
+            <nav class="site-header-nav site-header-nav--hmh" id="hmhHeaderNav" aria-label="홈페이지 관리 메뉴">
+                <a href="homepage-manage-hub.html#home" class="header-nav-link is-hmh-tab is-current" data-staff-nav-injected="manage-home" data-hmh-tab="home" aria-current="page">홈페이지관리</a>
+                <a href="homepage-manage-hub.html#support" class="header-nav-link is-hmh-tab" data-staff-nav-injected="manage-home" data-hmh-tab="support">고객센터관리</a>
+                <a href="homepage-manage-hub.html#product" class="header-nav-link is-hmh-tab" data-staff-nav-injected="manage-home" data-hmh-tab="product">상품관리</a>
+                <a href="homepage-manage-hub.html#vendor" class="header-nav-link is-hmh-tab" data-staff-nav-injected="manage-home" data-hmh-tab="vendor">업체관리</a>
+            </nav>
         </div>
         <nav class="site-header-actions" aria-label="계정">
             <time class="header-date" id="headerToday" datetime=""></time>

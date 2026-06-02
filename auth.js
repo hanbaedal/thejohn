@@ -900,6 +900,25 @@
         }
     }
 
+    function staffNavClearInjected(nav) {
+        var injected = nav.querySelectorAll("[data-staff-nav-injected]");
+        for (var i = 0; i < injected.length; i++) {
+            injected[i].remove();
+        }
+    }
+
+    function syncHmhManageHomeTabCurrent(nav, activeSection) {
+        if (!nav) return;
+        var tabs = nav.querySelectorAll("[data-hmh-tab]");
+        for (var i = 0; i < tabs.length; i++) {
+            var tab = tabs[i];
+            var on = tab.getAttribute("data-hmh-tab") === activeSection;
+            tab.classList.toggle("is-current", on);
+            if (on) tab.setAttribute("aria-current", "page");
+            else tab.removeAttribute("aria-current");
+        }
+    }
+
     function staffNavEnsureLink(nav, href, label, mode) {
         var file = staffNavHrefFile(href);
         var existing = nav.querySelector('a[href*="' + file + '"]');
@@ -993,32 +1012,35 @@
             ':scope > a.header-nav-link:not([data-staff-nav-injected]), :scope > .nav-dropdown'
         );
         for (var h = 0; h < plain.length; h++) {
-            staffNavSetVisible(plain[h], false);
+            plain[h].remove();
         }
 
-        staffNavRemoveInjected(nav, "manage-home");
-
         var active = getHomepageManageNavSectionForPage(currentPageFile());
-        var tabs = [
+        var hmhTabs = nav.querySelectorAll('[data-hmh-tab][data-staff-nav-injected="manage-home"]');
+        if (hmhTabs.length >= 4) {
+            syncHmhManageHomeTabCurrent(nav, active);
+            return;
+        }
+
+        staffNavClearInjected(nav);
+
+        var tabDefs = [
             { section: "home", label: "홈페이지관리", href: HOMEPAGE_MANAGE_HUB_PAGE + "#home" },
             { section: "support", label: "고객센터관리", href: HOMEPAGE_MANAGE_HUB_PAGE + "#support" },
             { section: "product", label: "상품관리", href: HOMEPAGE_MANAGE_HUB_PAGE + "#product" },
             { section: "vendor", label: "업체관리", href: HOMEPAGE_MANAGE_HUB_PAGE + "#vendor" }
         ];
-        for (var i = 0; i < tabs.length; i++) {
-            var t = tabs[i];
+        for (var i = 0; i < tabDefs.length; i++) {
+            var t = tabDefs[i];
             var a = document.createElement("a");
             a.href = t.href;
             a.className = "header-nav-link is-hmh-tab";
-            if (active === t.section) {
-                a.classList.add("is-current");
-                a.setAttribute("aria-current", "page");
-            }
             a.textContent = t.label;
             a.setAttribute("data-staff-nav-injected", "manage-home");
             a.setAttribute("data-hmh-tab", t.section);
             nav.appendChild(a);
         }
+        syncHmhManageHomeTabCurrent(nav, active);
     }
 
     function applyStaffNavMode(forceMode) {
@@ -1053,7 +1075,9 @@
         var nav = document.querySelector(".site-header-nav");
         if (!nav) return;
 
-        staffNavRemoveInjected(nav, mode);
+        if (mode !== "manage-home") {
+            staffNavClearInjected(nav);
+        }
 
         var workHub = nav.querySelector('a[href="work-hub.html"]');
         if (workHub) workHub.remove();
@@ -1926,6 +1950,8 @@
         canAccessHomepageManageCard: canAccessHomepageManageCard,
         getHomepageManageNavSectionForPage: getHomepageManageNavSectionForPage,
         applyStaffNavManageHomeTabs: applyStaffNavManageHomeTabs,
+        syncHmhManageHomeTabCurrent: syncHmhManageHomeTabCurrent,
+        staffNavClearInjected: staffNavClearInjected,
         getWorkHubOrderManageHref: getWorkHubOrderManageHref,
         getStaffLandingPath: getStaffLandingPath,
         getStaffNavMode: getStaffNavMode,
