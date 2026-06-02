@@ -1490,3 +1490,14 @@ body:not(.page-login) .login-card {
 .ol-hint {
     display: none !important;
 }
+
+/* 관리자·슈퍼바이저 — 허브 구역별 헤더 메뉴 (staff-nav-mode) */
+.header-nav-link--staff-hidden,
+.site-header-nav > .header-nav-link--staff-hidden,
+.site-header-nav > .nav-dropdown.header-nav-link--staff-hidden {
+    display: none !important;
+}
+body.staff-nav-hub .site-header-nav > .header-nav-link,
+body.staff-nav-hub .site-header-nav > .nav-dropdown {
+    display: none !important;
+}

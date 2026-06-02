@@ -131,6 +131,19 @@
         var nav = document.querySelector(".site-header-nav");
         if (!nav) return;
 
+        var Auth = window.THEJHON_AUTH;
+        if (
+            Auth &&
+            Auth.isStaffRole &&
+            Auth.isStaffRole(Auth.getRole && Auth.getRole()) &&
+            Auth.getStaffNavMode &&
+            Auth.getStaffNavMode() !== "manage-home"
+        ) {
+            removeAdminNavFromNav(nav);
+            if (Auth.applyStaffNavMode) Auth.applyStaffNavMode();
+            return;
+        }
+
         injectStaffManageLink(nav);
 
         var showAdmin = canShowAdminMenus();

@@ -128,6 +128,7 @@
     /** sessionStorage·토큰만 비움 (이 탭 계정 전환) */
     function clearAuthStorageLocal() {
         vendorPermsSynced = false;
+        staffNavClear();
         var i;
         for (i = 0; i < AUTH_PERSIST_KEYS.length; i++) {
             authRemove(AUTH_PERSIST_KEYS[i]);
@@ -456,6 +457,11 @@
         } else {
             authRemove(STAFF_ORDER_ENABLED_KEY);
         }
+        if (isStaffRole(role)) {
+            staffNavSet("hub");
+        } else {
+            staffNavClear();
+        }
         var label = companyName || "";
         var brandLabel = String(brandCompanyName || "").trim();
         if (role === "vendor") {
@@ -707,6 +713,40 @@
     var ORDER_MANAGE_PAGES = ["order-list-admin.html"];
     var WORK_HUB_PAGE = "work-hub.html";
     var HOMEPAGE_MANAGE_HUB_PAGE = "homepage-manage-hub.html";
+    var STAFF_NAV_MODE_KEY = "thejhon_staff_nav_mode";
+    var STAFF_NAV_PUBLIC_PAGES = {
+        "index.html": true,
+        "company.html": true,
+        "company-jeongyuk.html": true,
+        "company-driedfish.html": true,
+        "company-frozen.html": true,
+        "company-seafood.html": true,
+        "company-grocery.html": true,
+        "company-drink.html": true,
+        "products.html": true,
+        "product-detail.html": true,
+        "support.html": true,
+        "support-partners.html": true,
+        "support-library.html": true,
+        "support-qna.html": true,
+        "support-inquiry.html": true
+    };
+    var STAFF_NAV_MANAGE_HOME_PAGES = {
+        "homepage-manage-hub.html": true,
+        "support-news-admin.html": true
+    };
+    var STAFF_NAV_ORDER_PAGES = {
+        "order-list-admin.html": true,
+        "supervisor-order-list.html": true,
+        "supervisor-transaction-list.html": true
+    };
+    var STAFF_NAV_WORK_PAGES = {
+        "staff-manage-hub.html": true,
+        "staff-manage.html": true,
+        "staff-list-admin.html": true,
+        "supervisor-access-stats.html": true,
+        "supervisor-db-stats.html": true
+    };
     var STAFF_MANAGE_PAGES = [
         "staff-manage-hub.html",
         "staff-manage.html",
@@ -717,6 +757,290 @@
         "supervisor-db-stats.html"
     ];
     var ADMIN_REGISTER_PAGES = PRODUCT_ADMIN_PAGES.concat(VENDOR_ADMIN_PAGES);
+
+    PRODUCT_ADMIN_PAGES.forEach(function (f) {
+        STAFF_NAV_MANAGE_HOME_PAGES[f] = true;
+    });
+    VENDOR_ADMIN_PAGES.forEach(function (f) {
+        STAFF_NAV_MANAGE_HOME_PAGES[f] = true;
+    });
+
+    function staffNavGet() {
+        try {
+            return String(sessionStorage.getItem(STAFF_NAV_MODE_KEY) || "").trim();
+        } catch (e) {
+            return "";
+        }
+    }
+
+    function staffNavSet(mode) {
+        try {
+            if (!mode) sessionStorage.removeItem(STAFF_NAV_MODE_KEY);
+            else sessionStorage.setItem(STAFF_NAV_MODE_KEY, String(mode));
+        } catch (e2) {}
+    }
+
+    function staffNavClear() {
+        staffNavSet("");
+    }
+
+    function inferStaffNavModeFromPage(file) {
+        if (!file) return "";
+        if (file === WORK_HUB_PAGE) return "hub";
+        if (STAFF_NAV_PUBLIC_PAGES[file]) return "public";
+        if (STAFF_NAV_ORDER_PAGES[file]) return "order";
+        if (STAFF_NAV_WORK_PAGES[file]) return "work";
+        if (STAFF_NAV_MANAGE_HOME_PAGES[file]) return "manage-home";
+        return "";
+    }
+
+    function resolveStaffNavMode() {
+        if (!isStaffRole(getRole())) return "";
+        var file = currentPageFile();
+        if (file === WORK_HUB_PAGE) {
+            staffNavSet("hub");
+            return "hub";
+        }
+        var inferred = inferStaffNavModeFromPage(file);
+        if (inferred) {
+            staffNavSet(inferred);
+            return inferred;
+        }
+        var stored = staffNavGet();
+        if (
+            stored === "hub" ||
+            stored === "public" ||
+            stored === "manage-home" ||
+            stored === "order" ||
+            stored === "work"
+        ) {
+            return stored;
+        }
+        staffNavSet("hub");
+        return "hub";
+    }
+
+    function getStaffNavMode() {
+        return resolveStaffNavMode();
+    }
+
+    function setStaffNavMode(mode) {
+        if (!isStaffRole(getRole())) return;
+        staffNavSet(mode);
+        applyStaffNavMode(mode);
+    }
+
+    function staffNavSetVisible(el, show) {
+        if (!el) return;
+        if (show) {
+            el.classList.remove("header-nav-link--staff-hidden");
+            el.hidden = false;
+            el.removeAttribute("aria-hidden");
+            el.style.removeProperty("display");
+        } else {
+            el.classList.add("header-nav-link--staff-hidden");
+            el.hidden = true;
+            el.setAttribute("aria-hidden", "true");
+        }
+    }
+
+    function staffNavHrefFile(href) {
+        var h = String(href || "")
+            .split("?")[0]
+            .split("#")[0]
+            .toLowerCase();
+        return (h.split("/").pop() || "").trim();
+    }
+
+    function staffNavZoneForEl(el) {
+        if (!el) return "";
+        var file = staffNavHrefFile(el.getAttribute("href"));
+        var drop = el.getAttribute("data-nav-dropdown") || "";
+        if (drop === "support") return "public";
+        if (drop === "product-manage") return "manage-home";
+        if (drop === "vendor-manage") return "manage-home";
+        if (file === "homepage-manage-hub.html") return "manage-home";
+        if (file.indexOf("company") === 0 || file === "company.html") return "public";
+        if (file === "products.html" || file === "product-detail.html" || file === "index.html") {
+            return "public";
+        }
+        if (file === "support-news-admin.html") return "manage-home";
+        if (STAFF_NAV_ORDER_PAGES[file]) return "order";
+        if (STAFF_NAV_WORK_PAGES[file]) return "work";
+        if (STAFF_NAV_MANAGE_HOME_PAGES[file]) return "manage-home";
+        if (STAFF_NAV_PUBLIC_PAGES[file]) return "public";
+        if (file === "work-hub.html") return "hub";
+        return "";
+    }
+
+    function staffNavShouldShow(el, mode) {
+        var zone = staffNavZoneForEl(el);
+        if (!zone) return false;
+        if (mode === "hub") return false;
+        if (mode === "public") return zone === "public";
+        if (mode === "manage-home") return zone === "manage-home";
+        if (mode === "order") {
+            if (zone !== "order") return false;
+            var file = staffNavHrefFile(el.getAttribute("href"));
+            if (file === "order-list-admin.html") return canShowOrderManageMenu();
+            return isSupervisorStaff();
+        }
+        if (mode === "work") return zone === "work" && isSupervisorStaff();
+        return false;
+    }
+
+    function staffNavRemoveInjected(nav, keepMode) {
+        var injected = nav.querySelectorAll("[data-staff-nav-injected]");
+        for (var i = 0; i < injected.length; i++) {
+            var el = injected[i];
+            if (keepMode && el.getAttribute("data-staff-nav-injected") === keepMode) continue;
+            el.remove();
+        }
+    }
+
+    function staffNavEnsureLink(nav, href, label, mode) {
+        var file = staffNavHrefFile(href);
+        var existing = nav.querySelector('a[href*="' + file + '"]');
+        if (existing) {
+            staffNavSetVisible(existing, true);
+            return existing;
+        }
+        var a = document.createElement("a");
+        a.href = href;
+        a.className = "header-nav-link";
+        a.textContent = label;
+        a.setAttribute("data-staff-nav-injected", mode);
+        nav.insertBefore(a, nav.firstChild);
+        return a;
+    }
+
+    function syncStaffLogoToHub() {
+        if (!isStaffRole(getRole())) return;
+        var hub = WORK_HUB_PAGE;
+        var logos = document.querySelectorAll(".dz-logo, .dz-logo--compact");
+        for (var i = 0; i < logos.length; i++) {
+            logos[i].setAttribute("href", hub);
+            logos[i].setAttribute("aria-label", "업무관리");
+        }
+    }
+
+    function applyStaffNavManageHomeExtras(nav) {
+        var showAdmin = canShowAdminNavMenus();
+        document.body.classList.toggle("nav-admin-menus", showAdmin);
+        var sel =
+            '[data-nav-dropdown="product-manage"],' +
+            '[data-nav-dropdown="vendor-manage"],' +
+            'a.header-nav-link[href="product-register.html"],' +
+            'a.header-nav-link[href="vendor-register.html"],' +
+            'a.header-nav-link[href="product-manage.html"],' +
+            'a.header-nav-link[href="vendor-manage.html"]';
+        var nodes = nav.querySelectorAll(sel);
+        for (var i = 0; i < nodes.length; i++) {
+            var el = nodes[i];
+            if (el.classList.contains("nav-dropdown-item")) continue;
+            staffNavSetVisible(el, showAdmin);
+        }
+        if (!showAdmin) {
+            var drops = nav.querySelectorAll(
+                '[data-nav-dropdown="product-manage"], [data-nav-dropdown="vendor-manage"]'
+            );
+            for (var d = 0; d < drops.length; d++) drops[d].remove();
+        }
+        var orderLinks = nav.querySelectorAll('a[href="order-list-admin.html"]');
+        var showOrder = canShowOrderManageMenu();
+        var excelLinks = nav.querySelectorAll(
+            'a[href="vendor-excel-import.html"], [data-nav-excel-import]'
+        );
+        var showExcel = isSupervisorStaff();
+        var finderLinks = nav.querySelectorAll(
+            'a[href="vendor-prospect-finder.html"], [data-nav-prospect-finder]'
+        );
+        var showFinder = getRole() === "admin";
+        for (var x = 0; x < excelLinks.length; x++) {
+            excelLinks[x].hidden = !showExcel;
+            excelLinks[x].setAttribute("aria-hidden", showExcel ? "false" : "true");
+        }
+        for (var f = 0; f < finderLinks.length; f++) {
+            finderLinks[f].hidden = !showFinder;
+            finderLinks[f].setAttribute("aria-hidden", showFinder ? "false" : "true");
+        }
+        for (var o = 0; o < orderLinks.length; o++) {
+            if (showOrder) {
+                orderLinks[o].classList.remove("header-nav-link--register-hidden");
+                orderLinks[o].removeAttribute("aria-hidden");
+                orderLinks[o].style.removeProperty("display");
+            } else {
+                orderLinks[o].remove();
+            }
+        }
+    }
+
+    function applyStaffNavMode(forceMode) {
+        syncStaffLogoToHub();
+        if (!isStaffRole(getRole())) {
+            document.body.classList.remove(
+                "staff-nav-hub",
+                "staff-nav-public",
+                "staff-nav-manage-home",
+                "staff-nav-order",
+                "staff-nav-work"
+            );
+            return;
+        }
+        var mode =
+            forceMode === "hub" ||
+            forceMode === "public" ||
+            forceMode === "manage-home" ||
+            forceMode === "order" ||
+            forceMode === "work"
+                ? forceMode
+                : resolveStaffNavMode();
+        document.body.classList.remove(
+            "staff-nav-hub",
+            "staff-nav-public",
+            "staff-nav-manage-home",
+            "staff-nav-order",
+            "staff-nav-work"
+        );
+        document.body.classList.add("staff-nav-" + mode);
+
+        var nav = document.querySelector(".site-header-nav");
+        if (!nav) return;
+
+        staffNavRemoveInjected(nav, mode);
+
+        var workHub = nav.querySelector('a[href="work-hub.html"]');
+        if (workHub) workHub.remove();
+        var staffManage = nav.querySelector(
+            'a[href="staff-manage-hub.html"]:not([data-staff-nav-injected])'
+        );
+        if (staffManage && mode !== "work") staffManage.remove();
+
+        var top = nav.querySelectorAll(":scope > a.header-nav-link, :scope > .nav-dropdown");
+        for (var i = 0; i < top.length; i++) {
+            staffNavSetVisible(top[i], staffNavShouldShow(top[i], mode));
+        }
+
+        if (mode === "manage-home") {
+            staffNavEnsureLink(nav, HOMEPAGE_MANAGE_HUB_PAGE, "홈페이지 관리", "manage-home");
+            applyStaffNavManageHomeExtras(nav);
+        } else if (mode === "order") {
+            if (isSupervisorStaff()) {
+                staffNavEnsureLink(nav, "supervisor-order-list.html", "발주서 관리", "order");
+                staffNavEnsureLink(nav, "supervisor-transaction-list.html", "거래명세서", "order");
+            } else if (canShowOrderManageMenu()) {
+                staffNavEnsureLink(nav, "order-list-admin.html", "발주서 관리", "order");
+            }
+        } else if (mode === "work" && isSupervisorStaff()) {
+            staffNavEnsureLink(nav, "staff-manage-hub.html", "업무관리", "work");
+        }
+
+        var top2 = nav.querySelectorAll(":scope > a.header-nav-link, :scope > .nav-dropdown");
+        for (var j = 0; j < top2.length; j++) {
+            if (top2[j].getAttribute("data-staff-nav-injected") === mode) continue;
+            staffNavSetVisible(top2[j], staffNavShouldShow(top2[j], mode));
+        }
+    }
 
     /** 관리자(staff admin)만 상품·업체 관리 메뉴·등록 API */
     function canManageRegisters() {
@@ -1408,6 +1732,10 @@
     function applyNavRegisterVisibility() {
         try {
             normalizeLegacySession();
+            if (isStaffRole(getRole())) {
+                applyStaffNavMode();
+                return;
+            }
             var showAdmin = canShowAdminNavMenus();
             if (document.body) {
                 document.body.classList.toggle("nav-admin-menus", showAdmin);
@@ -1552,6 +1880,10 @@
         getHomepageManageHubAccess: getHomepageManageHubAccess,
         getWorkHubOrderManageHref: getWorkHubOrderManageHref,
         getStaffLandingPath: getStaffLandingPath,
+        getStaffNavMode: getStaffNavMode,
+        setStaffNavMode: setStaffNavMode,
+        applyStaffNavMode: applyStaffNavMode,
+        syncStaffLogoToHub: syncStaffLogoToHub,
         isVendorOrderEnabled: isVendorOrderEnabled,
         isVendorPermsSynced: function () {
             return vendorPermsSynced;

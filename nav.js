@@ -331,6 +331,17 @@
         el.innerHTML = AUTH_ICON_HTML[kind];
     }
 
+    (function bootStaffNavMode() {
+        if (!window.THEJHON_AUTH) return;
+        function run() {
+            if (THEJHON_AUTH.applyNavRegisterVisibility) THEJHON_AUTH.applyNavRegisterVisibility();
+            if (THEJHON_AUTH.syncStaffLogoToHub) THEJHON_AUTH.syncStaffLogoToHub();
+        }
+        run();
+        window.addEventListener("pageshow", run);
+        window.addEventListener("thejhon-auth-permissions-updated", run);
+    })();
+
     (function syncHeaderAuthButtons() {
         var actions = document.querySelector(".site-header-actions");
         if (!actions) return;
@@ -369,6 +380,9 @@
             refreshVendorCartNav();
             if (window.THEJHON_AUTH && THEJHON_AUTH.applyNavRegisterVisibility) {
                 THEJHON_AUTH.applyNavRegisterVisibility();
+            }
+            if (window.THEJHON_AUTH && THEJHON_AUTH.syncStaffLogoToHub) {
+                THEJHON_AUTH.syncStaffLogoToHub();
             }
         }
         syncAll();

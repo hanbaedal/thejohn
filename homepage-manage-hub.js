@@ -19,5 +19,14 @@
     var access = Auth.getHomepageManageHubAccess();
     if (!access.allowed) {
         setStatus(access.reason || "이용할 수 없습니다.", "err");
+        return;
     }
+
+    if (Auth.setStaffNavMode) Auth.setStaffNavMode("manage-home");
+
+    document.querySelectorAll(".company-division-card[href]").forEach(function (card) {
+        card.addEventListener("click", function () {
+            if (Auth.setStaffNavMode) Auth.setStaffNavMode("manage-home");
+        });
+    });
 })();

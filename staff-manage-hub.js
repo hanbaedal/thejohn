@@ -15,5 +15,23 @@
     var access = THEJHON_AUTH.getStaffManageAccess();
     if (!access.allowed) {
         setStatus(access.reason, "err");
+        return;
     }
+
+    if (THEJHON_AUTH.setStaffNavMode) THEJHON_AUTH.setStaffNavMode("work");
+
+    document.querySelectorAll(".company-division-card[href]").forEach(function (card) {
+        card.addEventListener("click", function () {
+            if (!THEJHON_AUTH.setStaffNavMode) return;
+            var href = String(card.getAttribute("href") || "").toLowerCase();
+            if (
+                href.indexOf("supervisor-order-list") >= 0 ||
+                href.indexOf("supervisor-transaction-list") >= 0
+            ) {
+                THEJHON_AUTH.setStaffNavMode("order");
+            } else {
+                THEJHON_AUTH.setStaffNavMode("work");
+            }
+        });
+    });
 })();

@@ -10,6 +10,13 @@
             (kind === "err" ? " shub-status--err" : kind === "ok" ? " shub-status--ok" : "");
     }
 
+    var NAV_MODE_BY_MENU = {
+        "view-home": "public",
+        "manage-home": "manage-home",
+        "order-manage": "order",
+        "work-manage": "work"
+    };
+
     function applyMenus() {
         if (!Auth || !Auth.canAccessWorkHubMenu) return;
         var cards = document.querySelectorAll("[data-wh-menu]");
@@ -30,6 +37,12 @@
             if (key === "order-manage" && Auth.getWorkHubOrderManageHref) {
                 card.setAttribute("href", Auth.getWorkHubOrderManageHref());
             }
+            var navMode = NAV_MODE_BY_MENU[key];
+            if (navMode) {
+                card.addEventListener("click", function () {
+                    if (Auth.setStaffNavMode) Auth.setStaffNavMode(navMode);
+                });
+            }
         });
     }
 
@@ -46,6 +59,7 @@
     }
 
     applyMenus();
+    if (Auth.setStaffNavMode) Auth.setStaffNavMode("hub");
 
     if (Auth.refreshSessionPermissionsAsync) {
         Auth.refreshSessionPermissionsAsync().then(function () {
