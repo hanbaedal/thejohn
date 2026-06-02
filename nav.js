@@ -410,16 +410,14 @@
             ) {
                 text = THEJHON_AUTH.getLoggedInCompanyDisplayName() || "";
             }
-            var wide =
-                window.THEJHON_AUTH &&
-                typeof THEJHON_AUTH.isNotebookViewport === "function" &&
-                THEJHON_AUTH.isNotebookViewport();
             var narrow = false;
             try {
                 narrow = window.matchMedia("(max-width: 720px)").matches;
             } catch (e) {
                 narrow = window.innerWidth <= 720;
             }
+            /* 721px 이상: 날짜 왼쪽(와이드) / 720px 이하: 메뉴 아래(모바일) */
+            var wide = !narrow;
 
             if (text && wide) {
                 elWide.textContent = text;
@@ -442,15 +440,27 @@
         ping();
         window.__thejhonRefreshHeaderCompany = ping;
         window.addEventListener("pageshow", ping);
-        var mq1024 = window.matchMedia("(min-width: 1024px)");
+        window.addEventListener("thejhon-auth-permissions-updated", ping);
         var mq720 = window.matchMedia("(max-width: 720px)");
-        if (mq1024.addEventListener) {
-            mq1024.addEventListener("change", ping);
+        if (mq720.addEventListener) {
             mq720.addEventListener("change", ping);
-        } else if (mq1024.addListener) {
-            mq1024.addListener(ping);
+        } else if (mq720.addListener) {
             mq720.addListener(ping);
         }
+    })();
+
+    (function initHeaderToday() {
+        var todayEl = document.getElementById("headerToday");
+        if (!todayEl || todayEl.dataset.dateBound === "1") return;
+        todayEl.dataset.dateBound = "1";
+        var now = new Date();
+        todayEl.dateTime = now.toISOString().slice(0, 10);
+        todayEl.textContent = now.toLocaleDateString("ko-KR", {
+            year: "numeric",
+            month: "long",
+            day: "numeric",
+            weekday: "long"
+        });
     })();
 
     var SITE_FOOTER_INNER_HTML =

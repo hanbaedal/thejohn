@@ -169,12 +169,8 @@
             return;
         }
         if (role === "vendor") {
-            var brand = String(authGet(BRAND_COMPANY_KEY) || "").trim();
-            if (brand) authSet(DISPLAY_KEY, brand);
-            else {
-                var vendorCo = authGet(COMPANY_KEY);
-                if (vendorCo) authSet(DISPLAY_KEY, vendorCo);
-            }
+            var vendorCo = String(authGet(COMPANY_KEY) || "").trim();
+            if (vendorCo) authSet(DISPLAY_KEY, vendorCo);
         } else if (isStaffRole(role)) {
             var company = authGet(COMPANY_KEY);
             if (company) {
@@ -297,6 +293,7 @@
             .then(function (item) {
                 if (item) {
                     storeVendorOrderContact(item);
+                    syncVendorCompanyFromProfile(item);
                 }
                 return getVendorOrderContact();
             })
@@ -476,6 +473,74 @@
                 global.__thejhonRefreshFooterSocial();
             } catch (e) {}
         }
+        if (typeof global.__thejhonRefreshHeaderCompany === "function") {
+            try {
+                global.__thejhonRefreshHeaderCompany();
+            } catch (eHdr) {}
+        }
+        if (role === "vendor" && !label) {
+            refreshVendorCompanyFromProfileAsync();
+        }
+    }
+
+    function syncVendorCompanyFromProfile(item) {
+        if (!item || getRole() !== "vendor") return;
+        var company = String(item.vn_company || item.companyName || "").trim();
+        if (!company) return;
+        authSet(COMPANY_KEY, company);
+        authSet(DISPLAY_KEY, company);
+        if (typeof global.__thejhonRefreshHeaderCompany === "function") {
+            try {
+                global.__thejhonRefreshHeaderCompany();
+            } catch (e) {}
+        }
+    }
+
+    function syncSessionCompanyFromApi(sess) {
+        if (!sess || !sess.loggedIn) return;
+        var role = sess.role || getRole();
+        if (role === "vendor") {
+            var company = String(sess.companyName || "").trim();
+            if (company) {
+                authSet(COMPANY_KEY, company);
+                authSet(DISPLAY_KEY, company);
+            }
+            var brand = String(
+                sess.brandCompanyName || sess.vendorRegisteredByName || ""
+            ).trim();
+            if (brand) authSet(BRAND_COMPANY_KEY, brand);
+        } else if (isStaffRole(role)) {
+            var staffCo = String(sess.companyName || "").trim();
+            if (staffCo) {
+                authSet(COMPANY_KEY, staffCo);
+                authSet(DISPLAY_KEY, staffCo);
+                authSet(BRAND_COMPANY_KEY, staffCo);
+            }
+        }
+        if (typeof global.__thejhonRefreshHeaderCompany === "function") {
+            try {
+                global.__thejhonRefreshHeaderCompany();
+            } catch (e2) {}
+        }
+    }
+
+    function refreshVendorCompanyFromProfileAsync() {
+        if (!isLoggedIn() || getRole() !== "vendor") return Promise.resolve(null);
+        if (!global.THEJHON_API || !THEJHON_API.getVendorProfile) return Promise.resolve(null);
+        if (!THEJHON_API.getToken || !THEJHON_API.getToken()) return Promise.resolve(null);
+        return THEJHON_API.getVendorProfile()
+            .then(function (item) {
+                if (item) {
+                    syncVendorCompanyFromProfile(item);
+                    storeVendorOrderContact(item);
+                    var brand = String(item.vn_registered_by_name || "").trim();
+                    if (brand) authSet(BRAND_COMPANY_KEY, brand);
+                }
+                return item;
+            })
+            .catch(function () {
+                return null;
+            });
     }
 
     function setOAuthSession(provider) {
@@ -533,6 +598,11 @@
             try {
                 global.__thejhonApplySiteLogo("", "");
             } catch (eLogo) {}
+        }
+        if (typeof global.__thejhonRefreshHeaderCompany === "function") {
+            try {
+                global.__thejhonRefreshHeaderCompany();
+            } catch (eHdr) {}
         }
         return guestId;
     }
@@ -698,6 +768,22 @@
                 }
                 if (sess && sess.loggedIn) {
                     syncVendorGradeFromSessionApi(sess);
+                    syncSessionCompanyFromApi(sess);
+                    var role = sess.role || getRole();
+                    if (
+                        role === "vendor" &&
+                        !getVendorCompanyName() &&
+                        refreshVendorCompanyFromProfileAsync
+                    ) {
+                        refreshVendorCompanyFromProfileAsync();
+                    } else if (
+                        isStaffRole(role) &&
+                        !String(authGet(COMPANY_KEY) || "").trim() &&
+                        !String(authGet(BRAND_COMPANY_KEY) || "").trim() &&
+                        refreshBrandFromStaffProfileAsync
+                    ) {
+                        refreshBrandFromStaffProfileAsync();
+                    }
                     applyNavRegisterVisibility();
                     if (typeof global.__thejhonRefreshVendorCartNav === "function") {
                         try {
@@ -719,7 +805,15 @@
         if (!isLoggedIn() || !usesStaffLogoRole()) return Promise.resolve(null);
         if (!global.THEJHON_API || !THEJHON_API.getStaffProfile) return Promise.resolve(null);
         if (!THEJHON_API.getToken || !THEJHON_API.getToken()) return Promise.resolve(null);
-        return THEJHON_API.getStaffProfile()
+        var role = getRole();
+        var chain = Promise.resolve(null);
+        if (role === "vendor" && refreshVendorCompanyFromProfileAsync) {
+            chain = refreshVendorCompanyFromProfileAsync();
+        }
+        return chain
+            .then(function () {
+                return THEJHON_API.getStaffProfile();
+            })
             .then(function (data) {
                 if (data) updateBrandFromStaffProfile(data);
                 return data;
@@ -1101,9 +1195,23 @@
     function getLoggedInCompanyDisplayName() {
         if (!isLoggedIn()) return "";
         var role = getRole();
-        if (role === "vendor") return getVendorCompanyName();
-        if (isStaffRole(role)) return getBrandCompanyDisplayName();
-        return authGet(DISPLAY_KEY) || "";
+        if (role === "guest") {
+            return String(authGet(DISPLAY_KEY) || "").trim() || "게스트";
+        }
+        if (role === "vendor") {
+            var co = getVendorCompanyName();
+            if (co) return co;
+            var disp = String(authGet(DISPLAY_KEY) || "").trim();
+            var brand = String(authGet(BRAND_COMPANY_KEY) || "").trim();
+            if (disp && (!brand || disp !== brand)) return disp;
+            return "";
+        }
+        if (isStaffRole(role)) {
+            var staffLabel = getBrandCompanyDisplayName();
+            if (staffLabel) return staffLabel;
+            return String(authGet(DISPLAY_KEY) || authGet(USER_ID_KEY) || "").trim();
+        }
+        return String(authGet(DISPLAY_KEY) || "").trim();
     }
 
     function isNotebookViewport() {
@@ -1405,6 +1513,9 @@
         VENDOR_ORDER_ENABLED_KEY: VENDOR_ORDER_ENABLED_KEY,
         getVendorUnitPriceForProduct: getVendorUnitPriceForProduct,
         syncVendorGradeFromSessionApi: syncVendorGradeFromSessionApi,
+        syncSessionCompanyFromApi: syncSessionCompanyFromApi,
+        syncVendorCompanyFromProfile: syncVendorCompanyFromProfile,
+        refreshVendorCompanyFromProfileAsync: refreshVendorCompanyFromProfileAsync,
         refreshSessionPermissionsAsync: refreshSessionPermissionsAsync,
         refreshBrandFromStaffProfileAsync: refreshBrandFromStaffProfileAsync,
         VENDOR_GRADE_KEY: VENDOR_GRADE_KEY,

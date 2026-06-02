@@ -3,8 +3,12 @@ const { signToken, extractBearer, verifyToken, requireRole } = require("../middl
 const { getDb, isDbReady } = require("../db");
 const { resolveFormLogin, findVendorByLoginId, findStaffByLoginId } = require("../lib/loginResolve");
 const { findStaffById } = require("../lib/staff");
-const { toPublic, F: VF } = require("../lib/vendorFields");
-const { toPublic: toPublicStaff, staffOrderEnabledFromDoc } = require("../lib/staffFields");
+const { toPublic, F: VF, getCompanyName: getVendorCompanyName } = require("../lib/vendorFields");
+const {
+    toPublic: toPublicStaff,
+    staffOrderEnabledFromDoc,
+    getCompanyName: getStaffCompanyName
+} = require("../lib/staffFields");
 const { vendorCanPlaceOrders } = require("../lib/orderAccess");
 const { findStaffByRegisteredBy } = require("../lib/staffRegisteredBy");
 const { logStaffLogin, logVendorLogin } = require("../lib/accessLog");
@@ -231,14 +235,39 @@ router.get("/session", async function (req, res) {
         }
         var vendorOrderEnabled = !!payload.vendorOrderEnabled;
         var staffOrderEnabled = !!payload.staffOrderEnabled;
+        var companyName = "";
+        var brandCompanyName = "";
+        var displayName = "";
         if (isDbReady()) {
             try {
                 if (payload.role === "vendor") {
                     const vendor = await findVendorByLoginId(payload.userId || "");
                     vendorOrderEnabled = !!(vendor && (await vendorCanPlaceOrders(vendor)));
-                } else if (payload.role === "admin") {
+                    if (vendor) {
+                        companyName = getVendorCompanyName(vendor);
+                        brandCompanyName = String(vendor[VF.registeredByName] || "").trim();
+                        if (!brandCompanyName) {
+                            const regBy = String(
+                                vendor[VF.registeredBy] || payload.vendorRegisteredBy || ""
+                            ).trim();
+                            if (regBy) {
+                                let adminStaff = await findStaffByLoginId(regBy);
+                                if (!adminStaff) adminStaff = await findStaffByRegisteredBy(regBy);
+                                if (adminStaff) {
+                                    brandCompanyName = getStaffCompanyName(adminStaff) || "";
+                                }
+                            }
+                        }
+                        displayName = companyName || payload.userId || "";
+                    }
+                } else if (payload.role === "admin" || payload.role === "supervisor") {
                     const staff = await findStaffByLoginId(payload.userId || "");
                     staffOrderEnabled = staffOrderEnabledFromDoc(staff);
+                    if (staff) {
+                        companyName = getStaffCompanyName(staff);
+                        brandCompanyName = companyName;
+                        displayName = companyName || payload.userId || "";
+                    }
                 }
             } catch (refreshErr) {
                 console.warn("[auth] session permission refresh:", refreshErr.message);
@@ -252,7 +281,10 @@ router.get("/session", async function (req, res) {
             vendorGrade: payload.vendorGrade || "",
             vendorRegisteredBy: payload.vendorRegisteredBy || "",
             vendorOrderEnabled: vendorOrderEnabled,
-            staffOrderEnabled: staffOrderEnabled
+            staffOrderEnabled: staffOrderEnabled,
+            companyName: companyName,
+            brandCompanyName: brandCompanyName,
+            displayName: displayName
         });
     } catch (e) {
         return res.json({ ok: true, loggedIn: false, error: "세션이 만료되었습니다." });

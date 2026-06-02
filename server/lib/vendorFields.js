@@ -178,8 +178,10 @@ function fromLegacyDoc(doc) {
 }
 
 function getCompanyName(doc) {
+    if (!doc) return "";
     const d = fromLegacyDoc(doc);
-    return d ? str(d[F.company]) : "";
+    if (d && str(d[F.company])) return str(d[F.company]);
+    return str(doc[F.company]) || str(doc.vn_company) || str(doc.companyName) || "";
 }
 
 function toPublic(doc) {

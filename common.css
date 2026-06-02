@@ -483,7 +483,7 @@ body.nav-admin-menus .site-header-nav a.header-nav-link[href="vendor-register.ht
     align-self: center;
     flex-shrink: 1;
 }
-@media (min-width: 1024px) {
+@media (min-width: 721px) {
     .header-session-company--wide.header-session-company--show {
         display: block;
     }

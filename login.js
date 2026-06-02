@@ -93,6 +93,10 @@
             Auth.refreshBrandFromStaffProfileAsync().finally(navigate);
             return;
         }
+        if (role === "vendor" && Auth.refreshBrandFromStaffProfileAsync) {
+            Auth.refreshBrandFromStaffProfileAsync().finally(navigate);
+            return;
+        }
         navigate();
     }
 
