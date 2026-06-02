@@ -72,7 +72,9 @@
     function bindCards() {
         document.querySelectorAll(".hmh-card[href]").forEach(function (card) {
             card.addEventListener("click", function () {
-                if (Auth && Auth.setStaffNavMode) Auth.setStaffNavMode("manage-home");
+                if (!Auth) return;
+                if (Auth.setStaffNavMode) Auth.setStaffNavMode("manage-home");
+                if (Auth.refreshManageHomeHeader) Auth.refreshManageHomeHeader();
             });
         });
     }

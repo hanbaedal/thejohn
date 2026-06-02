@@ -21,7 +21,11 @@
     <header class="site-header">
         <div class="site-header-start">
             <a href="work-hub.html" class="dz-logo dz-logo--compact" aria-label="그룹 마케팅 관리"><img src="img/logo.png" alt="" width="72" height="72" class="dz-logo-img"></a>
-            <nav class="site-header-nav" aria-label="홈페이지 관리 메뉴"></nav>
+            <nav class="site-header-nav site-header-nav--hmh" aria-label="상품관리 메뉴">
+                <a href="product-register.html" class="header-nav-link is-hmh-subnav" data-staff-nav-injected="manage-home">상품 등록</a>
+                <a href="product-list-admin.html" class="header-nav-link is-hmh-subnav" data-staff-nav-injected="manage-home">상품 리스트</a>
+                <a href="product-new-register.html" class="header-nav-link is-hmh-subnav" data-staff-nav-injected="manage-home">신규상품 등록</a>
+            </nav>
         </div>
         <nav class="site-header-actions" aria-label="계정">
             <time class="header-date" id="headerToday" datetime=""></time>
@@ -87,6 +91,7 @@
                 }
             }
             syncSupportHubAdminCards();
+            if (Auth && Auth.applyStaffNavMode) Auth.applyStaffNavMode("manage-home");
         })();
     </script>
 </body>

@@ -715,6 +715,7 @@
     var WORK_HUB_LABEL = "그룹 마케팅 관리";
     var HOMEPAGE_MANAGE_HUB_PAGE = "homepage-manage-hub.html";
     var STAFF_NAV_MODE_KEY = "thejhon_staff_nav_mode";
+    var MANAGE_HOME_SUBNAV_KEY_PREFIX = "thejhon_manage_home_subnav_";
     var STAFF_NAV_PUBLIC_PAGES = {
         "index.html": true,
         "company.html": true,
@@ -905,11 +906,111 @@
         }
     }
 
-    function staffNavClearInjected(nav) {
-        var injected = nav.querySelectorAll("[data-staff-nav-injected]");
+    function staffNavClearInjected(nav, onlyDynamic) {
+        var sel = onlyDynamic
+            ? '[data-staff-nav-injected][data-hmh-dynamic="1"]'
+            : "[data-staff-nav-injected]";
+        var injected = nav.querySelectorAll(sel);
         for (var i = 0; i < injected.length; i++) {
             injected[i].remove();
         }
+    }
+
+    function manageHomeSubnavStorageKey(section) {
+        return MANAGE_HOME_SUBNAV_KEY_PREFIX + String(section || "home");
+    }
+
+    function saveManageHomeSubnav(section, items) {
+        try {
+            sessionStorage.setItem(
+                manageHomeSubnavStorageKey(section),
+                JSON.stringify(items || [])
+            );
+        } catch (e) {}
+    }
+
+    function getManageHomeSubnavDefaults(section) {
+        if (section === "product") {
+            return [
+                { href: "product-register.html", label: "상품 등록" },
+                { href: "product-list-admin.html", label: "상품 리스트" },
+                { href: "product-new-register.html", label: "신규상품 등록" }
+            ];
+        }
+        if (section === "vendor") {
+            return [
+                { href: "vendor-register.html", label: "업체 등록" },
+                { href: "vendor-list-admin.html", label: "업체 리스트" },
+                { href: "vendor-manage.html", label: "업체관리 허브" }
+            ];
+        }
+        return [
+            { href: "support-news-admin.html", label: "최근소식 입력" },
+            { href: "support-qna-admin.html", label: "자유게시판" },
+            { href: "support-inquiry.html", label: "문의사항 답변" }
+        ];
+    }
+
+    function loadManageHomeSubnav(section) {
+        try {
+            var raw = sessionStorage.getItem(manageHomeSubnavStorageKey(section));
+            var data = JSON.parse(raw || "[]");
+            if (Array.isArray(data) && data.length) return data;
+        } catch (e2) {
+            /* ignore */
+        }
+        return getManageHomeSubnavDefaults(section);
+    }
+
+    function cardNavVisible(el) {
+        if (!el) return false;
+        if (el.hidden) return false;
+        if (el.getAttribute("aria-hidden") === "true") return false;
+        var st = global.getComputedStyle ? global.getComputedStyle(el) : null;
+        if (st && st.display === "none") return false;
+        return true;
+    }
+
+    function collectBodyNavCards(scope) {
+        var root = scope || document;
+        var items = [];
+        var seen = {};
+
+        function pushItem(href, label) {
+            var file = staffNavHrefFile(href);
+            if (!file || !label) return;
+            var key = file + "\t" + label;
+            if (seen[key]) return;
+            seen[key] = true;
+            items.push({ href: href, label: label });
+        }
+
+        var hmhCards = root.querySelectorAll(".hmh-panel:not([hidden]) .hmh-card[href]");
+        if (hmhCards.length) {
+            for (var h = 0; h < hmhCards.length; h++) {
+                var hc = hmhCards[h];
+                if (!cardNavVisible(hc)) continue;
+                var hHref = hc.getAttribute("href");
+                var hTitle = hc.querySelector("h3, h2");
+                pushItem(hHref, hTitle ? hTitle.textContent.trim() : "");
+            }
+            return items;
+        }
+
+        var main =
+            root.querySelector("main.page-main") ||
+            root.querySelector("main.company-main");
+        if (!main) return items;
+
+        var cards = main.querySelectorAll("a.company-division-card[href]");
+        for (var i = 0; i < cards.length; i++) {
+            var card = cards[i];
+            if (!cardNavVisible(card)) continue;
+            var href = card.getAttribute("href");
+            var title = card.querySelector("h2, h3");
+            pushItem(href, title ? title.textContent.trim() : "");
+        }
+        return items;
     }
 
     function syncHmhManageHomeTabCurrent(nav, activeSection) {
@@ -976,78 +1077,71 @@
         return "home";
     }
 
-    /** 현재 페이지 본문에 보이는 카드/링크 메뉴만 헤더 메뉴로 사용 (허브 본문과 중복되면 생략) */
+    /** 허브 본문 메뉴를 저장하고, 하위 페이지에서는 저장된 메뉴를 헤더에 표시 (업무관리 허브와 동일 패턴) */
     function collectManageHomeSubnavFromBody() {
-        var items = [];
-        var seen = {};
-        if (currentPageFile() === HOMEPAGE_MANAGE_HUB_PAGE) return items;
+        var file = currentPageFile();
+        var section = getHomepageManageNavSectionForPage(file);
 
-        function pushItem(href, label) {
-            var file = staffNavHrefFile(href);
-            if (!file || !label) return;
-            var key = file + "\t" + label;
-            if (seen[key]) return;
-            seen[key] = true;
-            items.push({ href: href, label: label });
+        if (file === HOMEPAGE_MANAGE_HUB_PAGE) {
+            var hubItems = collectBodyNavCards(document);
+            if (hubItems.length) saveManageHomeSubnav(section, hubItems);
+            return [];
         }
 
-        function cardVisible(el) {
-            if (!el) return false;
-            if (el.hidden) return false;
-            if (el.getAttribute("aria-hidden") === "true") return false;
-            var st = global.getComputedStyle ? global.getComputedStyle(el) : null;
-            if (st && st.display === "none") return false;
-            return true;
+        var bodyItems = collectBodyNavCards(document);
+        if (bodyItems.length) {
+            saveManageHomeSubnav(section, bodyItems);
+            return bodyItems;
         }
 
-        var hmhCards = document.querySelectorAll(
-            ".hmh-panel:not([hidden]) .hmh-card[href]"
-        );
-        if (hmhCards.length) {
-            for (var h = 0; h < hmhCards.length; h++) {
-                var hc = hmhCards[h];
-                if (!cardVisible(hc)) continue;
-                var hHref = hc.getAttribute("href");
-                var hTitle = hc.querySelector("h3, h2");
-                pushItem(hHref, hTitle ? hTitle.textContent.trim() : "");
-            }
-            return items;
-        }
+        return loadManageHomeSubnav(section);
+    }
 
-        var main =
-            document.querySelector("main.page-main") ||
-            document.querySelector("main.company-main");
-        if (!main) return items;
-
-        var cards = main.querySelectorAll("a.company-division-card[href]");
-        for (var i = 0; i < cards.length; i++) {
-            var card = cards[i];
-            if (!cardVisible(card)) continue;
-            var href = card.getAttribute("href");
-            var title = card.querySelector("h2, h3");
-            pushItem(href, title ? title.textContent.trim() : "");
+    function syncManageHomeSubnavCurrent(nav, items) {
+        if (!nav || !items || !items.length) return;
+        var cur = currentPageFile();
+        var links = nav.querySelectorAll("[data-hmh-subnav]");
+        for (var i = 0; i < links.length; i++) {
+            var link = links[i];
+            var on = staffNavHrefFile(link.getAttribute("href")) === cur;
+            link.classList.toggle("is-current", on);
+            if (on) link.setAttribute("aria-current", "page");
+            else link.removeAttribute("aria-current");
         }
-        return items;
+    }
+
+    function findManageHomeSubnavLink(nav, href) {
+        if (!nav) return null;
+        var target = staffNavHrefFile(href);
+        var links = nav.querySelectorAll("a[data-hmh-subnav]");
+        for (var i = 0; i < links.length; i++) {
+            if (staffNavHrefFile(links[i].getAttribute("href")) === target) return links[i];
+        }
+        return null;
     }
 
     function syncStaffNavManageHomeSubnav(nav) {
         if (!nav) return;
-        var sub = nav.querySelectorAll("[data-hmh-subnav]");
-        for (var s = 0; s < sub.length; s++) sub[s].remove();
+        staffNavClearInjected(nav, true);
 
+        var section = getHomepageManageNavSectionForPage(currentPageFile());
         var items = collectManageHomeSubnavFromBody();
         if (!items.length) return;
 
         var cur = currentPageFile();
         for (var i = 0; i < items.length; i++) {
             var it = items[i];
+            var file = staffNavHrefFile(it.href);
+            if (findManageHomeSubnavLink(nav, it.href)) continue;
+
             var a = document.createElement("a");
             a.href = it.href;
             a.className = "header-nav-link is-hmh-subnav";
             a.textContent = it.label;
             a.setAttribute("data-staff-nav-injected", "manage-home");
-            a.setAttribute("data-hmh-subnav", activeSection);
-            if (staffNavHrefFile(it.href) === cur) {
+            a.setAttribute("data-hmh-subnav", section);
+            a.setAttribute("data-hmh-dynamic", "1");
+            if (file === cur) {
                 a.classList.add("is-current");
                 a.setAttribute("aria-current", "page");
             }
@@ -1056,6 +1150,7 @@
             });
             nav.appendChild(a);
         }
+        syncManageHomeSubnavCurrent(nav, items);
     }
 
     function canAccessHomepageManageCard(cardKey) {
@@ -1094,9 +1189,16 @@
             plain[h].remove();
         }
 
-        staffNavClearInjected(nav);
         nav.classList.add("site-header-nav--hmh");
         syncStaffNavManageHomeSubnav(nav);
+    }
+
+    function refreshManageHomeHeader() {
+        if (!isStaffRole(getRole())) return;
+        var nav = document.querySelector(".site-header-nav");
+        if (!nav) return;
+        if (resolveStaffNavMode() !== "manage-home") return;
+        applyStaffNavManageHomeTabs(nav);
     }
 
     function applyStaffNavMode(forceMode) {
@@ -2012,6 +2114,8 @@
         canAccessHomepageManageCard: canAccessHomepageManageCard,
         getHomepageManageNavSectionForPage: getHomepageManageNavSectionForPage,
         applyStaffNavManageHomeTabs: applyStaffNavManageHomeTabs,
+        refreshManageHomeHeader: refreshManageHomeHeader,
+        saveManageHomeSubnav: saveManageHomeSubnav,
         syncHmhManageHomeTabCurrent: syncHmhManageHomeTabCurrent,
         staffNavClearInjected: staffNavClearInjected,
         getWorkHubOrderManageHref: getWorkHubOrderManageHref,
