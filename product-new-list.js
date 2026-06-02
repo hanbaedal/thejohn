@@ -43,7 +43,7 @@
         });
         if (!items.length) {
             listEl.innerHTML =
-                '<p class="am-list-empty">신규 상품이 없습니다. <a href="product-new-register.html">신규상품 등록</a>에서 추가해 주세요.</p>';
+                '<p class="am-list-empty">신규 상품이 없습니다. <a href="product-register.html">상품 등록</a>에서 추가해 주세요.</p>';
             return;
         }
         listEl.innerHTML =

@@ -933,8 +933,7 @@
         if (section === "product") {
             return [
                 { href: "product-register.html", label: "상품 등록" },
-                { href: "product-list-admin.html", label: "상품 리스트" },
-                { href: "product-new-register.html", label: "신규상품 등록" }
+                { href: "product-list-admin.html", label: "상품 리스트" }
             ];
         }
         if (section === "vendor") {
@@ -1122,10 +1121,18 @@
 
     function syncStaffNavManageHomeSubnav(nav) {
         if (!nav) return;
-        staffNavClearInjected(nav, true);
 
         var section = getHomepageManageNavSectionForPage(currentPageFile());
         var items = collectManageHomeSubnavFromBody();
+        var existingSubnav = nav.querySelectorAll("a[data-hmh-subnav]");
+
+        if (existingSubnav.length > 0) {
+            if (!items.length) items = loadManageHomeSubnav(section);
+            syncManageHomeSubnavCurrent(nav, items);
+            return;
+        }
+
+        staffNavClearInjected(nav, true);
         if (!items.length) return;
 
         var cur = currentPageFile();
@@ -1163,7 +1170,6 @@
             key === "support-inquiry" ||
             key === "product-register" ||
             key === "product-list" ||
-            key === "product-new" ||
             key === "vendor-register" ||
             key === "vendor-list" ||
             key === "vendor-hub"

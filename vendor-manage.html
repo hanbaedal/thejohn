@@ -41,15 +41,7 @@
     <header class="site-header">
         <div class="site-header-start">
             <a href="work-hub.html" class="dz-logo dz-logo--compact" aria-label="그룹 마케팅 관리"><img src="img/logo.png" alt="" width="72" height="72" class="dz-logo-img"></a>
-            <nav class="site-header-nav site-header-nav--hmh" aria-label="업체관리 메뉴">
-                <a href="vendor-register.html" class="header-nav-link is-hmh-subnav" data-staff-nav-injected="manage-home">업체 등록</a>
-                <a href="vendor-list-admin.html" class="header-nav-link is-hmh-subnav" data-staff-nav-injected="manage-home">업체 리스트</a>
-                <a href="vendor-email-broadcast.html" class="header-nav-link is-hmh-subnav" data-staff-nav-injected="manage-home">이메일 보내기</a>
-                <a href="vendor-new-register.html" class="header-nav-link is-hmh-subnav" data-staff-nav-injected="manage-home">신규업체 등록</a>
-                <a href="vendor-new-list.html" class="header-nav-link is-hmh-subnav" data-staff-nav-injected="manage-home">신규업체 리스트</a>
-                <a href="vendor-prospect-finder.html" class="header-nav-link is-hmh-subnav" data-staff-nav-injected="manage-home" id="vm-header-prospect-finder" hidden>예비 업체 찾기</a>
-                <a href="vendor-prospect-list.html" class="header-nav-link is-hmh-subnav" data-staff-nav-injected="manage-home">예비업체 리스트</a>
-            </nav>
+            <nav class="site-header-nav site-header-nav--hmh" aria-label="업체관리 메뉴"></nav>
         </div>
         <nav class="site-header-actions" aria-label="계정">
             <time class="header-date" id="headerToday" datetime=""></time>
@@ -162,11 +154,6 @@
                 if (finderCard) {
                     finderCard.hidden = !admin;
                     finderCard.setAttribute("aria-hidden", admin ? "false" : "true");
-                }
-                var headerFinder = document.getElementById("vm-header-prospect-finder");
-                if (headerFinder) {
-                    headerFinder.hidden = !admin;
-                    headerFinder.setAttribute("aria-hidden", admin ? "false" : "true");
                 }
             }
             syncSupportHubAdminCards();
