@@ -27,6 +27,23 @@
 
     if (!listEl) return;
 
+    var backLink = document.querySelector(".company-branch-back a");
+    var pageHeading = document.querySelector("main.page-main > h1");
+
+    function isManageHomeEntry() {
+        return A.getStaffNavMode && A.getStaffNavMode() === "manage-home";
+    }
+
+    function applyManageHomeUi() {
+        if (!isAdmin() || !isManageHomeEntry()) return;
+        if (backLink) {
+            backLink.href = "homepage-manage-hub.html#support";
+            backLink.textContent = "← 고객센터관리";
+        }
+        if (pageHeading) pageHeading.textContent = "문의사항 답변";
+        if (writeBtn) writeBtn.hidden = true;
+    }
+
     function isAdmin() {
         return A.canManageRegisters && A.canManageRegisters();
     }
@@ -462,5 +479,6 @@
         });
     }
 
+    applyManageHomeUi();
     loadList();
 })();

@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="auth-storage.js"></script>
+    <script src="site-brand-boot.js"></script>
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#0a4d9c">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-title" content="더존">
+    <title>자유게시판 관리 — 고객센터 — 더존</title>
+    <link rel="stylesheet" href="common.css">
+    <link rel="stylesheet" href="support-pages.css">
+    <script src="api-config.js"></script>
+    <script src="thejhon-api.js"></script>
+    <script src="auth.js"></script>
+    <script src="admin-header.js"></script>
+    <script src="support-common.js" defer></script>
+    <script src="nav.js" defer></script>
+    <script src="support-qna-admin.js" defer></script>
+</head>
+<body>
+    <script>
+        (function () {
+            var A = window.THEJHON_AUTH;
+            if (!A || !A.canManageRegisters || !A.canManageRegisters()) {
+                window.location.replace("support.html");
+            }
+        })();
+    </script>
+    <header class="site-header">
+        <div class="site-header-start">
+            <a href="work-hub.html" class="dz-logo dz-logo--compact" aria-label="업무관리"><img src="img/logo.png" alt="" width="72" height="72" class="dz-logo-img"></a>
+            <nav class="site-header-nav" aria-label="주요 메뉴">
+                <a href="company.html" class="header-nav-link">회사소개</a>
+                <a href="products.html" class="header-nav-link">사업부문</a>
+                <a href="product-register.html" class="header-nav-link">상품등록</a>
+                <a href="vendor-register.html" class="header-nav-link">업체등록</a>
+                <div class="nav-dropdown" data-nav-dropdown="support">
+                    <a href="support.html" class="header-nav-link nav-dropdown-trigger is-current" aria-haspopup="true" aria-expanded="false" aria-controls="supportSubmenu">고객센터</a>
+                    <div id="supportSubmenu" class="nav-dropdown-panel" role="menu" aria-label="고객센터 하위 메뉴">
+                        <a href="support-partners.html" class="nav-dropdown-item" role="menuitem">파트너회사 소개</a>
+                        <a href="support-library.html" class="nav-dropdown-item" role="menuitem">최근소식</a>
+                        <a href="support-qna.html" class="nav-dropdown-item" role="menuitem">자유게시판</a>
+                        <a href="support-inquiry.html" class="nav-dropdown-item" role="menuitem">문의사항</a>
+                    </div>
+                </div>
+            </nav>
+        </div>
+        <nav class="site-header-actions" aria-label="계정">
+            <time class="header-date" id="headerToday" datetime=""></time>
+            <button type="button" class="btn btn-auth-icon btn-logout" id="btnLogout" hidden aria-label="로그아웃" title="로그아웃"></button>
+        </nav>
+    </header>
+    <main class="page-main">
+        <p class="company-branch-back"><a href="homepage-manage-hub.html#support">← 고객센터관리</a></p>
+        <h1>자유게시판 관리</h1>
+        <p class="sp-lead">게시글을 선택해 수정하거나 삭제할 수 있습니다.</p>
+        <p id="sqa-status" class="sp-status" role="status" aria-live="polite"></p>
+        <div class="sq-list-wrap">
+            <div class="sq-list-toolbar">
+                <span class="sq-list-toolbar__label">전체 게시글</span>
+            </div>
+            <ul id="sqa-list" class="sq-board-list" aria-live="polite"></ul>
+        </div>
+    </main>
+    <div id="sqa-view-modal" class="sq-modal" hidden role="dialog" aria-modal="true" aria-labelledby="sqa-view-title">
+        <div class="sq-modal__panel sq-modal__panel--view">
+            <div class="sq-modal__head">
+                <h2 id="sqa-view-title" class="sq-modal__title">게시글 관리</h2>
+                <button type="button" class="sq-modal__close" id="sqa-view-close" aria-label="닫기">×</button>
+            </div>
+            <form id="sqa-edit-form" class="sp-form" novalidate>
+                <input type="hidden" id="sqa-edit-id" value="">
+                <p id="sqa-view-meta" class="sq-view-meta"></p>
+                <div class="sp-field">
+                    <label for="sqa-edit-title">제목</label>
+                    <input type="text" id="sqa-edit-title" required maxlength="200" autocomplete="off">
+                </div>
+                <div class="sp-field">
+                    <label for="sqa-edit-body">내용</label>
+                    <textarea id="sqa-edit-body" required maxlength="8000" rows="8"></textarea>
+                </div>
+                <div class="sp-actions sq-view-actions">
+                    <button type="submit" class="sp-btn sp-btn--primary">저장</button>
+                    <button type="button" class="sp-btn sp-btn--danger" id="sqa-del-btn">삭제</button>
+                    <button type="button" class="sp-btn sp-btn--secondary" id="sqa-view-cancel">닫기</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    <footer class="site-footer">
+        <div class="site-footer-inner">
+            <dl class="site-footer-grid" id="siteFooterCompanyGrid" aria-live="polite"></dl>
+            <p class="site-footer-company-msg" id="siteFooterCompanyMsg" hidden></p>
+        </div>
+    </footer>
+</body>
+</html>

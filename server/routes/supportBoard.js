@@ -1,6 +1,6 @@
 const express = require("express");
 const { getDb } = require("../db");
-const { optionalAuth } = require("../middleware/auth");
+const { optionalAuth, requireRole } = require("../middleware/auth");
 const {
     buildFromBody,
     toPublic,
@@ -66,6 +66,30 @@ router.post("/", optionalAuth, async function (req, res) {
         const doc = toDbDoc(id, built, author, null);
         await getDb().collection(COL).insertOne(doc);
         res.status(201).json({ ok: true, item: toPublic(doc) });
+    } catch (err) {
+        res.status(500).json({ ok: false, error: err.message });
+    }
+});
+
+router.put("/:id", requireRole("admin", "supervisor"), async function (req, res) {
+    try {
+        const id = String(req.params.id || "");
+        const doc = await getDb().collection(COL).findOne({ id: id });
+        if (!doc) {
+            return res.status(404).json({ ok: false, error: "글을 찾을 수 없습니다." });
+        }
+        const built = buildFromBody(req.body || {});
+        const errMsg = validateBuilt(built);
+        if (errMsg) {
+            return res.status(400).json({ ok: false, error: errMsg });
+        }
+        const updated = toDbDoc(id, built, {
+            role: doc[F.authorRole] || doc.authorRole,
+            userId: doc[F.authorUserId] || doc.authorUserId,
+            label: doc[F.authorLabel] || doc.authorLabel
+        }, doc);
+        await getDb().collection(COL).updateOne({ id: id }, { $set: updated });
+        res.json({ ok: true, item: toPublic(updated) });
     } catch (err) {
         res.status(500).json({ ok: false, error: err.message });
     }

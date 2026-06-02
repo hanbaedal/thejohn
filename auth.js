@@ -733,7 +733,8 @@
     };
     var STAFF_NAV_MANAGE_HOME_PAGES = {
         "homepage-manage-hub.html": true,
-        "support-news-admin.html": true
+        "support-news-admin.html": true,
+        "support-qna-admin.html": true
     };
     var STAFF_NAV_ORDER_PAGES = {
         "order-list-admin.html": true,
@@ -864,7 +865,9 @@
         if (file === "products.html" || file === "product-detail.html" || file === "index.html") {
             return "public";
         }
-        if (file === "support-news-admin.html") return "manage-home";
+        if (file === "support-news-admin.html" || file === "support-qna-admin.html") {
+            return "manage-home";
+        }
         if (STAFF_NAV_ORDER_PAGES[file]) return "order";
         if (STAFF_NAV_WORK_PAGES[file]) return "work";
         if (STAFF_NAV_MANAGE_HOME_PAGES[file]) return "manage-home";
@@ -965,7 +968,7 @@
         }
         if (
             file === "support-news-admin.html" ||
-            file === "support-qna.html" ||
+            file === "support-qna-admin.html" ||
             file === "support-inquiry.html"
         ) {
             return "support";
@@ -985,7 +988,7 @@
             key === "home-products" ||
             key === "home-partners" ||
             key === "support-news" ||
-            key === "support-qna" ||
+            key === "support-qna-admin" ||
             key === "support-inquiry" ||
             key === "product-register" ||
             key === "product-list" ||
@@ -1476,6 +1479,9 @@
     function canAccessWorkHubMenu(menuKey) {
         if (!getWorkHubAccess().allowed) return false;
         if (menuKey === "view-home" || menuKey === "manage-home") return true;
+        if (menuKey === "product-manage" || menuKey === "vendor-manage") {
+            return canManageRegisters();
+        }
         if (menuKey === "work-manage") return isSupervisorStaff();
         if (menuKey === "order-manage") {
             if (isSupervisorStaff()) return true;

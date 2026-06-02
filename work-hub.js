@@ -13,6 +13,8 @@
     var NAV_MODE_BY_MENU = {
         "view-home": "public",
         "manage-home": "manage-home",
+        "product-manage": "manage-home",
+        "vendor-manage": "manage-home",
         "order-manage": "order",
         "work-manage": "work"
     };

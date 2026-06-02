@@ -474,6 +474,11 @@
         deleteSupportBoard: function (id, body) {
             return request("DELETE", "/api/support-board/" + encodeURIComponent(id), body || {});
         },
+        updateSupportBoard: function (id, body) {
+            return request("PUT", "/api/support-board/" + encodeURIComponent(id), body || {}).then(function (d) {
+                return d.item;
+            });
+        },
         listSupportInquiry: function (opts) {
             var q = "";
             if (opts && opts.unlocked && opts.unlocked.length) {
