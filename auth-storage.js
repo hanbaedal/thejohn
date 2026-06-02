@@ -2,6 +2,16 @@
  * 로그인 세션 저장 — 탭별 sessionStorage, PWA만 localStorage (head 최상단 로드)
  */
 (function (global) {
+    /** 탭마다 달라야 하는 권한 플래그 — localStorage·탭 간 hydrate 금지 */
+    var SESSION_ONLY_KEYS = {
+        thejhon_vendor_order_enabled: true,
+        thejhon_staff_order_enabled: true
+    };
+
+    function isSessionOnlyKey(key) {
+        return !!SESSION_ONLY_KEYS[key];
+    }
+
     function isPwaStandalone() {
         try {
             if (global.matchMedia && global.matchMedia("(display-mode: standalone)").matches) {
@@ -19,6 +29,7 @@
             var s = sessionStorage.getItem(key);
             if (s != null && s !== "") return s;
         } catch (e) {}
+        if (isSessionOnlyKey(key)) return "";
         if (isPwaStandalone()) {
             try {
                 var v = localStorage.getItem(key);
@@ -33,6 +44,12 @@
             if (value == null || value === "") sessionStorage.removeItem(key);
             else sessionStorage.setItem(key, String(value));
         } catch (e) {}
+        if (isSessionOnlyKey(key)) {
+            try {
+                localStorage.removeItem(key);
+            } catch (eSo) {}
+            return;
+        }
         if (isPwaStandalone()) {
             try {
                 if (value == null || value === "") localStorage.removeItem(key);
@@ -68,6 +85,7 @@
         var i;
         for (i = 0; i < keys.length; i++) {
             var key = keys[i];
+            if (isSessionOnlyKey(key)) continue;
             try {
                 if (!sessionStorage.getItem(key)) {
                     var v = localStorage.getItem(key);

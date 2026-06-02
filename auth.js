@@ -29,6 +29,11 @@
 
     var store = global.THEJHON_AUTH_STORAGE;
 
+    /** setFormSession·로그아웃마다 증가 — 늦게 도착한 checkSession 응답 무시 */
+    var authSessionEpoch = 0;
+    /** 업체 주문 권한 — 로그인·세션 API 확인 후에만 true (로컬 캐시만으로 주문 불가) */
+    var vendorPermsSynced = false;
+
     /** 탭마다 sessionStorage(크롬 새 탭 업체별 로그인). PWA(홈 화면)만 localStorage 유지 */
     var AUTH_PERSIST_KEYS = [
         AUTH_KEY,
@@ -85,6 +90,33 @@
 
     migrateAuthStorageOnce();
 
+    function bumpAuthSessionEpoch() {
+        authSessionEpoch += 1;
+        return authSessionEpoch;
+    }
+
+    function resetVendorOrderPermissionLocal() {
+        vendorPermsSynced = false;
+        authRemove(VENDOR_ORDER_ENABLED_KEY);
+    }
+
+    /** PWA·이전 탭 로그인 잔여값 제거 — 세션 API 확인 전까지 주문 비활성 */
+    (function pessimisticVendorOrderOnLoad() {
+        if (authGet(AUTH_KEY) === "1" && authGet(ROLE_KEY) === "vendor") {
+            resetVendorOrderPermissionLocal();
+        }
+    })();
+
+    function sessionMatchesCurrentAccount(sess) {
+        if (!sess || !sess.loggedIn) return false;
+        var role = getRole();
+        if (!role || sess.role !== role) return false;
+        var uid = String(authGet(USER_ID_KEY) || "").trim();
+        var sid = String(sess.userId || "").trim();
+        if (!uid || !sid) return uid === sid;
+        return staffLoginIdsEqualClient(uid, sid);
+    }
+
     function clearVendorCartIfAny() {
         try {
             if (global.THEJHON_VENDOR_CART && THEJHON_VENDOR_CART.clearCart) {
@@ -95,6 +127,7 @@
 
     /** sessionStorage·토큰만 비움 (이 탭 계정 전환) */
     function clearAuthStorageLocal() {
+        vendorPermsSynced = false;
         var i;
         for (i = 0; i < AUTH_PERSIST_KEYS.length; i++) {
             authRemove(AUTH_PERSIST_KEYS[i]);
@@ -103,6 +136,7 @@
     }
 
     function clearSession() {
+        bumpAuthSessionEpoch();
         try {
             if (
                 global.THEJHON_API &&
@@ -379,6 +413,7 @@
         var prevUser = authGet(USER_ID_KEY);
         var hadToken =
             global.THEJHON_API && THEJHON_API.getToken && !!THEJHON_API.getToken();
+        bumpAuthSessionEpoch();
         if (hadToken && THEJHON_API.logoutAsync) {
             THEJHON_API.logoutAsync().catch(function () {});
         }
@@ -401,12 +436,14 @@
             else authRemove(VENDOR_REGISTERED_BY_KEY);
             if (vendorOrderEnabled) authSet(VENDOR_ORDER_ENABLED_KEY, "1");
             else authRemove(VENDOR_ORDER_ENABLED_KEY);
+            vendorPermsSynced = true;
             storeVendorOrderContact({
                 mgrName: vendorMgrName,
                 mgrTel: vendorMgrTel,
                 mgrEmail: vendorMgrEmail
             });
         } else {
+            vendorPermsSynced = false;
             authRemove(VENDOR_GRADE_KEY);
             authRemove(VENDOR_REGISTERED_BY_KEY);
             authRemove(VENDOR_ORDER_ENABLED_KEY);
@@ -497,7 +534,7 @@
     }
 
     function syncSessionCompanyFromApi(sess) {
-        if (!sess || !sess.loggedIn) return;
+        if (!sess || !sess.loggedIn || !sessionMatchesCurrentAccount(sess)) return;
         var role = sess.role || getRole();
         if (role === "vendor") {
             var company = String(sess.companyName || "").trim();
@@ -578,6 +615,7 @@
 
     /** 게스트 로그인 세션 — 접속 통계용 (가격·관리 메뉴 없음) */
     function setGuestSession() {
+        bumpAuthSessionEpoch();
         clearAuthStorageLocal();
         clearVendorCartIfAny();
         var guestId = newGuestId();
@@ -725,6 +763,7 @@
     }
 
     function syncVendorGradeFromSessionApi(sess) {
+        if (!sessionMatchesCurrentAccount(sess)) return;
         if (sess && sess.loggedIn && sess.role === "vendor") {
             if (sess.vendorGrade) {
                 authSet(VENDOR_GRADE_KEY, parseVendorGrade(sess.vendorGrade));
@@ -740,6 +779,7 @@
             } else {
                 authRemove(VENDOR_ORDER_ENABLED_KEY);
             }
+            vendorPermsSynced = true;
         }
         if (sess && sess.loggedIn && sess.role === "admin") {
             if (sess.staffOrderEnabled) {
@@ -760,13 +800,15 @@
         if (!isLoggedIn()) {
             return Promise.resolve(null);
         }
+        var epoch = authSessionEpoch;
         return THEJHON_API.checkSession()
             .then(function (sess) {
+                if (epoch !== authSessionEpoch) return sess;
                 if (sess && sess.code === "SESSION_INVALID") {
                     handleSessionInvalid(sess);
                     return sess;
                 }
-                if (sess && sess.loggedIn) {
+                if (sess && sess.loggedIn && sessionMatchesCurrentAccount(sess)) {
                     syncVendorGradeFromSessionApi(sess);
                     syncSessionCompanyFromApi(sess);
                     var role = sess.role || getRole();
@@ -797,6 +839,12 @@
                 return sess;
             })
             .catch(function () {
+                if (epoch === authSessionEpoch && getRole() === "vendor" && isLoggedIn()) {
+                    resetVendorOrderPermissionLocal();
+                    try {
+                        global.dispatchEvent(new CustomEvent("thejhon-auth-permissions-updated"));
+                    } catch (e4) {}
+                }
                 return null;
             });
     }
@@ -975,6 +1023,7 @@
         return (
             isLoggedIn() &&
             getRole() === "vendor" &&
+            vendorPermsSynced &&
             isVendorOrderEnabled() &&
             !!(global.THEJHON_API && THEJHON_API.getToken && THEJHON_API.getToken())
         );
@@ -1504,6 +1553,9 @@
         getWorkHubOrderManageHref: getWorkHubOrderManageHref,
         getStaffLandingPath: getStaffLandingPath,
         isVendorOrderEnabled: isVendorOrderEnabled,
+        isVendorPermsSynced: function () {
+            return vendorPermsSynced;
+        },
         isStaffOrderEnabled: isStaffOrderEnabled,
         isSupervisorStaff: isSupervisorStaff,
         getSupervisorExcelImportAccess: getSupervisorExcelImportAccess,

@@ -886,6 +886,7 @@
         manageLink.textContent = "주문서 보기";
     }
     refreshVendorCartNav();
+    window.addEventListener("thejhon-auth-permissions-updated", refreshVendorCartNav);
 
     (function injectSupportAdminOnlyNav() {
         var panel = document.getElementById("supportSubmenu");
