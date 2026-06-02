@@ -976,67 +976,67 @@
         return "home";
     }
 
-    function getManageHomeSubnavItems(section, file) {
-        if (!file) file = currentPageFile();
-        if (section === "home") {
-            return [
-                { href: "support-news-admin.html", label: "최근소식 입력" },
-                { href: "support-qna-admin.html", label: "자유게시판" },
-                { href: "support-inquiry.html", label: "문의사항 답변" }
-            ];
+    /** 현재 페이지 본문에 보이는 카드/링크 메뉴만 헤더 메뉴로 사용 (허브 본문과 중복되면 생략) */
+    function collectManageHomeSubnavFromBody() {
+        var items = [];
+        var seen = {};
+        if (currentPageFile() === HOMEPAGE_MANAGE_HUB_PAGE) return items;
+
+        function pushItem(href, label) {
+            var file = staffNavHrefFile(href);
+            if (!file || !label) return;
+            var key = file + "\t" + label;
+            if (seen[key]) return;
+            seen[key] = true;
+            items.push({ href: href, label: label });
         }
-        if (section === "product") {
-            return [
-                { href: "product-register.html", label: "상품 등록" },
-                { href: "product-list-admin.html", label: "상품 리스트" },
-                { href: "product-new-register.html", label: "신규상품 등록" }
-            ];
+
+        function cardVisible(el) {
+            if (!el) return false;
+            if (el.hidden) return false;
+            if (el.getAttribute("aria-hidden") === "true") return false;
+            var st = global.getComputedStyle ? global.getComputedStyle(el) : null;
+            if (st && st.display === "none") return false;
+            return true;
         }
-        if (section === "vendor") {
-            var hubOnly =
-                file === "vendor-register.html" ||
-                file === "vendor-list-admin.html" ||
-                file === HOMEPAGE_MANAGE_HUB_PAGE;
-            if (hubOnly) {
-                return [
-                    { href: "vendor-register.html", label: "업체 등록" },
-                    { href: "vendor-list-admin.html", label: "업체 리스트" },
-                    { href: "vendor-manage.html", label: "업체관리 허브" }
-                ];
-            }
-            var items = [
-                { href: "vendor-register.html", label: "업체 등록" },
-                { href: "vendor-list-admin.html", label: "업체 리스트" },
-                { href: "vendor-email-broadcast.html", label: "이메일 보내기" },
-                { href: "vendor-new-register.html", label: "신규업체 등록" },
-                { href: "vendor-new-list.html", label: "신규업체 리스트" },
-                { href: "vendor-prospect-list.html", label: "예비업체 리스트" }
-            ];
-            if (getRole() === "admin") {
-                items.splice(5, 0, {
-                    href: "vendor-prospect-finder.html",
-                    label: "예비 업체 찾기"
-                });
+
+        var hmhCards = document.querySelectorAll(
+            ".hmh-panel:not([hidden]) .hmh-card[href]"
+        );
+        if (hmhCards.length) {
+            for (var h = 0; h < hmhCards.length; h++) {
+                var hc = hmhCards[h];
+                if (!cardVisible(hc)) continue;
+                var hHref = hc.getAttribute("href");
+                var hTitle = hc.querySelector("h3, h2");
+                pushItem(hHref, hTitle ? hTitle.textContent.trim() : "");
             }
             return items;
         }
-        return [];
+
+        var main =
+            document.querySelector("main.page-main") ||
+            document.querySelector("main.company-main");
+        if (!main) return items;
+
+        var cards = main.querySelectorAll("a.company-division-card[href]");
+        for (var i = 0; i < cards.length; i++) {
+            var card = cards[i];
+            if (!cardVisible(card)) continue;
+            var href = card.getAttribute("href");
+            var title = card.querySelector("h2, h3");
+            pushItem(href, title ? title.textContent.trim() : "");
+        }
+        return items;
     }
 
-    function syncStaffNavManageHomeSubnav(nav, activeSection) {
+    function syncStaffNavManageHomeSubnav(nav) {
         if (!nav) return;
-        var sub = nav.querySelectorAll("[data-hmh-subnav], [data-hmh-nav-sep]");
+        var sub = nav.querySelectorAll("[data-hmh-subnav]");
         for (var s = 0; s < sub.length; s++) sub[s].remove();
 
-        var items = getManageHomeSubnavItems(activeSection, currentPageFile());
+        var items = collectManageHomeSubnavFromBody();
         if (!items.length) return;
-
-        var sep = document.createElement("span");
-        sep.className = "hmh-nav-sep";
-        sep.setAttribute("data-hmh-nav-sep", "1");
-        sep.setAttribute("data-staff-nav-injected", "manage-home");
-        sep.setAttribute("aria-hidden", "true");
-        nav.appendChild(sep);
 
         var cur = currentPageFile();
         for (var i = 0; i < items.length; i++) {
@@ -1094,30 +1094,9 @@
             plain[h].remove();
         }
 
+        staffNavClearInjected(nav);
         nav.classList.add("site-header-nav--hmh");
-
-        var active = getHomepageManageNavSectionForPage(currentPageFile());
-        var hmhTabs = nav.querySelectorAll('[data-hmh-tab][data-staff-nav-injected="manage-home"]');
-        if (hmhTabs.length < 3) {
-            staffNavClearInjected(nav);
-            var tabDefs = [
-                { section: "home", label: "홈페이지관리", href: HOMEPAGE_MANAGE_HUB_PAGE + "#home" },
-                { section: "product", label: "상품관리", href: HOMEPAGE_MANAGE_HUB_PAGE + "#product" },
-                { section: "vendor", label: "업체관리", href: HOMEPAGE_MANAGE_HUB_PAGE + "#vendor" }
-            ];
-            for (var i = 0; i < tabDefs.length; i++) {
-                var t = tabDefs[i];
-                var a = document.createElement("a");
-                a.href = t.href;
-                a.className = "header-nav-link is-hmh-tab";
-                a.textContent = t.label;
-                a.setAttribute("data-staff-nav-injected", "manage-home");
-                a.setAttribute("data-hmh-tab", t.section);
-                nav.appendChild(a);
-            }
-        }
-        syncHmhManageHomeTabCurrent(nav, active);
-        syncStaffNavManageHomeSubnav(nav, active);
+        syncStaffNavManageHomeSubnav(nav);
     }
 
     function applyStaffNavMode(forceMode) {

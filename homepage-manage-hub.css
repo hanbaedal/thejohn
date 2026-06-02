@@ -34,14 +34,7 @@
         grid-template-columns: 1fr;
     }
 }
-.header-nav-link.is-hmh-tab.is-current {
-    font-weight: 700;
-    color: var(--dz-blue, #0a4d9c);
-    border-color: rgba(10, 77, 156, 0.45);
-    background: rgba(255, 255, 255, 0.55);
-}
-
-/* 홈페이지 관리하기 — 헤더 3탭 한 줄·가로 스크롤 */
+/* 홈페이지 관리 — 헤더 본문 메뉴 한 줄·가로 스크롤 */
 body.staff-nav-manage-home .site-header-menu-scroll {
     min-width: 0;
     overflow-x: auto;
@@ -58,22 +51,11 @@ body.staff-nav-manage-home .site-header-nav {
     gap: 0.25rem;
     min-width: min-content;
 }
-body.staff-nav-manage-home .header-nav-link.is-hmh-tab,
 body.staff-nav-manage-home .header-nav-link.is-hmh-subnav {
     flex-shrink: 0;
     white-space: nowrap;
     padding: 0.35rem 0.55rem;
     font-size: 0.8125rem;
-}
-body.staff-nav-manage-home .hmh-nav-sep {
-    flex-shrink: 0;
-    width: 1px;
-    height: 1.1rem;
-    margin: 0 0.2rem;
-    background: rgba(10, 77, 156, 0.28);
-    align-self: center;
-}
-body.staff-nav-manage-home .header-nav-link.is-hmh-subnav {
     font-weight: 500;
     color: #2a4560;
 }
@@ -84,7 +66,7 @@ body.staff-nav-manage-home .header-nav-link.is-hmh-subnav.is-current {
     background: rgba(255, 255, 255, 0.45);
 }
 @media (min-width: 900px) {
-    body.staff-nav-manage-home .header-nav-link.is-hmh-tab {
+    body.staff-nav-manage-home .header-nav-link.is-hmh-subnav {
         padding: 0.4rem 0.7rem;
         font-size: 0.875rem;
     }

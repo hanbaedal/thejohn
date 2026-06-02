@@ -33,12 +33,8 @@
                 p.hidden = !on;
             }
         }
-        if (headerNav) {
-            if (Auth.applyStaffNavManageHomeTabs) {
-                Auth.applyStaffNavManageHomeTabs(headerNav);
-            } else if (Auth.syncHmhManageHomeTabCurrent) {
-                Auth.syncHmhManageHomeTabCurrent(headerNav, section);
-            }
+        if (headerNav && Auth.applyStaffNavManageHomeTabs) {
+            Auth.applyStaffNavManageHomeTabs(headerNav);
         }
         try {
             if (history.replaceState) {
@@ -81,19 +77,6 @@
         });
     }
 
-    function bindTabs() {
-        if (!headerNav) return;
-        headerNav.addEventListener("click", function (e) {
-            var tab = e.target.closest("[data-hmh-tab]");
-            if (!tab) return;
-            var section = tab.getAttribute("data-hmh-tab");
-            if (!section) return;
-            if (tab.getAttribute("data-hmh-navigate") === "page") return;
-            e.preventDefault();
-            showSection(section);
-        });
-    }
-
     function init() {
         if (!Auth || !Auth.getHomepageManageHubAccess) {
             setStatus("인증 스크립트 오류", "err");
@@ -115,7 +98,6 @@
 
         applyCardPermissions();
         bindCards();
-        bindTabs();
         showSection(currentSection());
         refreshHeader();
 
