@@ -4,7 +4,7 @@
     var panelsRoot = document.getElementById("hmhPanels");
     var headerNav = document.getElementById("hmhHeaderNav");
 
-    var SECTIONS = ["home", "support", "product", "vendor"];
+    var SECTIONS = ["home", "product", "vendor"];
 
     function setStatus(msg, kind) {
         if (!statusEl) return;
@@ -18,6 +18,7 @@
         var hash = String(window.location.hash || "")
             .replace(/^#/, "")
             .toLowerCase();
+        if (hash === "support") return "home";
         if (SECTIONS.indexOf(hash) >= 0) return hash;
         return "home";
     }

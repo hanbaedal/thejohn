@@ -955,12 +955,8 @@
                 var hash = String(global.location.hash || "")
                     .replace(/^#/, "")
                     .toLowerCase();
-                if (
-                    hash === "home" ||
-                    hash === "support" ||
-                    hash === "product" ||
-                    hash === "vendor"
-                ) {
+                if (hash === "support") return "home";
+                if (hash === "home" || hash === "product" || hash === "vendor") {
                     return hash;
                 }
             } catch (e) {}
@@ -971,7 +967,7 @@
             file === "support-qna-admin.html" ||
             file === "support-inquiry.html"
         ) {
-            return "support";
+            return "home";
         }
         if (PRODUCT_ADMIN_PAGES.indexOf(file) >= 0) return "product";
         if (VENDOR_ADMIN_PAGES.indexOf(file) >= 0) return "vendor";
@@ -984,9 +980,6 @@
         if (!canManageRegisters()) return false;
         var key = String(cardKey || "").trim();
         if (
-            key === "home-company" ||
-            key === "home-products" ||
-            key === "home-partners" ||
             key === "support-news" ||
             key === "support-qna-admin" ||
             key === "support-inquiry" ||
@@ -1020,7 +1013,7 @@
 
         var active = getHomepageManageNavSectionForPage(currentPageFile());
         var hmhTabs = nav.querySelectorAll('[data-hmh-tab][data-staff-nav-injected="manage-home"]');
-        if (hmhTabs.length >= 4) {
+        if (hmhTabs.length >= 3) {
             syncHmhManageHomeTabCurrent(nav, active);
             return;
         }
@@ -1029,7 +1022,6 @@
 
         var tabDefs = [
             { section: "home", label: "홈페이지관리", href: HOMEPAGE_MANAGE_HUB_PAGE + "#home" },
-            { section: "support", label: "고객센터관리", href: HOMEPAGE_MANAGE_HUB_PAGE + "#support" },
             { section: "product", label: "상품관리", href: HOMEPAGE_MANAGE_HUB_PAGE + "#product" },
             { section: "vendor", label: "업체관리", href: HOMEPAGE_MANAGE_HUB_PAGE + "#vendor" }
         ];
