@@ -335,6 +335,7 @@
         if (!window.THEJHON_AUTH) return;
         function run() {
             if (THEJHON_AUTH.applyNavRegisterVisibility) THEJHON_AUTH.applyNavRegisterVisibility();
+            else if (THEJHON_AUTH.applyStaffNavMode) THEJHON_AUTH.applyStaffNavMode();
             if (THEJHON_AUTH.syncStaffLogoToHub) THEJHON_AUTH.syncStaffLogoToHub();
         }
         run();

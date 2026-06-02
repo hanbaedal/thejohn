@@ -33,8 +33,12 @@
                 p.hidden = !on;
             }
         }
-        if (headerNav && Auth.syncHmhManageHomeTabCurrent) {
-            Auth.syncHmhManageHomeTabCurrent(headerNav, section);
+        if (headerNav) {
+            if (Auth.applyStaffNavManageHomeTabs) {
+                Auth.applyStaffNavManageHomeTabs(headerNav);
+            } else if (Auth.syncHmhManageHomeTabCurrent) {
+                Auth.syncHmhManageHomeTabCurrent(headerNav, section);
+            }
         }
         try {
             if (history.replaceState) {

@@ -712,6 +712,7 @@
     ];
     var ORDER_MANAGE_PAGES = ["order-list-admin.html"];
     var WORK_HUB_PAGE = "work-hub.html";
+    var WORK_HUB_LABEL = "그룹 마케팅 관리";
     var HOMEPAGE_MANAGE_HUB_PAGE = "homepage-manage-hub.html";
     var STAFF_NAV_MODE_KEY = "thejhon_staff_nav_mode";
     var STAFF_NAV_PUBLIC_PAGES = {
@@ -734,7 +735,8 @@
     var STAFF_NAV_MANAGE_HOME_PAGES = {
         "homepage-manage-hub.html": true,
         "support-news-admin.html": true,
-        "support-qna-admin.html": true
+        "support-qna-admin.html": true,
+        "support-inquiry.html": true
     };
     var STAFF_NAV_ORDER_PAGES = {
         "order-list-admin.html": true,
@@ -788,10 +790,10 @@
     function inferStaffNavModeFromPage(file) {
         if (!file) return "";
         if (file === WORK_HUB_PAGE) return "hub";
-        if (STAFF_NAV_PUBLIC_PAGES[file]) return "public";
+        if (STAFF_NAV_MANAGE_HOME_PAGES[file]) return "manage-home";
         if (STAFF_NAV_ORDER_PAGES[file]) return "order";
         if (STAFF_NAV_WORK_PAGES[file]) return "work";
-        if (STAFF_NAV_MANAGE_HOME_PAGES[file]) return "manage-home";
+        if (STAFF_NAV_PUBLIC_PAGES[file]) return "public";
         return "";
     }
 
@@ -944,7 +946,7 @@
         var logos = document.querySelectorAll(".dz-logo, .dz-logo--compact");
         for (var i = 0; i < logos.length; i++) {
             logos[i].setAttribute("href", hub);
-            logos[i].setAttribute("aria-label", "업무관리");
+            logos[i].setAttribute("aria-label", WORK_HUB_LABEL);
         }
     }
 
@@ -971,8 +973,89 @@
         }
         if (PRODUCT_ADMIN_PAGES.indexOf(file) >= 0) return "product";
         if (VENDOR_ADMIN_PAGES.indexOf(file) >= 0) return "vendor";
-        if (STAFF_NAV_PUBLIC_PAGES[file]) return "home";
         return "home";
+    }
+
+    function getManageHomeSubnavItems(section, file) {
+        if (!file) file = currentPageFile();
+        if (section === "home") {
+            return [
+                { href: "support-news-admin.html", label: "최근소식 입력" },
+                { href: "support-qna-admin.html", label: "자유게시판" },
+                { href: "support-inquiry.html", label: "문의사항 답변" }
+            ];
+        }
+        if (section === "product") {
+            return [
+                { href: "product-register.html", label: "상품 등록" },
+                { href: "product-list-admin.html", label: "상품 리스트" },
+                { href: "product-new-register.html", label: "신규상품 등록" }
+            ];
+        }
+        if (section === "vendor") {
+            var hubOnly =
+                file === "vendor-register.html" ||
+                file === "vendor-list-admin.html" ||
+                file === HOMEPAGE_MANAGE_HUB_PAGE;
+            if (hubOnly) {
+                return [
+                    { href: "vendor-register.html", label: "업체 등록" },
+                    { href: "vendor-list-admin.html", label: "업체 리스트" },
+                    { href: "vendor-manage.html", label: "업체관리 허브" }
+                ];
+            }
+            var items = [
+                { href: "vendor-register.html", label: "업체 등록" },
+                { href: "vendor-list-admin.html", label: "업체 리스트" },
+                { href: "vendor-email-broadcast.html", label: "이메일 보내기" },
+                { href: "vendor-new-register.html", label: "신규업체 등록" },
+                { href: "vendor-new-list.html", label: "신규업체 리스트" },
+                { href: "vendor-prospect-list.html", label: "예비업체 리스트" }
+            ];
+            if (getRole() === "admin") {
+                items.splice(5, 0, {
+                    href: "vendor-prospect-finder.html",
+                    label: "예비 업체 찾기"
+                });
+            }
+            return items;
+        }
+        return [];
+    }
+
+    function syncStaffNavManageHomeSubnav(nav, activeSection) {
+        if (!nav) return;
+        var sub = nav.querySelectorAll("[data-hmh-subnav], [data-hmh-nav-sep]");
+        for (var s = 0; s < sub.length; s++) sub[s].remove();
+
+        var items = getManageHomeSubnavItems(activeSection, currentPageFile());
+        if (!items.length) return;
+
+        var sep = document.createElement("span");
+        sep.className = "hmh-nav-sep";
+        sep.setAttribute("data-hmh-nav-sep", "1");
+        sep.setAttribute("data-staff-nav-injected", "manage-home");
+        sep.setAttribute("aria-hidden", "true");
+        nav.appendChild(sep);
+
+        var cur = currentPageFile();
+        for (var i = 0; i < items.length; i++) {
+            var it = items[i];
+            var a = document.createElement("a");
+            a.href = it.href;
+            a.className = "header-nav-link is-hmh-subnav";
+            a.textContent = it.label;
+            a.setAttribute("data-staff-nav-injected", "manage-home");
+            a.setAttribute("data-hmh-subnav", activeSection);
+            if (staffNavHrefFile(it.href) === cur) {
+                a.classList.add("is-current");
+                a.setAttribute("aria-current", "page");
+            }
+            a.addEventListener("click", function () {
+                staffNavSet("manage-home");
+            });
+            nav.appendChild(a);
+        }
     }
 
     function canAccessHomepageManageCard(cardKey) {
@@ -1011,31 +1094,30 @@
             plain[h].remove();
         }
 
+        nav.classList.add("site-header-nav--hmh");
+
         var active = getHomepageManageNavSectionForPage(currentPageFile());
         var hmhTabs = nav.querySelectorAll('[data-hmh-tab][data-staff-nav-injected="manage-home"]');
-        if (hmhTabs.length >= 3) {
-            syncHmhManageHomeTabCurrent(nav, active);
-            return;
-        }
-
-        staffNavClearInjected(nav);
-
-        var tabDefs = [
-            { section: "home", label: "홈페이지관리", href: HOMEPAGE_MANAGE_HUB_PAGE + "#home" },
-            { section: "product", label: "상품관리", href: HOMEPAGE_MANAGE_HUB_PAGE + "#product" },
-            { section: "vendor", label: "업체관리", href: HOMEPAGE_MANAGE_HUB_PAGE + "#vendor" }
-        ];
-        for (var i = 0; i < tabDefs.length; i++) {
-            var t = tabDefs[i];
-            var a = document.createElement("a");
-            a.href = t.href;
-            a.className = "header-nav-link is-hmh-tab";
-            a.textContent = t.label;
-            a.setAttribute("data-staff-nav-injected", "manage-home");
-            a.setAttribute("data-hmh-tab", t.section);
-            nav.appendChild(a);
+        if (hmhTabs.length < 3) {
+            staffNavClearInjected(nav);
+            var tabDefs = [
+                { section: "home", label: "홈페이지관리", href: HOMEPAGE_MANAGE_HUB_PAGE + "#home" },
+                { section: "product", label: "상품관리", href: HOMEPAGE_MANAGE_HUB_PAGE + "#product" },
+                { section: "vendor", label: "업체관리", href: HOMEPAGE_MANAGE_HUB_PAGE + "#vendor" }
+            ];
+            for (var i = 0; i < tabDefs.length; i++) {
+                var t = tabDefs[i];
+                var a = document.createElement("a");
+                a.href = t.href;
+                a.className = "header-nav-link is-hmh-tab";
+                a.textContent = t.label;
+                a.setAttribute("data-staff-nav-injected", "manage-home");
+                a.setAttribute("data-hmh-tab", t.section);
+                nav.appendChild(a);
+            }
         }
         syncHmhManageHomeTabCurrent(nav, active);
+        syncStaffNavManageHomeSubnav(nav, active);
     }
 
     function applyStaffNavMode(forceMode) {
@@ -1447,7 +1529,7 @@
         return { allowed: true, role: getRole() };
     }
 
-    /** 관리자·슈퍼바이저 — 업무관리 허브 */
+    /** 관리자·슈퍼바이저 — 그룹 마케팅 관리 허브 */
     function getWorkHubAccess() {
         normalizeLegacySession();
         if (!global.THEJHON_API || !THEJHON_API.getToken || !THEJHON_API.getToken()) {
@@ -1462,7 +1544,7 @@
         if (!isStaffRole(getRole())) {
             return {
                 allowed: false,
-                reason: "관리자·슈퍼바이저만 업무관리를 이용할 수 있습니다."
+                reason: "관리자·슈퍼바이저만 " + WORK_HUB_LABEL + "을(를) 이용할 수 있습니다."
             };
         }
         return { allowed: true, role: getRole() };
@@ -1876,7 +1958,7 @@
                     workHub = document.createElement("a");
                     workHub.href = "work-hub.html";
                     workHub.className = "header-nav-link";
-                    workHub.textContent = "업무관리";
+                    workHub.textContent = WORK_HUB_LABEL;
                     var supportDrop = nav.querySelector('[data-nav-dropdown="support"]');
                     if (supportDrop && supportDrop.parentNode === nav) {
                         nav.insertBefore(workHub, supportDrop);
@@ -1942,6 +2024,9 @@
         canPlaceVendorOrders: canPlaceVendorOrders,
         canShowOrderManageMenu: canShowOrderManageMenu,
         getOrderManageAccess: getOrderManageAccess,
+        getWorkHubLabel: function () {
+            return WORK_HUB_LABEL;
+        },
         getWorkHubAccess: getWorkHubAccess,
         canAccessWorkHubMenu: canAccessWorkHubMenu,
         getHomepageManageHubAccess: getHomepageManageHubAccess,
