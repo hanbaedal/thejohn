@@ -874,11 +874,13 @@
     }
 
     function staffNavShouldShow(el, mode) {
+        if (mode === "manage-home") {
+            return el.getAttribute("data-staff-nav-injected") === "manage-home";
+        }
         var zone = staffNavZoneForEl(el);
         if (!zone) return false;
         if (mode === "hub") return false;
         if (mode === "public") return zone === "public";
-        if (mode === "manage-home") return zone === "manage-home";
         if (mode === "order") {
             if (zone !== "order") return false;
             var file = staffNavHrefFile(el.getAttribute("href"));
@@ -924,54 +926,98 @@
         }
     }
 
-    function applyStaffNavManageHomeExtras(nav) {
-        var showAdmin = canShowAdminNavMenus();
-        document.body.classList.toggle("nav-admin-menus", showAdmin);
-        var sel =
-            '[data-nav-dropdown="product-manage"],' +
-            '[data-nav-dropdown="vendor-manage"],' +
-            'a.header-nav-link[href="product-register.html"],' +
-            'a.header-nav-link[href="vendor-register.html"],' +
-            'a.header-nav-link[href="product-manage.html"],' +
-            'a.header-nav-link[href="vendor-manage.html"]';
-        var nodes = nav.querySelectorAll(sel);
-        for (var i = 0; i < nodes.length; i++) {
-            var el = nodes[i];
-            if (el.classList.contains("nav-dropdown-item")) continue;
-            staffNavSetVisible(el, showAdmin);
+    function getHomepageManageNavSectionForPage(file) {
+        if (!file) file = currentPageFile();
+        if (file === HOMEPAGE_MANAGE_HUB_PAGE) {
+            try {
+                var hash = String(global.location.hash || "")
+                    .replace(/^#/, "")
+                    .toLowerCase();
+                if (
+                    hash === "home" ||
+                    hash === "support" ||
+                    hash === "product" ||
+                    hash === "vendor"
+                ) {
+                    return hash;
+                }
+            } catch (e) {}
+            return "home";
         }
-        if (!showAdmin) {
-            var drops = nav.querySelectorAll(
-                '[data-nav-dropdown="product-manage"], [data-nav-dropdown="vendor-manage"]'
-            );
-            for (var d = 0; d < drops.length; d++) drops[d].remove();
+        if (
+            file === "support-news-admin.html" ||
+            file === "support-qna.html" ||
+            file === "support-inquiry.html"
+        ) {
+            return "support";
         }
-        var orderLinks = nav.querySelectorAll('a[href="order-list-admin.html"]');
-        var showOrder = canShowOrderManageMenu();
-        var excelLinks = nav.querySelectorAll(
-            'a[href="vendor-excel-import.html"], [data-nav-excel-import]'
+        if (PRODUCT_ADMIN_PAGES.indexOf(file) >= 0) return "product";
+        if (VENDOR_ADMIN_PAGES.indexOf(file) >= 0) return "vendor";
+        if (STAFF_NAV_PUBLIC_PAGES[file]) return "home";
+        return "home";
+    }
+
+    function canAccessHomepageManageCard(cardKey) {
+        if (!getHomepageManageHubAccess().allowed) return false;
+        if (!canManageRegisters()) return false;
+        var key = String(cardKey || "").trim();
+        if (
+            key === "home-company" ||
+            key === "home-products" ||
+            key === "home-partners" ||
+            key === "support-news" ||
+            key === "support-qna" ||
+            key === "support-inquiry" ||
+            key === "product-register" ||
+            key === "product-list" ||
+            key === "product-new" ||
+            key === "vendor-register" ||
+            key === "vendor-list" ||
+            key === "vendor-hub"
+        ) {
+            return true;
+        }
+        return false;
+    }
+
+    function applyStaffNavManageHomeTabs(nav) {
+        if (!nav) return;
+        document.body.classList.toggle("nav-admin-menus", false);
+
+        var drops = nav.querySelectorAll(
+            '[data-nav-dropdown="product-manage"], [data-nav-dropdown="vendor-manage"]'
         );
-        var showExcel = isSupervisorStaff();
-        var finderLinks = nav.querySelectorAll(
-            'a[href="vendor-prospect-finder.html"], [data-nav-prospect-finder]'
+        for (var d = 0; d < drops.length; d++) drops[d].remove();
+
+        var plain = nav.querySelectorAll(
+            ':scope > a.header-nav-link:not([data-staff-nav-injected]), :scope > .nav-dropdown'
         );
-        var showFinder = getRole() === "admin";
-        for (var x = 0; x < excelLinks.length; x++) {
-            excelLinks[x].hidden = !showExcel;
-            excelLinks[x].setAttribute("aria-hidden", showExcel ? "false" : "true");
+        for (var h = 0; h < plain.length; h++) {
+            staffNavSetVisible(plain[h], false);
         }
-        for (var f = 0; f < finderLinks.length; f++) {
-            finderLinks[f].hidden = !showFinder;
-            finderLinks[f].setAttribute("aria-hidden", showFinder ? "false" : "true");
-        }
-        for (var o = 0; o < orderLinks.length; o++) {
-            if (showOrder) {
-                orderLinks[o].classList.remove("header-nav-link--register-hidden");
-                orderLinks[o].removeAttribute("aria-hidden");
-                orderLinks[o].style.removeProperty("display");
-            } else {
-                orderLinks[o].remove();
+
+        staffNavRemoveInjected(nav, "manage-home");
+
+        var active = getHomepageManageNavSectionForPage(currentPageFile());
+        var tabs = [
+            { section: "home", label: "홈페이지관리", href: HOMEPAGE_MANAGE_HUB_PAGE + "#home" },
+            { section: "support", label: "고객센터관리", href: HOMEPAGE_MANAGE_HUB_PAGE + "#support" },
+            { section: "product", label: "상품관리", href: HOMEPAGE_MANAGE_HUB_PAGE + "#product" },
+            { section: "vendor", label: "업체관리", href: HOMEPAGE_MANAGE_HUB_PAGE + "#vendor" }
+        ];
+        for (var i = 0; i < tabs.length; i++) {
+            var t = tabs[i];
+            var a = document.createElement("a");
+            a.href = t.href;
+            a.className = "header-nav-link is-hmh-tab";
+            if (active === t.section) {
+                a.classList.add("is-current");
+                a.setAttribute("aria-current", "page");
             }
+            a.textContent = t.label;
+            a.setAttribute("data-staff-nav-injected", "manage-home");
+            a.setAttribute("data-hmh-tab", t.section);
+            nav.appendChild(a);
         }
     }
 
@@ -1022,8 +1068,7 @@
         }
 
         if (mode === "manage-home") {
-            staffNavEnsureLink(nav, HOMEPAGE_MANAGE_HUB_PAGE, "홈페이지 관리", "manage-home");
-            applyStaffNavManageHomeExtras(nav);
+            applyStaffNavManageHomeTabs(nav);
         } else if (mode === "order") {
             if (isSupervisorStaff()) {
                 staffNavEnsureLink(nav, "supervisor-order-list.html", "발주서 관리", "order");
@@ -1878,6 +1923,9 @@
         getWorkHubAccess: getWorkHubAccess,
         canAccessWorkHubMenu: canAccessWorkHubMenu,
         getHomepageManageHubAccess: getHomepageManageHubAccess,
+        canAccessHomepageManageCard: canAccessHomepageManageCard,
+        getHomepageManageNavSectionForPage: getHomepageManageNavSectionForPage,
+        applyStaffNavManageHomeTabs: applyStaffNavManageHomeTabs,
         getWorkHubOrderManageHref: getWorkHubOrderManageHref,
         getStaffLandingPath: getStaffLandingPath,
         getStaffNavMode: getStaffNavMode,

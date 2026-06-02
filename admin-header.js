@@ -132,16 +132,17 @@
         if (!nav) return;
 
         var Auth = window.THEJHON_AUTH;
-        if (
-            Auth &&
-            Auth.isStaffRole &&
-            Auth.isStaffRole(Auth.getRole && Auth.getRole()) &&
-            Auth.getStaffNavMode &&
-            Auth.getStaffNavMode() !== "manage-home"
-        ) {
-            removeAdminNavFromNav(nav);
-            if (Auth.applyStaffNavMode) Auth.applyStaffNavMode();
-            return;
+        if (Auth && Auth.isStaffRole && Auth.isStaffRole(Auth.getRole && Auth.getRole())) {
+            if (Auth.getStaffNavMode && Auth.getStaffNavMode() !== "manage-home") {
+                removeAdminNavFromNav(nav);
+                if (Auth.applyStaffNavMode) Auth.applyStaffNavMode();
+                return;
+            }
+            if (Auth.getStaffNavMode && Auth.getStaffNavMode() === "manage-home") {
+                if (Auth.applyStaffNavManageHomeTabs) Auth.applyStaffNavManageHomeTabs(nav);
+                else if (Auth.applyStaffNavMode) Auth.applyStaffNavMode("manage-home");
+                return;
+            }
         }
 
         injectStaffManageLink(nav);

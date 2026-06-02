@@ -1,6 +1,10 @@
 (function () {
     var Auth = window.THEJHON_AUTH;
     var statusEl = document.getElementById("hmh-status");
+    var panelsRoot = document.getElementById("hmhPanels");
+    var headerNav = document.getElementById("hmhHeaderNav");
+
+    var SECTIONS = ["home", "support", "product", "vendor"];
 
     function setStatus(msg, kind) {
         if (!statusEl) return;
@@ -10,23 +14,123 @@
             (kind === "err" ? " shub-status--err" : kind === "ok" ? " shub-status--ok" : "");
     }
 
-    if (!Auth || !Auth.getHomepageManageHubAccess) {
-        setStatus("인증 스크립트 오류", "err");
-        return;
-    }
-    if (Auth.normalizeLegacySession) Auth.normalizeLegacySession();
-
-    var access = Auth.getHomepageManageHubAccess();
-    if (!access.allowed) {
-        setStatus(access.reason || "이용할 수 없습니다.", "err");
-        return;
+    function currentSection() {
+        var hash = String(window.location.hash || "")
+            .replace(/^#/, "")
+            .toLowerCase();
+        if (SECTIONS.indexOf(hash) >= 0) return hash;
+        return "home";
     }
 
-    if (Auth.setStaffNavMode) Auth.setStaffNavMode("manage-home");
+    function showSection(section) {
+        if (SECTIONS.indexOf(section) < 0) section = "home";
+        if (panelsRoot) {
+            var panels = panelsRoot.querySelectorAll(".hmh-panel");
+            for (var i = 0; i < panels.length; i++) {
+                var p = panels[i];
+                var on = p.getAttribute("data-hmh-section") === section;
+                p.hidden = !on;
+            }
+        }
+        if (headerNav) {
+            var tabs = headerNav.querySelectorAll("[data-hmh-tab]");
+            for (var t = 0; t < tabs.length; t++) {
+                var tab = tabs[t];
+                var active = tab.getAttribute("data-hmh-tab") === section;
+                tab.classList.toggle("is-current", active);
+                tab.setAttribute("aria-current", active ? "page" : "false");
+            }
+        }
+        try {
+            if (history.replaceState) {
+                history.replaceState(null, "", "#" + section);
+            } else {
+                window.location.hash = section;
+            }
+        } catch (e) {
+            window.location.hash = section;
+        }
+    }
 
-    document.querySelectorAll(".company-division-card[href]").forEach(function (card) {
-        card.addEventListener("click", function () {
-            if (Auth.setStaffNavMode) Auth.setStaffNavMode("manage-home");
+    function canShowCard(cardKey) {
+        if (!Auth || !Auth.canAccessHomepageManageCard) return true;
+        return Auth.canAccessHomepageManageCard(cardKey);
+    }
+
+    function applyCardPermissions() {
+        var cards = document.querySelectorAll("[data-hmh-card]");
+        for (var i = 0; i < cards.length; i++) {
+            var card = cards[i];
+            var key = card.getAttribute("data-hmh-card");
+            var ok = canShowCard(key);
+            card.hidden = !ok;
+            if (!ok) {
+                card.setAttribute("aria-hidden", "true");
+                card.setAttribute("tabindex", "-1");
+            } else {
+                card.removeAttribute("aria-hidden");
+                card.removeAttribute("tabindex");
+            }
+        }
+    }
+
+    function bindCards() {
+        document.querySelectorAll(".hmh-card[href]").forEach(function (card) {
+            card.addEventListener("click", function () {
+                if (Auth && Auth.setStaffNavMode) Auth.setStaffNavMode("manage-home");
+            });
         });
-    });
+    }
+
+    function bindTabs() {
+        if (!headerNav) return;
+        headerNav.addEventListener("click", function (e) {
+            var tab = e.target.closest("[data-hmh-tab]");
+            if (!tab) return;
+            var section = tab.getAttribute("data-hmh-tab");
+            if (!section) return;
+            if (tab.getAttribute("data-hmh-navigate") === "page") return;
+            e.preventDefault();
+            showSection(section);
+        });
+    }
+
+    function init() {
+        if (!Auth || !Auth.getHomepageManageHubAccess) {
+            setStatus("인증 스크립트 오류", "err");
+            return;
+        }
+        if (Auth.normalizeLegacySession) Auth.normalizeLegacySession();
+
+        var access = Auth.getHomepageManageHubAccess();
+        if (!access.allowed) {
+            setStatus(access.reason || "이용할 수 없습니다.", "err");
+            return;
+        }
+
+        if (Auth.setStaffNavMode) Auth.setStaffNavMode("manage-home");
+        if (Auth.applyStaffNavMode) Auth.applyStaffNavMode("manage-home");
+
+        applyCardPermissions();
+        bindCards();
+        bindTabs();
+        showSection(currentSection());
+
+        if (Auth.refreshSessionPermissionsAsync) {
+            Auth.refreshSessionPermissionsAsync().then(function () {
+                applyCardPermissions();
+                if (Auth.applyStaffNavMode) Auth.applyStaffNavMode("manage-home");
+            });
+        }
+
+        window.addEventListener("hashchange", function () {
+            showSection(currentSection());
+        });
+        window.addEventListener("thejhon-auth-permissions-updated", function () {
+            applyCardPermissions();
+            if (Auth.applyStaffNavMode) Auth.applyStaffNavMode("manage-home");
+        });
+    }
+
+    init();
 })();

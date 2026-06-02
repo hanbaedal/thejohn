@@ -1,0 +1,42 @@
+.hmh-page .hmh-panels {
+    margin-top: 0.5rem;
+}
+.hmh-panel-title {
+    margin: 0 0 0.35rem;
+    font-size: 1.1rem;
+    color: #052a4d;
+}
+.hmh-panel-lead {
+    margin: 0 0 1rem;
+    font-size: 0.88rem;
+    color: #3d556d;
+}
+.hmh-cards {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0.95rem;
+}
+.hmh-card[hidden] {
+    display: none !important;
+}
+.hmh-card h3 {
+    margin: 0 0 0.35rem;
+    font-size: 1.05rem;
+}
+.hmh-card p {
+    margin: 0;
+    font-size: 0.85rem;
+    color: #3d5166;
+    line-height: 1.45;
+}
+@media (max-width: 900px) {
+    .hmh-cards {
+        grid-template-columns: 1fr;
+    }
+}
+.header-nav-link.is-hmh-tab.is-current {
+    font-weight: 700;
+    color: var(--dz-blue, #0a4d9c);
+    text-decoration: underline;
+    text-underline-offset: 3px;
+}

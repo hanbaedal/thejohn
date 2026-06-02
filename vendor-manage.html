@@ -40,22 +40,8 @@
 <body>
     <header class="site-header">
         <div class="site-header-start">
-            <a href="index.html" class="dz-logo dz-logo--compact" aria-label="더존 홈"><img src="img/logo.png" alt="" width="72" height="72" class="dz-logo-img"></a>
-            <nav class="site-header-nav" aria-label="주요 메뉴">
-                <a href="company.html" class="header-nav-link">회사소개</a>
-                <a href="products.html" class="header-nav-link">사업부문</a>
-                <a href="product-register.html" class="header-nav-link">상품등록</a>
-                <a href="vendor-register.html" class="header-nav-link">업체등록</a>
-                <div class="nav-dropdown" data-nav-dropdown="support">
-                    <a href="support.html" class="header-nav-link nav-dropdown-trigger" aria-haspopup="true" aria-expanded="false" aria-controls="supportSubmenu">고객센터</a>
-                    <div id="supportSubmenu" class="nav-dropdown-panel" role="menu" aria-label="고객센터 하위 메뉴">
-                        <a href="support-partners.html" class="nav-dropdown-item" role="menuitem">파트너회사 소개</a>
-                        <a href="support-library.html" class="nav-dropdown-item" role="menuitem">최근소식</a>
-                        <a href="support-qna.html" class="nav-dropdown-item" role="menuitem">자유게시판</a>
-                        <a href="support-inquiry.html" class="nav-dropdown-item" role="menuitem">문의사항</a>
-                    </div>
-                </div>
-            </nav>
+            <a href="work-hub.html" class="dz-logo dz-logo--compact" aria-label="업무관리"><img src="img/logo.png" alt="" width="72" height="72" class="dz-logo-img"></a>
+            <nav class="site-header-nav" aria-label="홈페이지 관리 메뉴"></nav>
         </div>
         <nav class="site-header-actions" aria-label="계정">
             <time class="header-date" id="headerToday" datetime=""></time>
@@ -63,6 +49,7 @@
         </nav>
     </header>
     <main class="company-main company-main--support-hub">
+        <p class="shub-subnav"><a href="homepage-manage-hub.html#vendor">← 홈페이지 관리 · 업체관리</a></p>
         <div class="company-divisions vm-rows">
             <div class="vm-row">
                 <a href="vendor-register.html" class="company-division-card">
@@ -114,6 +101,8 @@
     </footer>
     <script>
         (function () {
+            var Auth = window.THEJHON_AUTH;
+            if (Auth && Auth.setStaffNavMode) Auth.setStaffNavMode("manage-home");
             var todayEl = document.getElementById("headerToday");
             if (todayEl) {
                 var now = new Date();
@@ -151,9 +140,12 @@
                     hubNews.hidden = !admin;
                     hubNews.setAttribute("aria-hidden", admin ? "false" : "true");
                 }
+                var manageHome =
+                    Auth && Auth.getStaffNavMode && Auth.getStaffNavMode() === "manage-home";
                 if (orderCard) {
-                    orderCard.hidden = !orderAdmin;
-                    orderCard.setAttribute("aria-hidden", orderAdmin ? "false" : "true");
+                    var showOrder = orderAdmin && !manageHome;
+                    orderCard.hidden = !showOrder;
+                    orderCard.setAttribute("aria-hidden", showOrder ? "false" : "true");
                 }
                 if (migrateCard) {
                     migrateCard.hidden = !admin;
