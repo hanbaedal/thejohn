@@ -9,27 +9,24 @@
     <meta name="theme-color" content="#0a4d9c">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-title" content="더존">
-    <title>업무관리 — 더존</title>
+    <title>홈페이지 관리하기 — 더존</title>
     <link rel="stylesheet" href="common.css">
     <link rel="stylesheet" href="staff-hub.css">
     <style>
-        .wh-hub-rows {
+        .hmh-rows {
             display: flex;
             flex-direction: column;
             gap: 0.85rem;
         }
-        .wh-hub-row {
+        .hmh-row {
             display: grid;
             grid-template-columns: repeat(2, minmax(0, 1fr));
             gap: 0.95rem;
         }
         @media (max-width: 720px) {
-            .wh-hub-row {
+            .hmh-row {
                 grid-template-columns: 1fr;
             }
-        }
-        .wh-hub-card[hidden] {
-            display: none !important;
         }
     </style>
     <script src="api-config.js"></script>
@@ -45,7 +42,7 @@
             <nav class="site-header-nav" aria-label="주요 메뉴">
                 <a href="company.html" class="header-nav-link">회사소개</a>
                 <a href="products.html" class="header-nav-link">사업부문</a>
-                <a href="work-hub.html" class="header-nav-link is-current">업무관리</a>
+                <a href="work-hub.html" class="header-nav-link">업무관리</a>
                 <a href="product-register.html" class="header-nav-link">상품등록</a>
                 <a href="vendor-register.html" class="header-nav-link">업체등록</a>
                 <div class="nav-dropdown" data-nav-dropdown="support">
@@ -65,23 +62,29 @@
         </nav>
     </header>
     <main class="page-main page-main--hide-scrollbar company-main company-main--support-hub">
-        <h1>업무관리</h1>
-        <p id="wh-status" class="shub-status" role="status" aria-live="polite"></p>
-        <div class="company-divisions wh-hub-rows">
-            <div class="wh-hub-row">
-                <a href="index.html" class="company-division-card" id="wh-menu-view-home" data-wh-menu="view-home">
-                    <h2>홈페이지</h2>
+        <p class="shub-subnav"><a href="work-hub.html">← 업무관리</a></p>
+        <h1>홈페이지 관리하기</h1>
+        <p id="hmh-status" class="shub-status" role="status" aria-live="polite"></p>
+        <div class="company-divisions hmh-rows">
+            <div class="hmh-row">
+                <a href="product-manage.html" class="company-division-card">
+                    <h2>상품관리</h2>
                 </a>
-                <a href="homepage-manage-hub.html" class="company-division-card" id="wh-menu-manage-home" data-wh-menu="manage-home">
-                    <h2>홈페이지 관리하기</h2>
+                <a href="vendor-manage.html" class="company-division-card">
+                    <h2>업체관리</h2>
                 </a>
             </div>
-            <div class="wh-hub-row">
-                <a href="supervisor-order-list.html" class="company-division-card" id="wh-menu-order-manage" data-wh-menu="order-manage" hidden>
-                    <h2>발주서 관리</h2>
+            <div class="hmh-row">
+                <a href="support-news-admin.html" class="company-division-card">
+                    <h2>최근소식 입력</h2>
                 </a>
-                <a href="staff-manage-hub.html" class="company-division-card" id="wh-menu-work-manage" data-wh-menu="work-manage" hidden>
-                    <h2>업무관리</h2>
+                <a href="support-qna.html" class="company-division-card">
+                    <h2>자유게시판</h2>
+                </a>
+            </div>
+            <div class="hmh-row">
+                <a href="support-inquiry.html" class="company-division-card">
+                    <h2>문의사항</h2>
                 </a>
             </div>
         </div>
@@ -92,6 +95,6 @@
             <p class="site-footer-company-msg" id="siteFooterCompanyMsg" hidden></p>
         </div>
     </footer>
-    <script src="work-hub.js"></script>
+    <script src="homepage-manage-hub.js"></script>
 </body>
 </html>

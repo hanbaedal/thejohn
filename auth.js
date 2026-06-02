@@ -598,6 +598,7 @@
     ];
     var ORDER_MANAGE_PAGES = ["order-list-admin.html"];
     var WORK_HUB_PAGE = "work-hub.html";
+    var HOMEPAGE_MANAGE_HUB_PAGE = "homepage-manage-hub.html";
     var STAFF_MANAGE_PAGES = [
         "staff-manage-hub.html",
         "staff-manage.html",
@@ -938,13 +939,18 @@
 
     function canAccessWorkHubMenu(menuKey) {
         if (!getWorkHubAccess().allowed) return false;
-        if (isSupervisorStaff()) return true;
-        if (getRole() !== "admin") return false;
-        var orderOn = isStaffOrderEnabled();
         if (menuKey === "view-home" || menuKey === "manage-home") return true;
-        if (menuKey === "order-manage") return orderOn;
-        if (menuKey === "work-manage") return false;
+        if (menuKey === "work-manage") return isSupervisorStaff();
+        if (menuKey === "order-manage") {
+            if (isSupervisorStaff()) return true;
+            return getRole() === "admin" && isStaffOrderEnabled();
+        }
         return false;
+    }
+
+    /** 홈페이지 관리하기 허브 — 상품·업체·고객센터 운영 */
+    function getHomepageManageHubAccess() {
+        return getWorkHubAccess();
     }
 
     function getWorkHubOrderManageHref() {
@@ -1158,6 +1164,12 @@
         var page = currentPageFile();
         if (page === WORK_HUB_PAGE) {
             if (!getWorkHubAccess().allowed) {
+                redirectFromProtectedPage(isLoggedIn());
+            }
+            return;
+        }
+        if (page === HOMEPAGE_MANAGE_HUB_PAGE) {
+            if (!getHomepageManageHubAccess().allowed) {
                 redirectFromProtectedPage(isLoggedIn());
             }
             return;
@@ -1380,6 +1392,7 @@
         getOrderManageAccess: getOrderManageAccess,
         getWorkHubAccess: getWorkHubAccess,
         canAccessWorkHubMenu: canAccessWorkHubMenu,
+        getHomepageManageHubAccess: getHomepageManageHubAccess,
         getWorkHubOrderManageHref: getWorkHubOrderManageHref,
         getStaffLandingPath: getStaffLandingPath,
         isVendorOrderEnabled: isVendorOrderEnabled,
