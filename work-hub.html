@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="auth-storage.js"></script>
+    <script src="site-brand-boot.js"></script>
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#0a4d9c">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-title" content="더존">
+    <title>업무관리 — 더존</title>
+    <link rel="stylesheet" href="common.css">
+    <link rel="stylesheet" href="staff-hub.css">
+    <style>
+        .wh-hub-rows {
+            display: flex;
+            flex-direction: column;
+            gap: 0.85rem;
+        }
+        .wh-hub-row {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 0.95rem;
+        }
+        @media (max-width: 720px) {
+            .wh-hub-row {
+                grid-template-columns: 1fr;
+            }
+        }
+        .wh-hub-card[hidden] {
+            display: none !important;
+        }
+    </style>
+    <script src="api-config.js"></script>
+    <script src="thejhon-api.js"></script>
+    <script src="auth.js"></script>
+    <script src="admin-header.js"></script>
+    <script src="nav.js" defer></script>
+</head>
+<body>
+    <header class="site-header">
+        <div class="site-header-start">
+            <a href="index.html" class="dz-logo dz-logo--compact" aria-label="더존 홈"><img src="img/logo.png" alt="" width="72" height="72" class="dz-logo-img"></a>
+            <nav class="site-header-nav" aria-label="주요 메뉴">
+                <a href="company.html" class="header-nav-link">회사소개</a>
+                <a href="products.html" class="header-nav-link">사업부문</a>
+                <a href="work-hub.html" class="header-nav-link is-current">업무관리</a>
+                <a href="product-register.html" class="header-nav-link">상품등록</a>
+                <a href="vendor-register.html" class="header-nav-link">업체등록</a>
+                <div class="nav-dropdown" data-nav-dropdown="support">
+                    <a href="support.html" class="header-nav-link nav-dropdown-trigger" aria-haspopup="true" aria-expanded="false" aria-controls="supportSubmenu">고객센터</a>
+                    <div id="supportSubmenu" class="nav-dropdown-panel" role="menu" aria-label="고객센터 하위 메뉴">
+                        <a href="support-partners.html" class="nav-dropdown-item" role="menuitem">파트너회사 소개</a>
+                        <a href="support-library.html" class="nav-dropdown-item" role="menuitem">최근소식</a>
+                        <a href="support-qna.html" class="nav-dropdown-item" role="menuitem">자유게시판</a>
+                        <a href="support-inquiry.html" class="nav-dropdown-item" role="menuitem">문의사항</a>
+                    </div>
+                </div>
+            </nav>
+        </div>
+        <nav class="site-header-actions" aria-label="계정">
+            <time class="header-date" id="headerToday" datetime=""></time>
+            <button type="button" class="btn btn-auth-icon btn-logout" id="btnLogout" hidden aria-label="로그아웃" title="로그아웃"></button>
+        </nav>
+    </header>
+    <main class="page-main page-main--hide-scrollbar company-main company-main--support-hub">
+        <h1>업무관리</h1>
+        <p id="wh-status" class="shub-status" role="status" aria-live="polite"></p>
+        <div class="company-divisions wh-hub-rows">
+            <div class="wh-hub-row">
+                <a href="index.html" class="company-division-card" id="wh-menu-view-home" data-wh-menu="view-home">
+                    <h2>홈페이지 보러가기</h2>
+                </a>
+                <a href="product-manage.html" class="company-division-card" id="wh-menu-manage-home" data-wh-menu="manage-home">
+                    <h2>홈페이지 관리하기</h2>
+                </a>
+            </div>
+            <div class="wh-hub-row">
+                <a href="supervisor-order-list.html" class="company-division-card" id="wh-menu-order-manage" data-wh-menu="order-manage" hidden>
+                    <h2>발주서 관리</h2>
+                </a>
+                <a href="staff-manage-hub.html" class="company-division-card" id="wh-menu-work-manage" data-wh-menu="work-manage" hidden>
+                    <h2>업무 관리</h2>
+                </a>
+            </div>
+        </div>
+    </main>
+    <footer class="site-footer">
+        <div class="site-footer-inner">
+            <dl class="site-footer-grid" id="siteFooterCompanyGrid" aria-live="polite"></dl>
+            <p class="site-footer-company-msg" id="siteFooterCompanyMsg" hidden></p>
+        </div>
+    </footer>
+    <script src="work-hub.js"></script>
+</body>
+</html>

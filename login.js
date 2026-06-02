@@ -8,13 +8,25 @@
         return document.getElementById(id);
     }
 
-    function goNext() {
+    function goNext(role) {
         var Auth = global.THEJHON_AUTH;
-        var next =
-            Auth && Auth.safeNextPath
-                ? Auth.safeNextPath(params.get("next"))
-                : "index.html";
-        global.location.href = next || "index.html";
+        var nextParam = params.get("next");
+        if (nextParam) {
+            global.location.href =
+                Auth && Auth.safeNextPath
+                    ? Auth.safeNextPath(nextParam)
+                    : "index.html";
+            return;
+        }
+        if (
+            (role === "admin" || role === "supervisor") &&
+            Auth &&
+            Auth.getStaffLandingPath
+        ) {
+            global.location.href = Auth.getStaffLandingPath();
+            return;
+        }
+        global.location.href = "index.html";
     }
 
     function initGuest() {
@@ -24,17 +36,17 @@
             e.preventDefault();
             var Auth = global.THEJHON_AUTH;
             if (!Auth || !Auth.enterGuestSessionAsync) {
-                goNext();
+                goNext("guest");
                 return;
             }
             guestBtn.setAttribute("aria-busy", "true");
             guestBtn.classList.add("login-guest--busy");
             Auth.enterGuestSessionAsync()
                 .then(function () {
-                    goNext();
+                    goNext("guest");
                 })
                 .catch(function () {
-                    goNext();
+                    goNext("guest");
                 });
         });
     }
@@ -71,7 +83,7 @@
         var role = ok && ok.role;
 
         function navigate() {
-            goNext();
+            goNext(role);
         }
 
         if (
@@ -135,7 +147,17 @@
             Auth.isLoggedIn() &&
             (role === "admin" || role === "supervisor" || role === "vendor")
         ) {
-            global.location.replace(Auth.safeNextPath(params.get("next")));
+            var nextParam = params.get("next");
+            if (nextParam) {
+                global.location.replace(Auth.safeNextPath(nextParam));
+            } else if (
+                (role === "admin" || role === "supervisor") &&
+                Auth.getStaffLandingPath
+            ) {
+                global.location.replace(Auth.getStaffLandingPath());
+            } else {
+                global.location.replace("index.html");
+            }
             return;
         }
 

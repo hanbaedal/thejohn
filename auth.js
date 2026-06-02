@@ -597,6 +597,7 @@
         "vendor-prospect-finder.html"
     ];
     var ORDER_MANAGE_PAGES = ["order-list-admin.html"];
+    var WORK_HUB_PAGE = "work-hub.html";
     var STAFF_MANAGE_PAGES = [
         "staff-manage-hub.html",
         "staff-manage.html",
@@ -914,6 +915,48 @@
         return { allowed: true, role: getRole() };
     }
 
+    /** 관리자·슈퍼바이저 — 업무관리 허브 */
+    function getWorkHubAccess() {
+        normalizeLegacySession();
+        if (!global.THEJHON_API || !THEJHON_API.getToken || !THEJHON_API.getToken()) {
+            return {
+                allowed: false,
+                reason: "로그인이 필요합니다. 관리자·슈퍼바이저 계정으로 로그인해 주세요."
+            };
+        }
+        if (!isLoggedIn()) {
+            return { allowed: false, reason: "로그인이 필요합니다." };
+        }
+        if (!isStaffRole(getRole())) {
+            return {
+                allowed: false,
+                reason: "관리자·슈퍼바이저만 업무관리를 이용할 수 있습니다."
+            };
+        }
+        return { allowed: true, role: getRole() };
+    }
+
+    function canAccessWorkHubMenu(menuKey) {
+        if (!getWorkHubAccess().allowed) return false;
+        if (isSupervisorStaff()) return true;
+        if (getRole() !== "admin") return false;
+        var orderOn = isStaffOrderEnabled();
+        if (menuKey === "view-home" || menuKey === "manage-home") return true;
+        if (menuKey === "order-manage") return orderOn;
+        if (menuKey === "work-manage") return false;
+        return false;
+    }
+
+    function getWorkHubOrderManageHref() {
+        if (isSupervisorStaff()) return "supervisor-order-list.html";
+        if (canShowOrderManageMenu()) return "order-list-admin.html";
+        return "work-hub.html";
+    }
+
+    function getStaffLandingPath() {
+        return WORK_HUB_PAGE;
+    }
+
     function getVendorUnitPriceForProduct(it) {
         if (!it || !canSeeProductPrices()) return { unitPrice: 0, priceLabel: "" };
         if (isStaffRole(getRole())) {
@@ -1113,6 +1156,12 @@
 
     function enforceRegisterPages() {
         var page = currentPageFile();
+        if (page === WORK_HUB_PAGE) {
+            if (!getWorkHubAccess().allowed) {
+                redirectFromProtectedPage(isLoggedIn());
+            }
+            return;
+        }
         if (ORDER_MANAGE_PAGES.indexOf(page) >= 0) {
             if (!canShowOrderManageMenu()) {
                 redirectFromProtectedPage(isLoggedIn());
@@ -1253,18 +1302,30 @@
             var staffManage = nav.querySelector(
                 'a[href="staff-manage-hub.html"], a[href="staff-manage.html"]'
             );
-            var showStaffManage = canManageStaffAccounts();
+            var workHub = nav.querySelector('a[href="work-hub.html"]');
+            var showWorkHub = getWorkHubAccess().allowed;
             if (staffManage) {
-                if (showStaffManage) {
-                    if (staffManage.getAttribute("href") === "staff-manage.html") {
-                        staffManage.setAttribute("href", "staff-manage-hub.html");
+                staffManage.remove();
+            }
+            if (showWorkHub) {
+                if (!workHub) {
+                    workHub = document.createElement("a");
+                    workHub.href = "work-hub.html";
+                    workHub.className = "header-nav-link";
+                    workHub.textContent = "업무관리";
+                    var supportDrop = nav.querySelector('[data-nav-dropdown="support"]');
+                    if (supportDrop && supportDrop.parentNode === nav) {
+                        nav.insertBefore(workHub, supportDrop);
+                    } else {
+                        nav.appendChild(workHub);
                     }
-                    staffManage.classList.remove("header-nav-link--register-hidden");
-                    staffManage.removeAttribute("aria-hidden");
-                    staffManage.style.removeProperty("display");
-                } else {
-                    staffManage.remove();
                 }
+                workHub.classList.remove("header-nav-link--register-hidden");
+                workHub.removeAttribute("aria-hidden");
+                workHub.hidden = false;
+                workHub.style.removeProperty("display");
+            } else if (workHub) {
+                workHub.remove();
             }
         } catch (e) {}
     }
@@ -1317,6 +1378,10 @@
         canPlaceVendorOrders: canPlaceVendorOrders,
         canShowOrderManageMenu: canShowOrderManageMenu,
         getOrderManageAccess: getOrderManageAccess,
+        getWorkHubAccess: getWorkHubAccess,
+        canAccessWorkHubMenu: canAccessWorkHubMenu,
+        getWorkHubOrderManageHref: getWorkHubOrderManageHref,
+        getStaffLandingPath: getStaffLandingPath,
         isVendorOrderEnabled: isVendorOrderEnabled,
         isStaffOrderEnabled: isStaffOrderEnabled,
         isSupervisorStaff: isSupervisorStaff,
