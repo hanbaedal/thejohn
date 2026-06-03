@@ -164,7 +164,7 @@ body.page-work-hub .header-session-company--hub[hidden] {
     outline: none;
 }
 
-.wh-card[hidden] {
+.wh-card.wh-card--off {
     display: none !important;
 }
 
