@@ -188,12 +188,13 @@
             escapeHtml(it.pd_explain || "") +
             "</div>" +
             '<div class="pd-actions">' +
-            '<button type="button" class="btn btn-secondary pd-btn-pinfo" data-pd-pinfo="' +
+            '<button type="button" class="pd-pinfo-row" data-pd-pinfo="' +
             escapeHtml(it.id) +
             '" data-pd-name="' +
             escapeHtml(it.pd_name || "") +
-            '">상품 필수 정보</button>' +
-            "</div>" +
+            '">' +
+            '<span class="pd-pinfo-row__text">상품 필수 정보</span>' +
+            "</button></div>" +
             "</div></div></article>"
         );
     }
