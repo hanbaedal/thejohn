@@ -108,10 +108,9 @@
         }
     })();
 
+    /** 같은 로그인 아이디 — 역할은 서버(DB)가 맞으면 로컬과 달라도 동기화 */
     function sessionMatchesCurrentAccount(sess) {
         if (!sess || !sess.loggedIn) return false;
-        var role = getRole();
-        if (!role || normalizeLoginRole(sess.role) !== normalizeLoginRole(role)) return false;
         var uid = String(authGet(USER_ID_KEY) || "").trim();
         var sid = String(sess.userId || "").trim();
         if (!uid || !sid) return uid === sid;

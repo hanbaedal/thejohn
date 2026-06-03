@@ -1,14 +1,22 @@
 /**
  * 그룹 마케팅 관리(work-hub)
- * 메뉴 표시: auth.getWorkHubVisibleMenuKeys() 단일 기준
- * 슈퍼바이저 6 · 관리자(주문) 5 · 관리자(비주문) 4
+ * 메뉴: 슈퍼바이저 6 · 관리자(주문) 5 · 관리자(비주문) 4
+ * 표시는 세션 API(DB 역할·주문권한) 우선, 로컬 Auth 보조
  */
 (function (global) {
     "use strict";
 
     var Auth = global.THEJHON_AUTH;
+    var Api = global.THEJHON_API;
     var statusEl = document.getElementById("wh-status");
     var gridEl = document.getElementById("whMenuGrid");
+
+    var BASE_MENUS = [
+        "view-home",
+        "manage-home",
+        "product-manage",
+        "vendor-manage"
+    ];
 
     var HREFS = {
         "view-home": "index.html",
@@ -27,6 +35,42 @@
         "order-manage": "order",
         "work-manage": "work"
     };
+
+    var ROLE_LABEL = {
+        supervisor: "슈퍼바이저",
+        admin: "관리자"
+    };
+
+    function normRole(role) {
+        return String(role || "")
+            .trim()
+            .toLowerCase();
+    }
+
+    function menuKeysForStaff(role, orderEnabled) {
+        var r = normRole(role);
+        if (r === "supervisor") {
+            return BASE_MENUS.concat(["order-manage", "work-manage"]);
+        }
+        if (r === "admin") {
+            return orderEnabled ? BASE_MENUS.concat(["order-manage"]) : BASE_MENUS.slice();
+        }
+        return [];
+    }
+
+    function menuKeysFromAuth() {
+        if (Auth && Auth.getWorkHubVisibleMenuKeys) {
+            return Auth.getWorkHubVisibleMenuKeys();
+        }
+        if (!Auth || !Auth.isLoggedIn || !Auth.isLoggedIn()) return [];
+        var orderOn = Auth.isStaffOrderEnabled && Auth.isStaffOrderEnabled();
+        return menuKeysForStaff(Auth.getRole ? Auth.getRole() : "", orderOn);
+    }
+
+    function menuKeysFromSession(sess) {
+        if (!sess || !sess.loggedIn) return null;
+        return menuKeysForStaff(sess.role, !!sess.staffOrderEnabled);
+    }
 
     function initHubBgm() {
         var media = global.THEJHON_HOME_INTRO_MEDIA;
@@ -51,9 +95,19 @@
             (kind === "err" ? " wh-status--err" : kind === "ok" ? " wh-status--ok" : "");
     }
 
-    function visibleKeys() {
-        if (!Auth || !Auth.getWorkHubVisibleMenuKeys) return [];
-        return Auth.getWorkHubVisibleMenuKeys();
+    function setMenuHint(keys, sess) {
+        if (!statusEl || !keys || !keys.length) return;
+        var hub = Auth && Auth.getWorkHubAccess ? Auth.getWorkHubAccess() : { allowed: false };
+        if (!hub.allowed) return;
+        var role = normRole((sess && sess.role) || (Auth.getRole && Auth.getRole()));
+        var label = ROLE_LABEL[role] || role || "스태프";
+        var orderNote =
+            role === "admin"
+                ? keys.indexOf("order-manage") >= 0
+                    ? " · 주문 권한 있음"
+                    : " · 주문 권한 없음"
+                : "";
+        setStatus(label + " · 메뉴 " + keys.length + "개" + orderNote, "ok");
     }
 
     function hrefFor(key) {
@@ -73,11 +127,11 @@
         });
     }
 
-    function applyMenus() {
-        if (!gridEl) return;
+    function applyMenus(keys) {
+        if (!gridEl || !keys) return;
 
         var show = {};
-        visibleKeys().forEach(function (key) {
+        keys.forEach(function (key) {
             show[key] = true;
         });
 
@@ -102,6 +156,38 @@
         }
     }
 
+    function refreshMenusAndHint(sess) {
+        var keys = menuKeysFromSession(sess);
+        if (!keys || !keys.length) keys = menuKeysFromAuth();
+        applyMenus(keys);
+        setMenuHint(keys, sess);
+        refreshHeaderCompany();
+    }
+
+    function fetchSessionThenApply() {
+        if (!Api || !Api.checkSession || !Api.getToken || !Api.getToken()) {
+            return Promise.resolve(null);
+        }
+        return Api.checkSession()
+            .then(function (sess) {
+                if (sess && sess.code === "SESSION_INVALID") return sess;
+                if (sess && sess.loggedIn) {
+                    refreshMenusAndHint(sess);
+                }
+                if (Auth && Auth.refreshSessionPermissionsAsync) {
+                    return Auth.refreshSessionPermissionsAsync().then(function () {
+                        refreshMenusAndHint(sess);
+                        return sess;
+                    });
+                }
+                return sess;
+            })
+            .catch(function () {
+                refreshMenusAndHint(null);
+                return null;
+            });
+    }
+
     function boot() {
         if (!Auth) {
             setStatus("인증 스크립트를 불러오지 못했습니다.", "err");
@@ -112,27 +198,14 @@
         var hub = Auth.getWorkHubAccess ? Auth.getWorkHubAccess() : { allowed: false };
         if (!hub.allowed) {
             setStatus(hub.reason || "이용할 수 없습니다.", "err");
-            applyMenus();
+            applyMenus([]);
             return;
         }
 
-        setStatus("");
         if (Auth.setStaffNavMode) Auth.setStaffNavMode("hub");
 
-        applyMenus();
-        refreshHeaderCompany();
-
-        var sync = Auth.refreshSessionPermissionsAsync
-            ? Auth.refreshSessionPermissionsAsync()
-            : null;
-        if (sync && typeof sync.then === "function") {
-            sync
-                .then(function () {
-                    applyMenus();
-                    refreshHeaderCompany();
-                })
-                .catch(applyMenus);
-        }
+        refreshMenusAndHint(null);
+        fetchSessionThenApply();
     }
 
     initHubBgm();
@@ -143,8 +216,7 @@
     }
 
     global.addEventListener("thejhon-auth-permissions-updated", function () {
-        applyMenus();
-        refreshHeaderCompany();
+        refreshMenusAndHint(null);
     });
     global.addEventListener("pageshow", function (ev) {
         if (ev.persisted) boot();
