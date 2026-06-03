@@ -12,15 +12,14 @@
         THEJHON_HOME_INTRO_MEDIA.init({
             videoSelector: ".wh-hub-backdrop-video",
             videoPlaybackRate: 0.55,
-            introSelector: ".wh-hub-stage",
             bgmId: "whHubMusic",
             bgmBtnId: "whBgmToggle",
             bgmHintId: "whBgmHint",
             volume: 0.28,
             autoplayBgm: false,
-            prominentBgmHint: true,
-            unlockOnAnyClick: true,
-            bgmButtonOnly: false
+            prominentBgmHint: false,
+            unlockOnAnyClick: false,
+            bgmButtonOnly: true
         });
     }
 
@@ -222,6 +221,14 @@
         } catch (eObs) {}
     }
 
+    function syncWorkHubAuthUi() {
+        var logoutBtn = document.getElementById("btnLogout");
+        var loginBtn = document.getElementById("btnLogin");
+        var loggedIn = Auth && Auth.isLoggedIn && Auth.isLoggedIn();
+        if (logoutBtn) logoutBtn.hidden = !loggedIn;
+        if (loginBtn) loginBtn.hidden = !!loggedIn;
+    }
+
     bootHubMediaWhenReady();
     scheduleWorkHubHeaderCompany();
 
@@ -239,6 +246,8 @@
 
     applyMenus();
     if (Auth.setStaffNavMode) Auth.setStaffNavMode("hub");
+    syncWorkHubAuthUi();
+    window.addEventListener("pageshow", syncWorkHubAuthUi);
 
     if (Auth.refreshSessionPermissionsAsync) {
         Auth.refreshSessionPermissionsAsync().then(function () {

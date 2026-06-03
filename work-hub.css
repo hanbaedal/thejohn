@@ -33,16 +33,17 @@ body.page-work-hub {
     );
 }
 
-/* 헤더 배경 투명 — 영상 위에 메뉴·로고만 표시 (본문·배경보다 항상 위) */
+/* 헤더 — 항상 맨 위·클릭 가능 (배경음악·본문보다 위) */
 body.page-work-hub .site-header {
-    position: relative;
-    z-index: 250;
+    position: sticky;
+    top: 0;
+    z-index: 500;
     flex: 0 0 auto;
     background: transparent;
     border-bottom-color: transparent;
     -webkit-backdrop-filter: none;
     backdrop-filter: none;
-    isolation: isolate;
+    pointer-events: auto;
 }
 
 body.page-work-hub .site-header .header-date,
@@ -66,6 +67,24 @@ body.page-work-hub .site-header-brand {
     max-width: min(52vw, 20rem);
     position: relative;
     z-index: 2;
+    pointer-events: auto;
+}
+
+body.page-work-hub .site-header-brand .dz-logo {
+    pointer-events: auto;
+    position: relative;
+    z-index: 3;
+}
+
+body.page-work-hub .site-header-menu-scroll,
+body.page-work-hub .site-header-menu-scroll-track,
+body.page-work-hub .site-header-actions {
+    pointer-events: auto;
+}
+
+body.page-work-hub .site-header-actions .btn-auth-icon,
+body.page-work-hub .site-header-actions .header-login-link {
+    pointer-events: auto;
 }
 
 body.page-work-hub .header-session-company--wide,
@@ -96,7 +115,8 @@ body.page-work-hub .header-session-company--hub[hidden] {
 
 .company-main--work-hub.wh-hub-stage {
     position: relative;
-    z-index: 10;
+    z-index: 1;
+    pointer-events: auto;
     flex: 1 1 auto;
     display: flex;
     flex-direction: column;
@@ -184,7 +204,9 @@ body.page-work-hub .header-session-company--hub[hidden] {
     margin: 0;
     box-sizing: border-box;
     position: relative;
-    z-index: 1;
+    z-index: 2;
+    pointer-events: auto;
+    cursor: pointer;
     background: rgba(255, 255, 255, 0.42);
     border-color: rgba(207, 232, 244, 0.75);
     box-shadow: 0 1px 6px rgba(10, 77, 156, 0.06);
@@ -201,12 +223,17 @@ body.page-work-hub .header-session-company--hub[hidden] {
     display: none !important;
 }
 
-/* main overflow 영향 없이 body 기준 고정 */
+/* 배경음악 — 우하단만 클릭, 나머지 영역은 통과 */
 body.page-work-hub .wh-hub-bgm-wrap {
     position: fixed;
     right: max(0.75rem, env(safe-area-inset-right, 0));
     bottom: max(0.75rem, env(safe-area-inset-bottom, 0));
-    z-index: 260;
+    z-index: 40;
+    pointer-events: none;
+}
+
+body.page-work-hub .wh-hub-bgm-wrap .home-bgm-toggle,
+body.page-work-hub .wh-hub-bgm-wrap .home-bgm-hint {
     pointer-events: auto;
 }
 
