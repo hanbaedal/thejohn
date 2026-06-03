@@ -5,8 +5,9 @@ const { resolveFontPath, resolveBoldFontPath } = require("./orderPdf");
 const PAGE_W = 595.28;
 const PAGE_H = 841.89;
 const MARGIN_X = 24;
-const SLIP_GAP = 8;
-const SLIP_H = (PAGE_H - SLIP_GAP) / 2;
+const PAGE_HALF_H = PAGE_H / 2;
+const CUT_LINE_Y = PAGE_HALF_H;
+const DOC_TOP_LINES = 2;
 const ROW_H = 15;
 const HEADER_ROW_H = 16;
 const SEAL_DRAW_SIZE = 56;
@@ -192,6 +193,37 @@ function supplierColumnWidths(supplierW) {
         pairVal2: pairVal2,
         valueW: inner
     };
+}
+
+/** 명세서 한 장 높이(대략) — 상·하 반쪽 세로 중앙 배치용 */
+function estimateSlipHeight(order, issuer) {
+    var ext = 0;
+    if (str(order.vendorAddr)) ext++;
+    if (str(order.vendorPhone) || str(issuer && issuer.phone)) ext++;
+    if (issuer && str(issuer.bankAccount)) ext++;
+    var extH = ext > 0 ? 15 : 0;
+    return 6 + HEADER_BLOCK_H + 4 + ROW_H + MAX_ITEM_ROWS * ROW_H + ROW_H * 2 + 5 + extH + 4;
+}
+
+function slipVerticalPositions(slipH) {
+    var topInset = ROW_H * DOC_TOP_LINES;
+    var topY = topInset + Math.max(6, (PAGE_HALF_H - topInset - slipH) / 2);
+    var bottomY = PAGE_HALF_H + Math.max(6, (PAGE_HALF_H - slipH) / 2);
+    return { topY: topY, bottomY: bottomY };
+}
+
+/** 공급받는자 / 공급자 절취선 (페이지 세로 중앙) */
+function drawPerforationLine(doc) {
+    var x1 = MARGIN_X;
+    var x2 = PAGE_W - MARGIN_X;
+    var cy = CUT_LINE_Y;
+    doc.save();
+    doc.strokeColor("#666666").lineWidth(0.5).dash(6, { space: 4 });
+    doc.moveTo(x1, cy).lineTo(x2, cy).stroke();
+    doc.undash();
+    doc.restore();
+    doc.font("KR").fontSize(7).fillColor("#555555");
+    doc.text("절  취  선", (PAGE_W - 56) / 2, cy - 8, { width: 56, align: "center", lineBreak: false });
 }
 
 function drawSlip(doc, slipY, order, issuer, theme, pageLabel) {
@@ -380,8 +412,9 @@ function drawSlip(doc, slipY, order, issuer, theme, pageLabel) {
         y += 10;
     }
 
-    var slipBottom = Math.min(slipY + SLIP_H - 4, y + 2);
+    var slipBottom = y + 2;
     doc.strokeColor("#333333").lineWidth(0.5).rect(x0, slipTop, slipW, slipBottom - slipTop).stroke();
+    return slipBottom - slipY;
 }
 
 function buildDouzoneTransactionPdfBuffer(order) {
@@ -429,8 +462,11 @@ function buildDouzoneTransactionPdfBuffer(order) {
             var pageOrder = Object.assign({}, order, { items: pageItems });
             var pageLabel = pageIdx + 1 + " / " + pages.length;
             doc.addPage({ size: "A4", margin: 0 });
-            drawSlip(doc, 0, pageOrder, issuer, THEME_RECIPIENT, pageLabel);
-            drawSlip(doc, SLIP_H + SLIP_GAP, pageOrder, issuer, THEME_SUPPLIER, pageLabel);
+            var slipH = estimateSlipHeight(pageOrder, issuer);
+            var pos = slipVerticalPositions(slipH);
+            drawSlip(doc, pos.topY, pageOrder, issuer, THEME_RECIPIENT, pageLabel);
+            drawSlip(doc, pos.bottomY, pageOrder, issuer, THEME_SUPPLIER, pageLabel);
+            drawPerforationLine(doc);
         });
 
         doc.end();
