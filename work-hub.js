@@ -22,12 +22,23 @@
         menuByKey[item.key] = item;
     });
 
-    function initHubVideo() {
+    function initHubMedia() {
         var media = global.THEJHON_HOME_INTRO_MEDIA;
-        if (!media || !media.init || !document.querySelector(".wh-hub-video")) return;
+        if (!media || !media.init) return;
+        if (!document.querySelector(".wh-hub-video") && !document.getElementById("whHubBgm")) {
+            return;
+        }
         media.init({
             videoSelector: ".wh-hub-video",
-            videoPlaybackRate: 0.55
+            videoPlaybackRate: 0.55,
+            bgmId: "whHubBgm",
+            bgmBtnId: "whBgmToggle",
+            bgmHintId: "whBgmHint",
+            volume: 0.28,
+            autoplayBgm: false,
+            prominentBgmHint: false,
+            unlockOnAnyClick: false,
+            bgmButtonOnly: true
         });
     }
 
@@ -70,6 +81,19 @@
         });
     }
 
+    function setCardVisible(card, allowed) {
+        card.hidden = !allowed;
+        if (allowed) {
+            card.style.removeProperty("display");
+            card.removeAttribute("aria-hidden");
+            card.removeAttribute("tabindex");
+        } else {
+            card.style.display = "none";
+            card.setAttribute("aria-hidden", "true");
+            card.setAttribute("tabindex", "-1");
+        }
+    }
+
     function applyMenus() {
         if (!gridEl) return;
         var hubOk = Auth && Auth.getWorkHubAccess && Auth.getWorkHubAccess().allowed;
@@ -78,7 +102,7 @@
             var key = card.getAttribute("data-wh-menu");
             var item = menuByKey[key];
             var allowed = hubOk && menuAllowed(key);
-            card.hidden = !allowed;
+            setCardVisible(card, allowed);
             if (!allowed || !item) return;
             card.href = menuHref(item);
             bindCard(card, item.navMode);
@@ -109,6 +133,9 @@
         if (Auth.refreshSessionPermissionsAsync) {
             tasks.push(Auth.refreshSessionPermissionsAsync());
         }
+        if (Auth.refreshStaffOrderEnabledFromProfileAsync) {
+            tasks.push(Auth.refreshStaffOrderEnabledFromProfileAsync());
+        }
         if (Auth.refreshBrandFromStaffProfileAsync) {
             tasks.push(Auth.refreshBrandFromStaffProfileAsync());
         }
@@ -121,7 +148,7 @@
     }
 
     function onReady() {
-        initHubVideo();
+        initHubMedia();
         boot();
     }
 
@@ -134,7 +161,7 @@
     global.addEventListener("thejhon-auth-permissions-updated", applyMenus);
     global.addEventListener("pageshow", function (ev) {
         if (ev.persisted) {
-            initHubVideo();
+            initHubMedia();
             boot();
         }
     });

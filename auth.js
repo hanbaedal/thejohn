@@ -111,7 +111,7 @@
     function sessionMatchesCurrentAccount(sess) {
         if (!sess || !sess.loggedIn) return false;
         var role = getRole();
-        if (!role || sess.role !== role) return false;
+        if (!role || normalizeLoginRole(sess.role) !== normalizeLoginRole(role)) return false;
         var uid = String(authGet(USER_ID_KEY) || "").trim();
         var sid = String(sess.userId || "").trim();
         if (!uid || !sid) return uid === sid;
@@ -1505,13 +1505,43 @@
             }
             vendorPermsSynced = true;
         }
-        if (sess && sess.loggedIn && sess.role === "admin") {
-            if (sess.staffOrderEnabled) {
-                authSet(STAFF_ORDER_ENABLED_KEY, "1");
-            } else {
-                authRemove(STAFF_ORDER_ENABLED_KEY);
-            }
+        syncStaffOrderEnabledFromSession(sess);
+    }
+
+    /** 관리자 리스트 「주문」/「비주문」 — 세션 API → 허브·발주 메뉴 */
+    function syncStaffOrderEnabledFromSession(sess) {
+        if (!sess || !sess.loggedIn) return;
+        if (normalizeLoginRole(sess.role) !== "admin") return;
+        if (sess.staffOrderEnabled) {
+            authSet(STAFF_ORDER_ENABLED_KEY, "1");
+        } else {
+            authRemove(STAFF_ORDER_ENABLED_KEY);
         }
+    }
+
+    function refreshStaffOrderEnabledFromProfileAsync() {
+        if (normalizeLoginRole(getRole()) !== "admin") {
+            return Promise.resolve(null);
+        }
+        if (!global.THEJHON_API || !THEJHON_API.getStaffProfile) {
+            return Promise.resolve(null);
+        }
+        if (!THEJHON_API.getToken || !THEJHON_API.getToken()) {
+            return Promise.resolve(null);
+        }
+        return THEJHON_API.getStaffProfile()
+            .then(function (item) {
+                if (!item || normalizeLoginRole(getRole()) !== "admin") return item;
+                if (item.orderEnabled === true) {
+                    authSet(STAFF_ORDER_ENABLED_KEY, "1");
+                } else {
+                    authRemove(STAFF_ORDER_ENABLED_KEY);
+                }
+                return item;
+            })
+            .catch(function () {
+                return null;
+            });
     }
 
     function refreshSessionPermissionsAsync() {
@@ -1534,6 +1564,7 @@
                 }
                 if (sess && sess.loggedIn && sessionMatchesCurrentAccount(sess)) {
                     syncVendorGradeFromSessionApi(sess);
+                    syncStaffOrderEnabledFromSession(sess);
                     syncSessionCompanyFromApi(sess);
                     var role = sess.role || getRole();
                     if (
@@ -1682,7 +1713,11 @@
      */
     /** 업체(vendor)만 상품 주문·장바구니 */
     function isSupervisorStaff() {
-        return isLoggedIn() && getRole() === "supervisor";
+        return isLoggedIn() && normalizeLoginRole(getRole()) === "supervisor";
+    }
+
+    function isAdminStaff() {
+        return isLoggedIn() && normalizeLoginRole(getRole()) === "admin";
     }
 
     /** 슈퍼바이저 — 엑셀 → vendor_prospects 일괄 등록 */
@@ -1757,7 +1792,7 @@
     function canShowOrderManageMenu() {
         return (
             isLoggedIn() &&
-            getRole() === "admin" &&
+            isAdminStaff() &&
             isStaffOrderEnabled() &&
             !!(global.THEJHON_API && THEJHON_API.getToken && THEJHON_API.getToken())
         );
@@ -1852,15 +1887,15 @@
 
     function canAccessWorkHubMenu(menuKey) {
         if (!getWorkHubAccess().allowed) return false;
-        if (menuKey === "view-home" || menuKey === "manage-home") return true;
-        /* 허브 진입 가능한 관리자·슈퍼바이저 — 상품·업체 카드 표시 (하위 페이지는 기존 권한 유지) */
-        if (menuKey === "product-manage" || menuKey === "vendor-manage") {
+        var key = String(menuKey || "").trim();
+        if (key === "view-home" || key === "manage-home") return true;
+        if (key === "product-manage" || key === "vendor-manage") {
             return isStaffRole(getRole());
         }
-        if (menuKey === "work-manage") return isSupervisorStaff();
-        if (menuKey === "order-manage") {
+        if (key === "work-manage") return isSupervisorStaff();
+        if (key === "order-manage") {
             if (isSupervisorStaff()) return true;
-            return getRole() === "admin" && isStaffOrderEnabled();
+            return isAdminStaff() && isStaffOrderEnabled();
         }
         return false;
     }
@@ -2416,6 +2451,7 @@
         },
         getWorkHubAccess: getWorkHubAccess,
         canAccessWorkHubMenu: canAccessWorkHubMenu,
+        refreshStaffOrderEnabledFromProfileAsync: refreshStaffOrderEnabledFromProfileAsync,
         getHomepageManageHubAccess: getHomepageManageHubAccess,
         canAccessHomepageManageCard: canAccessHomepageManageCard,
         getHomepageManageNavSectionForPage: getHomepageManageNavSectionForPage,
