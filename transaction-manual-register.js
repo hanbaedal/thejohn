@@ -24,6 +24,9 @@
     var productModalCloseBtn = document.getElementById("tmr-product-modal-close");
     var productSearchEl = document.getElementById("tmr-product-search");
     var productListEl = document.getElementById("tmr-product-list");
+    var issueYearEl = document.getElementById("tmr-issue-y");
+    var issueMonthEl = document.getElementById("tmr-issue-m");
+    var issueDayEl = document.getElementById("tmr-issue-d");
     var issuerWrap = document.getElementById("tmr-issuer-wrap");
     var issuerNoteEl = document.getElementById("tmr-issuer-note");
     var itemsHintEl = document.getElementById("tmr-items-hint");
@@ -62,12 +65,13 @@
             "tmr-status" + (kind === "err" ? " tmr-status--err" : kind === "ok" ? " tmr-status--ok" : "");
     }
 
-    function todayDateInput() {
-        var d = new Date();
-        var y = d.getFullYear();
-        var m = String(d.getMonth() + 1).padStart(2, "0");
-        var day = String(d.getDate()).padStart(2, "0");
-        return y + "-" + m + "-" + day;
+    var ISSUE_YEAR_START = 2018;
+
+    function daysInMonth(year, month) {
+        var y = parseInt(year, 10);
+        var m = parseInt(month, 10);
+        if (!isFinite(y) || !isFinite(m) || m < 1 || m > 12) return 31;
+        return new Date(y, m, 0).getDate();
     }
 
     function issueDateToMs(val) {
@@ -76,12 +80,93 @@
         return isFinite(t) ? t : Date.now();
     }
 
-    function msToDateInput(ms) {
+    function msToDateParts(ms) {
         var d = new Date(ms || Date.now());
-        var y = d.getFullYear();
-        var m = String(d.getMonth() + 1).padStart(2, "0");
-        var day = String(d.getDate()).padStart(2, "0");
-        return y + "-" + m + "-" + day;
+        return {
+            y: String(d.getFullYear()),
+            m: String(d.getMonth() + 1),
+            d: String(d.getDate())
+        };
+    }
+
+    function readIssueDateYmd() {
+        var y = String(issueYearEl?.value || "").trim();
+        var m = String(issueMonthEl?.value || "").trim();
+        var d = String(issueDayEl?.value || "").trim();
+        if (!y || !m || !d) return "";
+        var mm = String(m).padStart(2, "0");
+        var dd = String(d).padStart(2, "0");
+        return y + "-" + mm + "-" + dd;
+    }
+
+    function readIssueDateMs() {
+        return issueDateToMs(readIssueDateYmd());
+    }
+
+    function fillDayOptions(year, month, selectedDay) {
+        if (!issueDayEl) return;
+        var max = daysInMonth(year, month);
+        var sel = parseInt(selectedDay, 10);
+        if (!isFinite(sel) || sel < 1) sel = 1;
+        if (sel > max) sel = max;
+        var html = "";
+        for (var day = 1; day <= max; day++) {
+            html +=
+                '<option value="' +
+                day +
+                '"' +
+                (day === sel ? " selected" : "") +
+                ">" +
+                day +
+                "일</option>";
+        }
+        issueDayEl.innerHTML = html;
+        issueDayEl.value = String(sel);
+    }
+
+    function setIssueDateParts(y, m, d) {
+        if (!issueYearEl || !issueMonthEl || !issueDayEl) return;
+        var yi = parseInt(y, 10);
+        var mi = parseInt(m, 10);
+        var di = parseInt(d, 10);
+        if (!isFinite(yi)) yi = new Date().getFullYear();
+        if (!isFinite(mi) || mi < 1 || mi > 12) mi = 1;
+        if (!isFinite(di) || di < 1) di = 1;
+        if (issueYearEl.querySelector('option[value="' + yi + '"]')) {
+            issueYearEl.value = String(yi);
+        }
+        issueMonthEl.value = String(mi);
+        fillDayOptions(issueYearEl.value, mi, di);
+    }
+
+    function setIssueDateToToday() {
+        var t = msToDateParts(Date.now());
+        setIssueDateParts(t.y, t.m, t.d);
+    }
+
+    function initIssueDatePickers() {
+        if (!issueYearEl || !issueMonthEl || !issueDayEl) return;
+        var nowY = new Date().getFullYear();
+        var endY = nowY + 1;
+        var yHtml = "";
+        for (var y = endY; y >= ISSUE_YEAR_START; y--) {
+            yHtml += '<option value="' + y + '">' + y + "년</option>";
+        }
+        issueYearEl.innerHTML = yHtml;
+        var mHtml = "";
+        for (var m = 1; m <= 12; m++) {
+            mHtml += '<option value="' + m + '">' + m + "월</option>";
+        }
+        issueMonthEl.innerHTML = mHtml;
+        function onYmChange() {
+            var year = issueYearEl.value;
+            var month = issueMonthEl.value;
+            var day = issueDayEl.value;
+            fillDayOptions(year, month, day);
+        }
+        issueYearEl.addEventListener("change", onYmChange);
+        issueMonthEl.addEventListener("change", onYmChange);
+        setIssueDateToToday();
     }
 
     function parseNum(v) {
@@ -262,7 +347,7 @@
         var total = updateTotal();
         return {
             title: String(document.getElementById("tmr-title")?.value || "").trim(),
-            issueDate: issueDateToMs(document.getElementById("tmr-issue-date")?.value),
+            issueDate: readIssueDateMs(),
             issuerStaffLoginId: getIssuerLoginId(),
             issuerStaffName: getIssuerStaffName(),
             vendorCompany: String(document.getElementById("tmr-vendor-company")?.value || "").trim(),
@@ -653,6 +738,7 @@
                 ? "공급자(발행 관리자)를 선택해 주세요."
                 : "로그인 정보를 확인할 수 없습니다.";
         }
+        if (!readIssueDateYmd()) return "발행일자(년·월·일)를 선택해 주세요.";
         if (!body.vendorCompany) return "거래처(업체명)을 선택해 주세요.";
         if (!body.items.length) return "품목을 1개 이상 입력해 주세요.";
         return "";
@@ -670,8 +756,7 @@
         invalidateVendorCache();
         closeProductModal();
         if (form) form.reset();
-        var dateEl = document.getElementById("tmr-issue-date");
-        if (dateEl) dateEl.value = todayDateInput();
+        setIssueDateToToday();
         ensureRows(MIN_ROWS);
         setStatus("");
     }
@@ -680,7 +765,8 @@
         if (!item) return;
         setEditMode(item.id);
         document.getElementById("tmr-title").value = item.title || "";
-        document.getElementById("tmr-issue-date").value = msToDateInput(item.issueDate);
+        var dp = msToDateParts(item.issueDate);
+        setIssueDateParts(dp.y, dp.m, dp.d);
         if (issuerSelect) issuerSelect.value = item.issuerStaffLoginId || "";
         document.getElementById("tmr-vendor-company").value = item.vendorCompany || "";
         document.getElementById("tmr-vendor-ceo").value = item.vendorCeo || "";
@@ -765,7 +851,8 @@
         }
         savedListEl.innerHTML = items
             .map(function (it) {
-                var date = msToDateInput(it.issueDate);
+                var dp = msToDateParts(it.issueDate);
+                var date = dp.y + "-" + String(dp.m).padStart(2, "0") + "-" + String(dp.d).padStart(2, "0");
                 return (
                     '<li class="tmr-saved-item" data-id="' +
                     escapeHtml(it.id) +
@@ -868,7 +955,7 @@
                     "거래명세서_" +
                     company.replace(/[<>:"/\\|?*]/g, "_") +
                     "_" +
-                    (document.getElementById("tmr-issue-date")?.value || "").replace(/-/g, "") +
+                    readIssueDateYmd().replace(/-/g, "") +
                     ".pdf";
                 if (OU && OU.triggerPdfDownload) {
                     OU.triggerPdfDownload(blob, name);
@@ -947,6 +1034,7 @@
     if (Auth.setStaffNavMode) Auth.setStaffNavMode("order");
     if (Auth.refreshOrderHeader) Auth.refreshOrderHeader();
 
+    initIssueDatePickers();
     resetForm();
     setupIssuerUi()
         .then(refreshSavedList)

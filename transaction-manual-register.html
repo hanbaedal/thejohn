@@ -39,8 +39,12 @@
             <h2>기본 정보</h2>
             <div class="tmr-grid">
                 <div class="tmr-field">
-                    <label for="tmr-issue-date">발행일자</label>
-                    <input type="date" id="tmr-issue-date" name="issueDate" required>
+                    <span class="tmr-field-label" id="tmr-issue-date-label">발행일자</span>
+                    <div class="tmr-date-pick" role="group" aria-labelledby="tmr-issue-date-label">
+                        <select id="tmr-issue-y" aria-label="년" required></select>
+                        <select id="tmr-issue-m" aria-label="월" required></select>
+                        <select id="tmr-issue-d" aria-label="일" required></select>
+                    </div>
                 </div>
                 <div class="tmr-field tmr-field-issuer" id="tmr-issuer-wrap">
                     <label for="tmr-issuer">공급자 (발행 관리자·인감)</label>

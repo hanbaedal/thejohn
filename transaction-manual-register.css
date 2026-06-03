@@ -54,10 +54,28 @@
     cursor: pointer;
     background: #f7fafc;
 }
-.tmr-field label {
+.tmr-field label,
+.tmr-field-label {
     font-size: 0.85rem;
     font-weight: 600;
     color: #2a4a5e;
+}
+.tmr-date-pick {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+    align-items: center;
+}
+.tmr-date-pick select {
+    flex: 1;
+    min-width: 4.75rem;
+    padding: 0.5rem 0.45rem;
+    border: 1px solid #c5d0dc;
+    border-radius: 8px;
+    font-size: 16px;
+    font-family: inherit;
+    box-sizing: border-box;
+    background: #fff;
 }
 .tmr-picker-modal {
     position: fixed;
