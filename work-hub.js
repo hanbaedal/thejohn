@@ -122,15 +122,18 @@
             if (card.dataset.whMenuBound !== "1") {
                 card.dataset.whMenuBound = "1";
                 var navMode = NAV_MODE_BY_MENU[key];
-                card.addEventListener("click", function (e) {
-                    if (card.hidden) {
-                        e.preventDefault();
-                        return;
-                    }
-                    if (navMode && Auth.setStaffNavMode) {
-                        Auth.setStaffNavMode(navMode);
-                    }
-                });
+                (function (link, mode) {
+                    link.addEventListener("click", function (e) {
+                        var el = e.currentTarget || link;
+                        if (el.hidden || el.getAttribute("aria-hidden") === "true") {
+                            e.preventDefault();
+                            return;
+                        }
+                        if (mode && Auth.setStaffNavMode) {
+                            Auth.setStaffNavMode(mode);
+                        }
+                    });
+                })(card, navMode);
             }
         });
         syncHubRows();

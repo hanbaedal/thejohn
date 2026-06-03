@@ -134,8 +134,9 @@ body.page-work-hub .header-session-company--hub[hidden] {
 
 .company-main--work-hub.wh-hub-stage {
     position: relative;
-    z-index: 1;
+    z-index: 10;
     pointer-events: auto;
+    isolation: isolate;
     flex: 1 1 auto;
     display: flex;
     flex-direction: column;
@@ -223,9 +224,10 @@ body.page-work-hub .header-session-company--hub[hidden] {
     margin: 0;
     box-sizing: border-box;
     position: relative;
-    z-index: 2;
+    z-index: 12;
     pointer-events: auto;
     cursor: pointer;
+    touch-action: manipulation;
     background: rgba(255, 255, 255, 0.42);
     border-color: rgba(207, 232, 244, 0.75);
     box-shadow: 0 1px 6px rgba(10, 77, 156, 0.06);
