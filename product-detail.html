@@ -125,33 +125,39 @@
             box-sizing: border-box;
             text-align: center;
         }
-        .pd-hero-thumbs {
+        .pd-hero-scroll {
             display: flex;
-            flex-wrap: wrap;
-            gap: 0.35rem;
-            padding: 0.45rem 0.5rem 0.55rem;
+            flex-direction: row;
+            overflow-x: auto;
+            overflow-y: hidden;
+            scroll-snap-type: x mandatory;
+            -webkit-overflow-scrolling: touch;
+            width: 100%;
+            scrollbar-width: thin;
+        }
+        .pd-hero-slide {
+            flex: 0 0 100%;
+            scroll-snap-align: start;
+            scroll-snap-stop: always;
+            min-width: 100%;
+        }
+        .pd-hero-scroll-hint {
+            margin: 0;
+            padding: 0.35rem 0.55rem 0.45rem;
+            font-size: 0.78rem;
+            color: #6a7d8f;
+            text-align: center;
             background: #eef2f6;
             border-top: 1px solid #e0e6ed;
         }
-        .pd-hero-thumb {
-            flex: 0 0 auto;
-            width: 3.25rem;
-            height: 3.25rem;
-            padding: 0;
-            border: 2px solid transparent;
-            border-radius: 6px;
-            overflow: hidden;
-            cursor: pointer;
-            background: #fff;
+        .pd-actions {
+            margin-top: 0.85rem;
+            padding-top: 0.65rem;
+            border-top: 1px solid #e8edf2;
         }
-        .pd-hero-thumb.is-active {
-            border-color: #0a4d9c;
-        }
-        .pd-hero-thumb img {
+        .pd-btn-pinfo {
             width: 100%;
-            height: 100%;
-            object-fit: cover;
-            display: block;
+            max-width: 14rem;
         }
         .pd-summary {
             flex: 1;
@@ -366,6 +372,8 @@
     <script src="vendor-order-modal.js"></script>
     <script src="admin-header.js"></script>
     <script src="nav.js" defer></script>
+    <link rel="stylesheet" href="product-info-modal.css">
+    <script src="product-info-modal.js"></script>
     <script src="product-detail.js" defer></script>
 </head>
 <body class="page-product-detail">

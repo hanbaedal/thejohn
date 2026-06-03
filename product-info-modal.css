@@ -64,6 +64,21 @@
     color: #5a6d7e;
     line-height: 1.45;
 }
+.pinfo-modal--readonly .pinfo-modal__hint,
+.pinfo-modal--readonly .pinfo-modal__foot {
+    display: none;
+}
+.pinfo-modal--readonly .pinfo-row__input input,
+.pinfo-modal--readonly .pinfo-row__input textarea {
+    border: none;
+    background: #f8fafc;
+    resize: none;
+    color: #1e3a52;
+    cursor: default;
+}
+.pinfo-modal--readonly .pinfo-row__input textarea {
+    min-height: 4rem;
+}
 .pinfo-form {
     display: flex;
     flex-direction: column;

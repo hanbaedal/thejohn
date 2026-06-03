@@ -185,16 +185,69 @@
         close();
     }
 
+    function setReadOnlyMode(on) {
+        ensureModal();
+        modalEl.classList.toggle("pinfo-modal--readonly", !!on);
+        if (!formEl) return;
+        formEl.querySelectorAll("input, textarea").forEach(function (el) {
+            el.readOnly = !!on;
+            el.tabIndex = on ? -1 : 0;
+        });
+    }
+
     function close() {
         if (!modalEl) return;
         modalEl.hidden = true;
         document.body.style.overflow = "";
         setModalStatus("");
+        setReadOnlyMode(false);
+    }
+
+    /**
+     * 상세·카탈로그 등 읽기 전용 — 서버 product_info 조회
+     */
+    function openReadOnly(api, productId) {
+        productId = String(productId || "").trim();
+        if (!productId) return;
+        ensureModal();
+        setReadOnlyMode(true);
+        state.productId = productId;
+        fillForm(emptyValues());
+        setModalStatus("불러오는 중…");
+        modalEl.hidden = false;
+        document.body.style.overflow = "hidden";
+
+        var loadP;
+        if (api && api.getProductInfo) {
+            loadP = api.getProductInfo(productId);
+        } else if (api && api.get) {
+            loadP = api.get("api/products/" + encodeURIComponent(productId) + "/info");
+        } else {
+            setModalStatus("상품정보를 불러올 수 없습니다.", true);
+            return;
+        }
+
+        loadP
+            .then(function (data) {
+                var values =
+                    data && data.item && data.item.values ? data.item.values : emptyValues();
+                setValues(values);
+                fillForm(state.values);
+                if (!hasAnyValue(state.values)) {
+                    setModalStatus("등록된 상품정보가 없습니다.");
+                } else {
+                    setModalStatus("");
+                }
+            })
+            .catch(function (err) {
+                setModalStatus((err && err.message) || "상품정보를 불러오지 못했습니다.", true);
+            });
     }
 
     function open(opts) {
         opts = opts || {};
         ensureModal();
+        setReadOnlyMode(false);
         if (opts.productName || opts.netWeight) {
             var merged = Object.assign({}, state.values, readFormValues());
             if (opts.productName && !String(merged.productName || "").trim()) {
@@ -285,6 +338,7 @@
         emptyValues: emptyValues,
         hasAnyValue: hasAnyValue,
         bindOpenButton: bindOpenButton,
+        openReadOnly: openReadOnly,
         open: open,
         close: close,
         setValues: setValues,

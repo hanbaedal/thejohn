@@ -180,8 +180,24 @@
             '<div class="pd-content">' +
             escapeHtml(it.pd_explain || "") +
             "</div>" +
+            '<div class="pd-actions">' +
+            '<button type="button" class="btn btn-secondary pd-btn-pinfo" data-pd-pinfo="' +
+            escapeHtml(it.id) +
+            '">상품정보</button>' +
+            "</div>" +
             "</div></div></article>"
         );
+    }
+
+    function bindProductInfoButtons(container) {
+        var PInfo = window.THEJHON_PRODUCT_INFO;
+        if (!PInfo || !PInfo.openReadOnly || !container) return;
+        container.querySelectorAll("[data-pd-pinfo]").forEach(function (btn) {
+            btn.addEventListener("click", function () {
+                var pid = btn.getAttribute("data-pd-pinfo");
+                if (pid) PInfo.openReadOnly(api, pid);
+            });
+        });
     }
 
     function loadProductGalleries(container) {
@@ -199,38 +215,26 @@
                     var wrap = el.closest(".pd-hero-wrap");
                     if (!wrap) return;
                     wrap.innerHTML = "";
-                    var main = document.createElement("img");
-                    main.className = "pd-hero-img";
-                    main.alt = "";
-                    main.src = imgs[0];
-                    wrap.appendChild(main);
+                    var scroll = document.createElement("div");
+                    scroll.className = "pd-hero-scroll";
+                    scroll.setAttribute("role", "region");
+                    scroll.setAttribute("aria-label", "상품 사진");
+                    imgs.forEach(function (src, i) {
+                        var slide = document.createElement("div");
+                        slide.className = "pd-hero-slide";
+                        var img = document.createElement("img");
+                        img.className = "pd-hero-img";
+                        img.alt = "상품 사진 " + (i + 1);
+                        img.src = src;
+                        slide.appendChild(img);
+                        scroll.appendChild(slide);
+                    });
+                    wrap.appendChild(scroll);
                     if (imgs.length > 1) {
-                        var nav = document.createElement("div");
-                        nav.className = "pd-hero-thumbs";
-                        nav.setAttribute("role", "tablist");
-                        nav.setAttribute("aria-label", "상품 사진");
-                        imgs.forEach(function (src, i) {
-                            var btn = document.createElement("button");
-                            btn.type = "button";
-                            btn.className = "pd-hero-thumb" + (i === 0 ? " is-active" : "");
-                            btn.setAttribute("role", "tab");
-                            btn.setAttribute("aria-selected", i === 0 ? "true" : "false");
-                            var thumb = document.createElement("img");
-                            thumb.alt = "사진 " + (i + 1);
-                            thumb.src = src;
-                            btn.appendChild(thumb);
-                            btn.addEventListener("click", function () {
-                                main.src = src;
-                                var tabs = nav.querySelectorAll(".pd-hero-thumb");
-                                for (var t = 0; t < tabs.length; t++) {
-                                    var on = tabs[t] === btn;
-                                    tabs[t].classList.toggle("is-active", on);
-                                    tabs[t].setAttribute("aria-selected", on ? "true" : "false");
-                                }
-                            });
-                            nav.appendChild(btn);
-                        });
-                        wrap.appendChild(nav);
+                        var hint = document.createElement("p");
+                        hint.className = "pd-hero-scroll-hint";
+                        hint.textContent = "좌우로 밀어 사진을 넘겨 보세요";
+                        wrap.appendChild(hint);
                     }
                 })
                 .catch(function () {
@@ -274,6 +278,7 @@
             "</div></div>";
 
         loadProductGalleries(root);
+        bindProductInfoButtons(root);
         bindDetailOrders(items);
 
         requestAnimationFrame(function () {

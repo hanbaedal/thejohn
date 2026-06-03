@@ -301,13 +301,18 @@ router.get("/check-code", requireRole("supervisor", "admin"), async (req, res) =
     }
 });
 
-router.get("/:id/info", requireRole("supervisor", "admin"), async (req, res) => {
+router.get("/:id/info", async (req, res) => {
     try {
+        const auth = optionalAuth(req);
+        const vendorDoc = await resolveVendorForAuth(auth);
         const pid = String(req.params.id || "").trim();
         const db = getDb();
         await ensureProductInfoIndexes(db);
         const existing = await db.collection("products").findOne({ id: pid });
         if (!existing) {
+            return res.status(404).json({ ok: false, error: "상품을 찾을 수 없습니다." });
+        }
+        if (auth && auth.role === "vendor" && !vendorCanAccessProduct(vendorDoc, existing, auth)) {
             return res.status(404).json({ ok: false, error: "상품을 찾을 수 없습니다." });
         }
         const doc = await findProductInfoByProductId(db, pid);
