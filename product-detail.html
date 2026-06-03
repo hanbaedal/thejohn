@@ -95,6 +95,7 @@
             padding: 0.75rem 0.85rem 0.85rem;
         }
         .pd-hero-wrap {
+            position: relative;
             flex: 0 0 auto;
             width: 100%;
             max-width: none;
@@ -102,6 +103,33 @@
             background: #f4f6f9;
             border-radius: 8px;
             overflow: hidden;
+        }
+        .pd-hero-zone {
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            width: 30%;
+            max-width: 7rem;
+            padding: 0;
+            margin: 0;
+            border: none;
+            background: transparent;
+            cursor: pointer;
+            z-index: 2;
+        }
+        .pd-hero-zone--prev {
+            left: 0;
+        }
+        .pd-hero-zone--next {
+            right: 0;
+        }
+        .pd-hero-zone:hover,
+        .pd-hero-zone:focus-visible {
+            background: rgba(10, 77, 156, 0.06);
+            outline: none;
+        }
+        .pd-hero-zone:active {
+            background: rgba(10, 77, 156, 0.1);
         }
         .pd-hero-img {
             width: 100%;

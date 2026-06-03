@@ -183,6 +183,8 @@
             '<div class="pd-actions">' +
             '<button type="button" class="btn btn-secondary pd-btn-pinfo" data-pd-pinfo="' +
             escapeHtml(it.id) +
+            '" data-pd-name="' +
+            escapeHtml(it.pd_name || "") +
             '">상품 필수 정보</button>' +
             "</div>" +
             "</div></div></article>"
@@ -195,9 +197,43 @@
         container.querySelectorAll("[data-pd-pinfo]").forEach(function (btn) {
             btn.addEventListener("click", function () {
                 var pid = btn.getAttribute("data-pd-pinfo");
-                if (pid) PInfo.openReadOnly(api, pid);
+                if (pid) {
+                    PInfo.openReadOnly(api, pid, {
+                        productName: btn.getAttribute("data-pd-name") || ""
+                    });
+                }
             });
         });
+    }
+
+    function scrollHeroBySlide(scrollEl, direction) {
+        if (!scrollEl) return;
+        var slide = scrollEl.querySelector(".pd-hero-slide");
+        if (!slide) return;
+        var step = slide.offsetWidth || scrollEl.clientWidth;
+        scrollEl.scrollBy({ left: direction * step, behavior: "smooth" });
+    }
+
+    function attachHeroClickZones(wrap, scrollEl, count) {
+        if (!wrap || !scrollEl || count < 2) return;
+        var prev = document.createElement("button");
+        prev.type = "button";
+        prev.className = "pd-hero-zone pd-hero-zone--prev";
+        prev.setAttribute("aria-label", "이전 사진");
+        var next = document.createElement("button");
+        next.type = "button";
+        next.className = "pd-hero-zone pd-hero-zone--next";
+        next.setAttribute("aria-label", "다음 사진");
+        prev.addEventListener("click", function (e) {
+            e.preventDefault();
+            scrollHeroBySlide(scrollEl, -1);
+        });
+        next.addEventListener("click", function (e) {
+            e.preventDefault();
+            scrollHeroBySlide(scrollEl, 1);
+        });
+        wrap.appendChild(prev);
+        wrap.appendChild(next);
     }
 
     function loadProductGalleries(container) {
@@ -231,9 +267,11 @@
                     });
                     wrap.appendChild(scroll);
                     if (imgs.length > 1) {
+                        attachHeroClickZones(wrap, scroll, imgs.length);
                         var hint = document.createElement("p");
                         hint.className = "pd-hero-scroll-hint";
-                        hint.textContent = "좌우로 밀어 사진을 넘겨 보세요";
+                        hint.textContent =
+                            "사진 왼쪽·오른쪽을 누르거나 좌우로 밀어 넘겨 보세요";
                         wrap.appendChild(hint);
                     }
                 })

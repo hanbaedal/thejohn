@@ -3,7 +3,7 @@
  */
 (function (global) {
     var MODAL_TITLE_EDIT = "상품 필수 정보";
-    var MODAL_TITLE_VIEW = "상품필수정보";
+    var MODAL_TITLE_VIEW = "상품 필수 정보";
     var DEFAULT_NOTES =
         "-본 제품은 공정거래위원회 고시 소비자 분쟁해결 기준의 의거 교환 또는 보상을 받을 수 있습니다.\n" +
         "- 부정, 불량식품 신고는 국번없이 1399";
@@ -15,7 +15,13 @@
         { key: "expirationDate", label: "소비기한", multiline: false, max: 200 },
         { key: "storageMethod", label: "보관방법", multiline: false, max: 200 },
         { key: "netWeight", label: "내용량", multiline: false, max: 80 },
-        { key: "ingredients", label: "원재료명 및 함량", multiline: true, max: 8000 },
+        {
+            key: "ingredients",
+            label: "원재료명 및 함량",
+            labelLines: ["원재료명", "및", "함량"],
+            multiline: true,
+            max: 8000
+        },
         { key: "customerCenter", label: "고객센터", multiline: false, max: 80 },
         { key: "notes", label: "확인사항", multiline: true, max: 4000 }
     ];
@@ -34,6 +40,21 @@
         return o;
     }
 
+    /** 등록·수정 폼의 상품명·규격을 상품 필수 정보에 반영 */
+    function applyProductContext(values, opts) {
+        opts = opts || {};
+        var o = Object.assign({}, values || emptyValues());
+        if (opts.productName != null) {
+            var pn = String(opts.productName || "").trim();
+            if (pn) o.productName = pn;
+        }
+        if (opts.netWeight != null) {
+            var nw = String(opts.netWeight || "").trim();
+            if (nw && !String(o.netWeight || "").trim()) o.netWeight = nw;
+        }
+        return o;
+    }
+
     function hasAnyValue(values) {
         if (!values) return false;
         return FIELD_DEFS.some(function (d) {
@@ -46,6 +67,17 @@
             .replace(/&/g, "&amp;")
             .replace(/"/g, "&quot;")
             .replace(/</g, "&lt;");
+    }
+
+    function rowLabelHtml(def) {
+        if (def.labelLines && def.labelLines.length) {
+            return def.labelLines
+                .map(function (line) {
+                    return escapeAttr(line);
+                })
+                .join("<br>");
+        }
+        return escapeAttr(def.label);
     }
 
     var modalEl = null;
@@ -87,10 +119,22 @@
                     '" maxlength="' +
                     d.max +
                     '">';
+            var labelClass = "pinfo-row__label";
+            if (d.labelLines && d.labelLines.length) {
+                labelClass += " pinfo-row__label--lines";
+            }
+            var labelAttr =
+                d.labelLines && d.labelLines.length ?
+                    ' aria-label="' + escapeAttr(d.label) + '"'
+                :   "";
             return (
                 '<div class="pinfo-row">' +
-                '<p class="pinfo-row__label">' +
-                escapeAttr(d.label) +
+                '<p class="' +
+                labelClass +
+                '"' +
+                labelAttr +
+                ">" +
+                rowLabelHtml(d) +
                 "</p>" +
                 '<div class="pinfo-row__input">' +
                 inner +
@@ -234,14 +278,15 @@
     /**
      * 상세·카탈로그 등 읽기 전용 — 서버 product_info 조회
      */
-    function openReadOnly(api, productId) {
+    function openReadOnly(api, productId, opts) {
+        opts = opts || {};
         productId = String(productId || "").trim();
         if (!productId) return;
         ensureModal();
         setModalTitle(MODAL_TITLE_VIEW);
         setReadOnlyMode(true);
         state.productId = productId;
-        fillForm(emptyValues(), { emptyPlaceholder: true });
+        fillForm(applyProductContext(emptyValues(), opts), { emptyPlaceholder: true });
         setModalStatus("불러오는 중…");
         modalEl.hidden = false;
         document.body.style.overflow = "hidden";
@@ -258,15 +303,16 @@
 
         loadP
             .then(function (data) {
-                var values = withDefaultNotes(
-                    data && data.item && data.item.values ? data.item.values : null
+                var values = applyProductContext(
+                    withDefaultNotes(data && data.item && data.item.values ? data.item.values : null),
+                    opts
                 );
                 setValues(values);
                 fillForm(state.values, { emptyPlaceholder: true });
                 setModalStatus("");
             })
             .catch(function () {
-                setValues(emptyValues());
+                setValues(applyProductContext(emptyValues(), opts));
                 fillForm(state.values, { emptyPlaceholder: true });
                 setModalStatus("");
             });
@@ -277,16 +323,10 @@
         ensureModal();
         setModalTitle(MODAL_TITLE_EDIT);
         setReadOnlyMode(false);
-        if (opts.productName || opts.netWeight) {
-            var merged = Object.assign({}, state.values, readFormValues());
-            if (opts.productName && !String(merged.productName || "").trim()) {
-                merged.productName = String(opts.productName).trim();
-            }
-            if (opts.netWeight && !String(merged.netWeight || "").trim()) {
-                merged.netWeight = String(opts.netWeight).trim();
-            }
-            state.values = merged;
-        }
+        state.values = applyProductContext(
+            Object.assign({}, state.values, readFormValues()),
+            opts
+        );
         fillForm(state.values);
         setModalStatus(
             state.productId ?
