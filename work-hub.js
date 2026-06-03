@@ -22,6 +22,15 @@
         menuByKey[item.key] = item;
     });
 
+    function initHubVideo() {
+        var media = global.THEJHON_HOME_INTRO_MEDIA;
+        if (!media || !media.init || !document.querySelector(".wh-hub-video")) return;
+        media.init({
+            videoSelector: ".wh-hub-video",
+            videoPlaybackRate: 0.55
+        });
+    }
+
     function setStatus(msg, kind) {
         if (!statusEl) return;
         statusEl.textContent = msg || "";
@@ -111,14 +120,22 @@
         }
     }
 
-    if (document.readyState === "loading") {
-        document.addEventListener("DOMContentLoaded", boot, { once: true });
-    } else {
+    function onReady() {
+        initHubVideo();
         boot();
+    }
+
+    if (document.readyState === "loading") {
+        document.addEventListener("DOMContentLoaded", onReady, { once: true });
+    } else {
+        onReady();
     }
 
     global.addEventListener("thejhon-auth-permissions-updated", applyMenus);
     global.addEventListener("pageshow", function (ev) {
-        if (ev.persisted) boot();
+        if (ev.persisted) {
+            initHubVideo();
+            boot();
+        }
     });
 })();
