@@ -27,9 +27,13 @@
             ["loadedmetadata", "loadeddata", "playing", "play"].forEach(function (ev) {
                 video.addEventListener(ev, applyVideoPlaybackRate);
             });
+            var rateGuard = false;
             video.addEventListener("ratechange", function () {
+                if (rateGuard) return;
                 if (Math.abs(video.playbackRate - playbackRate) > 0.001) {
+                    rateGuard = true;
                     applyVideoPlaybackRate();
+                    rateGuard = false;
                 }
             });
 

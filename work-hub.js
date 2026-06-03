@@ -139,9 +139,15 @@
         syncHubRows();
     }
 
+    var headerCompanyInitDone = false;
+    var workHubBootDone = false;
+
     function resolveWorkHubBrand() {
         var header = document.querySelector(".site-header");
         if (!header) return null;
+        if (header.dataset.headerShell === "2") {
+            return header.querySelector(".site-header-brand");
+        }
         var brand = header.querySelector(".site-header-brand");
         if (brand) return brand;
         var logo =
@@ -169,6 +175,11 @@
     }
 
     function initWorkHubHeaderCompany() {
+        if (headerCompanyInitDone) {
+            refreshWorkHubHeaderCompany();
+            return;
+        }
+        headerCompanyInitDone = true;
         refreshWorkHubHeaderCompany();
         if (Auth && Auth.refreshBrandFromStaffProfileAsync) {
             Auth.refreshBrandFromStaffProfileAsync().then(refreshWorkHubHeaderCompany);
@@ -176,7 +187,14 @@
     }
 
     function scheduleWorkHubHeaderCompany() {
+        var tries = 0;
         function run() {
+            var header = document.querySelector(".site-header");
+            if (header && header.dataset.headerShell !== "2" && tries < 40) {
+                tries += 1;
+                window.setTimeout(run, 50);
+                return;
+            }
             initWorkHubHeaderCompany();
         }
         if (document.readyState === "loading") {
@@ -184,18 +202,6 @@
         } else {
             run();
         }
-        window.addEventListener("load", run, { once: true });
-        try {
-            var header = document.querySelector(".site-header");
-            if (header && typeof MutationObserver !== "undefined") {
-                var obs = new MutationObserver(function () {
-                    if (header.dataset.headerShell === "2") {
-                        initWorkHubHeaderCompany();
-                    }
-                });
-                obs.observe(header, { attributes: true, attributeFilter: ["data-header-shell"], childList: true, subtree: true });
-            }
-        } catch (eObs) {}
     }
 
     function syncWorkHubAuthUi() {
@@ -236,9 +242,17 @@
     }
 
     function scheduleApplyMenus() {
+        if (workHubBootDone) {
+            applyMenus();
+            refreshWorkHubHeaderCompany();
+            return;
+        }
+        workHubBootDone = true;
         bootWorkHub();
-        window.setTimeout(applyMenus, 0);
-        window.setTimeout(applyMenus, 350);
+        window.requestAnimationFrame(function () {
+            applyMenus();
+            initWorkHubHeaderCompany();
+        });
     }
 
     bootHubMediaWhenReady();
@@ -249,8 +263,11 @@
     } else {
         scheduleApplyMenus();
     }
-    window.addEventListener("load", scheduleApplyMenus);
-    window.addEventListener("pageshow", scheduleApplyMenus);
+    window.addEventListener("pageshow", function () {
+        workHubBootDone = false;
+        headerCompanyInitDone = false;
+        scheduleApplyMenus();
+    });
 
     try {
         window.addEventListener("thejhon-auth-permissions-updated", function () {
