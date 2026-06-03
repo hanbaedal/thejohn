@@ -206,6 +206,8 @@
         return;
     }
 
+    if (Auth.setStaffNavMode) Auth.setStaffNavMode("order");
+
     if (DetailModal && DetailModal.create) {
         detailModal = DetailModal.create({
             modalId: "ol-detail-modal",

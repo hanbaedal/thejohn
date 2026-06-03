@@ -817,7 +817,14 @@
         "vendor-excel-import.html",
         "vendor-prospect-finder.html"
     ];
+    var ORDER_MANAGE_HUB_PAGE = "order-manage-hub.html";
     var ORDER_MANAGE_PAGES = ["order-list-admin.html"];
+    var ORDER_MANAGE_HUB_PAGES = [
+        ORDER_MANAGE_HUB_PAGE,
+        "supervisor-order-list.html",
+        "supervisor-order-pdf.html",
+        "supervisor-transaction-pdf.html"
+    ];
     var WORK_HUB_PAGE = "work-hub.html";
     var WORK_HUB_LABEL = "그룹 마케팅 관리";
     var HOMEPAGE_MANAGE_HUB_PAGE = "homepage-manage-hub.html";
@@ -847,8 +854,11 @@
         "support-inquiry.html": true
     };
     var STAFF_NAV_ORDER_PAGES = {
+        "order-manage-hub.html": true,
         "order-list-admin.html": true,
         "supervisor-order-list.html": true,
+        "supervisor-order-pdf.html": true,
+        "supervisor-transaction-pdf.html": true,
         "supervisor-transaction-list.html": true
     };
     var STAFF_NAV_WORK_PAGES = {
@@ -998,6 +1008,9 @@
         if (mode === "order") {
             if (zone !== "order") return false;
             var file = staffNavHrefFile(el.getAttribute("href"));
+            if (ORDER_MANAGE_HUB_PAGES.indexOf(file) >= 0) {
+                return getOrderManageHubAccess().allowed;
+            }
             if (file === "order-list-admin.html") return canShowOrderManageMenu();
             return isSupervisorStaff();
         }
@@ -1389,11 +1402,8 @@
         if (mode === "manage-home") {
             applyStaffNavManageHomeTabs(nav);
         } else if (mode === "order") {
-            if (isSupervisorStaff()) {
-                staffNavEnsureLink(nav, "supervisor-order-list.html", "발주서 관리", "order");
-                staffNavEnsureLink(nav, "supervisor-transaction-list.html", "거래명세서", "order");
-            } else if (canShowOrderManageMenu()) {
-                staffNavEnsureLink(nav, "order-list-admin.html", "발주서 관리", "order");
+            if (getOrderManageHubAccess().allowed) {
+                staffNavEnsureLink(nav, ORDER_MANAGE_HUB_PAGE, "주문서 관리", "order");
             }
         } else if (mode === "work" && isSupervisorStaff()) {
             staffNavEnsureLink(nav, "staff-manage-hub.html", "업무관리", "work");
@@ -1747,6 +1757,52 @@
         return { allowed: true, role: getRole() };
     }
 
+    /** 그룹 마케팅 — 발주서 관리 허브 (슈퍼바이저·주문권한 관리자) */
+    function getOrderManageHubAccess() {
+        normalizeLegacySession();
+        if (!global.THEJHON_API || !THEJHON_API.getToken || !THEJHON_API.getToken()) {
+            return {
+                allowed: false,
+                reason: "로그인이 필요합니다."
+            };
+        }
+        if (!isLoggedIn()) {
+            return { allowed: false, reason: "로그인이 필요합니다." };
+        }
+        if (isSupervisorStaff()) {
+            return { allowed: true, role: "supervisor" };
+        }
+        if (canShowOrderManageMenu()) {
+            return { allowed: true, role: "admin" };
+        }
+        return {
+            allowed: false,
+            reason: "발주서 관리 권한이 있는 관리자·슈퍼바이저만 이용할 수 있습니다."
+        };
+    }
+
+    function getOrderManageHubLinks() {
+        if (isSupervisorStaff()) {
+            return {
+                list: "supervisor-order-list.html",
+                orderPdf: "supervisor-order-pdf.html",
+                transactionPdf: "supervisor-transaction-pdf.html"
+            };
+        }
+        if (canShowOrderManageMenu()) {
+            return {
+                list: "order-list-admin.html",
+                orderPdf: "supervisor-order-pdf.html",
+                transactionPdf: "supervisor-transaction-pdf.html"
+            };
+        }
+        return {
+            list: ORDER_MANAGE_HUB_PAGE,
+            orderPdf: ORDER_MANAGE_HUB_PAGE,
+            transactionPdf: ""
+        };
+    }
+
     /** 관리자·슈퍼바이저 — 그룹 마케팅 관리 허브 */
     function getWorkHubAccess() {
         normalizeLegacySession();
@@ -1788,8 +1844,7 @@
     }
 
     function getWorkHubOrderManageHref() {
-        if (isSupervisorStaff()) return "supervisor-order-list.html";
-        if (canShowOrderManageMenu()) return "order-list-admin.html";
+        if (getOrderManageHubAccess().allowed) return ORDER_MANAGE_HUB_PAGE;
         return "work-hub.html";
     }
 
@@ -2018,6 +2073,12 @@
         }
         if (page === HOMEPAGE_MANAGE_HUB_PAGE) {
             if (!getHomepageManageHubAccess().allowed) {
+                redirectFromProtectedPage(isLoggedIn());
+            }
+            return;
+        }
+        if (ORDER_MANAGE_HUB_PAGES.indexOf(page) >= 0) {
+            if (!getOrderManageHubAccess().allowed) {
                 redirectFromProtectedPage(isLoggedIn());
             }
             return;
@@ -2267,6 +2328,8 @@
         canPlaceVendorOrders: canPlaceVendorOrders,
         canShowOrderManageMenu: canShowOrderManageMenu,
         getOrderManageAccess: getOrderManageAccess,
+        getOrderManageHubAccess: getOrderManageHubAccess,
+        getOrderManageHubLinks: getOrderManageHubLinks,
         getWorkHubLabel: function () {
             return WORK_HUB_LABEL;
         },

@@ -166,6 +166,26 @@
         });
     }
 
+    function openPdfBlobInTab(blob, fallbackName) {
+        var url = URL.createObjectURL(blob);
+        var w = window.open(url, "_blank", "noopener");
+        if (!w) {
+            triggerPdfDownload(blob, fallbackName || "document.pdf");
+            return Promise.resolve();
+        }
+        return new Promise(function (resolve) {
+            w.addEventListener("load", function () {
+                try {
+                    w.focus();
+                } catch (e) {
+                    /* ignore */
+                }
+                resolve();
+            });
+            setTimeout(resolve, 1500);
+        });
+    }
+
     function openPdfForPrint(blob) {
         var url = URL.createObjectURL(blob);
         var w = window.open(url, "_blank", "noopener");
@@ -184,6 +204,24 @@
                 resolve();
             });
             setTimeout(resolve, 1500);
+        });
+    }
+
+    function viewOrderPdfWithAuth(api, orderId) {
+        if (!api || !api.fetchOrderPdfBlob) {
+            return Promise.reject(new Error("PDF API를 사용할 수 없습니다."));
+        }
+        return api.fetchOrderPdfBlob(orderId).then(function (blob) {
+            return openPdfBlobInTab(blob, "발주서.pdf");
+        });
+    }
+
+    function viewTransactionPdfWithAuth(api, orderId) {
+        if (!api || !api.fetchTransactionPdfBlob) {
+            return Promise.reject(new Error("거래명세서 PDF API를 사용할 수 없습니다."));
+        }
+        return api.fetchTransactionPdfBlob(orderId).then(function (blob) {
+            return openPdfBlobInTab(blob, "거래명세서.pdf");
         });
     }
 
@@ -206,6 +244,8 @@
         _lastOrderForPdf: null,
         downloadOrderPdfWithAuth: downloadOrderPdfWithAuth,
         downloadTransactionPdfWithAuth: downloadTransactionPdfWithAuth,
+        viewOrderPdfWithAuth: viewOrderPdfWithAuth,
+        viewTransactionPdfWithAuth: viewTransactionPdfWithAuth,
         printTransactionPdfWithAuth: printTransactionPdfWithAuth
     };
 })(typeof window !== "undefined" ? window : this);

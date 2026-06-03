@@ -25,8 +25,9 @@
             if (!THEJHON_AUTH.setStaffNavMode) return;
             var href = String(card.getAttribute("href") || "").toLowerCase();
             if (
-                href.indexOf("supervisor-order-list") >= 0 ||
-                href.indexOf("supervisor-transaction-list") >= 0
+                href.indexOf("order-manage-hub") >= 0 ||
+                href.indexOf("supervisor-order") >= 0 ||
+                href.indexOf("supervisor-transaction") >= 0
             ) {
                 THEJHON_AUTH.setStaffNavMode("order");
             } else {

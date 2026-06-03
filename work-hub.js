@@ -6,7 +6,7 @@
         if (!global.THEJHON_HOME_INTRO_MEDIA || !THEJHON_HOME_INTRO_MEDIA.init) return;
         THEJHON_HOME_INTRO_MEDIA.init({
             videoSelector: ".wh-hub-backdrop-video",
-            videoPlaybackRate: 0.1,
+            videoPlaybackRate: 0.55,
             introSelector: ".wh-hub-stage",
             bgmId: "whHubMusic",
             bgmBtnId: "whBgmToggle",
@@ -102,8 +102,32 @@
         syncHubRows();
     }
 
-    function layoutWorkHubHeaderCompany() {
-        var brand = document.querySelector(".site-header-brand");
+    var hubCompanyListenersBound = false;
+
+    function resolveWorkHubBrand() {
+        var header = document.querySelector(".site-header");
+        if (!header) return null;
+        var brand = header.querySelector(".site-header-brand");
+        if (brand) return brand;
+        var logo =
+            header.querySelector(".site-header-start .dz-logo") ||
+            header.querySelector(".site-header-start .dz-logo--compact") ||
+            header.querySelector(".dz-logo--compact") ||
+            header.querySelector(".dz-logo");
+        if (!logo) return null;
+        brand = document.createElement("div");
+        brand.className = "site-header-brand";
+        if (logo.parentNode) {
+            logo.parentNode.insertBefore(brand, logo);
+            brand.appendChild(logo);
+        } else {
+            header.insertBefore(brand, header.firstChild);
+        }
+        return brand;
+    }
+
+    function pingHubCompany() {
+        var brand = resolveWorkHubBrand();
         if (!brand) return;
 
         var elHub = document.getElementById("headerCompanyNameHub");
@@ -112,41 +136,44 @@
             elHub.id = "headerCompanyNameHub";
             elHub.className = "header-session-company header-session-company--hub";
             elHub.setAttribute("aria-live", "polite");
+        }
+        if (elHub.parentNode !== brand) {
             brand.appendChild(elHub);
         }
 
-        function pingHubCompany() {
-            var text = "";
-            if (
-                Auth &&
-                Auth.isLoggedIn &&
-                Auth.isLoggedIn() &&
-                Auth.getLoggedInCompanyDisplayName
-            ) {
-                text = String(Auth.getLoggedInCompanyDisplayName() || "").trim();
-            }
-            if (text) {
-                elHub.textContent = text;
-                elHub.hidden = false;
-            } else {
-                elHub.textContent = "";
-                elHub.hidden = true;
-            }
-            var elWide = document.getElementById("headerCompanyName");
-            var elMobile = document.getElementById("headerCompanyNameMobile");
-            if (elWide) {
-                elWide.textContent = "";
-                elWide.classList.remove("header-session-company--show");
-            }
-            if (elMobile) {
-                elMobile.textContent = "";
-                elMobile.classList.remove("header-session-company--show");
-            }
-            var header = document.querySelector(".site-header");
-            if (header) header.classList.remove("header-has-company-mobile");
+        var text = "";
+        if (
+            Auth &&
+            Auth.isLoggedIn &&
+            Auth.isLoggedIn() &&
+            Auth.getLoggedInCompanyDisplayName
+        ) {
+            text = String(Auth.getLoggedInCompanyDisplayName() || "").trim();
         }
+        if (text) {
+            elHub.textContent = text;
+            elHub.hidden = false;
+        } else {
+            elHub.textContent = "";
+            elHub.hidden = true;
+        }
+        var elWide = document.getElementById("headerCompanyName");
+        var elMobile = document.getElementById("headerCompanyNameMobile");
+        if (elWide) {
+            elWide.textContent = "";
+            elWide.classList.remove("header-session-company--show");
+        }
+        if (elMobile) {
+            elMobile.textContent = "";
+            elMobile.classList.remove("header-session-company--show");
+        }
+        var header = document.querySelector(".site-header");
+        if (header) header.classList.remove("header-has-company-mobile");
+    }
 
-        pingHubCompany();
+    function bindWorkHubCompanyListeners() {
+        if (hubCompanyListenersBound) return;
+        hubCompanyListenersBound = true;
         var prev = window.__thejhonRefreshHeaderCompany;
         window.__thejhonRefreshHeaderCompany = function () {
             if (typeof prev === "function") prev();
@@ -158,8 +185,25 @@
         } catch (e) {}
     }
 
+    function initWorkHubHeaderCompany() {
+        pingHubCompany();
+        bindWorkHubCompanyListeners();
+    }
+
+    function scheduleWorkHubHeaderCompany() {
+        function run() {
+            initWorkHubHeaderCompany();
+        }
+        if (document.readyState === "loading") {
+            document.addEventListener("DOMContentLoaded", run, { once: true });
+        } else {
+            run();
+        }
+        window.addEventListener("load", run, { once: true });
+    }
+
     bootHubMediaWhenReady();
-    layoutWorkHubHeaderCompany();
+    scheduleWorkHubHeaderCompany();
 
     if (!Auth || !Auth.getWorkHubAccess) {
         setStatus("인증 스크립트 오류", "err");
@@ -179,6 +223,7 @@
     if (Auth.refreshSessionPermissionsAsync) {
         Auth.refreshSessionPermissionsAsync().then(function () {
             applyMenus();
+            initWorkHubHeaderCompany();
         });
     }
 

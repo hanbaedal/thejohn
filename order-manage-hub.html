@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="auth-storage.js"></script>
+    <script src="site-brand-boot.js"></script>
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#0a4d9c">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-title" content="더존">
+    <title>주문서 관리 — 더존</title>
+    <link rel="stylesheet" href="common.css">
+    <link rel="stylesheet" href="staff-hub.css">
+    <style>
+        .omh-hub-rows .sm-hub-row--triple {
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+        }
+        @media (max-width: 900px) {
+            .omh-hub-rows .sm-hub-row--triple {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+    <script src="api-config.js"></script>
+    <script src="thejhon-api.js"></script>
+    <script src="auth.js"></script>
+    <script src="admin-header.js"></script>
+    <script src="nav.js" defer></script>
+</head>
+<body>
+    <header class="site-header">
+        <div class="site-header-start">
+            <a href="work-hub.html" class="dz-logo dz-logo--compact" aria-label="그룹 마케팅 관리"><img src="img/logo.png" alt="" width="72" height="72" class="dz-logo-img"></a>
+            <nav class="site-header-nav" aria-label="주요 메뉴"></nav>
+        </div>
+        <nav class="site-header-actions" aria-label="계정">
+            <time class="header-date" id="headerToday" datetime=""></time>
+            <button type="button" class="btn btn-auth-icon btn-logout" id="btnLogout" hidden aria-label="로그아웃" title="로그아웃"></button>
+        </nav>
+    </header>
+    <main class="page-main page-main--hide-scrollbar company-main company-main--support-hub">
+        <p class="shub-subnav"><a href="work-hub.html">← 그룹 마케팅 관리</a></p>
+        <h1>주문서 관리</h1>
+        <p id="omh-status" class="shub-status" role="status" aria-live="polite"></p>
+        <div class="company-divisions sm-hub-rows omh-hub-rows" id="omh-menus">
+            <div class="sm-hub-row sm-hub-row--triple">
+                <a href="supervisor-order-list.html" class="company-division-card" id="omh-link-list" data-omh-link="list">
+                    <h2>발주서 리스트</h2>
+                    <p>기간·담당별 발주 내역과 통계를 조회합니다.</p>
+                </a>
+                <a href="supervisor-order-pdf.html" class="company-division-card" id="omh-link-order-pdf" data-omh-link="order-pdf">
+                    <h2>발주서 PDF로 보기</h2>
+                    <p>조회한 발주서를 PDF로 열어 확인·저장합니다.</p>
+                </a>
+                <a href="supervisor-transaction-pdf.html" class="company-division-card" id="omh-link-transaction-pdf" data-omh-link="transaction-pdf">
+                    <h2>거래명세서 PDF로 보기</h2>
+                    <p>거래명세서 PDF를 열어 확인·인쇄·저장합니다.</p>
+                </a>
+            </div>
+        </div>
+    </main>
+    <footer class="site-footer">
+        <div class="site-footer-inner">
+            <dl class="site-footer-grid" id="siteFooterCompanyGrid" aria-live="polite"></dl>
+            <p class="site-footer-company-msg" id="siteFooterCompanyMsg" hidden></p>
+        </div>
+    </footer>
+    <script src="order-manage-hub.js"></script>
+</body>
+</html>

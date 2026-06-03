@@ -82,8 +82,8 @@ body.page-work-hub .header-session-company--hub {
     font-size: calc(2.5rem * 0.7);
     line-height: 1;
     font-weight: 800;
-    color: #ffd400;
-    text-shadow: 0 1px 6px rgba(0, 0, 0, 0.45), 0 0 12px rgba(255, 212, 0, 0.35);
+    color: #000000;
+    text-shadow: 0 1px 4px rgba(255, 255, 255, 0.9);
     align-self: center;
 }
 
