@@ -1901,29 +1901,32 @@
         return { allowed: true, role: getRole() };
     }
 
-    /**
-     * work-hub 메뉴 표시 (관리자 리스트 주문/비주문 = st_order_enabled)
-     * | 메뉴                         | 슈퍼바이저 | 관리자(주문) | 관리자(비주문) |
-     * | view-home, manage-home       | ○         | ○           | ○             |
-     * | product-manage, vendor-manage| ○         | ○           | ○             |
-     * | order-manage                 | ○         | ○           | 숨김          |
-     * | work-manage                  | ○         | 숨김        | 숨김          |
-     */
-    function canAccessWorkHubMenu(menuKey) {
-        if (!getWorkHubAccess().allowed) return false;
-        var key = String(menuKey || "").trim();
+    var WORK_HUB_BASE_MENUS = [
+        "view-home",
+        "manage-home",
+        "product-manage",
+        "vendor-manage"
+    ];
+
+    /** work-hub — 슈퍼바이저 6 · 관리자(주문) 5 · 관리자(비주문) 4 */
+    function getWorkHubVisibleMenuKeys() {
+        if (!getWorkHubAccess().allowed) return [];
         var role = normalizeLoginRole(getRole());
-        if (key === "view-home" || key === "manage-home") return true;
-        if (key === "product-manage" || key === "vendor-manage") {
-            return role === "admin" || role === "supervisor";
+        if (role === "supervisor") {
+            return WORK_HUB_BASE_MENUS.concat(["order-manage", "work-manage"]);
         }
-        if (key === "work-manage") return role === "supervisor";
-        if (key === "order-manage") {
-            if (role === "supervisor") return true;
-            if (role === "admin") return isStaffOrderEnabled();
-            return false;
+        if (role === "admin") {
+            if (isStaffOrderEnabled()) {
+                return WORK_HUB_BASE_MENUS.concat(["order-manage"]);
+            }
+            return WORK_HUB_BASE_MENUS.slice();
         }
-        return false;
+        return [];
+    }
+
+    function canAccessWorkHubMenu(menuKey) {
+        var key = String(menuKey || "").trim();
+        return getWorkHubVisibleMenuKeys().indexOf(key) >= 0;
     }
 
     /** 홈페이지 관리하기 허브 — 상품·업체·고객센터 운영 */
@@ -2477,6 +2480,7 @@
         },
         getWorkHubAccess: getWorkHubAccess,
         canAccessWorkHubMenu: canAccessWorkHubMenu,
+        getWorkHubVisibleMenuKeys: getWorkHubVisibleMenuKeys,
         refreshStaffOrderEnabledFromProfileAsync: refreshStaffOrderEnabledFromProfileAsync,
         getHomepageManageHubAccess: getHomepageManageHubAccess,
         canAccessHomepageManageCard: canAccessHomepageManageCard,

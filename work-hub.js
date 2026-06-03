@@ -1,5 +1,6 @@
 /**
- * 그룹 마케팅 관리(work-hub) — 메뉴 표시·권한은 auth.js(canAccessWorkHubMenu)에 위임
+ * 그룹 마케팅 관리(work-hub)
+ * 메뉴: 슈퍼바이저 6 · 관리자(주문) 5 · 관리자(비주문) 4 — auth.getWorkHubVisibleMenuKeys()
  */
 (function (global) {
     "use strict";
@@ -8,33 +9,18 @@
     var statusEl = document.getElementById("wh-status");
     var gridEl = document.getElementById("whMenuGrid");
 
-    var MENUS = [
-        { key: "view-home", href: "index.html", navMode: "public" },
-        { key: "manage-home", href: "homepage-manage-hub.html", navMode: "manage-home" },
-        { key: "product-manage", href: "product-manage.html", navMode: "manage-home" },
-        { key: "vendor-manage", href: "vendor-manage.html", navMode: "manage-home" },
-        { key: "order-manage", href: "order-manage-hub.html", navMode: "order", dynamicHref: true },
-        { key: "work-manage", href: "staff-manage-hub.html", navMode: "work" }
-    ];
-
-    var menuByKey = {};
-    var hubPermsReady = false;
-    MENUS.forEach(function (item) {
-        menuByKey[item.key] = item;
-    });
-
-    function currentRole() {
-        return String(Auth && Auth.getRole ? Auth.getRole() : "")
-            .trim()
-            .toLowerCase();
-    }
+    var NAV_MODE = {
+        "view-home": "public",
+        "manage-home": "manage-home",
+        "product-manage": "manage-home",
+        "vendor-manage": "manage-home",
+        "order-manage": "order",
+        "work-manage": "work"
+    };
 
     function initHubMedia() {
         var media = global.THEJHON_HOME_INTRO_MEDIA;
         if (!media || !media.init) return;
-        if (!document.querySelector(".wh-hub-video") && !document.getElementById("whHubBgm")) {
-            return;
-        }
         media.init({
             videoSelector: ".wh-hub-video",
             videoPlaybackRate: 0.55,
@@ -57,25 +43,61 @@
             (kind === "err" ? " wh-status--err" : kind === "ok" ? " wh-status--ok" : "");
     }
 
-    function menuHref(item) {
-        if (item.dynamicHref && Auth && Auth.getWorkHubOrderManageHref) {
-            return Auth.getWorkHubOrderManageHref();
-        }
-        return item.href;
+    function visibleMenuSet() {
+        var keys =
+            Auth && Auth.getWorkHubVisibleMenuKeys
+                ? Auth.getWorkHubVisibleMenuKeys()
+                : [];
+        var map = {};
+        keys.forEach(function (k) {
+            map[k] = true;
+        });
+        return map;
     }
 
-    function menuAllowed(key) {
-        if (!Auth || !Auth.canAccessWorkHubMenu) return false;
-        var role = currentRole();
-        if (key === "work-manage" && role !== "supervisor") return false;
-        if (key === "order-manage") {
-            if (role === "supervisor") return true;
-            if (role === "admin") {
-                return !!(Auth.isStaffOrderEnabled && Auth.isStaffOrderEnabled());
-            }
-            return false;
+    function cardHref(key) {
+        if (key === "order-manage" && Auth && Auth.getWorkHubOrderManageHref) {
+            return Auth.getWorkHubOrderManageHref();
         }
-        return Auth.canAccessWorkHubMenu(key);
+        var card = gridEl && gridEl.querySelector('[data-wh-menu="' + key + '"]');
+        if (!card) return "#";
+        var defaults = {
+            "view-home": "index.html",
+            "manage-home": "homepage-manage-hub.html",
+            "product-manage": "product-manage.html",
+            "vendor-manage": "vendor-manage.html",
+            "order-manage": "order-manage-hub.html",
+            "work-manage": "staff-manage-hub.html"
+        };
+        return defaults[key] || card.getAttribute("href") || "#";
+    }
+
+    function bindCard(card, key) {
+        if (card.dataset.whBound === "1") return;
+        card.dataset.whBound = "1";
+        var mode = NAV_MODE[key];
+        card.addEventListener("click", function () {
+            if (card.hidden || !mode || !Auth || !Auth.setStaffNavMode) return;
+            Auth.setStaffNavMode(mode);
+        });
+    }
+
+    function applyMenus() {
+        if (!gridEl || !Auth) return;
+        var show = visibleMenuSet();
+        var cards = gridEl.querySelectorAll("[data-wh-menu]");
+        cards.forEach(function (card) {
+            var key = card.getAttribute("data-wh-menu");
+            var on = !!show[key];
+            card.hidden = !on;
+            if (!on) {
+                card.style.display = "none";
+                return;
+            }
+            card.style.removeProperty("display");
+            card.href = cardHref(key);
+            bindCard(card, key);
+        });
     }
 
     function refreshHeaderCompany() {
@@ -84,58 +106,9 @@
         }
     }
 
-    function bindCard(card, navMode) {
-        if (card.dataset.whBound === "1") return;
-        card.dataset.whBound = "1";
-        card.addEventListener("click", function (e) {
-            if (card.hidden) {
-                e.preventDefault();
-                return;
-            }
-            if (navMode && Auth && Auth.setStaffNavMode) {
-                Auth.setStaffNavMode(navMode);
-            }
-        });
-    }
-
-    function setCardVisible(card, allowed) {
-        card.hidden = !allowed;
-        if (allowed) {
-            card.style.removeProperty("display");
-            card.removeAttribute("aria-hidden");
-            card.removeAttribute("tabindex");
-        } else {
-            card.style.display = "none";
-            card.setAttribute("aria-hidden", "true");
-            card.setAttribute("tabindex", "-1");
-        }
-    }
-
-    function applyMenus() {
-        if (!gridEl) return;
-        var hubOk = Auth && Auth.getWorkHubAccess && Auth.getWorkHubAccess().allowed;
-        var cards = gridEl.querySelectorAll("[data-wh-menu]");
-        cards.forEach(function (card) {
-            var key = card.getAttribute("data-wh-menu");
-            var item = menuByKey[key];
-            var allowed = hubOk && menuAllowed(key);
-            if (
-                !hubPermsReady &&
-                (key === "order-manage" || key === "work-manage")
-            ) {
-                allowed = false;
-            }
-            setCardVisible(card, allowed);
-            if (!allowed || !item) return;
-            card.href = menuHref(item);
-            bindCard(card, item.navMode);
-        });
-    }
-
     function boot() {
-        if (!Auth || !Auth.getWorkHubAccess) {
+        if (!Auth.getWorkHubAccess) {
             setStatus("인증 스크립트를 불러오지 못했습니다.", "err");
-            applyMenus();
             return;
         }
         if (Auth.normalizeLegacySession) Auth.normalizeLegacySession();
@@ -149,31 +122,19 @@
 
         setStatus("");
         if (Auth.setStaffNavMode) Auth.setStaffNavMode("hub");
-        hubPermsReady = false;
-        if (gridEl) gridEl.classList.add("wh-menu-await-perms");
-        applyMenus();
-        refreshHeaderCompany();
 
-        var tasks = [];
-        if (Auth.refreshSessionPermissionsAsync) {
-            tasks.push(Auth.refreshSessionPermissionsAsync());
-        }
-        if (Auth.refreshStaffOrderEnabledFromProfileAsync) {
-            tasks.push(Auth.refreshStaffOrderEnabledFromProfileAsync());
-        }
-        if (Auth.refreshBrandFromStaffProfileAsync) {
-            tasks.push(Auth.refreshBrandFromStaffProfileAsync());
-        }
-        function finishPerms() {
-            hubPermsReady = true;
-            if (gridEl) gridEl.classList.remove("wh-menu-await-perms");
+        function done() {
             applyMenus();
             refreshHeaderCompany();
         }
-        if (tasks.length) {
-            Promise.all(tasks).then(finishPerms).catch(finishPerms);
+
+        var sync = Auth.refreshSessionPermissionsAsync
+            ? Auth.refreshSessionPermissionsAsync()
+            : null;
+        if (sync && typeof sync.then === "function") {
+            sync.then(done).catch(done);
         } else {
-            finishPerms();
+            done();
         }
     }
 
@@ -190,9 +151,6 @@
 
     global.addEventListener("thejhon-auth-permissions-updated", applyMenus);
     global.addEventListener("pageshow", function (ev) {
-        if (ev.persisted) {
-            initHubMedia();
-            boot();
-        }
+        if (ev.persisted) boot();
     });
 })();
