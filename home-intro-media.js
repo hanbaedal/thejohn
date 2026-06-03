@@ -7,7 +7,24 @@
         var video = document.querySelector(options.videoSelector || ".home-intro-video");
         if (video) {
             video.muted = true;
+            var playbackRate =
+                typeof options.videoPlaybackRate === "number" &&
+                isFinite(options.videoPlaybackRate) &&
+                options.videoPlaybackRate > 0
+                    ? options.videoPlaybackRate
+                    : 1;
+
+            function applyVideoPlaybackRate() {
+                try {
+                    video.playbackRate = playbackRate;
+                } catch (e) {}
+            }
+
+            applyVideoPlaybackRate();
+            video.addEventListener("loadedmetadata", applyVideoPlaybackRate);
+
             var playV = function () {
+                applyVideoPlaybackRate();
                 var p = video.play();
                 if (p && p.catch) p.catch(function () {});
             };

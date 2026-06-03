@@ -6,6 +6,7 @@
         if (!global.THEJHON_HOME_INTRO_MEDIA || !THEJHON_HOME_INTRO_MEDIA.init) return;
         THEJHON_HOME_INTRO_MEDIA.init({
             videoSelector: ".wh-hub-backdrop-video",
+            videoPlaybackRate: 0.1,
             introSelector: ".wh-hub-stage",
             bgmId: "whHubMusic",
             bgmBtnId: "whBgmToggle",
