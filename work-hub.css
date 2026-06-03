@@ -33,19 +33,15 @@ body.page-work-hub {
     );
 }
 
-/* 헤더 영역에도 배경 영상이 비치도록 — 내용만 위에 표시 */
+/* 헤더 배경 투명 — 영상 위에 메뉴·로고만 표시 */
 body.page-work-hub .site-header {
     position: relative;
     z-index: 20;
     flex: 0 0 auto;
-    background: linear-gradient(
-        180deg,
-        rgba(255, 255, 255, 0.55) 0%,
-        rgba(255, 255, 255, 0.28) 100%
-    );
-    border-bottom-color: rgba(255, 255, 255, 0.45);
-    -webkit-backdrop-filter: blur(4px);
-    backdrop-filter: blur(4px);
+    background: transparent;
+    border-bottom-color: transparent;
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
 }
 
 body.page-work-hub .site-header .header-date,
