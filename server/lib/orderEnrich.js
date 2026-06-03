@@ -11,7 +11,7 @@ const {
     getCeoName: getStaffCeoName,
     F: SF
 } = require("./staffFields");
-const { resolveIssuerForOrder } = require("./transactionIssuer");
+const { resolveIssuerForOrder, resolveIssuerFromStaffLoginId } = require("./transactionIssuer");
 
 function str(v) {
     return String(v ?? "").trim();
@@ -181,10 +181,54 @@ async function prepareOrderForTransactionPdf(db, order) {
     return o;
 }
 
+/** 수기 거래명세서 — 품목·거래처를 그대로 PDF에 반영 */
+async function prepareManualTransactionForPdf(db, body) {
+    const items = Array.isArray(body.items) ? body.items : [];
+    let sum = 0;
+    const normalized = [];
+    for (let i = 0; i < items.length && i < 10; i++) {
+        const it = items[i] || {};
+        const qty = Number(it.quantity) || 0;
+        const unit = Number(it.unitPrice) || 0;
+        const line = Number(it.lineTotal) || (qty && unit ? qty * unit : 0);
+        sum += line;
+        normalized.push({
+            pd_code: str(it.pd_code),
+            productName: str(it.productName),
+            pd_size: str(it.pd_size),
+            quantity: qty,
+            unitPrice: unit,
+            lineTotal: line
+        });
+    }
+    const issuerLogin = str(body.vendorRegisteredBy);
+    const o = {
+        id: str(body.id) || "txn_manual",
+        createdAt: body.createdAt || Date.now(),
+        vendorCompany: str(body.vendorCompany),
+        vendorCeo: str(body.vendorCeo),
+        vendorAddr: str(body.vendorAddr),
+        vendorPhone: str(body.vendorPhone),
+        vendorRegisteredBy: issuerLogin,
+        totalAmount: Number(body.totalAmount) || sum,
+        items: normalized,
+        note: str(body.note)
+    };
+    if (issuerLogin) {
+        const issuer = await resolveIssuerFromStaffLoginId(db, issuerLogin);
+        if (issuer) o.issuer = issuer;
+    }
+    if (!o.issuer) {
+        o.issuer = await resolveIssuerForOrder(db, o);
+    }
+    return o;
+}
+
 module.exports = {
     staffSupplierFromLoginId,
     buildEnrichedOrder,
     prepareOrderForPdf,
     prepareOrderForTransactionPdf,
+    prepareManualTransactionForPdf,
     gradeLabel
 };

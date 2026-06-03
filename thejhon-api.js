@@ -440,6 +440,65 @@
                 return res.blob();
             });
         },
+        listTransactionManual: function () {
+            return request("GET", "/api/transaction-manual").then(function (d) {
+                return d.items || [];
+            });
+        },
+        getTransactionManual: function (id) {
+            return request("GET", "/api/transaction-manual/" + encodeURIComponent(id)).then(function (d) {
+                return d.item;
+            });
+        },
+        createTransactionManual: function (body) {
+            return request("POST", "/api/transaction-manual", body).then(function (d) {
+                return d.item;
+            });
+        },
+        updateTransactionManual: function (id, body) {
+            return request("PUT", "/api/transaction-manual/" + encodeURIComponent(id), body).then(function (d) {
+                return d.item;
+            });
+        },
+        deleteTransactionManual: function (id) {
+            return request("DELETE", "/api/transaction-manual/" + encodeURIComponent(id));
+        },
+        fetchTransactionManualPreviewPdf: function (body) {
+            var url = apiUrl("/api/transaction-manual/pdf");
+            return fetch(url, {
+                method: "POST",
+                headers: headers(),
+                body: JSON.stringify(body || {})
+            }).then(function (res) {
+                if (!res.ok) {
+                    return res.text().then(function (text) {
+                        var msg = "거래명세서 PDF를 만들지 못했습니다.";
+                        try {
+                            var data = JSON.parse(text);
+                            if (data && data.error) msg = data.error;
+                        } catch (e) {}
+                        throw new Error(msg);
+                    });
+                }
+                return res.blob();
+            });
+        },
+        fetchTransactionManualPdf: function (id) {
+            var url = apiUrl("/api/transaction-manual/" + encodeURIComponent(id) + "/pdf");
+            return fetch(url, { method: "GET", headers: headers() }).then(function (res) {
+                if (!res.ok) {
+                    return res.text().then(function (text) {
+                        var msg = "거래명세서 PDF를 불러오지 못했습니다.";
+                        try {
+                            var data = JSON.parse(text);
+                            if (data && data.error) msg = data.error;
+                        } catch (e) {}
+                        throw new Error(msg);
+                    });
+                }
+                return res.blob();
+            });
+        },
         listSupportNews: function (opts) {
             var q = "";
             if (opts && opts.dept) {

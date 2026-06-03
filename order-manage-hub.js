@@ -16,15 +16,26 @@
         var map = {
             list: document.getElementById("omh-link-list"),
             orderPdf: document.getElementById("omh-link-order-pdf"),
-            transactionPdf: document.getElementById("omh-link-transaction-pdf")
+            transactionPdf: document.getElementById("omh-link-transaction-pdf"),
+            transactionManual: document.getElementById("omh-link-transaction-manual")
         };
         if (map.list && links.list) map.list.setAttribute("href", links.list);
         if (map.orderPdf && links.orderPdf) map.orderPdf.setAttribute("href", links.orderPdf);
-        if (map.transactionPdf && links.transactionPdf) {
-            map.transactionPdf.setAttribute("href", links.transactionPdf);
-            map.transactionPdf.hidden = false;
-        } else if (map.transactionPdf) {
-            map.transactionPdf.hidden = true;
+        if (map.transactionPdf) {
+            if (links.transactionPdf) {
+                map.transactionPdf.setAttribute("href", links.transactionPdf);
+                map.transactionPdf.hidden = false;
+            } else {
+                map.transactionPdf.hidden = true;
+            }
+        }
+        if (map.transactionManual) {
+            if (links.transactionManual) {
+                map.transactionManual.setAttribute("href", links.transactionManual);
+                map.transactionManual.hidden = false;
+            } else {
+                map.transactionManual.hidden = true;
+            }
         }
     }
 

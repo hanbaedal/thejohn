@@ -246,6 +246,8 @@
         downloadTransactionPdfWithAuth: downloadTransactionPdfWithAuth,
         viewOrderPdfWithAuth: viewOrderPdfWithAuth,
         viewTransactionPdfWithAuth: viewTransactionPdfWithAuth,
-        printTransactionPdfWithAuth: printTransactionPdfWithAuth
+        printTransactionPdfWithAuth: printTransactionPdfWithAuth,
+        triggerPdfDownload: triggerPdfDownload,
+        openPdfBlobInTab: openPdfBlobInTab
     };
 })(typeof window !== "undefined" ? window : this);

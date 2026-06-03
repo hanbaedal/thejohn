@@ -199,6 +199,7 @@ app.use("/api/vendors", requireDb, vendorRoutes);
 app.use("/api/vendor-prospects", requireDb, vendorProspectRoutes);
 app.use("/api/vendor-new", requireDb, vendorNewRoutes);
 app.use("/api/orders", requireDb, orderRoutes);
+app.use("/api/transaction-manual", requireDb, require("./routes/transactionManual"));
 app.use("/api/vendor-email", requireDb, vendorEmailRoutes);
 app.use("/api/supervisor", requireDb, supervisorRoutes);
 app.use("/api/access", requireDb, accessRoutes);
