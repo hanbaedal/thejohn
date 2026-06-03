@@ -40,6 +40,16 @@
                 logo = start.querySelector(".dz-logo, .dz-logo--compact");
                 if (logo && logo.parentNode !== brand) brand.appendChild(logo);
             }
+            var brandInStart = start.querySelector(".site-header-brand");
+            if (brandInStart) {
+                if (brandInStart !== brand) {
+                    while (brandInStart.firstChild) {
+                        brand.appendChild(brandInStart.firstChild);
+                    }
+                } else if (brand.parentNode === start) {
+                    header.insertBefore(brand, start);
+                }
+            }
             start.remove();
         }
 

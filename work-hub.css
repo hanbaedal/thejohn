@@ -33,15 +33,16 @@ body.page-work-hub {
     );
 }
 
-/* 헤더 배경 투명 — 영상 위에 메뉴·로고만 표시 */
+/* 헤더 배경 투명 — 영상 위에 메뉴·로고만 표시 (본문·배경보다 항상 위) */
 body.page-work-hub .site-header {
     position: relative;
-    z-index: 20;
+    z-index: 250;
     flex: 0 0 auto;
     background: transparent;
     border-bottom-color: transparent;
     -webkit-backdrop-filter: none;
     backdrop-filter: none;
+    isolation: isolate;
 }
 
 body.page-work-hub .site-header .header-date,
@@ -63,6 +64,8 @@ body.page-work-hub .site-header-brand {
     flex-shrink: 0;
     min-width: 0;
     max-width: min(52vw, 20rem);
+    position: relative;
+    z-index: 2;
 }
 
 body.page-work-hub .header-session-company--wide,
@@ -198,9 +201,13 @@ body.page-work-hub .header-session-company--hub[hidden] {
     display: none !important;
 }
 
-.wh-hub-stage .wh-hub-bgm-wrap {
+/* main overflow 영향 없이 body 기준 고정 */
+body.page-work-hub .wh-hub-bgm-wrap {
     position: fixed;
-    z-index: 30;
+    right: max(0.75rem, env(safe-area-inset-right, 0));
+    bottom: max(0.75rem, env(safe-area-inset-bottom, 0));
+    z-index: 260;
+    pointer-events: auto;
 }
 
 @media (max-width: 720px) {

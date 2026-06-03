@@ -2,8 +2,13 @@
     var Auth = window.THEJHON_AUTH;
     var statusEl = document.getElementById("wh-status");
 
+    var hubMediaInited = false;
+
     function initHubMedia() {
+        if (hubMediaInited) return;
         if (!global.THEJHON_HOME_INTRO_MEDIA || !THEJHON_HOME_INTRO_MEDIA.init) return;
+        if (!document.getElementById("whHubMusic") || !document.getElementById("whBgmToggle")) return;
+        hubMediaInited = true;
         THEJHON_HOME_INTRO_MEDIA.init({
             videoSelector: ".wh-hub-backdrop-video",
             videoPlaybackRate: 0.55,
@@ -13,18 +18,22 @@
             bgmHintId: "whBgmHint",
             volume: 0.28,
             autoplayBgm: false,
-            prominentBgmHint: false,
-            unlockOnAnyClick: false,
-            bgmButtonOnly: true
+            prominentBgmHint: true,
+            unlockOnAnyClick: true,
+            bgmButtonOnly: false
         });
     }
 
     function bootHubMediaWhenReady() {
-        if (document.readyState === "complete") {
+        function run() {
             initHubMedia();
-        } else {
-            window.addEventListener("load", initHubMedia, { once: true });
         }
+        if (document.readyState === "loading") {
+            document.addEventListener("DOMContentLoaded", run, { once: true });
+        } else {
+            run();
+        }
+        window.addEventListener("load", run, { once: true });
     }
 
     function setStatus(msg, kind) {
@@ -200,6 +209,17 @@
             run();
         }
         window.addEventListener("load", run, { once: true });
+        try {
+            var header = document.querySelector(".site-header");
+            if (header && typeof MutationObserver !== "undefined") {
+                var obs = new MutationObserver(function () {
+                    if (header.dataset.headerShell === "2") {
+                        initWorkHubHeaderCompany();
+                    }
+                });
+                obs.observe(header, { attributes: true, attributeFilter: ["data-header-shell"], childList: true, subtree: true });
+            }
+        } catch (eObs) {}
     }
 
     bootHubMediaWhenReady();
