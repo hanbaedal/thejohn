@@ -266,7 +266,7 @@
         for (var i = 0; i < imgs.length; i++) {
             imgs[i].src = DEFAULT_SITE_LOGO;
         }
-        applySiteFavicon(DEFAULT_SITE_FAVICON);
+        applySiteFavicon(DEFAULT_SITE_LOGO);
         syncPwaManifest("", companyName || "");
         var label = String(companyName || "").trim()
             ? String(companyName).trim() + " 홈"

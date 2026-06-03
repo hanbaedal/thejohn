@@ -147,11 +147,44 @@
 
     var branded = usesStaffLogoRole();
     var staffBranded = isStaffBrandRole();
-    var customLogo = branded ? String(authRead(LOGO_KEY) || "").trim() : "";
-    var brandCompany = branded
-        ? String(authRead("thejhon_brand_company_name") || authRead("thejhon_company_name") || "").trim()
-        : "";
-    var faviconHref = customLogo || DEFAULT_FAVICON;
+    function readCachedLogo() {
+        return branded ? String(authRead(LOGO_KEY) || "").trim() : "";
+    }
+
+    function readBrandCompany() {
+        return branded
+            ? String(
+                  authRead("thejhon_brand_company_name") || authRead("thejhon_company_name") || ""
+              ).trim()
+            : "";
+    }
+
+    function faviconHrefForSession(logoSrc) {
+        var logo = String(logoSrc || "").trim();
+        if (logo) return logo;
+        /* 로그인(관리자·업체)인데 등록 로고 없음 — 한가람 기본 icon-192 대신 더존 로고 */
+        if (branded) return DEFAULT_SITE_LOGO;
+        return DEFAULT_FAVICON;
+    }
+
+    function applyFaviconHref(href) {
+        var h = String(href || "").trim();
+        if (!h) return;
+        var mime = iconMime(h);
+        var links = document.querySelectorAll('link[rel="icon"], link[rel="apple-touch-icon"]');
+        for (var i = 0; i < links.length; i++) {
+            links[i].href = h;
+            try {
+                links[i].type = mime;
+            } catch (e) {}
+        }
+    }
+
+    global.__thejhonApplyFavicon = applyFaviconHref;
+
+    var customLogo = readCachedLogo();
+    var brandCompany = readBrandCompany();
+    var faviconHref = faviconHrefForSession(customLogo);
     var brandedWithCustom = branded && !!customLogo;
 
     if (isHomePage) {
@@ -319,16 +352,19 @@
         clearPending();
     }
 
+    function syncBrandFromSession() {
+        if (!branded && !isLoggedInSession()) return;
+        customLogo = readCachedLogo();
+        brandCompany = readBrandCompany();
+        faviconHref = faviconHrefForSession(customLogo);
+        applyFaviconHref(faviconHref);
+        applyPwaManifest(customLogo || "", brandCompany);
+        applyEarlyHeaderLogo();
+        if (brandCompany) applyEarlyHeroBrand();
+    }
+
     function bootPwaBrand() {
-        if (!customLogo && !branded) return;
-        var company = "";
-        try {
-            company =
-                authRead("thejhon_brand_company_name") ||
-                authRead("thejhon_company_name") ||
-                "";
-        } catch (e) {}
-        applyPwaManifest(customLogo || "", company);
+        syncBrandFromSession();
     }
 
     global.__THEJHON_BRAND_BOOT = {
@@ -338,15 +374,18 @@
         markBrandHasLogo: markBrandHasLogo
     };
 
+    global.__thejhonSyncBrandFromSession = syncBrandFromSession;
+
     if (document.readyState === "loading") {
         document.addEventListener("DOMContentLoaded", function () {
             if (branded || isLoggedInSession()) stripDeozonVideoPoster();
-            applyEarlyHeaderLogo();
-            bootPwaBrand();
+            syncBrandFromSession();
         });
     } else {
         if (branded || isLoggedInSession()) stripDeozonVideoPoster();
-        applyEarlyHeaderLogo();
-        bootPwaBrand();
+        syncBrandFromSession();
     }
+    window.addEventListener("pageshow", function () {
+        syncBrandFromSession();
+    });
 })(typeof window !== "undefined" ? window : this);

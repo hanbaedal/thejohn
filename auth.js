@@ -341,6 +341,11 @@
                 global.__thejhonApplySiteLogo(logo, headerName || company || "");
             } catch (e3) {}
         }
+        if (typeof global.__thejhonSyncBrandFromSession === "function") {
+            try {
+                global.__thejhonSyncBrandFromSession();
+            } catch (eSync) {}
+        }
     }
 
     function getVendorOrderContact() {
@@ -526,6 +531,11 @@
                 try {
                     global.__thejhonApplySiteLogo(staffLogo, headerLabel);
                 } catch (eLogo) {}
+            }
+            if (typeof global.__thejhonSyncBrandFromSession === "function") {
+                try {
+                    global.__thejhonSyncBrandFromSession();
+                } catch (eLogoSync) {}
             }
         } else {
             clearStaffLogoCache();
