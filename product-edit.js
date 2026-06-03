@@ -41,6 +41,7 @@
     var pendingImageData = "";
     var deptPicker = null;
     var nameDupCheck = null;
+    var codeDupCheck = null;
 
     function setStatus(msg, isError) {
         if (!statusEl) return;
@@ -73,6 +74,7 @@
         editIdInput.value = "";
         if (photoPicker) photoPicker.clear();
         if (nameDupCheck) nameDupCheck.reset();
+        if (codeDupCheck) codeDupCheck.reset();
         pendingImageData = "";
         updatePhotoPreview("");
         if (deptPicker) deptPicker.clear();
@@ -97,6 +99,7 @@
         updatePhotoPreview(pendingImageData || "");
         if (deptPicker) deptPicker.setValue(itemDept(it));
         if (nameDupCheck) nameDupCheck.reset();
+        if (codeDupCheck) codeDupCheck.reset();
         setStatus("수정 중: " + (it.pd_name || ""));
     }
 
@@ -107,6 +110,7 @@
             hiddenInput: deptHidden,
             onSelect: function () {
                 if (nameDupCheck) nameDupCheck.checkNow();
+                if (codeDupCheck) codeDupCheck.checkNow();
             }
         });
     }
@@ -123,6 +127,22 @@
             },
             checkDuplicate: function (name, excludeId, dept) {
                 return api.checkProductName(name, excludeId, dept);
+            }
+        });
+    }
+
+    if (PF && PF.initProductCodeDuplicateCheck && api && api.checkProductCode) {
+        codeDupCheck = PF.initProductCodeDuplicateCheck({
+            codeInput: codeInput,
+            hintEl: document.getElementById("pe-code-dup-hint"),
+            getExcludeId: function () {
+                return editIdInput ? editIdInput.value.trim() : "";
+            },
+            getDeptId: function () {
+                return deptPicker ? deptPicker.getValue() : "";
+            },
+            checkDuplicate: function (code, excludeId, dept) {
+                return api.checkProductCode(code, excludeId, dept);
             }
         });
     }
@@ -198,22 +218,20 @@
                 });
         }
 
-        if (!nameDupCheck) {
-            saveProduct();
+        if (PF && PF.beforeProductSaveDuplicateCheck) {
+            PF.beforeProductSaveDuplicateCheck(
+                {
+                    nameDupCheck: nameDupCheck,
+                    codeDupCheck: codeDupCheck,
+                    onStatus: setStatus,
+                    nameInput: nameInput,
+                    codeInput: codeInput
+                },
+                saveProduct
+            );
             return;
         }
-        nameDupCheck.checkNow().then(function (res) {
-            if (res && res.duplicate) {
-                setStatus("같은 사업부문에 이미 등록된 상품 명칭입니다. 다른 명칭을 입력해 주세요.", true);
-                nameInput.focus();
-                return;
-            }
-            if (nameDupCheck.isChecking()) {
-                setStatus("명칭 중복 확인 중입니다. 잠시 후 다시 시도해 주세요.", true);
-                return;
-            }
-            saveProduct();
-        });
+        saveProduct();
     });
 
     var access = THEJHON_AUTH.getRegisterAccess();

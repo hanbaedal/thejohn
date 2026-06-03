@@ -54,7 +54,8 @@
 .pr-name-dup-hint--err {
     color: #6b7c8e;
 }
-.pr-field input.pr-name-input--dup {
+.pr-field input.pr-name-input--dup,
+.pr-field input.pr-code-input--dup {
     border-color: #c44;
     box-shadow: 0 0 0 2px rgba(193, 68, 68, 0.15);
 }

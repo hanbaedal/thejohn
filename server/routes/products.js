@@ -8,6 +8,7 @@ const {
     toDbDoc,
     validateBuilt,
     findDuplicateProductByName,
+    findDuplicateProductByCode,
     applyStaffContactFallback,
     F
 } = require("../lib/productFields");
@@ -220,6 +221,26 @@ router.get("/check-name", requireRole("supervisor", "admin"), async (req, res) =
     }
 });
 
+router.get("/check-code", requireRole("supervisor", "admin"), async (req, res) => {
+    try {
+        const code = String(req.query.code || "");
+        const excludeId = req.query.excludeId ? String(req.query.excludeId) : "";
+        const dept = String(req.query.dept || "");
+        if (!code.trim() || !dept.trim()) {
+            return res.json({ ok: true, duplicate: false });
+        }
+        const dup = await findDuplicateProductByCode(getDb(), code, excludeId, dept);
+        res.json({
+            ok: true,
+            duplicate: !!dup,
+            item: dup ? toPublic(dup) : null
+        });
+    } catch (e) {
+        console.error("GET /api/products/check-code", e);
+        res.status(500).json({ ok: false, error: "상품 코드 중복 확인에 실패했습니다." });
+    }
+});
+
 router.get("/:id", async (req, res) => {
     try {
         const auth = optionalAuth(req);
@@ -276,6 +297,22 @@ router.post("/", requireRole("supervisor", "admin"), async (req, res) => {
             });
         }
 
+        if (built.pd_code) {
+            const dupCode = await findDuplicateProductByCode(
+                getDb(),
+                built.pd_code,
+                null,
+                built.pd_dept
+            );
+            if (dupCode) {
+                return res.status(409).json({
+                    ok: false,
+                    code: "DUPLICATE_CODE",
+                    error: "같은 사업부문에 이미 사용 중인 상품 코드입니다."
+                });
+            }
+        }
+
         let doc = toDbDoc(newId(), built, null);
         doc = await stampNewProductRegistration(doc, req.auth);
         await getDb().collection("products").insertOne(doc);
@@ -311,6 +348,22 @@ router.put("/:id", requireRole("supervisor", "admin"), async (req, res) => {
                 code: "DUPLICATE_NAME",
                 error: "같은 사업부문에 이미 등록된 상품 명칭입니다."
             });
+        }
+
+        if (built.pd_code) {
+            const dupCode = await findDuplicateProductByCode(
+                getDb(),
+                built.pd_code,
+                id,
+                built.pd_dept
+            );
+            if (dupCode) {
+                return res.status(409).json({
+                    ok: false,
+                    code: "DUPLICATE_CODE",
+                    error: "같은 사업부문에 이미 사용 중인 상품 코드입니다."
+                });
+            }
         }
 
         let doc = toDbDoc(id, built, existing);

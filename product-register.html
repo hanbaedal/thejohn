@@ -109,7 +109,8 @@
             <div class="pr-field-row pr-row--name">
                 <div class="pr-field-code">
                     <label for="pr-pd-code">상품 코드</label>
-                    <input type="text" id="pr-pd-code" name="pd_code" maxlength="16" autocomplete="off" placeholder="16자 이내" inputmode="text">
+                    <input type="text" id="pr-pd-code" name="pd_code" maxlength="16" autocomplete="off" placeholder="16자 이내" inputmode="text" aria-describedby="pr-code-dup-hint">
+                    <p id="pr-code-dup-hint" class="pr-name-dup-hint pr-name-dup-hint--idle" hidden></p>
                 </div>
                 <div class="pr-field-name-wrap">
                     <label for="pr-pd-name">상품 명칭</label>

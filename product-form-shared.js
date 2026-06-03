@@ -510,6 +510,185 @@
         };
     }
 
+    /**
+     * 상품 코드 중복 확인 (같은 사업부문, 코드 입력 시에만)
+     */
+    function initProductCodeDuplicateCheck(options) {
+        var codeInput = options.codeInput;
+        var hintEl = options.hintEl;
+        var checkDuplicate = options.checkDuplicate;
+        var getExcludeId = options.getExcludeId || function () {
+            return "";
+        };
+        var getDeptId = options.getDeptId || function () {
+            return "";
+        };
+        var debounceMs = options.debounceMs || 450;
+        var state = { duplicate: false, checking: false, lastChecked: "" };
+        var timer = null;
+        var seq = 0;
+
+        if (!codeInput || !checkDuplicate) {
+            return {
+                checkNow: function () {
+                    return Promise.resolve({ duplicate: false });
+                },
+                isDuplicate: function () {
+                    return false;
+                },
+                isChecking: function () {
+                    return false;
+                },
+                reset: function () {}
+            };
+        }
+
+        function setHint(mode, text) {
+            if (!hintEl) return;
+            hintEl.textContent = text || "";
+            hintEl.hidden = !text;
+            hintEl.className = "pr-name-dup-hint pr-name-dup-hint--" + (mode || "idle");
+            if (mode === "dup") {
+                codeInput.setAttribute("aria-invalid", "true");
+                codeInput.classList.add("pr-code-input--dup");
+            } else {
+                codeInput.removeAttribute("aria-invalid");
+                codeInput.classList.remove("pr-code-input--dup");
+            }
+        }
+
+        function runCheck() {
+            var code = String(codeInput.value || "").trim();
+            var dept = getDeptId ? String(getDeptId() || "").trim() : "";
+            if (!code) {
+                state.duplicate = false;
+                state.checking = false;
+                state.lastChecked = "";
+                setHint("idle", "");
+                return Promise.resolve({ duplicate: false });
+            }
+            if (!dept) {
+                state.duplicate = false;
+                state.checking = false;
+                state.lastChecked = "";
+                setHint("idle", "사업부문을 선택하면 코드 중복을 확인합니다.");
+                return Promise.resolve({ duplicate: false });
+            }
+            var mySeq = ++seq;
+            state.checking = true;
+            setHint("checking", "같은 사업부문에서 코드 중복 확인 중…");
+            return checkDuplicate(code, getExcludeId(), dept)
+                .then(function (res) {
+                    if (mySeq !== seq) return res;
+                    state.checking = false;
+                    state.lastChecked = code;
+                    state.duplicate = !!(res && res.duplicate);
+                    if (state.duplicate) {
+                        setHint("dup", "같은 사업부문에 이미 사용 중인 상품 코드입니다.");
+                    } else {
+                        setHint("ok", "사용 가능한 상품 코드입니다.");
+                    }
+                    return res;
+                })
+                .catch(function () {
+                    if (mySeq !== seq) return { duplicate: false };
+                    state.checking = false;
+                    setHint("err", "중복 확인에 실패했습니다. 다시 시도해 주세요.");
+                    return { duplicate: false, error: true };
+                });
+        }
+
+        codeInput.addEventListener("input", function () {
+            var code = String(codeInput.value || "").trim();
+            if (code !== state.lastChecked) {
+                state.duplicate = false;
+                if (!code) setHint("idle", "");
+            }
+            if (timer) clearTimeout(timer);
+            timer = setTimeout(runCheck, debounceMs);
+        });
+        codeInput.addEventListener("blur", function () {
+            if (timer) clearTimeout(timer);
+            runCheck();
+        });
+
+        return {
+            checkNow: runCheck,
+            isDuplicate: function () {
+                return state.duplicate;
+            },
+            isChecking: function () {
+                return state.checking;
+            },
+            reset: function () {
+                if (timer) clearTimeout(timer);
+                seq++;
+                state.duplicate = false;
+                state.checking = false;
+                state.lastChecked = "";
+                setHint("idle", "");
+            }
+        };
+    }
+
+    /** 저장 전 명칭·코드 중복 확인 */
+    function beforeProductSaveDuplicateCheck(options, onReady) {
+        var nameDup = options.nameDupCheck;
+        var codeDup = options.codeDupCheck;
+        var onStatus = options.onStatus;
+        var nameInput = options.nameInput;
+        var codeInput = options.codeInput;
+
+        function fail(msg, focusEl) {
+            if (onStatus) onStatus(msg, true);
+            if (focusEl) focusEl.focus();
+        }
+
+        function checkCode() {
+            if (!codeDup) {
+                onReady();
+                return;
+            }
+            codeDup.checkNow().then(function (res) {
+                if (res && res.duplicate) {
+                    fail(
+                        "같은 사업부문에 이미 사용 중인 상품 코드입니다. 다른 코드를 입력해 주세요.",
+                        codeInput
+                    );
+                    return;
+                }
+                if (codeDup.isChecking()) {
+                    fail("상품 코드 중복 확인 중입니다. 잠시 후 다시 시도해 주세요.", codeInput);
+                    return;
+                }
+                onReady();
+            });
+        }
+
+        function checkName() {
+            if (!nameDup) {
+                checkCode();
+                return;
+            }
+            nameDup.checkNow().then(function (res) {
+                if (res && res.duplicate) {
+                    fail(
+                        "같은 사업부문에 이미 등록된 상품 명칭입니다. 다른 명칭을 입력해 주세요.",
+                        nameInput
+                    );
+                    return;
+                }
+                if (nameDup.isChecking()) {
+                    fail("명칭 중복 확인 중입니다. 잠시 후 다시 시도해 주세요.", nameInput);
+                    return;
+                }
+                checkCode();
+            });
+        }
+
+        checkName();
+    }
+
     global.THEJHON_PRODUCT_FORM = {
         MAX_IMAGE_BYTES: MAX_IMAGE_BYTES,
         STAFF_LOGO_PIXEL_SIZE: STAFF_LOGO_PIXEL_SIZE,
@@ -526,6 +705,8 @@
         deptLabel: deptLabel,
         initDeptPicker: initDeptPicker,
         initProductNameDuplicateCheck: initProductNameDuplicateCheck,
+        initProductCodeDuplicateCheck: initProductCodeDuplicateCheck,
+        beforeProductSaveDuplicateCheck: beforeProductSaveDuplicateCheck,
         validateProductFields: validateProductFields
     };
 })(typeof window !== "undefined" ? window : global);

@@ -135,6 +135,12 @@
             if (dept) q += "&dept=" + encodeURIComponent(String(dept));
             return request("GET", "/api/products/check-name" + q);
         },
+        checkProductCode: function (code, excludeId, dept) {
+            var q = "?code=" + encodeURIComponent(String(code || ""));
+            if (excludeId) q += "&excludeId=" + encodeURIComponent(String(excludeId));
+            if (dept) q += "&dept=" + encodeURIComponent(String(dept));
+            return request("GET", "/api/products/check-code" + q);
+        },
         createProduct: function (body) {
             return request("POST", "/api/products", body).then(function (d) {
                 return d.item;

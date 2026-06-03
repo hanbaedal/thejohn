@@ -327,6 +327,21 @@ async function findDuplicateProductByName(db, name, excludeId, dept, registeredB
     return db.collection("products").findOne(filter);
 }
 
+/** 같은 사업부문 내 동일 상품 코드(대소문자 무시, 16자 정규화) */
+async function findDuplicateProductByCode(db, code, excludeId, dept) {
+    const c = normalizeProductCode(code);
+    const deptNorm = str(dept);
+    if (!c || !deptNorm) return null;
+    const esc = c.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    const codeRe = new RegExp("^" + esc + "$", "i");
+    const filter = {
+        [F.dept]: deptNorm,
+        $or: [{ [F.code]: codeRe }, { pd_code: codeRe }]
+    };
+    if (excludeId) filter.id = { $ne: String(excludeId) };
+    return db.collection("products").findOne(filter);
+}
+
 function validateBuilt(built, requireImage) {
     if (built.pd_code && built.pd_code.length > PRODUCT_CODE_MAX_LEN) {
         return "상품 코드는 16자 이내로 입력해 주세요.";
@@ -428,6 +443,7 @@ module.exports = {
     toDbDoc,
     validateBuilt,
     findDuplicateProductByName,
+    findDuplicateProductByCode,
     migrateProductsCollection,
     fromLegacyDoc,
     readPricesFromDoc,
