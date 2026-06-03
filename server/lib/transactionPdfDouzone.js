@@ -8,10 +8,9 @@ const MARGIN_X = 24;
 const SLIP_GAP = 8;
 const SLIP_H = (PAGE_H - SLIP_GAP) / 2;
 const ROW_H = 15;
-const TABLE_TOP_GAP_ROWS = 2;
 const HEADER_ROW_H = 16;
 const SEAL_DRAW_SIZE = 56;
-const SUPPLIER_ROWS = 6;
+const SUPPLIER_ROWS = 5;
 const HEADER_BLOCK_H = HEADER_ROW_H * SUPPLIER_ROWS;
 const MAX_ITEM_ROWS = 10;
 const FONT_BODY = 8;
@@ -99,16 +98,16 @@ function drawTextInCell(doc, text, x, y, w, h, opts) {
     doc.font("KR");
 }
 
-/** 합계금액 — 거래처 아래, 표와 동일 폭(slipW) */
-function drawTotalAmountRow(doc, x0, y, slipW, lblW, totalAmount, theme) {
+/** 합계금액 — 왼쪽 표 4행째, 열 폭 = 거래명세서(titleW) */
+function drawTotalAmountRow(doc, x0, y, blockW, lblW, totalAmount, theme) {
     strokeRect(doc, x0, y, lblW, HEADER_ROW_H, theme.labelBg);
     drawTextInCell(doc, "합계금액", x0, y, lblW, HEADER_ROW_H, {
         align: "center",
         size: FONT_TOTAL_LABEL,
         bold: true
     });
-    strokeRect(doc, x0 + lblW, y, slipW - lblW, HEADER_ROW_H, null);
-    drawTextInCell(doc, "₩  " + formatNum(totalAmount), x0 + lblW, y, slipW - lblW, HEADER_ROW_H, {
+    strokeRect(doc, x0 + lblW, y, blockW - lblW, HEADER_ROW_H, null);
+    drawTextInCell(doc, "₩  " + formatNum(totalAmount), x0 + lblW, y, blockW - lblW, HEADER_ROW_H, {
         align: "right",
         size: FONT_TOTAL_AMOUNT,
         bold: true
@@ -224,9 +223,14 @@ function drawSlip(doc, slipY, order, issuer, theme, pageLabel) {
 
     var tx = x0 + leftW;
     strokeRect(doc, tx, y, titleW, headerH, null);
+    var titleTextH = 36;
+    var titleY = y + (headerH - titleTextH) / 2;
     doc.fontSize(FONT_TITLE).fillColor("#000000");
-    doc.text("거래명세서", tx, y + 10, { width: titleW, align: "center" });
-    doc.fontSize(FONT_SMALL).text(theme.subtitle, tx, y + 32, { width: titleW, align: "center" });
+    doc.text("거래명세서", tx, titleY, { width: titleW, align: "center" });
+    doc.fontSize(FONT_SMALL).text(theme.subtitle, tx, titleY + 20, { width: titleW, align: "center" });
+
+    var totalRowY = y + 3 * HEADER_ROW_H;
+    drawTotalAmountRow(doc, x0, totalRowY, titleW, leftLabelW, order.totalAmount, theme);
 
     var sx = tx + titleW;
     var sy = y;
@@ -273,18 +277,15 @@ function drawSlip(doc, slipY, order, issuer, theme, pageLabel) {
     drawValue(doc, issuer.address, sx + sc.lbl, sy, sc.valueW, HEADER_ROW_H);
     sy += HEADER_ROW_H;
 
-    drawTotalAmountRow(doc, x0, sy, slipW, leftLabelW, order.totalAmount, theme);
-    sy += HEADER_ROW_H;
-
     cx = sx;
-    drawLabel(doc, "업태", cx, sy, sc.lbl, HEADER_ROW_H, theme.labelBg);
+    drawLabel(doc, "업태", cx, totalRowY, sc.lbl, HEADER_ROW_H, theme.labelBg);
     cx += sc.lbl;
-    drawValue(doc, issuer.bizType, cx, sy, sc.pairVal, HEADER_ROW_H);
+    drawValue(doc, issuer.bizType, cx, totalRowY, sc.pairVal, HEADER_ROW_H);
     cx += sc.pairVal;
-    drawLabel(doc, "종목", cx, sy, sc.pairLbl, HEADER_ROW_H, theme.labelBg);
+    drawLabel(doc, "종목", cx, totalRowY, sc.pairLbl, HEADER_ROW_H, theme.labelBg);
     cx += sc.pairLbl;
-    drawValue(doc, issuer.bizItem, cx, sy, sc.pairVal2, HEADER_ROW_H);
-    sy += HEADER_ROW_H;
+    drawValue(doc, issuer.bizItem, cx, totalRowY, sc.pairVal2, HEADER_ROW_H);
+    sy = totalRowY + HEADER_ROW_H;
 
     cx = sx;
     drawLabel(doc, "전화번호", cx, sy, sc.lbl, HEADER_ROW_H, theme.labelBg);
@@ -295,7 +296,7 @@ function drawSlip(doc, slipY, order, issuer, theme, pageLabel) {
     cx += sc.pairLbl;
     drawValue(doc, issuer.fax, cx, sy, sc.pairVal2, HEADER_ROW_H);
 
-    y += headerH + 4 + ROW_H * TABLE_TOP_GAP_ROWS;
+    y += headerH + 4;
 
     var cols = tableColumnWidths(slipW);
     var headers = ["월일", "품목코드", "품명", "규격", "수량", "단가", "공급가액", "세액"];
