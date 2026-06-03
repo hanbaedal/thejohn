@@ -9,6 +9,8 @@ const SLIP_GAP = 8;
 const SLIP_H = (PAGE_H - SLIP_GAP) / 2;
 const ROW_H = 15;
 const HEADER_ROW_H = 16;
+const SUPPLIER_ROWS = 5;
+const HEADER_BLOCK_H = HEADER_ROW_H * SUPPLIER_ROWS;
 const MAX_ITEM_ROWS = 10;
 const FONT_BODY = 8;
 const FONT_TITLE = 17;
@@ -111,6 +113,32 @@ function tableColumnWidths(slipW) {
     return cols;
 }
 
+/** 하단 총합계·입금액·총잔액·인수자 행 — 합이 slipW와 일치 */
+function bottomSummarySegments(slipW) {
+    var inW = 26;
+    var totLbl = 46;
+    var totVal = 58;
+    var depLbl = 34;
+    var depVal = 52;
+    var balLbl = 40;
+    var balVal = 58;
+    var fixed = totLbl + totVal + depLbl + depVal + balLbl + balVal + inW;
+    var remain = slipW - fixed;
+    var recvLbl = Math.max(36, Math.round(remain * 0.32));
+    var recvVal = remain - recvLbl;
+    return [
+        { kind: "label", text: "총합계", w: totLbl },
+        { kind: "value", w: totVal },
+        { kind: "label", text: "입금액", w: depLbl },
+        { kind: "value", w: depVal },
+        { kind: "label", text: "총잔액", w: balLbl },
+        { kind: "value", w: balVal },
+        { kind: "label", text: "인수자", w: recvLbl },
+        { kind: "value", w: recvVal },
+        { kind: "value", text: "인", w: inW, align: "center" }
+    ];
+}
+
 /** 공급자(우측) 칸 너비 — 합이 supplierW와 정확히 일치 */
 function supplierColumnWidths(supplierW) {
     var lbl = 36;
@@ -148,6 +176,7 @@ function drawSlip(doc, slipY, order, issuer, theme, pageLabel) {
     var supplierW = slipW - leftW - titleW;
     var leftRowH = HEADER_ROW_H;
     var leftH = leftRowH * 3;
+    var headerH = HEADER_BLOCK_H;
     var leftLabelW = 44;
     var leftValues = [pageLabel, formatIssueDate(order.createdAt), order.vendorCompany || ""];
     var leftLabels = ["Page", "발행일자", "거래처"];
@@ -165,7 +194,7 @@ function drawSlip(doc, slipY, order, issuer, theme, pageLabel) {
     }
 
     var tx = x0 + leftW;
-    strokeRect(doc, tx, y, titleW, leftH, null);
+    strokeRect(doc, tx, y, titleW, headerH, null);
     doc.fontSize(FONT_TITLE).fillColor("#000000");
     doc.text("거래명세서", tx, y + 10, { width: titleW, align: "center" });
     doc.fontSize(FONT_SMALL).text(theme.subtitle, tx, y + 32, { width: titleW, align: "center" });
@@ -230,7 +259,7 @@ function drawSlip(doc, slipY, order, issuer, theme, pageLabel) {
     cx += sc.halfLbl;
     drawValue(doc, issuer.fax, cx, sy, sc.halfVal2, HEADER_ROW_H);
 
-    y += leftH + 4;
+    y += headerH + 4;
 
     var totalRowH = ROW_H + 2;
     strokeRect(doc, x0, y, slipW, totalRowH, theme.labelBg);
@@ -303,19 +332,21 @@ function drawSlip(doc, slipY, order, issuer, theme, pageLabel) {
     drawValue(doc, formatNum(totalTax), cx + footLabelW + cols[2] + cols[3] + cols[4] + cols[5] + cols[6], y, cols[7], ROW_H, "right");
     y += ROW_H;
 
-    var f1 = 54;
-    var f2 = 62;
-    var f3 = 62;
-    var rest = slipW - f1 - f2 - f3;
+    var segments = bottomSummarySegments(slipW);
     cx = x0;
-    drawLabel(doc, "총합계", cx, y, f1, ROW_H, theme.labelBg);
-    drawValue(doc, "₩ " + formatNum(order.totalAmount), cx + f1, y, f2, ROW_H, "right");
-    drawLabel(doc, "입금액", cx + f1 + f2, y, 38, ROW_H, theme.labelBg);
-    drawValue(doc, "₩ 0", cx + f1 + f2 + 38, y, f2 - 38, ROW_H, "right");
-    drawLabel(doc, "총잔액", cx + f1 + f2 * 2, y, 44, ROW_H, theme.labelBg);
-    drawValue(doc, "₩ " + formatNum(order.totalAmount), cx + f1 + f2 * 2 + 44, y, f3, ROW_H, "right");
-    drawLabel(doc, "인수자", cx + f1 + f2 * 2 + 44 + f3, y, rest - 30, ROW_H, theme.labelBg);
-    drawValue(doc, "인", cx + slipW - 28, y, 28, ROW_H, "center");
+    var totalAmt = "₩ " + formatNum(order.totalAmount);
+    var bottomVals = [totalAmt, "₩ 0", totalAmt, ""];
+    var bottomValIdx = 0;
+    segments.forEach(function (seg) {
+        if (seg.kind === "label") {
+            drawLabel(doc, seg.text, cx, y, seg.w, ROW_H, theme.labelBg);
+        } else if (seg.text === "인") {
+            drawValue(doc, seg.text, cx, y, seg.w, ROW_H, seg.align || "center");
+        } else {
+            drawValue(doc, bottomVals[bottomValIdx++] || "", cx, y, seg.w, ROW_H, "right");
+        }
+        cx += seg.w;
+    });
     y += ROW_H + 5;
 
     var deliveryAddr = str(order.vendorAddr);
