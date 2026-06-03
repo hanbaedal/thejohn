@@ -133,14 +133,20 @@
 
         var Auth = window.THEJHON_AUTH;
         if (Auth && Auth.isStaffRole && Auth.isStaffRole(Auth.getRole && Auth.getRole())) {
-            if (Auth.getStaffNavMode && Auth.getStaffNavMode() !== "manage-home") {
-                removeAdminNavFromNav(nav);
-                if (Auth.applyStaffNavMode) Auth.applyStaffNavMode();
-                return;
-            }
             if (Auth.getStaffNavMode && Auth.getStaffNavMode() === "manage-home") {
                 if (Auth.applyStaffNavManageHomeTabs) Auth.applyStaffNavManageHomeTabs(nav);
                 else if (Auth.applyStaffNavMode) Auth.applyStaffNavMode("manage-home");
+                return;
+            }
+            if (Auth.getStaffNavMode && Auth.getStaffNavMode() === "order") {
+                removeAdminNavFromNav(nav);
+                if (Auth.applyStaffNavOrderTabs) Auth.applyStaffNavOrderTabs(nav);
+                else if (Auth.applyStaffNavMode) Auth.applyStaffNavMode("order");
+                return;
+            }
+            if (Auth.getStaffNavMode && Auth.getStaffNavMode() !== "manage-home") {
+                removeAdminNavFromNav(nav);
+                if (Auth.applyStaffNavMode) Auth.applyStaffNavMode();
                 return;
             }
         }

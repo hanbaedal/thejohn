@@ -856,6 +856,7 @@
     var HOMEPAGE_MANAGE_HUB_PAGE = "homepage-manage-hub.html";
     var STAFF_NAV_MODE_KEY = "thejhon_staff_nav_mode";
     var MANAGE_HOME_SUBNAV_KEY_PREFIX = "thejhon_manage_home_subnav_";
+    var ORDER_SUBNAV_STORAGE_KEY = "thejhon_order_subnav";
     var STAFF_NAV_PUBLIC_PAGES = {
         "index.html": true,
         "company.html": true,
@@ -1133,6 +1134,153 @@
             "a[data-hmh-subnav], a.is-hmh-subnav[data-staff-nav-injected='manage-home']"
         );
         for (var i = 0; i < links.length; i++) links[i].remove();
+    }
+
+    function saveOrderSubnav(items) {
+        try {
+            sessionStorage.setItem(ORDER_SUBNAV_STORAGE_KEY, JSON.stringify(items || []));
+        } catch (e) {}
+    }
+
+    function loadOrderSubnav() {
+        try {
+            var data = JSON.parse(sessionStorage.getItem(ORDER_SUBNAV_STORAGE_KEY) || "[]");
+            if (Array.isArray(data) && data.length) return data;
+        } catch (e2) {}
+        return getDefaultOrderSubnavItems();
+    }
+
+    function getDefaultOrderSubnavItems() {
+        if (!getOrderManageHubAccess().allowed) return [];
+        var links = getOrderManageHubLinks();
+        var items = [{ href: ORDER_MANAGE_HUB_PAGE, label: "주문서 관리" }];
+        if (links.list && staffNavHrefFile(links.list) !== ORDER_MANAGE_HUB_PAGE) {
+            items.push({
+                href: links.list,
+                label:
+                    staffNavHrefFile(links.list) === "order-list-admin.html"
+                        ? "주문서 리스트"
+                        : "발주서 리스트"
+            });
+        }
+        if (links.orderPdf && staffNavHrefFile(links.orderPdf) !== ORDER_MANAGE_HUB_PAGE) {
+            items.push({ href: links.orderPdf, label: "발주서 PDF" });
+        }
+        if (links.transactionPdf) {
+            items.push({ href: links.transactionPdf, label: "거래명세서 PDF" });
+        }
+        return items;
+    }
+
+    function collectOrderSubnavFromBody() {
+        var file = currentPageFile();
+        if (file === ORDER_MANAGE_HUB_PAGE) {
+            var fromBody = collectBodyNavCards(document);
+            var items = [{ href: ORDER_MANAGE_HUB_PAGE, label: "주문서 관리" }];
+            var seen = {};
+            seen[ORDER_MANAGE_HUB_PAGE] = true;
+            for (var i = 0; i < fromBody.length; i++) {
+                var f = staffNavHrefFile(fromBody[i].href);
+                if (!f || seen[f]) continue;
+                seen[f] = true;
+                items.push(fromBody[i]);
+            }
+            saveOrderSubnav(items);
+            return items;
+        }
+        var bodyItems = collectBodyNavCards(document);
+        if (bodyItems.length) {
+            var merged = [{ href: ORDER_MANAGE_HUB_PAGE, label: "주문서 관리" }];
+            var seen2 = {};
+            seen2[ORDER_MANAGE_HUB_PAGE] = true;
+            for (var j = 0; j < bodyItems.length; j++) {
+                var f2 = staffNavHrefFile(bodyItems[j].href);
+                if (!f2 || seen2[f2]) continue;
+                seen2[f2] = true;
+                merged.push(bodyItems[j]);
+            }
+            saveOrderSubnav(merged);
+            return merged;
+        }
+        var cached = loadOrderSubnav();
+        saveOrderSubnav(cached);
+        return cached;
+    }
+
+    function clearOrderSubnavLinks(nav) {
+        if (!nav) return;
+        var links = nav.querySelectorAll(
+            "a[data-order-subnav], a.is-order-subnav[data-staff-nav-injected='order']"
+        );
+        for (var i = 0; i < links.length; i++) links[i].remove();
+    }
+
+    function syncOrderSubnavCurrent(nav, items) {
+        if (!nav || !items || !items.length) return;
+        var cur = currentPageFile();
+        var links = nav.querySelectorAll("a[data-order-subnav]");
+        for (var i = 0; i < links.length; i++) {
+            var link = links[i];
+            var on = staffNavHrefFile(link.getAttribute("href")) === cur;
+            link.classList.toggle("is-current", on);
+            if (on) link.setAttribute("aria-current", "page");
+            else link.removeAttribute("aria-current");
+        }
+    }
+
+    function syncStaffNavOrderSubnav(nav) {
+        if (!nav) return;
+        var items = collectOrderSubnavFromBody();
+        if (!items.length) items = getDefaultOrderSubnavItems();
+        clearOrderSubnavLinks(nav);
+        if (!items.length) return;
+
+        var cur = currentPageFile();
+        for (var i = 0; i < items.length; i++) {
+            var it = items[i];
+            var file = staffNavHrefFile(it.href);
+            if (!file) continue;
+            if (nav.querySelector('a[data-order-subnav][href*="' + file + '"]')) continue;
+
+            var a = document.createElement("a");
+            a.href = it.href;
+            a.className = "header-nav-link is-order-subnav";
+            a.textContent = it.label;
+            a.setAttribute("data-staff-nav-injected", "order");
+            a.setAttribute("data-order-subnav", "1");
+            if (file === cur) {
+                a.classList.add("is-current");
+                a.setAttribute("aria-current", "page");
+            }
+            a.addEventListener("click", function () {
+                staffNavSet("order");
+            });
+            nav.appendChild(a);
+        }
+        syncOrderSubnavCurrent(nav, items);
+    }
+
+    function applyStaffNavOrderTabs(nav) {
+        if (!nav || !getOrderManageHubAccess().allowed) return;
+        document.body.classList.toggle("nav-admin-menus", false);
+
+        var plain = nav.querySelectorAll(
+            ':scope > a.header-nav-link:not([data-staff-nav-injected]), :scope > .nav-dropdown'
+        );
+        for (var h = 0; h < plain.length; h++) {
+            plain[h].remove();
+        }
+
+        nav.classList.add("site-header-nav--order");
+        syncStaffNavOrderSubnav(nav);
+    }
+
+    function refreshOrderHeader() {
+        if (!isStaffRole(getRole())) return;
+        var nav = document.querySelector(".site-header-nav");
+        if (!nav) return;
+        if (resolveStaffNavMode() !== "order") return;
+        applyStaffNavOrderTabs(nav);
     }
 
     function cardNavVisible(el) {
@@ -1428,9 +1576,7 @@
         if (mode === "manage-home") {
             applyStaffNavManageHomeTabs(nav);
         } else if (mode === "order") {
-            if (getOrderManageHubAccess().allowed) {
-                staffNavEnsureLink(nav, ORDER_MANAGE_HUB_PAGE, "주문서 관리", "order");
-            }
+            applyStaffNavOrderTabs(nav);
         } else if (mode === "work" && isSupervisorStaff()) {
             staffNavEnsureLink(nav, "staff-manage-hub.html", "업무관리", "work");
         }
@@ -2489,7 +2635,9 @@
         canAccessHomepageManageCard: canAccessHomepageManageCard,
         getHomepageManageNavSectionForPage: getHomepageManageNavSectionForPage,
         applyStaffNavManageHomeTabs: applyStaffNavManageHomeTabs,
+        applyStaffNavOrderTabs: applyStaffNavOrderTabs,
         refreshManageHomeHeader: refreshManageHomeHeader,
+        refreshOrderHeader: refreshOrderHeader,
         saveManageHomeSubnav: saveManageHomeSubnav,
         syncHmhManageHomeTabCurrent: syncHmhManageHomeTabCurrent,
         staffNavClearInjected: staffNavClearInjected,

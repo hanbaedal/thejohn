@@ -1,3 +1,26 @@
+/* 주문서 관리 — 헤더 하위 메뉴 (홈페이지관리와 동일 패턴) */
+body.staff-nav-order .site-header-nav--order,
+body.staff-nav-order .site-header-nav {
+    flex: 1 1 auto;
+    flex-wrap: nowrap;
+    gap: 0.25rem;
+    min-width: min-content;
+}
+body.staff-nav-order .header-nav-link.is-order-subnav {
+    flex-shrink: 0;
+    white-space: nowrap;
+    padding: 0.35rem 0.55rem;
+    font-size: 0.8125rem;
+    font-weight: 500;
+    color: #2a4560;
+}
+body.staff-nav-order .header-nav-link.is-order-subnav.is-current {
+    font-weight: 700;
+    color: var(--dz-blue, #0a4d9c);
+    border-color: rgba(10, 77, 156, 0.35);
+    background: rgba(255, 255, 255, 0.45);
+}
+
 .shub-page h1 {
     margin: 0 0 0.35rem;
     font-size: 1.35rem;

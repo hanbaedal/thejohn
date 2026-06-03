@@ -41,6 +41,7 @@
     }
 
     if (Auth.setStaffNavMode) Auth.setStaffNavMode("order");
+    if (Auth.refreshOrderHeader) Auth.refreshOrderHeader();
     applyLinks();
 
     document.querySelectorAll("[data-omh-link]").forEach(function (card) {
