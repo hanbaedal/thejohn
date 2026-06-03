@@ -1,6 +1,7 @@
 /**
  * 그룹 마케팅 관리(work-hub)
- * 기본 4메뉴는 HTML에 항상 표시 · 주문/업무는 JS로 역할에 맞게 표시
+ * 메뉴 표시: auth.getWorkHubVisibleMenuKeys() 단일 기준
+ * 슈퍼바이저 6 · 관리자(주문) 5 · 관리자(비주문) 4
  */
 (function (global) {
     "use strict";
@@ -8,22 +9,6 @@
     var Auth = global.THEJHON_AUTH;
     var statusEl = document.getElementById("wh-status");
     var gridEl = document.getElementById("whMenuGrid");
-
-    var BASE_KEYS = [
-        "view-home",
-        "manage-home",
-        "product-manage",
-        "vendor-manage"
-    ];
-
-    var NAV_MODE = {
-        "view-home": "public",
-        "manage-home": "manage-home",
-        "product-manage": "manage-home",
-        "vendor-manage": "manage-home",
-        "order-manage": "order",
-        "work-manage": "work"
-    };
 
     var HREFS = {
         "view-home": "index.html",
@@ -34,49 +19,14 @@
         "work-manage": "staff-manage-hub.html"
     };
 
-    function roleNorm() {
-        return String(Auth && Auth.getRole ? Auth.getRole() : "")
-            .trim()
-            .toLowerCase();
-    }
-
-    function orderOn() {
-        return !!(Auth && Auth.isStaffOrderEnabled && Auth.isStaffOrderEnabled());
-    }
-
-    function staffHubOk() {
-        if (!Auth) return false;
-        if (Auth.getWorkHubAccess) {
-            return Auth.getWorkHubAccess().allowed;
-        }
-        var r = roleNorm();
-        return (
-            Auth.isLoggedIn &&
-            Auth.isLoggedIn() &&
-            (r === "admin" || r === "supervisor")
-        );
-    }
-
-    /** 슈퍼바이저 6 · 관리자(주문) 5 · 관리자(비주문) 4 */
-    function menuKeys() {
-        if (!staffHubOk()) return [];
-
-        if (Auth.getWorkHubVisibleMenuKeys) {
-            var fromAuth = Auth.getWorkHubVisibleMenuKeys();
-            if (fromAuth && fromAuth.length) return fromAuth;
-        }
-
-        var role = roleNorm();
-        if (role === "supervisor") {
-            return BASE_KEYS.concat(["order-manage", "work-manage"]);
-        }
-        if (role === "admin") {
-            return orderOn()
-                ? BASE_KEYS.concat(["order-manage"])
-                : BASE_KEYS.slice();
-        }
-        return BASE_KEYS.slice();
-    }
+    var NAV_MODE = {
+        "view-home": "public",
+        "manage-home": "manage-home",
+        "product-manage": "manage-home",
+        "vendor-manage": "manage-home",
+        "order-manage": "order",
+        "work-manage": "work"
+    };
 
     function initHubBgm() {
         var media = global.THEJHON_HOME_INTRO_MEDIA;
@@ -101,7 +51,12 @@
             (kind === "err" ? " wh-status--err" : kind === "ok" ? " wh-status--ok" : "");
     }
 
-    function cardHref(key) {
+    function visibleKeys() {
+        if (!Auth || !Auth.getWorkHubVisibleMenuKeys) return [];
+        return Auth.getWorkHubVisibleMenuKeys();
+    }
+
+    function hrefFor(key) {
         if (key === "order-manage" && Auth && Auth.getWorkHubOrderManageHref) {
             return Auth.getWorkHubOrderManageHref();
         }
@@ -113,39 +68,30 @@
         card.dataset.whBound = "1";
         var mode = NAV_MODE[key];
         card.addEventListener("click", function () {
-            if (card.classList.contains("wh-card--off") || !mode || !Auth || !Auth.setStaffNavMode) {
-                return;
-            }
-            Auth.setStaffNavMode(mode);
+            if (card.classList.contains("wh-card--off")) return;
+            if (mode && Auth && Auth.setStaffNavMode) Auth.setStaffNavMode(mode);
         });
-    }
-
-    function setCardOn(card, on) {
-        if (on) {
-            card.classList.remove("wh-card--off");
-            card.removeAttribute("hidden");
-            card.removeAttribute("aria-hidden");
-        } else {
-            card.classList.add("wh-card--off");
-            card.setAttribute("aria-hidden", "true");
-        }
     }
 
     function applyMenus() {
         if (!gridEl) return;
 
-        var allowed = {};
-        menuKeys().forEach(function (k) {
-            allowed[k] = true;
+        var show = {};
+        visibleKeys().forEach(function (key) {
+            show[key] = true;
         });
 
         gridEl.querySelectorAll("[data-wh-menu]").forEach(function (card) {
             var key = card.getAttribute("data-wh-menu");
-            var on = !!allowed[key];
-            setCardOn(card, on);
+            var on = !!show[key];
+            card.classList.toggle("wh-card--off", !on);
             if (on) {
-                card.href = cardHref(key);
+                card.removeAttribute("hidden");
+                card.removeAttribute("aria-hidden");
+                card.href = hrefFor(key);
                 bindCard(card, key);
+            } else {
+                card.setAttribute("aria-hidden", "true");
             }
         });
     }
@@ -163,16 +109,10 @@
         }
         if (Auth.normalizeLegacySession) Auth.normalizeLegacySession();
 
-        if (!staffHubOk()) {
-            var reason =
-                Auth.getWorkHubAccess && Auth.getWorkHubAccess().reason
-                    ? Auth.getWorkHubAccess().reason
-                    : "로그인이 필요합니다.";
-            setStatus(reason, "err");
-            BASE_KEYS.forEach(function (k) {
-                var card = gridEl && gridEl.querySelector('[data-wh-menu="' + k + '"]');
-                if (card) setCardOn(card, false);
-            });
+        var hub = Auth.getWorkHubAccess ? Auth.getWorkHubAccess() : { allowed: false };
+        if (!hub.allowed) {
+            setStatus(hub.reason || "이용할 수 없습니다.", "err");
+            applyMenus();
             return;
         }
 
@@ -182,8 +122,11 @@
         applyMenus();
         refreshHeaderCompany();
 
-        if (Auth.refreshSessionPermissionsAsync) {
-            Auth.refreshSessionPermissionsAsync()
+        var sync = Auth.refreshSessionPermissionsAsync
+            ? Auth.refreshSessionPermissionsAsync()
+            : null;
+        if (sync && typeof sync.then === "function") {
+            sync
                 .then(function () {
                     applyMenus();
                     refreshHeaderCompany();
@@ -199,7 +142,10 @@
         boot();
     }
 
-    global.addEventListener("thejhon-auth-permissions-updated", applyMenus);
+    global.addEventListener("thejhon-auth-permissions-updated", function () {
+        applyMenus();
+        refreshHeaderCompany();
+    });
     global.addEventListener("pageshow", function (ev) {
         if (ev.persisted) boot();
     });

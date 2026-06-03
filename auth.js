@@ -1908,9 +1908,13 @@
         "vendor-manage"
     ];
 
-    /** work-hub — 슈퍼바이저 6 · 관리자(주문) 5 · 관리자(비주문) 4 */
+    /**
+     * work-hub 메뉴 id 목록 (페이지 입장 권한과 분리 — 표시만 역할·주문권한)
+     * 슈퍼바이저 6 · 관리자(주문) 5 · 관리자(비주문) 4
+     */
     function getWorkHubVisibleMenuKeys() {
-        if (!getWorkHubAccess().allowed) return [];
+        normalizeLegacySession();
+        if (!isLoggedIn()) return [];
         var role = normalizeLoginRole(getRole());
         if (role === "supervisor") {
             return WORK_HUB_BASE_MENUS.concat(["order-manage", "work-manage"]);
