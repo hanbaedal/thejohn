@@ -1,4 +1,3 @@
-const fs = require("fs");
 const PDFDocument = require("pdfkit");
 const { resolveFontPath, resolveBoldFontPath } = require("./orderPdf");
 
@@ -297,15 +296,20 @@ function drawSlip(doc, slipY, order, issuer, theme, pageLabel) {
     cx += sc.ceoW;
     drawLabel(doc, "인", cx, sy, sc.inLbl, HEADER_ROW_H, theme.labelBg);
     strokeRect(doc, sealX, sy, sc.seal, HEADER_ROW_H, null);
-    if (issuer.sealPath && fs.existsSync(issuer.sealPath)) {
+    var sealLeft = sx + supplierW - SEAL_DRAW_SIZE;
+    var sealTop = sy + (HEADER_ROW_H - SEAL_DRAW_SIZE) / 2;
+    var sealOpts = {
+        width: SEAL_DRAW_SIZE,
+        height: SEAL_DRAW_SIZE,
+        fit: [SEAL_DRAW_SIZE, SEAL_DRAW_SIZE]
+    };
+    var sealDataUrl = str(issuer.sealDataUrl);
+    if (sealDataUrl) {
         try {
-            var sealLeft = sx + supplierW - SEAL_DRAW_SIZE;
-            var sealTop = sy + (HEADER_ROW_H - SEAL_DRAW_SIZE) / 2;
-            doc.image(issuer.sealPath, sealLeft, sealTop, {
-                width: SEAL_DRAW_SIZE,
-                height: SEAL_DRAW_SIZE,
-                fit: [SEAL_DRAW_SIZE, SEAL_DRAW_SIZE]
-            });
+            var sealMatch = sealDataUrl.match(/^data:image\/([a-z0-9+.-]+);base64,(.+)$/i);
+            if (sealMatch && sealMatch[2]) {
+                doc.image(Buffer.from(sealMatch[2], "base64"), sealLeft, sealTop, sealOpts);
+            }
         } catch (e) {
             /* ignore */
         }

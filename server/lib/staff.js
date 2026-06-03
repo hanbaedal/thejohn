@@ -97,7 +97,8 @@ function pickStaffBody(body) {
         "st_addr",
         "st_addr_detail",
         "st_address",
-        "st_logo"
+        "st_logo",
+        "st_seal"
     ]);
     return picked;
 }
@@ -198,11 +199,12 @@ async function createStaffAccount(body, creatorRole) {
         st_youtube: picked.st_youtube,
         st_kakao: picked.st_kakao,
         st_logo: picked.st_logo !== undefined ? picked.st_logo : "",
+        st_seal: picked.st_seal !== undefined ? picked.st_seal : "",
         role: "admin",
         loginEnabled: true,
         orderEnabled: picked.orderEnabled === true
     };
-    copyIfDefined(buildBody, picked, ["st_zip", "st_addr", "st_addr_detail", "st_address"]);
+    copyIfDefined(buildBody, picked, ["st_zip", "st_addr", "st_addr_detail", "st_address", "st_seal"]);
     const built = buildFromBody(buildBody, null, loginId, password);
     const doc = toDbDoc(newStaffId(), built, null);
     await staffCol.insertOne(doc);
@@ -270,7 +272,15 @@ async function updateStaffAccount(id, body, creatorRole) {
                   ? existing.st_order_enabled === true || existing[SF.orderEnabled] === true
                   : false
     };
-    copyIfDefined(buildBody, picked, ["st_zip", "st_addr", "st_addr_detail", "st_address", "st_kakao", "st_logo"]);
+    copyIfDefined(buildBody, picked, [
+        "st_zip",
+        "st_addr",
+        "st_addr_detail",
+        "st_address",
+        "st_kakao",
+        "st_logo",
+        "st_seal"
+    ]);
     const built = buildFromBody(buildBody, existing, nextLoginId, password);
     const doc = toDbDoc(existing.id, built, existing);
     if (loginChanged) {

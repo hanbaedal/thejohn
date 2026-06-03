@@ -1,13 +1,8 @@
-const path = require("path");
-const fs = require("fs");
 const { fromLegacyDoc: staffFromLegacy, F: SF } = require("./staffFields");
 const { formatFullAddress } = require("./addressFormat");
 const { findStaffByRegisteredBy } = require("./staffRegisteredBy");
 const { trimStaffLoginId } = require("./staffLoginId");
 
-/** 거래명세서 공급자 인감 */
-const DOUZONE_SEAL_PATH = path.join(__dirname, "..", "assets", "douzone-seal.png");
-const AK_SEAL_PATH = path.join(__dirname, "..", "assets", "ak-seal.png");
 const DOUZONE_LOGIN_IDS = ["thejohn", "thejhon"];
 const AK_LOGIN_IDS = ["ak20140516"];
 
@@ -46,13 +41,11 @@ function matchesDouzoneStaff(staff) {
     return c.indexOf("더존") >= 0;
 }
 
-function resolveSealPath(staff) {
-    if (matchesAkSangsaStaff(staff) && fs.existsSync(AK_SEAL_PATH)) {
-        return AK_SEAL_PATH;
-    }
-    if (matchesDouzoneStaff(staff) && fs.existsSync(DOUZONE_SEAL_PATH)) {
-        return DOUZONE_SEAL_PATH;
-    }
+function staffSealDataUrl(staff) {
+    if (!staff) return "";
+    const d = staffFromLegacy(staff) || {};
+    const raw = str(d[SF.seal] || staff.st_seal);
+    if (/^data:image\/[a-z0-9+.-]+;base64,/i.test(raw)) return raw;
     return "";
 }
 
@@ -90,7 +83,7 @@ function staffToIssuer(staff) {
         address:
             formatFullAddress(d[SF.zip], d[SF.addr], d[SF.addrDetail]) ||
             str(d[SF.address] || staff.st_address),
-        sealPath: resolveSealPath(staff),
+        sealDataUrl: staffSealDataUrl(staff),
         bankAccount: bankAccountForStaff(staff)
     };
 }
@@ -171,14 +164,12 @@ async function resolveDouzoneIssuer(db) {
         bizType: "",
         bizItem: "",
         address: "",
-        sealPath: fs.existsSync(DOUZONE_SEAL_PATH) ? DOUZONE_SEAL_PATH : "",
+        sealDataUrl: "",
         bankAccount: str(process.env.DOUZONE_BANK_ACCOUNT || "")
     };
 }
 
 module.exports = {
-    DOUZONE_SEAL_PATH,
-    AK_SEAL_PATH,
     resolveDouzoneIssuer,
     resolveIssuerForOrder,
     resolveIssuerFromStaffLoginId,

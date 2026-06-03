@@ -13,6 +13,8 @@
     var editLoadedFromServer = false;
     var pendingEditLogo = null;
     var editLogoTouched = false;
+    var pendingEditSeal = null;
+    var editSealTouched = false;
     var PF = window.THEJHON_PRODUCT_FORM;
     var AF = window.THEJHON_ADDRESS_FIELDS;
 
@@ -27,6 +29,16 @@
         PF && PF.STAFF_LOGO_PROCESS_OPTIONS
             ? PF.STAFF_LOGO_PROCESS_OPTIONS
             : { maxDimension: 512, fixedDimension: true, fit: "contain", maxBytes: 1024 * 1024 };
+    var STAFF_SEAL_PIXEL_SIZE = PF && PF.STAFF_SEAL_PIXEL_SIZE ? PF.STAFF_SEAL_PIXEL_SIZE : 160;
+    var STAFF_SEAL_PROCESS_OPTIONS =
+        PF && PF.STAFF_SEAL_PROCESS_OPTIONS
+            ? PF.STAFF_SEAL_PROCESS_OPTIONS
+            : {
+                  maxDimension: STAFF_SEAL_PIXEL_SIZE,
+                  fixedDimension: true,
+                  fit: "contain",
+                  maxBytes: 1024 * 1024
+              };
 
     function updateLogoPreview(imgEl, clearBtn, src) {
         if (PF && PF.showImagePreview) {
@@ -43,7 +55,7 @@
         if (clearBtn) clearBtn.hidden = !src;
     }
 
-    function initLogoPicker(opts) {
+    function initImagePicker(opts) {
         if (!PF || !PF.initProductPhotoPicker) return null;
         return PF.initProductPhotoPicker({
             galleryInput: opts.galleryInput,
@@ -52,8 +64,13 @@
             btnCamera: opts.btnCamera,
             onSelect: opts.onSelect,
             onError: opts.onError,
-            processOptions: STAFF_LOGO_PROCESS_OPTIONS
+            processOptions: opts.processOptions || STAFF_LOGO_PROCESS_OPTIONS
         });
+    }
+
+    function initLogoPicker(opts) {
+        opts.processOptions = STAFF_LOGO_PROCESS_OPTIONS;
+        return initImagePicker(opts);
     }
 
     var editLogoPicker = initLogoPicker({
@@ -84,6 +101,40 @@
             updateLogoPreview(
                 document.getElementById("sm-edit-logo-preview"),
                 editLogoClear,
+                ""
+            );
+        });
+    }
+
+    var editSealPicker = initImagePicker({
+        galleryInput: document.getElementById("sm-edit-seal-gallery"),
+        cameraInput: document.getElementById("sm-edit-seal-camera"),
+        btnGallery: document.getElementById("sm-edit-seal-gallery-btn"),
+        btnCamera: document.getElementById("sm-edit-seal-camera-btn"),
+        processOptions: STAFF_SEAL_PROCESS_OPTIONS,
+        onSelect: function (dataUrl) {
+            editSealTouched = true;
+            pendingEditSeal = dataUrl || "";
+            updateLogoPreview(
+                document.getElementById("sm-edit-seal-preview"),
+                document.getElementById("sm-edit-seal-clear"),
+                pendingEditSeal
+            );
+        },
+        onError: function (err) {
+            setEditMsg((err && err.message) || "도장 오류", "err");
+        }
+    });
+
+    var editSealClear = document.getElementById("sm-edit-seal-clear");
+    if (editSealClear) {
+        editSealClear.addEventListener("click", function () {
+            editSealTouched = true;
+            pendingEditSeal = "";
+            if (editSealPicker && editSealPicker.clear) editSealPicker.clear();
+            updateLogoPreview(
+                document.getElementById("sm-edit-seal-preview"),
+                editSealClear,
                 ""
             );
         });
@@ -181,6 +232,8 @@
             st_naver_cafe: st.st_naver_cafe || "",
             st_youtube: st.st_youtube || "",
             st_kakao: st.st_kakao || "",
+            st_logo: st.st_logo || "",
+            st_seal: st.st_seal || "",
             loginEnabled: st.loginEnabled !== false,
             orderEnabled: st.orderEnabled === true
         };
@@ -227,12 +280,20 @@
         document.getElementById("sm-edit-st_kakao").value = st.st_kakao || "";
         pendingEditLogo = null;
         editLogoTouched = false;
+        pendingEditSeal = null;
+        editSealTouched = false;
         updateLogoPreview(
             document.getElementById("sm-edit-logo-preview"),
             document.getElementById("sm-edit-logo-clear"),
             st.st_logo || ""
         );
+        updateLogoPreview(
+            document.getElementById("sm-edit-seal-preview"),
+            document.getElementById("sm-edit-seal-clear"),
+            st.st_seal || ""
+        );
         if (editLogoPicker && editLogoPicker.clear) editLogoPicker.clear();
+        if (editSealPicker && editSealPicker.clear) editSealPicker.clear();
         var title = document.getElementById("sm-edit-title");
         if (title) {
             title.textContent =
@@ -550,6 +611,7 @@
 
             function saveUpdate() {
                 if (editLogoTouched) body.st_logo = pendingEditLogo || "";
+                if (editSealTouched) body.st_seal = pendingEditSeal || "";
                 var st = staffByKey[id] || staffByKey[origLoginId];
                 var payload = st ? staffToUpdateBody(st, body) : body;
                 setEditMsg("저장 중…");

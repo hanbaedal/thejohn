@@ -35,6 +35,7 @@ const F = {
     youtube: "st_youtube",
     kakao: "st_kakao",
     logo: "st_logo",
+    seal: "st_seal",
     orderEnabled: "st_order_enabled"
 };
 
@@ -167,6 +168,7 @@ function fromLegacyDoc(doc) {
     if (doc.st_youtube != null) d[F.youtube] = str(doc.st_youtube);
     if (doc.st_kakao != null) d[F.kakao] = str(doc.st_kakao);
     if (doc.st_logo != null) d[F.logo] = String(doc.st_logo);
+    if (doc.st_seal != null) d[F.seal] = String(doc.st_seal);
     return d;
 }
 
@@ -196,6 +198,7 @@ function toPublic(doc) {
         st_youtube: str(d[F.youtube]),
         st_kakao: normalizeKakaoChannelUrl(d[F.kakao]),
         st_logo: String(d[F.logo] || ""),
+        st_seal: String(d[F.seal] || ""),
         role: d.role || "admin",
         active: d.active !== false,
         loginEnabled: d.loginEnabled !== false,
@@ -256,6 +259,10 @@ function buildFromBody(body, existing, loginId, password) {
             body.st_logo !== undefined && body.st_logo !== null
                 ? String(body.st_logo)
                 : String(prev[F.logo] || ""),
+        st_seal:
+            body.st_seal !== undefined && body.st_seal !== null
+                ? String(body.st_seal)
+                : String(prev[F.seal] || ""),
         role: body.role || prev.role || "admin",
         loginEnabled:
             body.loginEnabled === false || body.loginEnabled === "false" || body.loginEnabled === 0
@@ -309,6 +316,7 @@ function toDbDoc(id, built, existing) {
         [F.youtube]: built.st_youtube,
         [F.kakao]: built.st_kakao,
         [F.logo]: built.st_logo,
+        [F.seal]: built.st_seal,
         role: built.role,
         active: existing?.active !== false,
         loginEnabled: built.loginEnabled !== false,

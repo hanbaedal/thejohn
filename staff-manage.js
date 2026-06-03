@@ -6,6 +6,7 @@
     var statusEl = document.getElementById("sm-status");
     var regForm = document.getElementById("sm-register-form");
     var pendingRegLogo = "";
+    var pendingRegSeal = "";
     var PF = window.THEJHON_PRODUCT_FORM;
     var AF = window.THEJHON_ADDRESS_FIELDS;
 
@@ -20,8 +21,18 @@
         PF && PF.STAFF_LOGO_PROCESS_OPTIONS
             ? PF.STAFF_LOGO_PROCESS_OPTIONS
             : { maxDimension: 512, fixedDimension: true, fit: "contain", maxBytes: 1024 * 1024 };
+    var STAFF_SEAL_PIXEL_SIZE = PF && PF.STAFF_SEAL_PIXEL_SIZE ? PF.STAFF_SEAL_PIXEL_SIZE : 160;
+    var STAFF_SEAL_PROCESS_OPTIONS =
+        PF && PF.STAFF_SEAL_PROCESS_OPTIONS
+            ? PF.STAFF_SEAL_PROCESS_OPTIONS
+            : {
+                  maxDimension: STAFF_SEAL_PIXEL_SIZE,
+                  fixedDimension: true,
+                  fit: "contain",
+                  maxBytes: 1024 * 1024
+              };
 
-    function updateLogoPreview(imgEl, clearBtn, src) {
+    function updateImagePreview(imgEl, clearBtn, src) {
         if (PF && PF.showImagePreview) {
             PF.showImagePreview(imgEl, src);
         } else if (imgEl) {
@@ -36,7 +47,7 @@
         if (clearBtn) clearBtn.hidden = !src;
     }
 
-    function initLogoPicker(opts) {
+    function initImagePicker(opts) {
         if (!PF || !PF.initProductPhotoPicker) return null;
         return PF.initProductPhotoPicker({
             galleryInput: opts.galleryInput,
@@ -45,18 +56,19 @@
             btnCamera: opts.btnCamera,
             onSelect: opts.onSelect,
             onError: opts.onError,
-            processOptions: STAFF_LOGO_PROCESS_OPTIONS
+            processOptions: opts.processOptions || STAFF_LOGO_PROCESS_OPTIONS
         });
     }
 
-    var regLogoPicker = initLogoPicker({
+    var regLogoPicker = initImagePicker({
         galleryInput: document.getElementById("sm-reg-logo-gallery"),
         cameraInput: document.getElementById("sm-reg-logo-camera"),
         btnGallery: document.getElementById("sm-reg-logo-gallery-btn"),
         btnCamera: document.getElementById("sm-reg-logo-camera-btn"),
+        processOptions: STAFF_LOGO_PROCESS_OPTIONS,
         onSelect: function (dataUrl) {
             pendingRegLogo = dataUrl || "";
-            updateLogoPreview(
+            updateImagePreview(
                 document.getElementById("sm-reg-logo-preview"),
                 document.getElementById("sm-reg-logo-clear"),
                 pendingRegLogo
@@ -65,9 +77,34 @@
         onError: function (err) {
             setStatus((err && err.message) || "로고 오류", "err");
             pendingRegLogo = "";
-            updateLogoPreview(
+            updateImagePreview(
                 document.getElementById("sm-reg-logo-preview"),
                 document.getElementById("sm-reg-logo-clear"),
+                ""
+            );
+        }
+    });
+
+    var regSealPicker = initImagePicker({
+        galleryInput: document.getElementById("sm-reg-seal-gallery"),
+        cameraInput: document.getElementById("sm-reg-seal-camera"),
+        btnGallery: document.getElementById("sm-reg-seal-gallery-btn"),
+        btnCamera: document.getElementById("sm-reg-seal-camera-btn"),
+        processOptions: STAFF_SEAL_PROCESS_OPTIONS,
+        onSelect: function (dataUrl) {
+            pendingRegSeal = dataUrl || "";
+            updateImagePreview(
+                document.getElementById("sm-reg-seal-preview"),
+                document.getElementById("sm-reg-seal-clear"),
+                pendingRegSeal
+            );
+        },
+        onError: function (err) {
+            setStatus((err && err.message) || "도장 오류", "err");
+            pendingRegSeal = "";
+            updateImagePreview(
+                document.getElementById("sm-reg-seal-preview"),
+                document.getElementById("sm-reg-seal-clear"),
                 ""
             );
         }
@@ -78,9 +115,22 @@
         regLogoClear.addEventListener("click", function () {
             pendingRegLogo = "";
             if (regLogoPicker && regLogoPicker.clear) regLogoPicker.clear();
-            updateLogoPreview(
+            updateImagePreview(
                 document.getElementById("sm-reg-logo-preview"),
                 regLogoClear,
+                ""
+            );
+        });
+    }
+
+    var regSealClear = document.getElementById("sm-reg-seal-clear");
+    if (regSealClear) {
+        regSealClear.addEventListener("click", function () {
+            pendingRegSeal = "";
+            if (regSealPicker && regSealPicker.clear) regSealPicker.clear();
+            updateImagePreview(
+                document.getElementById("sm-reg-seal-preview"),
+                regSealClear,
                 ""
             );
         });
@@ -125,6 +175,23 @@
         return body;
     }
 
+    function resetBrandMedia() {
+        pendingRegLogo = "";
+        pendingRegSeal = "";
+        updateImagePreview(
+            document.getElementById("sm-reg-logo-preview"),
+            document.getElementById("sm-reg-logo-clear"),
+            ""
+        );
+        updateImagePreview(
+            document.getElementById("sm-reg-seal-preview"),
+            document.getElementById("sm-reg-seal-clear"),
+            ""
+        );
+        if (regLogoPicker && regLogoPicker.clear) regLogoPicker.clear();
+        if (regSealPicker && regSealPicker.clear) regSealPicker.clear();
+    }
+
     if (regForm) {
         regForm.addEventListener("submit", function (e) {
             e.preventDefault();
@@ -146,17 +213,13 @@
                 return;
             }
             if (pendingRegLogo) body.st_logo = pendingRegLogo;
+            if (pendingRegSeal) body.st_seal = pendingRegSeal;
             setStatus("등록 중…");
             api
                 .createStaff(body)
                 .then(function () {
                     regForm.reset();
-                    pendingRegLogo = "";
-                    updateLogoPreview(
-                        document.getElementById("sm-reg-logo-preview"),
-                        document.getElementById("sm-reg-logo-clear"),
-                        ""
-                    );
+                    resetBrandMedia();
                     if (regAddrPicker && regAddrPicker.clear) regAddrPicker.clear();
                     setStatus("관리자를 등록했습니다. 목록에서 확인·수정할 수 있습니다.", "ok");
                 })

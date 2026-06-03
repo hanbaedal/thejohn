@@ -5,6 +5,8 @@
     var MAX_IMAGE_BYTES = 1 * 1024 * 1024;
     /** 관리자 로고 — 저장 시 항상 이 크기(정사각)로 변환 */
     var STAFF_LOGO_PIXEL_SIZE = 512;
+    /** 관리자 도장 — 거래명세서용 douzone-seal.png 와 동일 160×160 정사각 */
+    var STAFF_SEAL_PIXEL_SIZE = 160;
 
     function escapeHtml(s) {
         return String(s)
@@ -205,6 +207,13 @@
 
     var STAFF_LOGO_PROCESS_OPTIONS = {
         maxDimension: STAFF_LOGO_PIXEL_SIZE,
+        fixedDimension: true,
+        fit: "contain",
+        maxBytes: MAX_IMAGE_BYTES
+    };
+
+    var STAFF_SEAL_PROCESS_OPTIONS = {
+        maxDimension: STAFF_SEAL_PIXEL_SIZE,
         fixedDimension: true,
         fit: "contain",
         maxBytes: MAX_IMAGE_BYTES
@@ -692,7 +701,9 @@
     global.THEJHON_PRODUCT_FORM = {
         MAX_IMAGE_BYTES: MAX_IMAGE_BYTES,
         STAFF_LOGO_PIXEL_SIZE: STAFF_LOGO_PIXEL_SIZE,
+        STAFF_SEAL_PIXEL_SIZE: STAFF_SEAL_PIXEL_SIZE,
         STAFF_LOGO_PROCESS_OPTIONS: STAFF_LOGO_PROCESS_OPTIONS,
+        STAFF_SEAL_PROCESS_OPTIONS: STAFF_SEAL_PROCESS_OPTIONS,
         escapeHtml: escapeHtml,
         formatWon: formatWon,
         parsePriceInput: parsePriceInput,

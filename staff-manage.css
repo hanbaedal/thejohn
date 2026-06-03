@@ -294,9 +294,30 @@
     font-size: 0.8rem;
     color: #5a6d7e;
 }
+.sm-brand-media {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem 1.25rem;
+    align-items: start;
+}
+@media (max-width: 720px) {
+    .sm-brand-media {
+        grid-template-columns: 1fr;
+    }
+}
+.sm-brand-media-col {
+    min-width: 0;
+}
+.sm-brand-preview-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 1rem;
+    margin-top: 0.75rem;
+}
+.sm-brand-preview,
 .sm-logo-preview {
     display: block;
-    margin-top: 0.65rem;
     width: 5.5rem;
     height: 5.5rem;
     object-fit: contain;
@@ -304,6 +325,12 @@
     border-radius: 8px;
     background: #f8fafc;
 }
+.sm-brand-preview--seal {
+    width: 10rem;
+    height: 10rem;
+    background: #fff;
+}
+.sm-brand-preview[hidden],
 .sm-logo-preview[hidden] {
     display: none !important;
 }
