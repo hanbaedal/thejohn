@@ -105,10 +105,10 @@
                             "_" +
                             date +
                             ".pdf";
-                        if (OU && OU.triggerPdfDownload) {
-                            OU.triggerPdfDownload(blob, name);
+                        if (OU && OU.openPdfBlobInTab) {
+                            return OU.openPdfBlobInTab(blob, name);
                         }
-                        setStatus("PDF를 저장했습니다.", "ok");
+                        setStatus("PDF를 열었습니다.", "ok");
                     })
                     .catch(function (err) {
                         setStatus((err && err.message) || "PDF 실패", "err");
@@ -163,7 +163,7 @@
                     '">수정</button>' +
                     '<button type="button" class="btn btn-primary" data-tml-pdf data-id="' +
                     escapeAttr(it.id) +
-                    '">PDF</button>' +
+                    '">PDF 보기</button>' +
                     "</div></td>" +
                     "</tr>"
                 );
