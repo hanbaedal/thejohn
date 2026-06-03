@@ -1,3 +1,4 @@
+const fs = require("fs");
 const PDFDocument = require("pdfkit");
 const { resolveFontPath, resolveBoldFontPath } = require("./orderPdf");
 
@@ -303,15 +304,35 @@ function drawSlip(doc, slipY, order, issuer, theme, pageLabel) {
         height: SEAL_DRAW_SIZE,
         fit: [SEAL_DRAW_SIZE, SEAL_DRAW_SIZE]
     };
-    var sealDataUrl = str(issuer.sealDataUrl);
-    if (sealDataUrl) {
+    var sealDrawn = false;
+    var sealImage = issuer.sealImage;
+    if (sealImage && sealImage.kind === "path" && sealImage.path && fs.existsSync(sealImage.path)) {
         try {
-            var sealMatch = sealDataUrl.match(/^data:image\/([a-z0-9+.-]+);base64,(.+)$/i);
-            if (sealMatch && sealMatch[2]) {
-                doc.image(Buffer.from(sealMatch[2], "base64"), sealLeft, sealTop, sealOpts);
-            }
+            doc.image(sealImage.path, sealLeft, sealTop, sealOpts);
+            sealDrawn = true;
         } catch (e) {
             /* ignore */
+        }
+    }
+    if (!sealDrawn && sealImage && sealImage.kind === "buffer" && sealImage.buffer) {
+        try {
+            doc.image(sealImage.buffer, sealLeft, sealTop, sealOpts);
+            sealDrawn = true;
+        } catch (e) {
+            /* ignore */
+        }
+    }
+    if (!sealDrawn) {
+        var sealDataUrl = str(issuer.sealDataUrl);
+        if (sealDataUrl) {
+            try {
+                var sealMatch = sealDataUrl.match(/^data:image\/([a-z0-9+.-]+);base64,(.+)$/i);
+                if (sealMatch && sealMatch[2]) {
+                    doc.image(Buffer.from(sealMatch[2], "base64"), sealLeft, sealTop, sealOpts);
+                }
+            } catch (e) {
+                /* ignore */
+            }
         }
     }
     sy += HEADER_ROW_H;

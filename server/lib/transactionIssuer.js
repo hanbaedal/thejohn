@@ -2,6 +2,7 @@ const { fromLegacyDoc: staffFromLegacy, F: SF } = require("./staffFields");
 const { formatFullAddress } = require("./addressFormat");
 const { findStaffByRegisteredBy } = require("./staffRegisteredBy");
 const { trimStaffLoginId } = require("./staffLoginId");
+const { resolveSealForPdf } = require("./staffSealImage");
 
 const DOUZONE_LOGIN_IDS = ["thejohn", "thejhon"];
 const AK_LOGIN_IDS = ["ak20140516"];
@@ -84,6 +85,7 @@ function staffToIssuer(staff) {
             formatFullAddress(d[SF.zip], d[SF.addr], d[SF.addrDetail]) ||
             str(d[SF.address] || staff.st_address),
         sealDataUrl: staffSealDataUrl(staff),
+        sealImage: resolveSealForPdf(staff, staffSealDataUrl(staff)),
         bankAccount: bankAccountForStaff(staff)
     };
 }
@@ -165,6 +167,7 @@ async function resolveDouzoneIssuer(db) {
         bizItem: "",
         address: "",
         sealDataUrl: "",
+        sealImage: null,
         bankAccount: str(process.env.DOUZONE_BANK_ACCOUNT || "")
     };
 }

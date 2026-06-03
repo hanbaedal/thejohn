@@ -17,6 +17,7 @@ const {
     loginIdsEquivalent
 } = require("./staffLoginIdMigration");
 const { appendPreviousLoginIds } = require("./staffRegisteredBy");
+const { normalizeStaffSealForDb } = require("./staffSealImage");
 
 function str(v) {
     return String(v ?? "").trim();
@@ -68,6 +69,15 @@ function copyIfDefined(target, source, keys) {
     for (const key of keys) {
         if (source[key] !== undefined) target[key] = source[key];
     }
+}
+
+function normalizePickedSeal(picked, loginId, existing) {
+    if (picked.st_seal === undefined) return;
+    picked.st_seal = normalizeStaffSealForDb(picked.st_seal, {
+        loginId: str(loginId || picked.loginId),
+        id: existing && existing.id,
+        st_company: picked.st_company || (existing && getCompanyName(existing))
+    });
 }
 
 function pickStaffBody(body) {
@@ -182,6 +192,7 @@ async function createStaffAccount(body, creatorRole) {
     }
 
     const picked = pickStaffBody(body);
+    normalizePickedSeal(picked, loginId, null);
     const buildBody = {
         st_company: picked.st_company || picked.name,
         st_phone: picked.st_phone,
@@ -224,12 +235,13 @@ async function updateStaffAccount(id, body, creatorRole) {
     const staffId = existing.id;
 
     const picked = pickStaffBody(body);
+    const nextLoginId =
+        picked.loginId != null && str(picked.loginId) ? str(picked.loginId) : str(existing.loginId);
+    normalizePickedSeal(picked, nextLoginId, existing);
     if (!str(picked.st_company) && !getCompanyName(existing)) {
         throw new Error("회사명을 입력해 주세요.");
     }
 
-    const nextLoginId =
-        picked.loginId != null && str(picked.loginId) ? str(picked.loginId) : str(existing.loginId);
     if (!nextLoginId) throw new Error("아이디를 입력해 주세요.");
 
     const loginChanged = !loginIdsEquivalent(nextLoginId, existing.loginId);
