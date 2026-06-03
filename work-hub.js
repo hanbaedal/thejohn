@@ -62,19 +62,15 @@
         return [];
     }
 
-    function initHubMedia() {
+    function initHubBgm() {
         var media = global.THEJHON_HOME_INTRO_MEDIA;
-        if (!media || !media.init) return;
+        if (!media || !media.init || !document.getElementById("whHubBgm")) return;
         media.init({
-            videoSelector: ".wh-hub-video",
-            videoPlaybackRate: 0.55,
             bgmId: "whHubBgm",
             bgmBtnId: "whBgmToggle",
             bgmHintId: "whBgmHint",
             volume: 0.28,
             autoplayBgm: false,
-            prominentBgmHint: false,
-            unlockOnAnyClick: false,
             bgmButtonOnly: true
         });
     }
@@ -173,7 +169,7 @@
     }
 
     function onReady() {
-        initHubMedia();
+        initHubBgm();
         boot();
     }
 

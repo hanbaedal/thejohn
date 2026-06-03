@@ -1,4 +1,4 @@
-/* 그룹 마케팅 관리 — 배경 영상 + 단순 메뉴 허브 */
+/* 그룹 마케팅 관리 — 단순 메뉴 허브 (배경 영상 없음) */
 
 body.page-work-hub {
     min-height: 100dvh;
@@ -6,33 +6,7 @@ body.page-work-hub {
     flex-direction: column;
     margin: 0;
     overflow-x: hidden;
-    background: #0a1a2e;
-}
-
-.wh-backdrop {
-    position: fixed;
-    inset: 0;
-    z-index: 0;
-    overflow: hidden;
-    pointer-events: none;
-}
-
-.wh-hub-video {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    display: block;
-}
-
-.wh-backdrop-overlay {
-    position: absolute;
-    inset: 0;
-    background: linear-gradient(
-        180deg,
-        rgba(255, 255, 255, 0.28) 0%,
-        rgba(255, 255, 255, 0.52) 38%,
-        rgba(255, 255, 255, 0.68) 100%
-    );
+    background: linear-gradient(165deg, #e8f2fc 0%, #f5f9fd 42%, #dceaf8 100%);
 }
 
 /* 헤더 — nav.js work-hub 레이아웃과 호환 */
@@ -45,8 +19,8 @@ body.page-work-hub .site-header {
     align-items: center;
     flex-wrap: nowrap;
     gap: 0.5rem;
-    background: transparent;
-    border-bottom-color: transparent;
+    background: rgba(255, 255, 255, 0.85);
+    border-bottom: 1px solid rgba(10, 77, 156, 0.12);
 }
 
 body.page-work-hub .site-header .header-date,
@@ -107,7 +81,8 @@ body.page-work-hub .header-session-company--hub[hidden] {
 /* 본문 */
 .wh-main {
     position: relative;
-    z-index: 10;
+    z-index: 1;
+    isolation: isolate;
     flex: 1 1 auto;
     width: 100%;
     max-width: 40rem;
@@ -162,6 +137,7 @@ body.page-work-hub .header-session-company--hub[hidden] {
     z-index: 2;
     pointer-events: auto;
     cursor: pointer;
+    touch-action: manipulation;
 }
 
 .wh-card {
