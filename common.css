@@ -1,3 +1,5 @@
+@import url("pdf-view-modal.css");
+
 :root {
     --dz-blue: #0a4d9c;
     --header-pad-x: 1.25rem;

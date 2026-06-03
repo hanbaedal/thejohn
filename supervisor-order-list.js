@@ -96,9 +96,24 @@
             showVendor: true,
             actions: [
                 {
-                    id: "sol-detail-pdf",
-                    label: "PDF",
+                    id: "sol-detail-pdf-view",
+                    label: "PDF 보기",
                     primary: true,
+                    onClick: function (ord, btn) {
+                        btn.disabled = true;
+                        OrderUI.viewOrderPdfWithAuth(api, ord.id)
+                            .catch(function (err) {
+                                alert((err && err.message) || "PDF를 열지 못했습니다.");
+                            })
+                            .finally(function () {
+                                btn.disabled = false;
+                            });
+                    }
+                },
+                {
+                    id: "sol-detail-pdf-save",
+                    label: "PDF 저장",
+                    primary: false,
                     onClick: function (ord, btn) {
                         btn.disabled = true;
                         OrderUI.downloadOrderPdfWithAuth(api, ord.id, ord.orderNo, ord)

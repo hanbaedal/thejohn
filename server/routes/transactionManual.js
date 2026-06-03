@@ -35,18 +35,26 @@ function ymd(ts) {
     );
 }
 
-async function sendPdf(res, doc) {
+async function sendPdf(res, doc, opts) {
+    opts = opts || {};
     const buf = await buildTransactionPdfBuffer(
         await prepareManualTransactionForPdf(getDb(), toPdfOrder(doc))
     );
     const company = safeFilePart(doc.vendorCompany || "거래명세서");
     const date = ymd(doc.issueDate || doc.createdAt);
     const fname = "거래명세서_" + company + "_" + date + ".pdf";
+    const inline = !!opts.inline;
+    const disp = inline ? "inline" : "attachment";
     res.setHeader("Content-Type", "application/pdf");
     res.setHeader(
         "Content-Disposition",
-        'attachment; filename="' + encodeURIComponent(fname) + '"; filename*=UTF-8\'\'' + encodeURIComponent(fname)
+        disp +
+            '; filename="' +
+            encodeURIComponent(fname) +
+            '"; filename*=UTF-8\'\'' +
+            encodeURIComponent(fname)
     );
+    res.setHeader("Content-Length", String(buf.length));
     res.send(buf);
 }
 
@@ -62,7 +70,7 @@ router.post("/pdf", async function (req, res) {
         const previewDoc = Object.assign({ id: "txn_manual_preview" }, built, {
             createdBy: req.auth.userId
         });
-        await sendPdf(res, previewDoc);
+        await sendPdf(res, previewDoc, { inline: true });
     } catch (e) {
         console.error("POST /api/transaction-manual/pdf", e);
         if (!res.headersSent) {
@@ -97,7 +105,9 @@ router.get("/:id/pdf", async function (req, res) {
         if (!canAccessDoc(req.auth, doc)) {
             return res.status(403).json({ ok: false, error: "권한이 없습니다." });
         }
-        await sendPdf(res, doc);
+        const download =
+            String(req.query.download || req.query.attachment || "").trim() === "1";
+        await sendPdf(res, doc, { inline: !download });
     } catch (e) {
         console.error("GET /api/transaction-manual/:id/pdf", e);
         if (!res.headersSent) {

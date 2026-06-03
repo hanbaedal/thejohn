@@ -40,6 +40,27 @@ function ymd(ts) {
     );
 }
 
+function wantsPdfDownload(req) {
+    return String(req.query.download || req.query.attachment || "").trim() === "1";
+}
+
+function sendPdfBuffer(res, buf, fname, opts) {
+    opts = opts || {};
+    const download = !!opts.download;
+    const disp = download ? "attachment" : "inline";
+    res.setHeader("Content-Type", "application/pdf");
+    res.setHeader(
+        "Content-Disposition",
+        disp +
+            '; filename="' +
+            encodeURIComponent(fname) +
+            '"; filename*=UTF-8\'\'' +
+            encodeURIComponent(fname)
+    );
+    res.setHeader("Content-Length", String(buf.length));
+    res.send(buf);
+}
+
 /** 토큰 링크로 발주서 PDF 공개 (7일, 레거시·수동 링크용) */
 router.get("/notify-pdf/:token", async function (req, res) {
     try {
@@ -360,12 +381,7 @@ router.get("/:id/transaction-pdf", requireRole("vendor", "admin", "supervisor"),
         const company = safeFilePart(pdfOrder.vendorCompany || "거래명세서");
         const date = ymd(pdfOrder.createdAt);
         const fname = "거래명세서_" + company + "_" + date + ".pdf";
-        res.setHeader("Content-Type", "application/pdf");
-        res.setHeader(
-            "Content-Disposition",
-            'attachment; filename="' + encodeURIComponent(fname) + '"; filename*=UTF-8\'\'' + encodeURIComponent(fname)
-        );
-        res.send(buf);
+        sendPdfBuffer(res, buf, fname, { download: wantsPdfDownload(req) });
     } catch (e) {
         console.error("GET order transaction-pdf", e);
         return res.status(500).json({ ok: false, error: "거래명세서 PDF 생성에 실패했습니다." });
@@ -387,12 +403,7 @@ router.get("/:id/pdf", requireRole("vendor", "admin", "supervisor"), async funct
         const company = safeFilePart(pdfOrder.vendorCompany || "주문서");
         const date = ymd(pdfOrder.createdAt);
         const fname = company + "_" + date + ".pdf";
-        res.setHeader("Content-Type", "application/pdf");
-        res.setHeader(
-            "Content-Disposition",
-            'attachment; filename="' + encodeURIComponent(fname) + '"; filename*=UTF-8\'\'' + encodeURIComponent(fname)
-        );
-        res.send(buf);
+        sendPdfBuffer(res, buf, fname, { download: wantsPdfDownload(req) });
     } catch (e) {
         console.error("GET order pdf", e);
         return res.status(500).json({ ok: false, error: "PDF 생성에 실패했습니다." });

@@ -71,9 +71,24 @@
             showVendor: true,
             actions: [
                 {
+                    id: "stl-detail-pdf-view",
+                    label: "PDF 보기",
+                    primary: true,
+                    onClick: function (ord, btn) {
+                        btn.disabled = true;
+                        OrderUI.viewTransactionPdfWithAuth(api, ord.id)
+                            .catch(function (err) {
+                                alert((err && err.message) || "PDF를 열지 못했습니다.");
+                            })
+                            .finally(function () {
+                                btn.disabled = false;
+                            });
+                    }
+                },
+                {
                     id: "stl-detail-print",
                     label: "인쇄",
-                    primary: true,
+                    primary: false,
                     onClick: function (ord, btn) {
                         btn.disabled = true;
                         OrderUI.printTransactionPdfWithAuth(api, ord.id)
@@ -130,7 +145,7 @@
                         "</span></div>" +
                         '<div class="ol-admin-actions">' +
                         '<button type="button" class="btn btn-primary stl-btn-print">인쇄</button>' +
-                        '<button type="button" class="btn stl-btn-pdf">PDF</button>' +
+                        '<button type="button" class="btn stl-btn-pdf">PDF 보기</button>' +
                         "</div></li>"
                     );
                 })
@@ -181,8 +196,8 @@
                 pdfBtn.addEventListener("click", function (e) {
                     e.preventDefault();
                     e.stopPropagation();
-                    OrderUI.downloadTransactionPdfWithAuth(api, id, row).catch(function (err) {
-                        alert((err && err.message) || "PDF 저장 실패");
+                    OrderUI.viewTransactionPdfWithAuth(api, id).catch(function (err) {
+                        alert((err && err.message) || "PDF를 열지 못했습니다.");
                     });
                 });
             }

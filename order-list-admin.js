@@ -134,9 +134,24 @@
             showVendor: true,
             actions: [
                 {
+                    id: "ol-detail-pdf-view",
+                    label: "PDF 보기",
+                    primary: true,
+                    onClick: function (ord, btn) {
+                        btn.disabled = true;
+                        OrderUI.viewOrderPdfWithAuth(api, ord.id)
+                            .catch(function (err) {
+                                alert((err && err.message) || "PDF를 열지 못했습니다.");
+                            })
+                            .finally(function () {
+                                btn.disabled = false;
+                            });
+                    }
+                },
+                {
                     id: "ol-detail-pdf",
                     label: "PDF 저장",
-                    primary: true,
+                    primary: false,
                     onClick: function (ord, btn) {
                         btn.disabled = true;
                         OrderUI.downloadOrderPdfWithAuth(api, ord.id, ord.orderNo, ord)
@@ -189,8 +204,8 @@
                     var row = items.find(function (it) {
                         return it.id === id;
                     });
-                    OrderUI.downloadOrderPdfWithAuth(api, id, row && row.orderNo, row).catch(function (err) {
-                        alert((err && err.message) || "PDF 저장에 실패했습니다.");
+                    OrderUI.viewOrderPdfWithAuth(api, id).catch(function (err) {
+                        alert((err && err.message) || "PDF를 열지 못했습니다.");
                     });
                 });
             }
@@ -263,7 +278,7 @@
                                     : "") +
                                 "</span></div>" +
                                 '<div class="ol-admin-actions">' +
-                                '<button type="button" class="btn btn-primary ol-btn-pdf">PDF</button>' +
+                                '<button type="button" class="btn btn-primary ol-btn-pdf">PDF 보기</button>' +
                                 "</div></li>"
                             );
                         })

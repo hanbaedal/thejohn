@@ -960,8 +960,8 @@
         api
             .fetchTransactionManualPreviewPdf(body)
             .then(function (blob) {
-                if (OU && OU.openPdfBlobInTab) {
-                    return OU.openPdfBlobInTab(blob, "거래명세서.pdf");
+                if (OU && OU.openPdfBlobInModal) {
+                    return OU.openPdfBlobInModal(blob, "거래명세서.pdf");
                 }
                 setStatus("PDF를 열었습니다.", "ok");
             })
@@ -997,7 +997,7 @@
         }
         setStatus("PDF 생성 중…");
         api
-            .fetchTransactionManualPdf(currentId)
+            .fetchTransactionManualPdf(currentId, { download: true })
             .then(function (blob) {
                 var body = readBody();
                 var company = body.vendorCompany || "거래명세서";

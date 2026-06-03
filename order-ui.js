@@ -143,7 +143,7 @@
         if (!api || !api.fetchOrderPdfBlob) {
             return Promise.reject(new Error("PDF API를 사용할 수 없습니다."));
         }
-        return api.fetchOrderPdfBlob(orderId).then(function (blob) {
+        return api.fetchOrderPdfBlob(orderId, { download: true }).then(function (blob) {
             var meta = orderMeta || null;
             if (!meta && window.THEJHON_ORDER_UI) meta = THEJHON_ORDER_UI._lastOrderForPdf;
             var company = meta && meta.vendorCompany ? meta.vendorCompany : "";
@@ -157,7 +157,7 @@
         if (!api || !api.fetchTransactionPdfBlob) {
             return Promise.reject(new Error("거래명세서 PDF API를 사용할 수 없습니다."));
         }
-        return api.fetchTransactionPdfBlob(orderId).then(function (blob) {
+        return api.fetchTransactionPdfBlob(orderId, { download: true }).then(function (blob) {
             var meta = orderMeta || null;
             var company = meta && meta.vendorCompany ? meta.vendorCompany : "";
             var createdAt = meta && meta.createdAt ? meta.createdAt : null;
@@ -166,23 +166,117 @@
         });
     }
 
-    function openPdfBlobInTab(blob, fallbackName) {
+    function ensurePdfBlob(blob) {
+        if (!blob) return blob;
+        if (blob.type === "application/pdf") return blob;
+        return new Blob([blob], { type: "application/pdf" });
+    }
+
+    var pdfModalUi = {
+        el: null,
+        frame: null,
+        titleEl: null,
+        url: null,
+        escBound: false
+    };
+
+    function closePdfBlobModal() {
+        if (!pdfModalUi.el || pdfModalUi.el.hidden) return;
+        pdfModalUi.el.hidden = true;
+        if (pdfModalUi.frame) pdfModalUi.frame.removeAttribute("src");
+        if (pdfModalUi.url) {
+            URL.revokeObjectURL(pdfModalUi.url);
+            pdfModalUi.url = null;
+        }
+        document.body.style.overflow = "";
+    }
+
+    function ensurePdfBlobModal() {
+        if (pdfModalUi.el) return pdfModalUi.el;
+        var modal = document.createElement("div");
+        modal.id = "thejhonPdfViewModal";
+        modal.className = "pdf-view-modal";
+        modal.hidden = true;
+        modal.setAttribute("role", "dialog");
+        modal.setAttribute("aria-modal", "true");
+        modal.setAttribute("aria-labelledby", "thejhonPdfViewModalTitle");
+        modal.innerHTML =
+            '<div class="pdf-view-modal__panel">' +
+            '<div class="pdf-view-modal__head">' +
+            '<h2 class="pdf-view-modal__title" id="thejhonPdfViewModalTitle">PDF 보기</h2>' +
+            '<button type="button" class="pdf-view-modal__close" id="thejhonPdfViewModalClose" aria-label="닫기">&times;</button>' +
+            "</div>" +
+            '<div class="pdf-view-modal__body">' +
+            '<iframe class="pdf-view-modal__frame" id="thejhonPdfViewModalFrame" title="PDF 미리보기"></iframe>' +
+            "</div>" +
+            "</div>";
+        document.body.appendChild(modal);
+        pdfModalUi.el = modal;
+        pdfModalUi.frame = document.getElementById("thejhonPdfViewModalFrame");
+        pdfModalUi.titleEl = document.getElementById("thejhonPdfViewModalTitle");
+        document.getElementById("thejhonPdfViewModalClose").addEventListener("click", closePdfBlobModal);
+        modal.addEventListener("click", function (e) {
+            if (e.target === modal) closePdfBlobModal();
+        });
+        if (!pdfModalUi.escBound) {
+            pdfModalUi.escBound = true;
+            document.addEventListener("keydown", function (e) {
+                if (e.key === "Escape" && pdfModalUi.el && !pdfModalUi.el.hidden) closePdfBlobModal();
+            });
+        }
+        return modal;
+    }
+
+    function openPdfBlobInModal(blob, fallbackName) {
+        blob = ensurePdfBlob(blob);
+        closePdfBlobModal();
+        ensurePdfBlobModal();
+        var title = String(fallbackName || "PDF 보기").replace(/\.pdf$/i, "").replace(/</g, "");
         var url = URL.createObjectURL(blob);
-        var w = window.open(url, "_blank", "noopener");
+        pdfModalUi.url = url;
+        if (pdfModalUi.titleEl) pdfModalUi.titleEl.textContent = title;
+        if (pdfModalUi.frame) pdfModalUi.frame.src = url;
+        pdfModalUi.el.hidden = false;
+        document.body.style.overflow = "hidden";
+        return Promise.resolve();
+    }
+
+    /** @deprecated 보기는 openPdfBlobInModal 사용. 새 탭이 필요할 때만 opts.newTab */
+    function openPdfBlobInTab(blob, fallbackName, opts) {
+        opts = opts || {};
+        if (!opts.newTab) {
+            return openPdfBlobInModal(blob, fallbackName);
+        }
+        blob = ensurePdfBlob(blob);
+        var url = URL.createObjectURL(blob);
+        var title = String(fallbackName || "PDF").replace(/</g, "");
+        var w = window.open("", "_blank", "noopener");
         if (!w) {
+            if (opts.noDownloadFallback) {
+                return openPdfBlobInModal(blob, fallbackName);
+            }
             triggerPdfDownload(blob, fallbackName || "document.pdf");
             return Promise.resolve();
         }
+        try {
+            w.document.write(
+                "<!DOCTYPE html><html><head><meta charset=\"utf-8\"><title>" +
+                    title +
+                    "</title></head><body style=\"margin:0;height:100vh\"><embed src=\"" +
+                    url +
+                    "\" type=\"application/pdf\" width=\"100%\" height=\"100%\" /></body></html>"
+            );
+            w.document.close();
+        } catch (e) {
+            w.location.href = url;
+        }
         return new Promise(function (resolve) {
-            w.addEventListener("load", function () {
-                try {
-                    w.focus();
-                } catch (e) {
-                    /* ignore */
-                }
-                resolve();
-            });
-            setTimeout(resolve, 1500);
+            try {
+                w.focus();
+            } catch (e2) {
+                /* ignore */
+            }
+            setTimeout(resolve, 400);
         });
     }
 
@@ -212,7 +306,7 @@
             return Promise.reject(new Error("PDF API를 사용할 수 없습니다."));
         }
         return api.fetchOrderPdfBlob(orderId).then(function (blob) {
-            return openPdfBlobInTab(blob, "발주서.pdf");
+            return openPdfBlobInModal(blob, "발주서.pdf");
         });
     }
 
@@ -221,7 +315,7 @@
             return Promise.reject(new Error("거래명세서 PDF API를 사용할 수 없습니다."));
         }
         return api.fetchTransactionPdfBlob(orderId).then(function (blob) {
-            return openPdfBlobInTab(blob, "거래명세서.pdf");
+            return openPdfBlobInModal(blob, "거래명세서.pdf");
         });
     }
 
@@ -248,6 +342,8 @@
         viewTransactionPdfWithAuth: viewTransactionPdfWithAuth,
         printTransactionPdfWithAuth: printTransactionPdfWithAuth,
         triggerPdfDownload: triggerPdfDownload,
+        openPdfBlobInModal: openPdfBlobInModal,
+        closePdfBlobModal: closePdfBlobModal,
         openPdfBlobInTab: openPdfBlobInTab
     };
 })(typeof window !== "undefined" ? window : this);

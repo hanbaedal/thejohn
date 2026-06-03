@@ -46,6 +46,14 @@
         return h;
     }
 
+    /** PDF blob — 브라우저 탭 미리보기용 MIME 보정 */
+    function pdfBlobFromResponse(res) {
+        return res.blob().then(function (b) {
+            if (b && b.type === "application/pdf") return b;
+            return new Blob([b], { type: "application/pdf" });
+        });
+    }
+
     function parseJson(res) {
         return res.text().then(function (text) {
             if (!text) return {};
@@ -408,8 +416,12 @@
         orderPdfUrl: function (orderId) {
             return apiUrl("/api/orders/" + encodeURIComponent(orderId) + "/pdf");
         },
-        fetchOrderPdfBlob: function (orderId) {
+        fetchOrderPdfBlob: function (orderId, opts) {
+            opts = opts || {};
             var url = apiUrl("/api/orders/" + encodeURIComponent(orderId) + "/pdf");
+            if (opts.download) {
+                url += (url.indexOf("?") >= 0 ? "&" : "?") + "download=1";
+            }
             return fetch(url, { method: "GET", headers: headers() }).then(function (res) {
                 if (!res.ok) {
                     return res.text().then(function (text) {
@@ -421,11 +433,15 @@
                         throw new Error(msg);
                     });
                 }
-                return res.blob();
+                return pdfBlobFromResponse(res);
             });
         },
-        fetchTransactionPdfBlob: function (orderId) {
+        fetchTransactionPdfBlob: function (orderId, opts) {
+            opts = opts || {};
             var url = apiUrl("/api/orders/" + encodeURIComponent(orderId) + "/transaction-pdf");
+            if (opts.download) {
+                url += (url.indexOf("?") >= 0 ? "&" : "?") + "download=1";
+            }
             return fetch(url, { method: "GET", headers: headers() }).then(function (res) {
                 if (!res.ok) {
                     return res.text().then(function (text) {
@@ -437,7 +453,7 @@
                         throw new Error(msg);
                     });
                 }
-                return res.blob();
+                return pdfBlobFromResponse(res);
             });
         },
         listTransactionManual: function (opts) {
@@ -484,11 +500,15 @@
                         throw new Error(msg);
                     });
                 }
-                return res.blob();
+                return pdfBlobFromResponse(res);
             });
         },
-        fetchTransactionManualPdf: function (id) {
+        fetchTransactionManualPdf: function (id, opts) {
+            opts = opts || {};
             var url = apiUrl("/api/transaction-manual/" + encodeURIComponent(id) + "/pdf");
+            if (opts.download) {
+                url += (url.indexOf("?") >= 0 ? "&" : "?") + "download=1";
+            }
             return fetch(url, { method: "GET", headers: headers() }).then(function (res) {
                 if (!res.ok) {
                     return res.text().then(function (text) {
@@ -500,7 +520,7 @@
                         throw new Error(msg);
                     });
                 }
-                return res.blob();
+                return pdfBlobFromResponse(res);
             });
         },
         listSupportNews: function (opts) {

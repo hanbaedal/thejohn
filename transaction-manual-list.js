@@ -105,8 +105,10 @@
                             "_" +
                             date +
                             ".pdf";
-                        if (OU && OU.openPdfBlobInTab) {
-                            return OU.openPdfBlobInTab(blob, name);
+                        if (OU && OU.openPdfBlobInModal) {
+                            return OU.openPdfBlobInModal(blob, name).then(function () {
+                                setStatus("PDF를 열었습니다.", "ok");
+                            });
                         }
                         setStatus("PDF를 열었습니다.", "ok");
                     })
