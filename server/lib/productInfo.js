@@ -39,6 +39,10 @@ const FIELD_DEFS = [
     { key: "notes", label: "확인사항", field: F.notes, multiline: true, max: 4000 }
 ];
 
+const DEFAULT_NOTES =
+    "-본 제품은 공정거래위원회 고시 소비자 분쟁해결 기준의 의거 교환 또는 보상을 받을 수 있습니다.\n" +
+    "- 부정, 불량식품 신고는 국번없이 1399";
+
 function str(v) {
     return String(v ?? "")
         .replace(/[\uD800-\uDBFF](?![\uDC00-\uDFFF])|(?<![\uD800-\uDBFF])[\uDC00-\uDFFF]/g, "\uFFFD")
@@ -53,8 +57,14 @@ function newId() {
 function emptyValues() {
     const o = {};
     FIELD_DEFS.forEach(function (def) {
-        o[def.key] = "";
+        o[def.key] = def.key === "notes" ? DEFAULT_NOTES : "";
     });
+    return o;
+}
+
+function withDefaultNotes(values) {
+    const o = Object.assign(emptyValues(), values || {});
+    if (!str(o.notes)) o.notes = DEFAULT_NOTES;
     return o;
 }
 
@@ -81,7 +91,7 @@ function valuesFromDoc(doc) {
     FIELD_DEFS.forEach(function (def) {
         values[def.key] = str(doc[def.field]);
     });
-    return values;
+    return withDefaultNotes(values);
 }
 
 function toPublic(doc) {

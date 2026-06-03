@@ -1,7 +1,12 @@
 /**
- * 상품정보(식품 표시사항) 모달 — product_info API 연동
+ * 상품 필수 정보(식품 표시사항) 모달 — product_info API 연동
  */
 (function (global) {
+    var MODAL_TITLE_EDIT = "상품 필수 정보";
+    var MODAL_TITLE_VIEW = "상품필수정보";
+    var DEFAULT_NOTES =
+        "-본 제품은 공정거래위원회 고시 소비자 분쟁해결 기준의 의거 교환 또는 보상을 받을 수 있습니다.\n" +
+        "- 부정, 불량식품 신고는 국번없이 1399";
     var FIELD_DEFS = [
         { key: "productName", label: "제품명", multiline: false, max: 200 },
         { key: "foodType", label: "식품유형", multiline: false, max: 120 },
@@ -18,8 +23,14 @@
     function emptyValues() {
         var o = {};
         FIELD_DEFS.forEach(function (d) {
-            o[d.key] = "";
+            o[d.key] = d.key === "notes" ? DEFAULT_NOTES : "";
         });
+        return o;
+    }
+
+    function withDefaultNotes(values) {
+        var o = Object.assign(emptyValues(), values || {});
+        if (!String(o.notes || "").trim()) o.notes = DEFAULT_NOTES;
         return o;
     }
 
@@ -90,7 +101,9 @@
         modalEl.innerHTML =
             '<div class="pinfo-modal__panel">' +
             '<div class="pinfo-modal__head">' +
-            '<h2 class="pinfo-modal__title" id="pinfoModalTitle">상품정보</h2>' +
+            '<h2 class="pinfo-modal__title" id="pinfoModalTitle">' +
+            escapeAttr(MODAL_TITLE_EDIT) +
+            "</h2>" +
             '<button type="button" class="pinfo-modal__close" id="pinfoModalClose" aria-label="닫기">&times;</button>' +
             "</div>" +
             '<div class="pinfo-modal__body">' +
@@ -137,12 +150,27 @@
         return values;
     }
 
-    function fillForm(values) {
+    function setModalTitle(title) {
+        ensureModal();
+        var t = document.getElementById("pinfoModalTitle");
+        if (t) t.textContent = title || MODAL_TITLE_EDIT;
+    }
+
+    function fillForm(values, options) {
+        options = options || {};
         values = values || emptyValues();
         if (!formEl) return;
         formEl.querySelectorAll("[data-pinfo-key]").forEach(function (el) {
             var key = el.getAttribute("data-pinfo-key");
-            el.value = values[key] != null ? values[key] : "";
+            var raw = values[key] != null ? String(values[key]) : "";
+            var trimmed = raw.trim();
+            if (options.emptyPlaceholder && !trimmed) {
+                el.value = "";
+                el.placeholder = "—";
+            } else {
+                el.value = raw;
+                el.removeAttribute("placeholder");
+            }
         });
     }
 
@@ -150,7 +178,7 @@
         if (!openBtnRef) return;
         if (hasAnyValue(state.values)) {
             openBtnRef.classList.add("has-data");
-            openBtnRef.setAttribute("title", "상품정보 입력됨");
+            openBtnRef.setAttribute("title", MODAL_TITLE_EDIT + " 입력됨");
         } else {
             openBtnRef.classList.remove("has-data");
             openBtnRef.removeAttribute("title");
@@ -210,9 +238,10 @@
         productId = String(productId || "").trim();
         if (!productId) return;
         ensureModal();
+        setModalTitle(MODAL_TITLE_VIEW);
         setReadOnlyMode(true);
         state.productId = productId;
-        fillForm(emptyValues());
+        fillForm(emptyValues(), { emptyPlaceholder: true });
         setModalStatus("불러오는 중…");
         modalEl.hidden = false;
         document.body.style.overflow = "hidden";
@@ -223,30 +252,30 @@
         } else if (api && api.get) {
             loadP = api.get("api/products/" + encodeURIComponent(productId) + "/info");
         } else {
-            setModalStatus("상품정보를 불러올 수 없습니다.", true);
+            setModalStatus("");
             return;
         }
 
         loadP
             .then(function (data) {
-                var values =
-                    data && data.item && data.item.values ? data.item.values : emptyValues();
+                var values = withDefaultNotes(
+                    data && data.item && data.item.values ? data.item.values : null
+                );
                 setValues(values);
-                fillForm(state.values);
-                if (!hasAnyValue(state.values)) {
-                    setModalStatus("등록된 상품정보가 없습니다.");
-                } else {
-                    setModalStatus("");
-                }
+                fillForm(state.values, { emptyPlaceholder: true });
+                setModalStatus("");
             })
-            .catch(function (err) {
-                setModalStatus((err && err.message) || "상품정보를 불러오지 못했습니다.", true);
+            .catch(function () {
+                setValues(emptyValues());
+                fillForm(state.values, { emptyPlaceholder: true });
+                setModalStatus("");
             });
     }
 
     function open(opts) {
         opts = opts || {};
         ensureModal();
+        setModalTitle(MODAL_TITLE_EDIT);
         setReadOnlyMode(false);
         if (opts.productName || opts.netWeight) {
             var merged = Object.assign({}, state.values, readFormValues());
@@ -262,7 +291,7 @@
         setModalStatus(
             state.productId ?
                 "저장된 상품입니다. 적용 후 상품 저장 시 서버에 반영됩니다."
-            :   "신규 등록입니다. 상품 저장 후 상품정보가 DB에 저장됩니다."
+            :   "신규 등록입니다. 상품 저장 후 상품 필수 정보가 DB에 저장됩니다."
         );
         modalEl.hidden = false;
         document.body.style.overflow = "hidden";
@@ -271,7 +300,7 @@
     }
 
     function setValues(values) {
-        state.values = Object.assign(emptyValues(), values || {});
+        state.values = withDefaultNotes(values);
         notifyLocal();
     }
 
@@ -313,7 +342,7 @@
         }
         return api.getProductInfo(productId).then(function (data) {
             if (data && data.item && data.item.values) {
-                setValues(data.item.values);
+                setValues(withDefaultNotes(data.item.values));
             }
             if (data && data.fieldDefs && data.fieldDefs.length) {
                 /* 서버 정의와 동기 — 현재 클라이언트 FIELD_DEFS 사용 */

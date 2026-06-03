@@ -183,7 +183,7 @@
             '<div class="pd-actions">' +
             '<button type="button" class="btn btn-secondary pd-btn-pinfo" data-pd-pinfo="' +
             escapeHtml(it.id) +
-            '">상품정보</button>' +
+            '">상품 필수 정보</button>' +
             "</div>" +
             "</div></div></article>"
         );
