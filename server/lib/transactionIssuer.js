@@ -2,6 +2,7 @@ const path = require("path");
 const { fromLegacyDoc: staffFromLegacy, F: SF } = require("./staffFields");
 const { formatFullAddress } = require("./addressFormat");
 
+/** 거래명세서 공급자 인감 (더존푸드) */
 const DOUZONE_SEAL_PATH = path.join(__dirname, "..", "assets", "douzone-seal.png");
 const DOUZONE_LOGIN_IDS = ["thejohn"];
 
@@ -33,7 +34,8 @@ function staffToIssuer(staff) {
         address:
             formatFullAddress(d[SF.zip], d[SF.addr], d[SF.addrDetail]) ||
             str(d[SF.address] || staff.st_address),
-        sealPath: DOUZONE_SEAL_PATH
+        sealPath: DOUZONE_SEAL_PATH,
+        bankAccount: str(process.env.DOUZONE_BANK_ACCOUNT || "")
     };
 }
 
@@ -61,7 +63,7 @@ async function resolveDouzoneIssuer(db) {
     return {
         templateId: "douzone",
         loginId: "",
-        company: "(주) 더존",
+        company: "더존푸드",
         bizNo: "",
         ceo: "",
         phone: "",
@@ -69,7 +71,8 @@ async function resolveDouzoneIssuer(db) {
         bizType: "",
         bizItem: "",
         address: "",
-        sealPath: DOUZONE_SEAL_PATH
+        sealPath: DOUZONE_SEAL_PATH,
+        bankAccount: str(process.env.DOUZONE_BANK_ACCOUNT || "")
     };
 }
 

@@ -13,6 +13,7 @@ const MAX_ITEM_ROWS = 10;
 const FONT_BODY = 8;
 const FONT_TITLE = 17;
 const FONT_SMALL = 7;
+const TOTAL_LABEL_W = 52;
 
 const THEME_RECIPIENT = {
     subtitle: "(공급받는자 보관용)",
@@ -94,6 +95,22 @@ function drawValue(doc, text, x, y, w, h, align) {
     drawTextInCell(doc, text, x, y, w, h, { align: align || "left" });
 }
 
+/** 품목 표 열 너비 — 합이 slipW와 일치 */
+function tableColumnWidths(slipW) {
+    var base = [32, 48, 128, 52, 36, 52, 58, 48];
+    var sum = base.reduce(function (a, b) {
+        return a + b;
+    }, 0);
+    var cols = base.map(function (w) {
+        return Math.round((w * slipW) / sum);
+    });
+    var drift = slipW - cols.reduce(function (a, b) {
+        return a + b;
+    }, 0);
+    cols[cols.length - 1] += drift;
+    return cols;
+}
+
 /** 공급자(우측) 칸 너비 — 합이 supplierW와 정확히 일치 */
 function supplierColumnWidths(supplierW) {
     var lbl = 36;
@@ -123,7 +140,8 @@ function supplierColumnWidths(supplierW) {
 function drawSlip(doc, slipY, order, issuer, theme, pageLabel) {
     var x0 = MARGIN_X;
     var slipW = PAGE_W - MARGIN_X * 2;
-    var y = slipY + 6;
+    var slipTop = slipY + 4;
+    var y = slipTop + 2;
 
     var leftW = 118;
     var titleW = 148;
@@ -132,7 +150,7 @@ function drawSlip(doc, slipY, order, issuer, theme, pageLabel) {
     var leftH = leftRowH * 3;
     var leftLabelW = 44;
     var leftValues = [pageLabel, formatIssueDate(order.createdAt), order.vendorCompany || ""];
-    var leftLabels = ["Page", "발행일자", "거래처명"];
+    var leftLabels = ["Page", "발행일자", "거래처"];
     for (var lr = 0; lr < 3; lr++) {
         drawLabel(doc, leftLabels[lr], x0, y + lr * leftRowH, leftLabelW, leftRowH, "#EEEEEE");
         drawValue(
@@ -172,13 +190,17 @@ function drawSlip(doc, slipY, order, issuer, theme, pageLabel) {
     drawValue(doc, issuer.ceo, cx, sy, sc.ceoW, HEADER_ROW_H, "center");
     cx += sc.ceoW;
     drawLabel(doc, "인", cx, sy, sc.inLbl, HEADER_ROW_H, theme.labelBg);
+    strokeRect(doc, sealX, sy, sc.seal, HEADER_ROW_H, null);
     if (issuer.sealPath && fs.existsSync(issuer.sealPath)) {
         try {
-            doc.image(issuer.sealPath, sealX, sy + 1, {
-                width: sc.seal - 2,
-                height: HEADER_ROW_H - 2,
-                fit: [sc.seal - 2, HEADER_ROW_H - 2]
-            });
+            var sealPad = 1;
+            var sealBox = Math.min(sc.seal, HEADER_ROW_H) - sealPad * 2;
+            doc.image(
+                issuer.sealPath,
+                sealX + (sc.seal - sealBox) / 2,
+                sy + (HEADER_ROW_H - sealBox) / 2,
+                { width: sealBox, height: sealBox, fit: [sealBox, sealBox] }
+            );
         } catch (e) {
             /* ignore */
         }
@@ -210,12 +232,27 @@ function drawSlip(doc, slipY, order, issuer, theme, pageLabel) {
 
     y += leftH + 4;
 
-    drawLabel(doc, "합계금액", x0, y, 56, ROW_H + 2, theme.labelBg);
-    drawValue(doc, "₩  " + formatNum(order.totalAmount), x0 + 56, y, slipW - 56, ROW_H + 2, "right");
-    y += ROW_H + 6;
+    var totalRowH = ROW_H + 2;
+    strokeRect(doc, x0, y, slipW, totalRowH, theme.labelBg);
+    drawTextInCell(doc, "합계금액", x0, y, TOTAL_LABEL_W, totalRowH, { align: "center" });
+    doc
+        .strokeColor("#333333")
+        .moveTo(x0 + TOTAL_LABEL_W, y)
+        .lineTo(x0 + TOTAL_LABEL_W, y + totalRowH)
+        .stroke();
+    drawTextInCell(
+        doc,
+        "₩  " + formatNum(order.totalAmount),
+        x0 + TOTAL_LABEL_W,
+        y,
+        slipW - TOTAL_LABEL_W,
+        totalRowH,
+        { align: "right" }
+    );
+    y += totalRowH + 4;
 
-    var cols = [32, 48, 118, 52, 36, 52, 58, 48];
-    var headers = ["월일", "품목코드", "품목", "규격", "수량", "단가", "공급가액", "세액"];
+    var cols = tableColumnWidths(slipW);
+    var headers = ["월일", "품목코드", "품명", "규격", "수량", "단가", "공급가액", "세액"];
     var cx = x0;
     for (var h = 0; h < headers.length; h++) {
         drawLabel(doc, headers[h], cx, y, cols[h], ROW_H, theme.labelBg);
@@ -260,7 +297,7 @@ function drawSlip(doc, slipY, order, issuer, theme, pageLabel) {
     var footLabelW = cols[0] + cols[1];
     cx = x0;
     drawLabel(doc, "전잔금", cx, y, footLabelW, ROW_H, theme.labelBg);
-    drawValue(doc, "₩", cx + footLabelW, y, cols[2], ROW_H);
+    drawValue(doc, "₩ 0", cx + footLabelW, y, cols[2], ROW_H, "right");
     drawLabel(doc, "합계", cx + footLabelW + cols[2], y, cols[3] + cols[4] + cols[5], ROW_H, theme.labelBg);
     drawValue(doc, formatNum(totalSupply), cx + footLabelW + cols[2] + cols[3] + cols[4] + cols[5], y, cols[6], ROW_H, "right");
     drawValue(doc, formatNum(totalTax), cx + footLabelW + cols[2] + cols[3] + cols[4] + cols[5] + cols[6], y, cols[7], ROW_H, "right");
@@ -273,12 +310,29 @@ function drawSlip(doc, slipY, order, issuer, theme, pageLabel) {
     cx = x0;
     drawLabel(doc, "총합계", cx, y, f1, ROW_H, theme.labelBg);
     drawValue(doc, "₩ " + formatNum(order.totalAmount), cx + f1, y, f2, ROW_H, "right");
-    drawLabel(doc, "입금", cx + f1 + f2, y, 38, ROW_H, theme.labelBg);
-    drawValue(doc, "₩", cx + f1 + f2 + 38, y, f2 - 38, ROW_H);
+    drawLabel(doc, "입금액", cx + f1 + f2, y, 38, ROW_H, theme.labelBg);
+    drawValue(doc, "₩ 0", cx + f1 + f2 + 38, y, f2 - 38, ROW_H, "right");
     drawLabel(doc, "총잔액", cx + f1 + f2 * 2, y, 44, ROW_H, theme.labelBg);
     drawValue(doc, "₩ " + formatNum(order.totalAmount), cx + f1 + f2 * 2 + 44, y, f3, ROW_H, "right");
     drawLabel(doc, "인수자", cx + f1 + f2 * 2 + 44 + f3, y, rest - 30, ROW_H, theme.labelBg);
     drawValue(doc, "인", cx + slipW - 28, y, 28, ROW_H, "center");
+    y += ROW_H + 5;
+
+    var deliveryAddr = str(order.vendorAddr);
+    var deliveryPhone = str(order.vendorPhone) || str(issuer.phone);
+    var bankLine = str(issuer.bankAccount);
+    var extParts = [];
+    if (deliveryAddr) extParts.push("*배송지 " + deliveryAddr);
+    if (deliveryPhone) extParts.push("*전화 " + deliveryPhone);
+    if (bankLine) extParts.push("*계좌번호 " + bankLine);
+    if (extParts.length) {
+        doc.fontSize(FONT_SMALL).fillColor("#000000");
+        doc.text(extParts.join("   "), x0, y, { width: slipW, lineBreak: false });
+        y += 10;
+    }
+
+    var slipBottom = Math.min(slipY + SLIP_H - 4, y + 2);
+    doc.strokeColor("#333333").lineWidth(0.5).rect(x0, slipTop, slipW, slipBottom - slipTop).stroke();
 }
 
 function buildDouzoneTransactionPdfBuffer(order) {
@@ -320,8 +374,7 @@ function buildDouzoneTransactionPdfBuffer(order) {
 
         pages.forEach(function (pageItems, pageIdx) {
             var pageOrder = Object.assign({}, order, { items: pageItems });
-            var pageLabel =
-                pages.length > 1 ? pageIdx + 1 + " / " + pages.length : String(pageIdx + 1);
+            var pageLabel = pageIdx + 1 + " / " + pages.length;
             doc.addPage({ size: "A4", margin: 0 });
             drawSlip(doc, 0, pageOrder, issuer, THEME_RECIPIENT, pageLabel);
             drawSlip(doc, SLIP_H + SLIP_GAP, pageOrder, issuer, THEME_SUPPLIER, pageLabel);
