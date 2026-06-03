@@ -951,6 +951,25 @@
     }
 
     function loadManageHomeSubnav(section) {
+        if (section === "product") {
+            var saved = [];
+            try {
+                var rawP = sessionStorage.getItem(manageHomeSubnavStorageKey("product"));
+                saved = JSON.parse(rawP || "[]");
+            } catch (eP) {
+                saved = [];
+            }
+            var canonical = getManageHomeSubnavDefaults("product");
+            if (!Array.isArray(saved) || !saved.length) return canonical;
+            var canonFiles = {};
+            for (var c = 0; c < canonical.length; c++) {
+                canonFiles[staffNavHrefFile(canonical[c].href)] = true;
+            }
+            var filtered = saved.filter(function (it) {
+                return canonFiles[staffNavHrefFile(it.href)];
+            });
+            return filtered.length ? filtered : canonical;
+        }
         try {
             var raw = sessionStorage.getItem(manageHomeSubnavStorageKey(section));
             var data = JSON.parse(raw || "[]");
@@ -959,6 +978,14 @@
             /* ignore */
         }
         return getManageHomeSubnavDefaults(section);
+    }
+
+    function clearManageHomeSubnavLinks(nav) {
+        if (!nav) return;
+        var links = nav.querySelectorAll(
+            "a[data-hmh-subnav], a.is-hmh-subnav[data-staff-nav-injected='manage-home']"
+        );
+        for (var i = 0; i < links.length; i++) links[i].remove();
     }
 
     function cardNavVisible(el) {
@@ -1093,7 +1120,9 @@
             return bodyItems;
         }
 
-        return loadManageHomeSubnav(section);
+        var fallback = loadManageHomeSubnav(section);
+        saveManageHomeSubnav(section, fallback);
+        return fallback;
     }
 
     function syncManageHomeSubnavCurrent(nav, items) {
@@ -1126,7 +1155,7 @@
         var items = collectManageHomeSubnavFromBody();
         if (!items.length) items = loadManageHomeSubnav(section);
 
-        staffNavClearInjected(nav, true);
+        clearManageHomeSubnavLinks(nav);
         if (!items.length) return;
 
         var cur = currentPageFile();

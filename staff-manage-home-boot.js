@@ -8,9 +8,10 @@
         if (A.applyStaffNavMode) A.applyStaffNavMode("manage-home");
     }
 
-    boot();
     if (document.readyState === "loading") {
         document.addEventListener("DOMContentLoaded", boot);
+    } else {
+        boot();
     }
     try {
         window.addEventListener("pageshow", boot);
