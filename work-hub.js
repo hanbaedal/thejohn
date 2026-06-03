@@ -127,8 +127,6 @@
         syncHubRows();
     }
 
-    var hubCompanyListenersBound = false;
-
     function resolveWorkHubBrand() {
         var header = document.querySelector(".site-header");
         if (!header) return null;
@@ -151,68 +149,18 @@
         return brand;
     }
 
-    function pingHubCompany() {
-        var brand = resolveWorkHubBrand();
-        if (!brand) return;
-
-        var elHub = document.getElementById("headerCompanyNameHub");
-        if (!elHub) {
-            elHub = document.createElement("p");
-            elHub.id = "headerCompanyNameHub";
-            elHub.className = "header-session-company header-session-company--hub";
-            elHub.setAttribute("aria-live", "polite");
+    function refreshWorkHubHeaderCompany() {
+        resolveWorkHubBrand();
+        if (typeof window.__thejhonRefreshHeaderCompany === "function") {
+            window.__thejhonRefreshHeaderCompany();
         }
-        if (elHub.parentNode !== brand) {
-            brand.appendChild(elHub);
-        }
-
-        var text = "";
-        if (
-            Auth &&
-            Auth.isLoggedIn &&
-            Auth.isLoggedIn() &&
-            Auth.getLoggedInCompanyDisplayName
-        ) {
-            text = String(Auth.getLoggedInCompanyDisplayName() || "").trim();
-        }
-        if (text) {
-            elHub.textContent = text;
-            elHub.hidden = false;
-        } else {
-            elHub.textContent = "";
-            elHub.hidden = true;
-        }
-        var elWide = document.getElementById("headerCompanyName");
-        var elMobile = document.getElementById("headerCompanyNameMobile");
-        if (elWide) {
-            elWide.textContent = "";
-            elWide.classList.remove("header-session-company--show");
-        }
-        if (elMobile) {
-            elMobile.textContent = "";
-            elMobile.classList.remove("header-session-company--show");
-        }
-        var header = document.querySelector(".site-header");
-        if (header) header.classList.remove("header-has-company-mobile");
-    }
-
-    function bindWorkHubCompanyListeners() {
-        if (hubCompanyListenersBound) return;
-        hubCompanyListenersBound = true;
-        var prev = window.__thejhonRefreshHeaderCompany;
-        window.__thejhonRefreshHeaderCompany = function () {
-            if (typeof prev === "function") prev();
-            pingHubCompany();
-        };
-        window.addEventListener("pageshow", pingHubCompany);
-        try {
-            window.addEventListener("thejhon-auth-permissions-updated", pingHubCompany);
-        } catch (e) {}
     }
 
     function initWorkHubHeaderCompany() {
-        pingHubCompany();
-        bindWorkHubCompanyListeners();
+        refreshWorkHubHeaderCompany();
+        if (Auth && Auth.refreshBrandFromStaffProfileAsync) {
+            Auth.refreshBrandFromStaffProfileAsync().then(refreshWorkHubHeaderCompany);
+        }
     }
 
     function scheduleWorkHubHeaderCompany() {
@@ -275,6 +223,10 @@
     }
 
     try {
-        window.addEventListener("thejhon-auth-permissions-updated", applyMenus);
+        window.addEventListener("thejhon-auth-permissions-updated", function () {
+            applyMenus();
+            refreshWorkHubHeaderCompany();
+        });
     } catch (e2) {}
+    window.addEventListener("pageshow", refreshWorkHubHeaderCompany);
 })();

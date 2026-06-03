@@ -433,6 +433,21 @@
             header.appendChild(elMobile);
         }
 
+        function ensureWorkHubCompanyEl(brand) {
+            if (!brand) return null;
+            var elHub = document.getElementById("headerCompanyNameHub");
+            if (!elHub) {
+                elHub = document.createElement("p");
+                elHub.id = "headerCompanyNameHub";
+                elHub.className = "header-session-company header-session-company--hub";
+                elHub.setAttribute("aria-live", "polite");
+            }
+            if (elHub.parentNode !== brand) {
+                brand.appendChild(elHub);
+            }
+            return elHub;
+        }
+
         function ping() {
             var text = "";
             var loggedIn = window.THEJHON_AUTH && THEJHON_AUTH.isLoggedIn && THEJHON_AUTH.isLoggedIn();
@@ -441,8 +456,41 @@
                 window.THEJHON_AUTH &&
                 typeof THEJHON_AUTH.getLoggedInCompanyDisplayName === "function"
             ) {
-                text = THEJHON_AUTH.getLoggedInCompanyDisplayName() || "";
+                text = String(THEJHON_AUTH.getLoggedInCompanyDisplayName() || "").trim();
             }
+            if (
+                loggedIn &&
+                !text &&
+                window.THEJHON_AUTH &&
+                typeof THEJHON_AUTH.getBrandCompanyDisplayName === "function"
+            ) {
+                text = String(THEJHON_AUTH.getBrandCompanyDisplayName() || "").trim();
+            }
+
+            var isWorkHub =
+                document.body && document.body.classList.contains("page-work-hub");
+            if (isWorkHub) {
+                var brand =
+                    header.querySelector(".site-header-brand") ||
+                    header.querySelector(".site-header-start");
+                var elHub = ensureWorkHubCompanyEl(brand);
+                if (elHub) {
+                    if (text) {
+                        elHub.textContent = text;
+                        elHub.hidden = false;
+                    } else {
+                        elHub.textContent = "";
+                        elHub.hidden = true;
+                    }
+                }
+                elWide.textContent = "";
+                elWide.classList.remove("header-session-company--show");
+                elMobile.textContent = "";
+                elMobile.classList.remove("header-session-company--show");
+                header.classList.remove("header-has-company-mobile");
+                return;
+            }
+
             var narrow = false;
             try {
                 narrow = window.matchMedia("(max-width: 720px)").matches;

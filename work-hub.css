@@ -79,10 +79,11 @@ body.page-work-hub .site-header .dz-logo {
 body.page-work-hub .site-header-brand {
     display: inline-flex;
     align-items: center;
-    gap: 0.4rem;
-    flex-shrink: 0;
+    gap: 0.35rem;
+    flex: 1 1 auto;
+    flex-shrink: 1;
     min-width: 0;
-    max-width: min(52vw, 20rem);
+    max-width: min(72vw, 28rem);
     position: relative;
     z-index: 2;
     pointer-events: auto;
