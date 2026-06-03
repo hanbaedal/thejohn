@@ -13,6 +13,10 @@
 | `thejhon-api.js` | `/api` REST 클라이언트 |
 | `server/` | Express API + 정적 파일 서빙 |
 
+**상세 아키텍처·디렉터리·권한·PDF·배포**: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)
+
+**관리용 Word·PPT**: [docs/thejohn-system-structure-management.docx](docs/thejohn-system-structure-management.docx) · [docs/thejohn-system-structure-management.pptx](docs/thejohn-system-structure-management.pptx) (`python scripts/generate-management-docs.py` 로 재생성)
+
 ## 로컬 실행
 
 ### 1. 환경 변수

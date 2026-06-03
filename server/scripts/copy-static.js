@@ -35,6 +35,18 @@ function shouldCopy(name) {
     return EXT.has(ext) || ASSET_EXT.has(ext);
 }
 
+/** 관리용 Word·PPT 등 — docs/ 전체 복사 */
+function copyDocsDir(src, dst) {
+    fs.mkdirSync(dst, { recursive: true });
+    for (const name of fs.readdirSync(src)) {
+        const srcPath = path.join(src, name);
+        const stat = fs.statSync(srcPath);
+        if (stat.isFile()) {
+            fs.copyFileSync(srcPath, path.join(dst, name));
+        }
+    }
+}
+
 function copyFrom(src, dst) {
     fs.mkdirSync(dst, { recursive: true });
     for (const name of fs.readdirSync(src)) {
@@ -42,7 +54,11 @@ function copyFrom(src, dst) {
         const srcPath = path.join(src, name);
         const stat = fs.statSync(srcPath);
         if (stat.isDirectory()) {
-            copyFrom(srcPath, path.join(dst, name));
+            if (name === "docs") {
+                copyDocsDir(srcPath, path.join(dst, name));
+            } else {
+                copyFrom(srcPath, path.join(dst, name));
+            }
         } else if (stat.isFile() && shouldCopy(name)) {
             fs.copyFileSync(srcPath, path.join(dst, name));
         }

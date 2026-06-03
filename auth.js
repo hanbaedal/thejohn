@@ -899,9 +899,11 @@
         "staff-manage-hub.html": true,
         "staff-manage.html": true,
         "staff-list-admin.html": true,
+        "system-structure-docs.html": true,
         "supervisor-access-stats.html": true,
         "supervisor-db-stats.html": true
     };
+    var SYSTEM_STRUCTURE_DOCS_PAGE = "system-structure-docs.html";
     var STAFF_MANAGE_PAGES = [
         "staff-manage-hub.html",
         "staff-manage.html",
@@ -2524,7 +2526,7 @@
 
     function enforceRegisterPages() {
         var page = currentPageFile();
-        if (page === WORK_HUB_PAGE) {
+        if (page === WORK_HUB_PAGE || page === SYSTEM_STRUCTURE_DOCS_PAGE) {
             if (!getWorkHubAccess().allowed) {
                 redirectFromProtectedPage(isLoggedIn());
             }

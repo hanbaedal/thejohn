@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="auth-storage.js"></script>
+    <script src="site-brand-boot.js"></script>
+    <meta name="theme-color" content="#0a4d9c">
+    <title>시스템 구조 문서 — 더존</title>
+    <link rel="stylesheet" href="common.css">
+    <link rel="stylesheet" href="staff-hub.css">
+    <script src="api-config.js"></script>
+    <script src="thejhon-api.js"></script>
+    <script src="auth.js"></script>
+    <script src="admin-header.js"></script>
+    <script src="nav.js" defer></script>
+    <style>
+        .ssd-panel { max-width: 40rem; margin: 0 auto; }
+        .ssd-dl { display: grid; gap: 0.75rem; margin: 1.25rem 0 0; }
+        .ssd-item {
+            display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between;
+            gap: 0.5rem 1rem; padding: 1rem 1.1rem; background: #fff;
+            border: 1px solid #d4e0eb; border-radius: 10px;
+        }
+        .ssd-item h2 { margin: 0; font-size: 1rem; color: #1e3a52; }
+        .ssd-item p { margin: 0.25rem 0 0; font-size: 0.85rem; color: #5a6d7e; flex: 1 1 100%; }
+        .ssd-item .btn { flex-shrink: 0; }
+    </style>
+</head>
+<body>
+    <header class="site-header">
+        <div class="site-header-start">
+            <a href="work-hub.html" class="dz-logo dz-logo--compact" aria-label="그룹 마케팅 관리">
+                <img src="img/logo.png" alt="" width="72" height="72" class="dz-logo-img">
+            </a>
+        </div>
+        <nav class="site-header-actions" aria-label="계정">
+            <time class="header-date" id="headerToday" datetime=""></time>
+            <button type="button" class="btn btn-auth-icon btn-logout" id="btnLogout" hidden aria-label="로그아웃" title="로그아웃"></button>
+        </nav>
+    </header>
+    <main class="page-main page-main--hide-scrollbar company-main">
+        <p class="shub-subnav"><a href="staff-manage-hub.html">← 업무관리</a></p>
+        <h1>시스템 구조 문서 (관리용)</h1>
+        <p id="ssd-status" class="shub-status" role="status">아래에서 파일을 받아 PC에서 열어 보세요.</p>
+        <section class="ssd-panel" aria-label="다운로드">
+            <div class="ssd-dl">
+                <article class="ssd-item">
+                    <div>
+                        <h2>시스템 구조 설명서 (Word)</h2>
+                        <p>권한·업무 메뉴·데이터·인프라 등 관리·기획용 상세 문서</p>
+                    </div>
+                    <a class="btn btn-primary" href="docs/thejohn-system-structure-management.docx" download="더존-시스템구조-관리용.docx">다운로드 (.docx)</a>
+                </article>
+                <article class="ssd-item">
+                    <div>
+                        <h2>시스템 구조 요약 (PowerPoint)</h2>
+                        <p>회의·보고용 슬라이드 (약 7장)</p>
+                    </div>
+                    <a class="btn btn-primary" href="docs/thejohn-system-structure-management.pptx" download="더존-시스템구조-관리용.pptx">다운로드 (.pptx)</a>
+                </article>
+                <article class="ssd-item">
+                    <div>
+                        <h2>기술 구조 (Markdown)</h2>
+                        <p>개발·운영 담당자용 상세 (브라우저에서 열림)</p>
+                    </div>
+                    <a class="btn btn-secondary" href="docs/ARCHITECTURE.md" target="_blank" rel="noopener">열기</a>
+                </article>
+            </div>
+        </section>
+    </main>
+    <script>
+        (function () {
+            var Auth = window.THEJHON_AUTH;
+            var statusEl = document.getElementById("ssd-status");
+            if (!Auth || !Auth.getWorkHubAccess) {
+                if (statusEl) statusEl.textContent = "권한 확인을 할 수 없습니다.";
+                return;
+            }
+            var access = Auth.getWorkHubAccess();
+            if (!access.allowed) {
+                if (statusEl) {
+                    statusEl.textContent = access.reason || "접근 권한이 없습니다.";
+                    statusEl.className = "shub-status shub-status--err";
+                }
+                return;
+            }
+            if (Auth.bindLogoutButton) Auth.bindLogoutButton(document.getElementById("btnLogout"));
+            if (Auth.bindHeaderDate) Auth.bindHeaderDate(document.getElementById("headerToday"));
+        })();
+    </script>
+</body>
+</html>
