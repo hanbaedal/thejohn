@@ -73,8 +73,17 @@
         document.querySelectorAll(".hmh-card[href]").forEach(function (card) {
             card.addEventListener("click", function () {
                 if (!Auth) return;
-                if (Auth.setStaffNavMode) Auth.setStaffNavMode("manage-home");
-                if (Auth.refreshManageHomeHeader) Auth.refreshManageHomeHeader();
+                var key = card.getAttribute("data-hmh-card") || "";
+                if (
+                    key === "product-register" ||
+                    key === "product-list"
+                ) {
+                    if (Auth.setStaffNavMode) Auth.setStaffNavMode("product");
+                    if (Auth.refreshProductHeader) Auth.refreshProductHeader();
+                } else {
+                    if (Auth.setStaffNavMode) Auth.setStaffNavMode("manage-home");
+                    if (Auth.refreshManageHomeHeader) Auth.refreshManageHomeHeader();
+                }
             });
         });
     }

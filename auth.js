@@ -857,6 +857,8 @@
     var STAFF_NAV_MODE_KEY = "thejhon_staff_nav_mode";
     var MANAGE_HOME_SUBNAV_KEY_PREFIX = "thejhon_manage_home_subnav_";
     var ORDER_SUBNAV_STORAGE_KEY = "thejhon_order_subnav";
+    var PRODUCT_MANAGE_HUB_PAGE = "product-manage.html";
+    var PRODUCT_SUBNAV_STORAGE_KEY = "thejhon_product_subnav";
     var STAFF_NAV_PUBLIC_PAGES = {
         "index.html": true,
         "company.html": true,
@@ -888,6 +890,7 @@
         "supervisor-transaction-pdf.html": true,
         "supervisor-transaction-list.html": true
     };
+    var STAFF_NAV_PRODUCT_PAGES = {};
     var STAFF_NAV_WORK_PAGES = {
         "staff-manage-hub.html": true,
         "staff-manage.html": true,
@@ -907,7 +910,7 @@
     var ADMIN_REGISTER_PAGES = PRODUCT_ADMIN_PAGES.concat(VENDOR_ADMIN_PAGES);
 
     PRODUCT_ADMIN_PAGES.forEach(function (f) {
-        STAFF_NAV_MANAGE_HOME_PAGES[f] = true;
+        STAFF_NAV_PRODUCT_PAGES[f] = true;
     });
     VENDOR_ADMIN_PAGES.forEach(function (f) {
         STAFF_NAV_MANAGE_HOME_PAGES[f] = true;
@@ -935,6 +938,7 @@
     function inferStaffNavModeFromPage(file) {
         if (!file) return "";
         if (file === WORK_HUB_PAGE) return "hub";
+        if (STAFF_NAV_PRODUCT_PAGES[file]) return "product";
         if (STAFF_NAV_MANAGE_HOME_PAGES[file]) return "manage-home";
         if (STAFF_NAV_ORDER_PAGES[file]) return "order";
         if (STAFF_NAV_WORK_PAGES[file]) return "work";
@@ -959,6 +963,7 @@
             stored === "hub" ||
             stored === "public" ||
             stored === "manage-home" ||
+            stored === "product" ||
             stored === "order" ||
             stored === "work"
         ) {
@@ -1017,6 +1022,7 @@
             return "manage-home";
         }
         if (STAFF_NAV_ORDER_PAGES[file]) return "order";
+        if (STAFF_NAV_PRODUCT_PAGES[file]) return "product";
         if (STAFF_NAV_WORK_PAGES[file]) return "work";
         if (STAFF_NAV_MANAGE_HOME_PAGES[file]) return "manage-home";
         if (STAFF_NAV_PUBLIC_PAGES[file]) return "public";
@@ -1032,6 +1038,9 @@
         if (!zone) return false;
         if (mode === "hub") return false;
         if (mode === "public") return zone === "public";
+        if (mode === "product") {
+            return zone === "product" && canManageRegisters();
+        }
         if (mode === "order") {
             if (zone !== "order") return false;
             var file = staffNavHrefFile(el.getAttribute("href"));
@@ -1271,6 +1280,7 @@
             plain[h].remove();
         }
 
+        nav.classList.remove("site-header-nav--hmh", "site-header-nav--product");
         nav.classList.add("site-header-nav--order");
         syncStaffNavOrderSubnav(nav);
     }
@@ -1281,6 +1291,141 @@
         if (!nav) return;
         if (resolveStaffNavMode() !== "order") return;
         applyStaffNavOrderTabs(nav);
+    }
+
+    function saveProductSubnav(items) {
+        try {
+            sessionStorage.setItem(PRODUCT_SUBNAV_STORAGE_KEY, JSON.stringify(items || []));
+        } catch (e) {}
+    }
+
+    function loadProductSubnav() {
+        try {
+            var data = JSON.parse(sessionStorage.getItem(PRODUCT_SUBNAV_STORAGE_KEY) || "[]");
+            if (Array.isArray(data) && data.length) return data;
+        } catch (e2) {}
+        return getDefaultProductSubnavItems();
+    }
+
+    function getDefaultProductSubnavItems() {
+        if (!canManageRegisters()) return [];
+        return [
+            { href: PRODUCT_MANAGE_HUB_PAGE, label: "상품관리" },
+            { href: "product-register.html", label: "상품 등록" },
+            { href: "product-list-admin.html", label: "상품 리스트" }
+        ];
+    }
+
+    function collectProductSubnavFromBody() {
+        var file = currentPageFile();
+        if (file === PRODUCT_MANAGE_HUB_PAGE) {
+            var fromBody = collectBodyNavCards(document);
+            var items = [{ href: PRODUCT_MANAGE_HUB_PAGE, label: "상품관리" }];
+            var seen = {};
+            seen[PRODUCT_MANAGE_HUB_PAGE] = true;
+            for (var i = 0; i < fromBody.length; i++) {
+                var f = staffNavHrefFile(fromBody[i].href);
+                if (!f || seen[f]) continue;
+                seen[f] = true;
+                items.push(fromBody[i]);
+            }
+            saveProductSubnav(items);
+            return items;
+        }
+        var bodyItems = collectBodyNavCards(document);
+        if (bodyItems.length) {
+            var merged = [{ href: PRODUCT_MANAGE_HUB_PAGE, label: "상품관리" }];
+            var seen2 = {};
+            seen2[PRODUCT_MANAGE_HUB_PAGE] = true;
+            for (var j = 0; j < bodyItems.length; j++) {
+                var f2 = staffNavHrefFile(bodyItems[j].href);
+                if (!f2 || seen2[f2]) continue;
+                seen2[f2] = true;
+                merged.push(bodyItems[j]);
+            }
+            saveProductSubnav(merged);
+            return merged;
+        }
+        var cached = loadProductSubnav();
+        saveProductSubnav(cached);
+        return cached;
+    }
+
+    function clearProductSubnavLinks(nav) {
+        if (!nav) return;
+        var links = nav.querySelectorAll(
+            "a[data-product-subnav], a.is-product-subnav[data-staff-nav-injected='product']"
+        );
+        for (var i = 0; i < links.length; i++) links[i].remove();
+    }
+
+    function syncProductSubnavCurrent(nav, items) {
+        if (!nav || !items || !items.length) return;
+        var cur = currentPageFile();
+        var links = nav.querySelectorAll("a[data-product-subnav]");
+        for (var i = 0; i < links.length; i++) {
+            var link = links[i];
+            var on = staffNavHrefFile(link.getAttribute("href")) === cur;
+            link.classList.toggle("is-current", on);
+            if (on) link.setAttribute("aria-current", "page");
+            else link.removeAttribute("aria-current");
+        }
+    }
+
+    function syncStaffNavProductSubnav(nav) {
+        if (!nav) return;
+        var items = collectProductSubnavFromBody();
+        if (!items.length) items = getDefaultProductSubnavItems();
+        clearProductSubnavLinks(nav);
+        if (!items.length) return;
+
+        var cur = currentPageFile();
+        for (var i = 0; i < items.length; i++) {
+            var it = items[i];
+            var file = staffNavHrefFile(it.href);
+            if (!file) continue;
+            if (nav.querySelector('a[data-product-subnav][href*="' + file + '"]')) continue;
+
+            var a = document.createElement("a");
+            a.href = it.href;
+            a.className = "header-nav-link is-product-subnav";
+            a.textContent = it.label;
+            a.setAttribute("data-staff-nav-injected", "product");
+            a.setAttribute("data-product-subnav", "1");
+            if (file === cur) {
+                a.classList.add("is-current");
+                a.setAttribute("aria-current", "page");
+            }
+            a.addEventListener("click", function () {
+                staffNavSet("product");
+            });
+            nav.appendChild(a);
+        }
+        syncProductSubnavCurrent(nav, items);
+    }
+
+    function applyStaffNavProductTabs(nav) {
+        if (!nav || !canManageRegisters()) return;
+        document.body.classList.toggle("nav-admin-menus", false);
+
+        var plain = nav.querySelectorAll(
+            ':scope > a.header-nav-link:not([data-staff-nav-injected]), :scope > .nav-dropdown'
+        );
+        for (var h = 0; h < plain.length; h++) {
+            plain[h].remove();
+        }
+
+        nav.classList.remove("site-header-nav--hmh");
+        nav.classList.add("site-header-nav--product");
+        syncStaffNavProductSubnav(nav);
+    }
+
+    function refreshProductHeader() {
+        if (!isStaffRole(getRole())) return;
+        var nav = document.querySelector(".site-header-nav");
+        if (!nav) return;
+        if (resolveStaffNavMode() !== "product") return;
+        applyStaffNavProductTabs(nav);
     }
 
     function cardNavVisible(el) {
@@ -1393,7 +1538,6 @@
         ) {
             return "home";
         }
-        if (PRODUCT_ADMIN_PAGES.indexOf(file) >= 0) return "product";
         if (VENDOR_ADMIN_PAGES.indexOf(file) >= 0) return "vendor";
         return "home";
     }
@@ -1513,6 +1657,7 @@
             plain[h].remove();
         }
 
+        nav.classList.remove("site-header-nav--order", "site-header-nav--product");
         nav.classList.add("site-header-nav--hmh");
         syncStaffNavManageHomeSubnav(nav);
     }
@@ -1533,6 +1678,7 @@
                 "staff-nav-public",
                 "staff-nav-manage-home",
                 "staff-nav-order",
+                "staff-nav-product",
                 "staff-nav-work"
             );
             return;
@@ -1541,6 +1687,7 @@
             forceMode === "hub" ||
             forceMode === "public" ||
             forceMode === "manage-home" ||
+            forceMode === "product" ||
             forceMode === "order" ||
             forceMode === "work"
                 ? forceMode
@@ -1550,6 +1697,7 @@
             "staff-nav-public",
             "staff-nav-manage-home",
             "staff-nav-order",
+            "staff-nav-product",
             "staff-nav-work"
         );
         document.body.classList.add("staff-nav-" + mode);
@@ -1575,6 +1723,8 @@
 
         if (mode === "manage-home") {
             applyStaffNavManageHomeTabs(nav);
+        } else if (mode === "product") {
+            applyStaffNavProductTabs(nav);
         } else if (mode === "order") {
             applyStaffNavOrderTabs(nav);
         } else if (mode === "work" && isSupervisorStaff()) {
@@ -2457,6 +2607,7 @@
         if (file === "index.html") return false;
         if (file === WORK_HUB_PAGE || file === HOMEPAGE_MANAGE_HUB_PAGE) return true;
         if (STAFF_NAV_ORDER_PAGES[file]) return true;
+        if (STAFF_NAV_PRODUCT_PAGES[file]) return true;
         if (STAFF_NAV_WORK_PAGES[file]) return true;
         if (!STAFF_NAV_MANAGE_HOME_PAGES[file]) return false;
         if (file === "support-inquiry.html") {
@@ -2636,8 +2787,10 @@
         getHomepageManageNavSectionForPage: getHomepageManageNavSectionForPage,
         applyStaffNavManageHomeTabs: applyStaffNavManageHomeTabs,
         applyStaffNavOrderTabs: applyStaffNavOrderTabs,
+        applyStaffNavProductTabs: applyStaffNavProductTabs,
         refreshManageHomeHeader: refreshManageHomeHeader,
         refreshOrderHeader: refreshOrderHeader,
+        refreshProductHeader: refreshProductHeader,
         saveManageHomeSubnav: saveManageHomeSubnav,
         syncHmhManageHomeTabCurrent: syncHmhManageHomeTabCurrent,
         staffNavClearInjected: staffNavClearInjected,
