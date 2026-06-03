@@ -99,7 +99,7 @@ function drawTextInCell(doc, text, x, y, w, h, opts) {
     doc.font("KR");
 }
 
-/** 합계금액 — 왼쪽 표 4행째, 열 폭 = 거래명세서(titleW) */
+/** 합계금액 — 왼쪽 표 4행째(Page·발행일자·거래처와 동일 폭) */
 function drawTotalAmountRow(doc, x0, y, blockW, lblW, totalAmount, theme) {
     strokeRect(doc, x0, y, lblW, HEADER_ROW_H, theme.labelBg);
     drawTextInCell(doc, "합계금액", x0, y, lblW, HEADER_ROW_H, {
@@ -262,7 +262,7 @@ function drawSlip(doc, slipY, order, issuer, theme, pageLabel) {
     doc.fontSize(FONT_SMALL).text(theme.subtitle, tx, titleY + 20, { width: titleW, align: "center" });
 
     var totalRowY = y + 3 * HEADER_ROW_H;
-    drawTotalAmountRow(doc, x0, totalRowY, titleW, leftLabelW, order.totalAmount, theme);
+    drawTotalAmountRow(doc, x0, totalRowY, leftW, leftLabelW, order.totalAmount, theme);
 
     var sx = tx + titleW;
     var sy = y;
