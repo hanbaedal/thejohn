@@ -127,8 +127,40 @@
         return canvas.toDataURL("image/jpeg", quality);
     }
 
+    /** 도장용 — 투명 배경 PNG (JPEG 흰 배경 방지) */
+    function drawSquarePng(img, size, fit) {
+        var w = img.naturalWidth || img.width;
+        var h = img.naturalHeight || img.height;
+        if (!w || !h) throw new Error("이미지 크기를 확인할 수 없습니다.");
+        var canvas = document.createElement("canvas");
+        canvas.width = size;
+        canvas.height = size;
+        var ctx = canvas.getContext("2d");
+        if (!ctx) throw new Error("이미지 처리를 지원하지 않는 브라우저입니다.");
+        ctx.clearRect(0, 0, size, size);
+        var mode = fit === "contain" ? "contain" : "cover";
+        if (mode === "contain") {
+            var scale = Math.min(size / w, size / h);
+            var dw = w * scale;
+            var dh = h * scale;
+            var dx = (size - dw) / 2;
+            var dy = (size - dh) / 2;
+            ctx.drawImage(img, dx, dy, dw, dh);
+        } else {
+            var side = Math.min(w, h);
+            var sx = (w - side) / 2;
+            var sy = (h - side) / 2;
+            ctx.drawImage(img, sx, sy, side, side, 0, 0, size, size);
+        }
+        return canvas.toDataURL("image/png");
+    }
+
+    function usesTransparentPngOutput(options) {
+        return options.outputFormat === "png" || !!options.transparentBackground;
+    }
+
     /**
-     * 큰 이미지도 1:1 정사각형·1MB 이하 JPEG data URL로 변환
+     * 큰 이미지도 1:1 정사각형·1MB 이하 data URL로 변환 (로고 JPEG / 도장 PNG)
      */
     function processImageFileToSquareDataURL(file, options) {
         options = options || {};
@@ -136,6 +168,7 @@
         var maxDim = options.maxDimension || 1024;
         var fixedDimension = !!options.fixedDimension;
         var fit = options.fit === "contain" ? "contain" : "cover";
+        var outputPng = usesTransparentPngOutput(options);
         var fileSize = file && file.size ? file.size : 0;
 
         if (!fixedDimension) {
@@ -165,13 +198,22 @@
                     var dataUrl = "";
                     var lastBytes = Infinity;
                     var minDim = fixedDimension ? maxDim : 280;
+                    var pngMinDim = fixedDimension ? Math.min(maxDim, 96) : 96;
 
                     for (var attempt = 0; attempt < 36; attempt++) {
-                        dataUrl = drawSquareJpeg(decoded, dim, quality, fit);
+                        dataUrl = outputPng
+                            ? drawSquarePng(decoded, dim, fit)
+                            : drawSquareJpeg(decoded, dim, quality, fit);
                         var bytes = dataUrlByteSize(dataUrl);
                         if (bytes <= maxBytes) return finish(dataUrl);
 
-                        if (quality > 0.55) {
+                        if (outputPng) {
+                            if (dim > pngMinDim) {
+                                dim = Math.max(pngMinDim, Math.round(dim * 0.88));
+                            } else if (bytes >= lastBytes) {
+                                break;
+                            }
+                        } else if (quality > 0.55) {
                             quality = Math.max(0.55, quality - 0.07);
                         } else if (!fixedDimension && dim > minDim) {
                             dim = Math.max(minDim, Math.round(dim * 0.82));
@@ -189,13 +231,19 @@
                     if (dataUrlByteSize(dataUrl) <= maxBytes) return finish(dataUrl);
                     return fail(
                         new Error(
-                            fixedDimension
-                                ? "이미지를 " +
+                            outputPng
+                                ? "도장 이미지를 " +
                                       maxDim +
                                       "×" +
                                       maxDim +
-                                      "·1MB 이하로 줄이지 못했습니다. 다른 사진을 선택해 주세요."
-                                : "이미지를 1MB 이하·1:1 비율로 줄이지 못했습니다. 다른 사진을 선택해 주세요."
+                                      "·투명 PNG·1MB 이하로 줄이지 못했습니다. PNG 파일을 사용해 주세요."
+                                : fixedDimension
+                                  ? "이미지를 " +
+                                        maxDim +
+                                        "×" +
+                                        maxDim +
+                                        "·1MB 이하로 줄이지 못했습니다. 다른 사진을 선택해 주세요."
+                                  : "이미지를 1MB 이하·1:1 비율로 줄이지 못했습니다. 다른 사진을 선택해 주세요."
                         )
                     );
                 })
@@ -216,8 +264,14 @@
         maxDimension: STAFF_SEAL_PIXEL_SIZE,
         fixedDimension: true,
         fit: "contain",
-        maxBytes: MAX_IMAGE_BYTES
+        maxBytes: MAX_IMAGE_BYTES,
+        outputFormat: "png",
+        transparentBackground: true
     };
+
+    function processStaffSealFile(file) {
+        return processImageFileToSquareDataURL(file, STAFF_SEAL_PROCESS_OPTIONS);
+    }
 
     function processStaffLogoFile(file) {
         return processImageFileToSquareDataURL(file, STAFF_LOGO_PROCESS_OPTIONS);
@@ -710,6 +764,7 @@
         isImageFile: isImageFile,
         processImageFileToSquareDataURL: processImageFileToSquareDataURL,
         processStaffLogoFile: processStaffLogoFile,
+        processStaffSealFile: processStaffSealFile,
         showImagePreview: showImagePreview,
         readFileAsDataURL: readFileAsDataURL,
         initProductPhotoPicker: initProductPhotoPicker,
