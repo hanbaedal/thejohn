@@ -11,10 +11,13 @@ const ROW_H = 15;
 const TABLE_TOP_GAP_ROWS = 2;
 const HEADER_ROW_H = 16;
 const SEAL_DRAW_SIZE = 56;
-const SUPPLIER_ROWS = 5;
+const SUPPLIER_ROWS = 6;
 const HEADER_BLOCK_H = HEADER_ROW_H * SUPPLIER_ROWS;
 const MAX_ITEM_ROWS = 10;
 const FONT_BODY = 8;
+const FONT_BIZ_NO = 10;
+const FONT_TOTAL_LABEL = 9;
+const FONT_TOTAL_AMOUNT = 11;
 const FONT_TITLE = 17;
 const FONT_SMALL = 7;
 
@@ -74,17 +77,41 @@ function strokeRect(doc, x, y, w, h, fill) {
     doc.strokeColor("#333333").lineWidth(0.5).rect(x, y, w, h).stroke();
 }
 
+function cellFont(doc, opts) {
+    if (opts.bold && doc._krBold) return "KR-Bold";
+    return "KR";
+}
+
 function drawTextInCell(doc, text, x, y, w, h, opts) {
     opts = opts || {};
-    doc.fillColor("#000000").fontSize(opts.size || FONT_BODY);
+    var size = opts.size || FONT_BODY;
+    doc.font(cellFont(doc, opts));
+    doc.fillColor("#000000").fontSize(size);
     var t = str(text);
     if (!t) return;
-    doc.text(t, x + 2, y + (h - (opts.size || FONT_BODY)) / 2 - 1, {
+    doc.text(t, x + 2, y + (h - size) / 2 - 1, {
         width: w - 4,
         height: h,
         align: opts.align || "left",
         lineBreak: false,
         ellipsis: true
+    });
+    doc.font("KR");
+}
+
+/** 합계금액 — 거래처 아래, 표와 동일 폭(slipW) */
+function drawTotalAmountRow(doc, x0, y, slipW, lblW, totalAmount, theme) {
+    strokeRect(doc, x0, y, lblW, HEADER_ROW_H, theme.labelBg);
+    drawTextInCell(doc, "합계금액", x0, y, lblW, HEADER_ROW_H, {
+        align: "center",
+        size: FONT_TOTAL_LABEL,
+        bold: true
+    });
+    strokeRect(doc, x0 + lblW, y, slipW - lblW, HEADER_ROW_H, null);
+    drawTextInCell(doc, "₩  " + formatNum(totalAmount), x0 + lblW, y, slipW - lblW, HEADER_ROW_H, {
+        align: "right",
+        size: FONT_TOTAL_AMOUNT,
+        bold: true
     });
 }
 
@@ -194,17 +221,6 @@ function drawSlip(doc, slipY, order, issuer, theme, pageLabel) {
             "center"
         );
     }
-    var totalRowY = y + 3 * leftRowH;
-    drawLabel(doc, "합계금액", x0, totalRowY, leftLabelW, leftRowH, theme.labelBg);
-    drawValue(
-        doc,
-        "₩  " + formatNum(order.totalAmount),
-        x0 + leftLabelW,
-        totalRowY,
-        leftW - leftLabelW,
-        leftRowH,
-        "right"
-    );
 
     var tx = x0 + leftW;
     strokeRect(doc, tx, y, titleW, headerH, null);
@@ -219,7 +235,12 @@ function drawSlip(doc, slipY, order, issuer, theme, pageLabel) {
     var sealX = sx + supplierW - sc.seal;
 
     drawLabel(doc, "등록번호", sx, sy, sc.lbl, HEADER_ROW_H, theme.labelBg);
-    drawValue(doc, issuer.bizNo, sx + sc.lbl, sy, supplierW - sc.lbl, HEADER_ROW_H, "center");
+    strokeRect(doc, sx + sc.lbl, sy, supplierW - sc.lbl, HEADER_ROW_H, null);
+    drawTextInCell(doc, issuer.bizNo, sx + sc.lbl, sy, supplierW - sc.lbl, HEADER_ROW_H, {
+        align: "center",
+        size: FONT_BIZ_NO,
+        bold: true
+    });
     sy += HEADER_ROW_H;
 
     cx = sx;
@@ -250,6 +271,9 @@ function drawSlip(doc, slipY, order, issuer, theme, pageLabel) {
 
     drawLabel(doc, "주소", sx, sy, sc.lbl, HEADER_ROW_H, theme.labelBg);
     drawValue(doc, issuer.address, sx + sc.lbl, sy, sc.valueW, HEADER_ROW_H);
+    sy += HEADER_ROW_H;
+
+    drawTotalAmountRow(doc, x0, sy, slipW, leftLabelW, order.totalAmount, theme);
     sy += HEADER_ROW_H;
 
     cx = sx;
@@ -391,7 +415,11 @@ function buildDouzoneTransactionPdfBuffer(order) {
             doc.registerFont("KR", fontPath);
             doc.font("KR");
             var boldPath = resolveBoldFontPath();
-            if (boldPath) doc.registerFont("KR-Bold", boldPath);
+            doc._krBold = false;
+            if (boldPath) {
+                doc.registerFont("KR-Bold", boldPath);
+                doc._krBold = true;
+            }
         } catch (e) {
             return reject(new Error("PDF 한글 폰트 등록 실패: " + e.message));
         }
