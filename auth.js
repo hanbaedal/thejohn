@@ -3,7 +3,8 @@
  *
  * 로그인·권한 정책
  * - 로그아웃 → login.html
- * - 미로그인 방문 → login.html (아이디 로그인 또는 게스트 로그인 선택)
+ * - 미로그인 방문 → login.html
+ * - 로그인 후 기본 이동: 게스트·업체 → index, 슈퍼바이저·관리자 → work-hub (login.js)
  * - 슈퍼바이저: 관리자(staff) 생성 · 전체 기능
  * - 관리자: 업체(vendors) 생성 · 주문 권한(st_order_enabled)은 슈퍼바이저 부여
  * - 업체: 담당 관리자 상품 등급가, 타 관리자 상품은 가격1 · 주문은 담당 관리자+주문권한 있을 때
@@ -801,6 +802,18 @@
         return authGet(AUTH_KEY) === "1" && !!authGet(ROLE_KEY);
     }
 
+    /** 아이디 로그인(관리자·슈퍼바이저·업체) + 유효 JWT — 게스트·미로그인 제외 */
+    function hasAccountSession() {
+        normalizeLegacySession();
+        if (!isLoggedIn()) return false;
+        var role = String(getRole() || "")
+            .trim()
+            .toLowerCase();
+        if (role === "guest" || role === "oauth") return false;
+        if (role !== "admin" && role !== "supervisor" && role !== "vendor") return false;
+        return !!(global.THEJHON_API && THEJHON_API.getToken && THEJHON_API.getToken());
+    }
+
     function getRole() {
         return authGet(ROLE_KEY) || "";
     }
@@ -1587,11 +1600,11 @@
         function run() {
             enforceSiteLogin();
         }
+        run();
         if (document.readyState === "loading") {
             document.addEventListener("DOMContentLoaded", run);
-        } else {
-            run();
         }
+        window.addEventListener("pageshow", run);
     })();
 
     (function bootBrandProfileRefresh() {
@@ -2319,6 +2332,7 @@
         handleSessionInvalid: handleSessionInvalid,
         normalizeLegacySession: normalizeLegacySession,
         isLoggedIn: isLoggedIn,
+        hasAccountSession: hasAccountSession,
         getRole: getRole,
         getUserId: getUserId,
         getRegisterAccess: getRegisterAccess,

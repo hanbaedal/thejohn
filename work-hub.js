@@ -1,221 +1,84 @@
-(function () {
-    var Auth = window.THEJHON_AUTH;
+/**
+ * 그룹 마케팅 관리(work-hub) — 메뉴 표시·권한은 auth.js(canAccessWorkHubMenu)에 위임
+ */
+(function (global) {
+    "use strict";
+
+    var Auth = global.THEJHON_AUTH;
     var statusEl = document.getElementById("wh-status");
+    var gridEl = document.getElementById("whMenuGrid");
 
-    var hubMediaInited = false;
+    var MENUS = [
+        { key: "view-home", href: "index.html", navMode: "public" },
+        { key: "manage-home", href: "homepage-manage-hub.html", navMode: "manage-home" },
+        { key: "product-manage", href: "product-manage.html", navMode: "manage-home" },
+        { key: "vendor-manage", href: "vendor-manage.html", navMode: "manage-home" },
+        { key: "order-manage", href: "order-manage-hub.html", navMode: "order", dynamicHref: true },
+        { key: "work-manage", href: "staff-manage-hub.html", navMode: "work" }
+    ];
 
-    function initHubMedia() {
-        if (hubMediaInited) return;
-        var g = typeof window !== "undefined" ? window : this;
-        if (!g.THEJHON_HOME_INTRO_MEDIA || !g.THEJHON_HOME_INTRO_MEDIA.init) return;
-        var THEJHON_HOME_INTRO_MEDIA = g.THEJHON_HOME_INTRO_MEDIA;
-        if (!document.getElementById("whHubMusic") || !document.getElementById("whBgmToggle")) return;
-        hubMediaInited = true;
-        THEJHON_HOME_INTRO_MEDIA.init({
-            videoSelector: ".wh-hub-backdrop-video",
-            videoPlaybackRate: 0.55,
-            bgmId: "whHubMusic",
-            bgmBtnId: "whBgmToggle",
-            bgmHintId: "whBgmHint",
-            volume: 0.28,
-            autoplayBgm: false,
-            prominentBgmHint: false,
-            unlockOnAnyClick: false,
-            bgmButtonOnly: true
-        });
-    }
-
-    function bootHubMediaWhenReady() {
-        function run() {
-            initHubMedia();
-        }
-        if (document.readyState === "loading") {
-            document.addEventListener("DOMContentLoaded", run, { once: true });
-        } else {
-            run();
-        }
-        window.addEventListener("load", run, { once: true });
-    }
+    var menuByKey = {};
+    MENUS.forEach(function (item) {
+        menuByKey[item.key] = item;
+    });
 
     function setStatus(msg, kind) {
         if (!statusEl) return;
         statusEl.textContent = msg || "";
         statusEl.className =
-            "shub-status" +
-            (kind === "err" ? " shub-status--err" : kind === "ok" ? " shub-status--ok" : "");
+            "wh-status" +
+            (kind === "err" ? " wh-status--err" : kind === "ok" ? " wh-status--ok" : "");
     }
 
-    var NAV_MODE_BY_MENU = {
-        "view-home": "public",
-        "manage-home": "manage-home",
-        "product-manage": "manage-home",
-        "vendor-manage": "manage-home",
-        "order-manage": "order",
-        "work-manage": "work"
-    };
-
-    function rowHasVisibleMenu(row) {
-        var cards = row.querySelectorAll("[data-wh-menu]");
-        for (var i = 0; i < cards.length; i++) {
-            if (!cards[i].hidden) return true;
+    function menuHref(item) {
+        if (item.dynamicHref && Auth && Auth.getWorkHubOrderManageHref) {
+            return Auth.getWorkHubOrderManageHref();
         }
-        return false;
+        return item.href;
     }
 
-    function syncHubRows() {
-        var rows = document.querySelectorAll(".wh-hub-row");
-        rows.forEach(function (row) {
-            row.hidden = !rowHasVisibleMenu(row);
+    function menuAllowed(key) {
+        return !!(Auth && Auth.canAccessWorkHubMenu && Auth.canAccessWorkHubMenu(key));
+    }
+
+    function refreshHeaderCompany() {
+        if (typeof global.__thejhonRefreshHeaderCompany === "function") {
+            global.__thejhonRefreshHeaderCompany();
+        }
+    }
+
+    function bindCard(card, navMode) {
+        if (card.dataset.whBound === "1") return;
+        card.dataset.whBound = "1";
+        card.addEventListener("click", function (e) {
+            if (card.hidden) {
+                e.preventDefault();
+                return;
+            }
+            if (navMode && Auth && Auth.setStaffNavMode) {
+                Auth.setStaffNavMode(navMode);
+            }
         });
-    }
-
-    function normalizeHubRole() {
-        return String(Auth && Auth.getRole ? Auth.getRole() : "")
-            .trim()
-            .toLowerCase();
-    }
-
-    function hubMenuAllowed(menuKey) {
-        if (!Auth || !Auth.getWorkHubAccess) return false;
-        if (!Auth.getWorkHubAccess().allowed) return false;
-        var role = normalizeHubRole();
-        var staff = role === "admin" || role === "supervisor";
-        if (!staff) return false;
-        if (menuKey === "view-home" || menuKey === "manage-home") return true;
-        if (menuKey === "product-manage" || menuKey === "vendor-manage") return true;
-        if (menuKey === "work-manage") return role === "supervisor";
-        if (menuKey === "order-manage") {
-            if (role === "supervisor") return true;
-            return role === "admin" && Auth.isStaffOrderEnabled && Auth.isStaffOrderEnabled();
-        }
-        return false;
     }
 
     function applyMenus() {
-        if (!Auth || !Auth.getWorkHubAccess) return;
-        var access = Auth.getWorkHubAccess();
-        var cards = document.querySelectorAll("[data-wh-menu]");
-        if (!access.allowed) {
-            cards.forEach(function (card) {
-                card.hidden = true;
-                card.style.display = "none";
-            });
-            syncHubRows();
-            return;
-        }
-
+        if (!gridEl) return;
+        var hubOk = Auth && Auth.getWorkHubAccess && Auth.getWorkHubAccess().allowed;
+        var cards = gridEl.querySelectorAll("[data-wh-menu]");
         cards.forEach(function (card) {
             var key = card.getAttribute("data-wh-menu");
-            var allowed = hubMenuAllowed(key);
+            var item = menuByKey[key];
+            var allowed = hubOk && menuAllowed(key);
             card.hidden = !allowed;
-            card.style.display = allowed ? "" : "none";
-            if (!allowed) {
-                card.setAttribute("aria-hidden", "true");
-                card.setAttribute("tabindex", "-1");
-            } else {
-                card.removeAttribute("aria-hidden");
-                card.removeAttribute("tabindex");
-            }
-            if (key === "order-manage" && Auth.getWorkHubOrderManageHref) {
-                card.setAttribute("href", Auth.getWorkHubOrderManageHref());
-            }
-            if (card.dataset.whMenuBound !== "1") {
-                card.dataset.whMenuBound = "1";
-                var navMode = NAV_MODE_BY_MENU[key];
-                (function (link, mode) {
-                    link.addEventListener("click", function (e) {
-                        var el = e.currentTarget || link;
-                        if (el.hidden || el.getAttribute("aria-hidden") === "true") {
-                            e.preventDefault();
-                            return;
-                        }
-                        if (mode && Auth.setStaffNavMode) {
-                            Auth.setStaffNavMode(mode);
-                        }
-                    });
-                })(card, navMode);
-            }
+            if (!allowed || !item) return;
+            card.href = menuHref(item);
+            bindCard(card, item.navMode);
         });
-        syncHubRows();
     }
 
-    var headerCompanyInitDone = false;
-    var workHubBootDone = false;
-
-    function resolveWorkHubBrand() {
-        var header = document.querySelector(".site-header");
-        if (!header) return null;
-        if (header.dataset.headerShell === "2") {
-            return header.querySelector(".site-header-brand");
-        }
-        var brand = header.querySelector(".site-header-brand");
-        if (brand) return brand;
-        var logo =
-            header.querySelector(".site-header-start .dz-logo") ||
-            header.querySelector(".site-header-start .dz-logo--compact") ||
-            header.querySelector(".dz-logo--compact") ||
-            header.querySelector(".dz-logo");
-        if (!logo) return null;
-        brand = document.createElement("div");
-        brand.className = "site-header-brand";
-        if (logo.parentNode) {
-            logo.parentNode.insertBefore(brand, logo);
-            brand.appendChild(logo);
-        } else {
-            header.insertBefore(brand, header.firstChild);
-        }
-        return brand;
-    }
-
-    function refreshWorkHubHeaderCompany() {
-        resolveWorkHubBrand();
-        if (typeof window.__thejhonRefreshHeaderCompany === "function") {
-            window.__thejhonRefreshHeaderCompany();
-        }
-    }
-
-    function initWorkHubHeaderCompany() {
-        if (headerCompanyInitDone) {
-            refreshWorkHubHeaderCompany();
-            return;
-        }
-        headerCompanyInitDone = true;
-        refreshWorkHubHeaderCompany();
-        if (Auth && Auth.refreshBrandFromStaffProfileAsync) {
-            Auth.refreshBrandFromStaffProfileAsync().then(refreshWorkHubHeaderCompany);
-        }
-    }
-
-    function scheduleWorkHubHeaderCompany() {
-        var tries = 0;
-        function run() {
-            var header = document.querySelector(".site-header");
-            if (header && header.dataset.headerShell !== "2" && tries < 40) {
-                tries += 1;
-                window.setTimeout(run, 50);
-                return;
-            }
-            initWorkHubHeaderCompany();
-        }
-        if (document.readyState === "loading") {
-            document.addEventListener("DOMContentLoaded", run, { once: true });
-        } else {
-            run();
-        }
-    }
-
-    function syncWorkHubAuthUi() {
-        var logoutBtn = document.getElementById("btnLogout");
-        var loginBtn = document.getElementById("btnLogin");
-        var loggedIn = Auth && Auth.isLoggedIn && Auth.isLoggedIn();
-        if (logoutBtn) logoutBtn.hidden = !loggedIn;
-        if (loginBtn) loginBtn.hidden = !!loggedIn;
-    }
-
-    function bootWorkHub() {
-        syncWorkHubAuthUi();
+    function boot() {
         if (!Auth || !Auth.getWorkHubAccess) {
-            setStatus("인증 스크립트 오류", "err");
+            setStatus("인증 스크립트를 불러오지 못했습니다.", "err");
             applyMenus();
             return;
         }
@@ -228,51 +91,34 @@
             return;
         }
 
-        setStatus("", "");
-        applyMenus();
+        setStatus("");
         if (Auth.setStaffNavMode) Auth.setStaffNavMode("hub");
-        syncWorkHubAuthUi();
+        applyMenus();
+        refreshHeaderCompany();
 
+        var tasks = [];
         if (Auth.refreshSessionPermissionsAsync) {
-            Auth.refreshSessionPermissionsAsync().then(function () {
+            tasks.push(Auth.refreshSessionPermissionsAsync());
+        }
+        if (Auth.refreshBrandFromStaffProfileAsync) {
+            tasks.push(Auth.refreshBrandFromStaffProfileAsync());
+        }
+        if (tasks.length) {
+            Promise.all(tasks).then(function () {
                 applyMenus();
-                initWorkHubHeaderCompany();
+                refreshHeaderCompany();
             });
         }
     }
 
-    function scheduleApplyMenus() {
-        if (workHubBootDone) {
-            applyMenus();
-            refreshWorkHubHeaderCompany();
-            return;
-        }
-        workHubBootDone = true;
-        bootWorkHub();
-        window.requestAnimationFrame(function () {
-            applyMenus();
-            initWorkHubHeaderCompany();
-        });
-    }
-
-    bootHubMediaWhenReady();
-    scheduleWorkHubHeaderCompany();
-
     if (document.readyState === "loading") {
-        document.addEventListener("DOMContentLoaded", scheduleApplyMenus, { once: true });
+        document.addEventListener("DOMContentLoaded", boot, { once: true });
     } else {
-        scheduleApplyMenus();
+        boot();
     }
-    window.addEventListener("pageshow", function () {
-        workHubBootDone = false;
-        headerCompanyInitDone = false;
-        scheduleApplyMenus();
-    });
 
-    try {
-        window.addEventListener("thejhon-auth-permissions-updated", function () {
-            applyMenus();
-            refreshWorkHubHeaderCompany();
-        });
-    } catch (e2) {}
+    global.addEventListener("thejhon-auth-permissions-updated", applyMenus);
+    global.addEventListener("pageshow", function (ev) {
+        if (ev.persisted) boot();
+    });
 })();

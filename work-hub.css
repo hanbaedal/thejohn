@@ -1,57 +1,30 @@
-/* 그룹 마케팅 관리 — 바디 전체 배경 영상, 제목·메뉴 중앙 */
+/* 그룹 마케팅 관리 — 단순 허브 (배경 영상·BGM 없음) */
+
 body.page-work-hub {
     min-height: 100dvh;
     display: flex;
     flex-direction: column;
+    margin: 0;
     overflow-x: hidden;
+    background: linear-gradient(165deg, #e8f2fc 0%, #f5f9fd 42%, #dceaf8 100%);
 }
 
-.wh-hub-backdrop {
-    position: fixed;
-    inset: 0;
-    z-index: 0;
-    overflow: hidden;
-    background: #0a1a2e;
-    pointer-events: none;
-}
-
-.wh-hub-backdrop-video {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    display: block;
-}
-
-.wh-hub-backdrop-overlay {
-    position: absolute;
-    inset: 0;
-    background: linear-gradient(
-        180deg,
-        rgba(255, 255, 255, 0.28) 0%,
-        rgba(255, 255, 255, 0.52) 38%,
-        rgba(255, 255, 255, 0.68) 100%
-    );
-}
-
-/* 헤더 — 항상 맨 위·클릭 가능 (배경음악·본문보다 위) */
+/* 헤더 — nav.js work-hub 레이아웃과 호환 */
 body.page-work-hub .site-header {
     position: sticky;
     top: 0;
-    z-index: 500;
+    z-index: 100;
     flex: 0 0 auto;
     display: flex;
     align-items: center;
     flex-wrap: nowrap;
     gap: 0.5rem;
-    isolation: isolate;
-    background: transparent;
-    border-bottom-color: transparent;
-    -webkit-backdrop-filter: none;
-    backdrop-filter: none;
-    pointer-events: auto;
+    background: rgba(255, 255, 255, 0.72);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    border-bottom: 1px solid rgba(10, 77, 156, 0.12);
 }
 
-/* 허브는 헤더 가로 메뉴 없음 — 빈 스크롤 영역이 로고·버튼을 가리지 않게 */
 body.page-work-hub .site-header-menu-scroll {
     display: none !important;
 }
@@ -60,50 +33,15 @@ body.page-work-hub .site-header > .site-header-actions {
     display: flex !important;
     margin-left: auto;
     flex-shrink: 0;
-    position: relative;
-    z-index: 6;
 }
 
-body.page-work-hub .site-header .header-date,
-body.page-work-hub .site-header .header-nav-link,
-body.page-work-hub .site-header .nav-dropdown-trigger,
-body.page-work-hub .site-header .btn-auth-icon {
-    text-shadow: 0 1px 8px rgba(255, 255, 255, 0.95);
-}
-
-body.page-work-hub .site-header .dz-logo {
-    filter: drop-shadow(0 1px 6px rgba(255, 255, 255, 0.85));
-}
-
-/* work-hub만 — 상호를 로고 바로 오른쪽 */
 body.page-work-hub .site-header-brand {
     display: inline-flex;
     align-items: center;
     gap: 0.35rem;
     flex: 1 1 auto;
-    flex-shrink: 1;
     min-width: 0;
     max-width: min(72vw, 28rem);
-    position: relative;
-    z-index: 2;
-    pointer-events: auto;
-}
-
-body.page-work-hub .site-header-brand .dz-logo {
-    pointer-events: auto;
-    position: relative;
-    z-index: 3;
-}
-
-body.page-work-hub .site-header-menu-scroll,
-body.page-work-hub .site-header-menu-scroll-track,
-body.page-work-hub .site-header-actions {
-    pointer-events: auto;
-}
-
-body.page-work-hub .site-header-actions .btn-auth-icon,
-body.page-work-hub .site-header-actions .header-login-link {
-    pointer-events: auto;
 }
 
 body.page-work-hub .header-session-company--wide,
@@ -119,174 +57,118 @@ body.page-work-hub .header-session-company--hub {
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
-    /* 로고(.dz-logo--compact 2.5rem) 높이의 70% */
     font-size: calc(2.5rem * 0.7);
     line-height: 1;
     font-weight: 800;
-    color: #000000;
-    text-shadow: 0 1px 4px rgba(255, 255, 255, 0.9);
-    align-self: center;
+    color: #000;
 }
 
 body.page-work-hub .header-session-company--hub[hidden] {
     display: none !important;
 }
 
-.company-main--work-hub.wh-hub-stage {
-    position: relative;
-    z-index: 10;
-    pointer-events: auto;
-    isolation: isolate;
+/* 본문 */
+.wh-main {
     flex: 1 1 auto;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: flex-start;
     width: 100%;
-    max-width: none;
-    min-height: 0;
-    margin: 0;
-    padding: 0.75rem max(0.75rem, env(safe-area-inset-left, 0)) max(4.5rem, env(safe-area-inset-bottom, 0))
-        max(0.75rem, env(safe-area-inset-right, 0));
+    max-width: 40rem;
+    margin: 0 auto;
+    padding: 1.25rem max(1rem, env(safe-area-inset-right, 0))
+        max(2rem, env(safe-area-inset-bottom, 0)) max(1rem, env(safe-area-inset-left, 0));
     box-sizing: border-box;
-    background: transparent;
-    overflow-x: hidden;
-    overflow-y: auto;
-    -webkit-overflow-scrolling: touch;
 }
 
-.wh-hub-center {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: flex-start;
-    flex: 0 0 auto;
-    width: 100%;
-    max-width: 36rem;
-    margin: auto;
-    gap: 1.5rem;
+.wh-hero {
     text-align: center;
+    margin-bottom: 1.5rem;
 }
 
-.wh-hub-title-block {
-    width: 100%;
-}
-
-.wh-hub-title-block h1 {
+.wh-hero h1 {
     margin: 0 0 0.35rem;
     font-size: clamp(1.35rem, 4vw, 1.75rem);
     font-weight: 800;
     color: #052a4d;
     letter-spacing: -0.03em;
-    text-shadow: 0 1px 14px rgba(255, 255, 255, 0.95);
 }
 
-.wh-hub-title-block .shub-status {
-    margin: 0 auto;
-    max-width: 28rem;
-    text-align: center;
-    text-shadow: 0 1px 8px rgba(255, 255, 255, 0.9);
-}
-
-.wh-hub-menus {
-    width: 100%;
-    text-align: left;
-    flex: 0 0 auto;
-}
-
-.company-main--work-hub .wh-hub-menus .company-divisions.wh-hub-rows {
-    display: flex;
-    flex-direction: column;
-    gap: 0.85rem;
+.wh-status {
     margin: 0;
-    padding: 0;
-    width: 100%;
-    max-width: none;
+    font-size: 0.85rem;
+    color: #3d5166;
+    min-height: 1.25rem;
 }
 
-.company-main--work-hub .wh-hub-row {
+.wh-status--err {
+    color: #a12c2c;
+}
+
+.wh-status--ok {
+    color: #2d6a4f;
+}
+
+.wh-menu-grid {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 0.85rem;
-    align-content: start;
-    width: 100%;
 }
 
-.company-main--work-hub .wh-hub-row:empty,
-.company-main--work-hub .wh-hub-row[hidden] {
-    display: none !important;
-}
-
-.company-main--work-hub a.company-division-card.wh-hub-card {
-    display: block;
-    width: 100%;
-    max-width: 100%;
-    margin: 0;
+.wh-card {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 4.5rem;
+    padding: 1rem 0.75rem;
     box-sizing: border-box;
-    position: relative;
-    z-index: 12;
-    pointer-events: auto;
-    cursor: pointer;
-    touch-action: manipulation;
-    background: rgba(255, 255, 255, 0.42);
-    border-color: rgba(207, 232, 244, 0.75);
-    box-shadow: 0 1px 6px rgba(10, 77, 156, 0.06);
+    text-decoration: none;
+    text-align: center;
+    background: rgba(255, 255, 255, 0.88);
+    border: 1px solid rgba(10, 77, 156, 0.2);
+    border-radius: 12px;
+    box-shadow: 0 2px 10px rgba(10, 77, 156, 0.08);
+    transition: background 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
 }
 
-.company-main--work-hub a.company-division-card.wh-hub-card:hover,
-.company-main--work-hub a.company-division-card.wh-hub-card:focus-visible {
-    background: rgba(255, 255, 255, 0.78);
-    border-color: rgba(10, 77, 156, 0.55);
+.wh-card:hover,
+.wh-card:focus-visible {
+    background: #fff;
+    border-color: rgba(10, 77, 156, 0.45);
     box-shadow: 0 4px 16px rgba(10, 77, 156, 0.14);
+    outline: none;
 }
 
-.company-main--work-hub a.company-division-card.wh-hub-card[hidden] {
+.wh-card[hidden] {
     display: none !important;
 }
 
-/* 배경음악 — 우하단만 클릭, 나머지 영역은 통과 */
-body.page-work-hub .wh-hub-bgm-wrap {
-    position: fixed;
-    right: max(0.75rem, env(safe-area-inset-right, 0));
-    bottom: max(0.75rem, env(safe-area-inset-bottom, 0));
-    z-index: 40;
-    pointer-events: none;
+.wh-card-label {
+    font-size: 1rem;
+    font-weight: 700;
+    color: #052a4d;
+    line-height: 1.3;
 }
 
-body.page-work-hub .wh-hub-bgm-wrap .home-bgm-toggle,
-body.page-work-hub .wh-hub-bgm-wrap .home-bgm-hint {
-    pointer-events: auto;
-}
-
-body.page-work-hub audio#whHubMusic {
-    position: fixed;
-    width: 0;
-    height: 0;
-    opacity: 0;
-    pointer-events: none;
+body.page-work-hub .site-footer {
+    flex: 0 0 auto;
+    margin-top: auto;
 }
 
 @media (max-width: 720px) {
     body.page-work-hub .site-header {
         display: grid;
         grid-template-columns: auto minmax(0, 1fr);
-        grid-template-rows: auto;
         align-items: center;
     }
+
     body.page-work-hub .site-header-brand {
         grid-column: 1;
-        grid-row: 1;
     }
+
     body.page-work-hub .site-header > .site-header-actions {
         grid-column: 2;
-        grid-row: 1;
         justify-self: end;
-        display: flex !important;
     }
-    body.page-work-hub .site-header-menu-scroll-track .site-header-actions {
-        display: none !important;
-    }
-    .company-main--work-hub .wh-hub-row {
+
+    .wh-menu-grid {
         grid-template-columns: 1fr;
     }
 }
