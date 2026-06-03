@@ -26,6 +26,15 @@
         @media (max-width: 520px) {
             .pr-field-row.pr-row--2 { grid-template-columns: 1fr; }
         }
+        .pr-field-row.pr-row--name { display: grid; grid-template-columns: minmax(9.5rem, 11.5rem) minmax(0, 1fr); gap: 0.5rem 0.75rem; align-items: start; margin-bottom: 1rem; }
+        @media (max-width: 520px) {
+            .pr-field-row.pr-row--name { grid-template-columns: 1fr; }
+        }
+        .pr-field-row.pr-row--name .pr-field-code,
+        .pr-field-row.pr-row--name .pr-field-name-wrap { min-width: 0; margin-bottom: 0; }
+        .pr-field-row.pr-row--name label { display: block; font-size: 0.8rem; font-weight: 600; color: #3d5166; margin-bottom: 0.35rem; }
+        .pr-field-row.pr-row--name input { width: 100%; padding: 0.6rem 0.7rem; font-size: 1rem; font-family: inherit; border: 1px solid #c5d0dc; border-radius: 6px; box-sizing: border-box; }
+        .pr-field-row.pr-row--name input:focus { outline: none; border-color: var(--dz-blue); box-shadow: 0 0 0 2px rgba(10, 77, 156, 0.2); }
         .pr-field-row.pr-row--4 { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 0.5rem 0.65rem; }
         @media (max-width: 720px) {
             .pr-field-row.pr-row--4 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
@@ -97,10 +106,16 @@
                 <input type="hidden" id="pr-pd-dept" name="pd_dept" value="">
                 <div id="pr-dept-picker" class="am-dept-picker-btns" role="group" aria-labelledby="pr-dept-label"></div>
             </div>
-            <div class="pr-field">
-                <label for="pr-pd-name">상품 명칭</label>
-                <input type="text" id="pr-pd-name" name="pd_name" required maxlength="200" autocomplete="off" placeholder="상품 명칭" aria-describedby="pr-name-dup-hint">
-                <p id="pr-name-dup-hint" class="pr-name-dup-hint pr-name-dup-hint--idle" hidden></p>
+            <div class="pr-field-row pr-row--name">
+                <div class="pr-field-code">
+                    <label for="pr-pd-code">상품 코드</label>
+                    <input type="text" id="pr-pd-code" name="pd_code" maxlength="16" autocomplete="off" placeholder="16자 이내" inputmode="text">
+                </div>
+                <div class="pr-field-name-wrap">
+                    <label for="pr-pd-name">상품 명칭</label>
+                    <input type="text" id="pr-pd-name" name="pd_name" required maxlength="200" autocomplete="off" placeholder="상품 명칭" aria-describedby="pr-name-dup-hint">
+                    <p id="pr-name-dup-hint" class="pr-name-dup-hint pr-name-dup-hint--idle" hidden></p>
+                </div>
             </div>
             <div class="pr-price-group">
                 <span class="pr-price-caption">상품가격 (원)</span>

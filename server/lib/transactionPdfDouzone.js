@@ -360,7 +360,7 @@ function drawSlip(doc, slipY, order, issuer, theme, pageLabel) {
         var cells = it
             ? [
                   formatMd(order.createdAt),
-                  str(it.productId || "").slice(-8),
+                  str(it.pd_code || it.productId || "").slice(0, 16),
                   it.productName || "",
                   it.pd_size || "",
                   formatNum(it.quantity),

@@ -73,6 +73,7 @@ async function enrichOrderItems(db, rawItems) {
             Object.assign({}, it, {
                 pd_dept: deptId,
                 pd_dept_label: deptLabel(deptId),
+                pd_code: str(p[PF.code] || p.pd_code),
                 productRegisteredBy: productReg,
                 productRegisteredByName: productRegName
             })

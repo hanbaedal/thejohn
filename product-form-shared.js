@@ -376,6 +376,9 @@
 
     function validateProductFields(data, options) {
         options = options || {};
+        if (data.pd_code && String(data.pd_code).trim().length > 16) {
+            return "상품 코드는 16자 이내로 입력해 주세요.";
+        }
         if (!data.pd_name) return "상품 명칭을 입력해 주세요.";
         if (!data.pd_explain) return "상품 설명을 입력해 주세요.";
         if (!data.pd_dept) return "사업부문을 선택해 주세요.";

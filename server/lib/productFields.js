@@ -7,6 +7,7 @@ const { registeredByInFilter } = require("./staffLoginId");
 /** products 컬렉션 필드명 (Atlas 레코드 키) */
 const F = {
     name: "pd_name",
+    code: "pd_code",
     price1: "pd_price1",
     price2: "pd_price2",
     price3: "pd_price3",
@@ -60,6 +61,12 @@ function jsonSafeStr(v) {
         .replace(/\u0000/g, "");
 }
 
+const PRODUCT_CODE_MAX_LEN = 16;
+
+function normalizeProductCode(v) {
+    return str(v).slice(0, PRODUCT_CODE_MAX_LEN);
+}
+
 function parsePrice(v) {
     if (v === "" || v === null || v === undefined) return 0;
     const n = parseInt(v, 10);
@@ -87,6 +94,7 @@ function fromLegacyDoc(doc) {
     if (!doc) return null;
     const d = Object.assign({}, doc);
     if (!d[F.name] && doc.title) d[F.name] = String(doc.title).trim();
+    if (!d[F.code] && doc.pd_code) d[F.code] = normalizeProductCode(doc.pd_code);
     if (!d[F.explain] && doc.content) d[F.explain] = String(doc.content).trim();
     if (!d[F.size] && doc.spec) d[F.size] = String(doc.spec).trim();
     const prices = readPricesFromDoc(doc);
@@ -130,6 +138,7 @@ function toPublicListItem(doc) {
     return {
         id: id,
         pd_name: str(d[F.name] || d.pd_name),
+        pd_code: normalizeProductCode(d[F.code] || d.pd_code),
         pd_price1: prices.pd_price1,
         pd_price2: prices.pd_price2,
         pd_price3: prices.pd_price3,
@@ -179,6 +188,7 @@ function toPublic(doc) {
     return {
         id: d.id,
         pd_name: str(d[F.name]),
+        pd_code: normalizeProductCode(d[F.code]),
         pd_price1: prices.pd_price1,
         pd_price2: prices.pd_price2,
         pd_price3: prices.pd_price3,
@@ -221,6 +231,9 @@ function buildFromBody(body, existing) {
     const prev = fromLegacyDoc(existing) || {};
     const prices = parsePricesFromBody(body, existing);
     const pd_name = str(body.pd_name != null ? body.pd_name : body.title);
+    const pd_code = normalizeProductCode(
+        body.pd_code != null ? body.pd_code : prev[F.code] != null ? prev[F.code] : ""
+    );
     const pd_explain = str(body.pd_explain != null ? body.pd_explain : body.content);
     const pd_size = str(body.pd_size != null ? body.pd_size : body.spec);
     let pd_image =
@@ -248,6 +261,7 @@ function buildFromBody(body, existing) {
 
     return {
         pd_name,
+        pd_code,
         pd_explain,
         pd_size,
         pd_dept,
@@ -268,6 +282,7 @@ function toDbDoc(id, built, existing) {
     const doc = {
         id,
         [F.name]: built.pd_name,
+        [F.code]: built.pd_code,
         [F.price1]: built.pd_price1,
         [F.price2]: built.pd_price2,
         [F.price3]: built.pd_price3,
@@ -313,6 +328,9 @@ async function findDuplicateProductByName(db, name, excludeId, dept, registeredB
 }
 
 function validateBuilt(built, requireImage) {
+    if (built.pd_code && built.pd_code.length > PRODUCT_CODE_MAX_LEN) {
+        return "상품 코드는 16자 이내로 입력해 주세요.";
+    }
     if (!built.pd_name) return "상품 명칭을 입력해 주세요.";
     if (!built.pd_explain) return "상품 설명을 입력해 주세요.";
     const prices = [built.pd_price1, built.pd_price2, built.pd_price3, built.pd_price4];
@@ -400,6 +418,8 @@ async function migrateProductsCollection(db) {
 
 module.exports = {
     F,
+    PRODUCT_CODE_MAX_LEN,
+    normalizeProductCode,
     PRICE_KEYS,
     toPublic,
     toPublicListItem,

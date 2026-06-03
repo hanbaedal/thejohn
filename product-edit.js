@@ -22,6 +22,7 @@
     var editIdInput = document.getElementById("pe-edit-id");
     var deptHidden = document.getElementById("pe-pd-dept");
     var deptPickerRoot = document.getElementById("pe-dept-picker");
+    var codeInput = document.getElementById("pe-pd-code");
     var nameInput = document.getElementById("pe-pd-name");
     var photoPreview = document.getElementById("pe-photo-preview");
     var photoPicker = null;
@@ -80,6 +81,7 @@
     function fillFormFromItem(it) {
         if (!it) return;
         editIdInput.value = it.id;
+        if (codeInput) codeInput.value = it.pd_code || "";
         nameInput.value = it.pd_name || "";
         explainInput.value = it.pd_explain || "";
         price1Input.value = String(it.pd_price1 != null ? it.pd_price1 : 0);
@@ -158,6 +160,7 @@
             return;
         }
         var body = {
+            pd_code: codeInput ? codeInput.value.trim() : "",
             pd_name: nameInput.value.trim(),
             pd_explain: explainInput.value.trim(),
             pd_size: sizeInput.value.trim(),

@@ -7,6 +7,7 @@
     var statusEl = document.getElementById("pr-status");
     var deptHidden = document.getElementById("pr-pd-dept");
     var deptPickerRoot = document.getElementById("pr-dept-picker");
+    var codeInput = document.getElementById("pr-pd-code");
     var nameInput = document.getElementById("pr-pd-name");
     var photoPreview = document.getElementById("pr-photo-preview");
     var photoPicker = null;
@@ -93,6 +94,7 @@
     form.addEventListener("submit", function (e) {
         e.preventDefault();
         var body = {
+            pd_code: codeInput ? codeInput.value.trim() : "",
             pd_name: nameInput.value.trim(),
             pd_explain: explainInput.value.trim(),
             pd_size: sizeInput ? sizeInput.value.trim() : "",
