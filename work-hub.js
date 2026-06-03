@@ -67,21 +67,38 @@
         });
     }
 
-    function applyMenus() {
-        if (!Auth || !Auth.canAccessWorkHubMenu) return;
+    function hubMenuAllowed(menuKey) {
+        if (!Auth || !Auth.getWorkHubAccess) return false;
+        if (!Auth.getWorkHubAccess().allowed) return false;
+        if (Auth.canAccessWorkHubMenu) return Auth.canAccessWorkHubMenu(menuKey);
         var role = Auth.getRole ? Auth.getRole() : "";
-        var staff = Auth.isStaffRole && Auth.isStaffRole(role);
-        var access = Auth.getWorkHubAccess ? Auth.getWorkHubAccess() : { allowed: false };
+        if (menuKey === "view-home" || menuKey === "manage-home") {
+            return Auth.isStaffRole && Auth.isStaffRole(role);
+        }
+        if (menuKey === "product-manage" || menuKey === "vendor-manage") {
+            return Auth.isStaffRole && Auth.isStaffRole(role);
+        }
+        if (menuKey === "work-manage") return role === "supervisor";
+        if (menuKey === "order-manage") {
+            if (role === "supervisor") return true;
+            return (
+                role === "admin" &&
+                Auth.isStaffOrderEnabled &&
+                Auth.isStaffOrderEnabled()
+            );
+        }
+        return false;
+    }
+
+    function applyMenus() {
+        if (!Auth || !Auth.getWorkHubAccess) return;
+        var access = Auth.getWorkHubAccess();
+        if (!access.allowed) return;
 
         var cards = document.querySelectorAll("[data-wh-menu]");
         cards.forEach(function (card) {
             var key = card.getAttribute("data-wh-menu");
-            var allowed = false;
-            if (staff && (key === "view-home" || key === "manage-home")) {
-                allowed = true;
-            } else if (access.allowed) {
-                allowed = Auth.canAccessWorkHubMenu(key);
-            }
+            var allowed = hubMenuAllowed(key);
             card.hidden = !allowed;
             if (!allowed) {
                 card.setAttribute("aria-hidden", "true");

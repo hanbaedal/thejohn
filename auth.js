@@ -1837,8 +1837,9 @@
     function canAccessWorkHubMenu(menuKey) {
         if (!getWorkHubAccess().allowed) return false;
         if (menuKey === "view-home" || menuKey === "manage-home") return true;
+        /* 허브 진입 가능한 관리자·슈퍼바이저 — 상품·업체 카드 표시 (하위 페이지는 기존 권한 유지) */
         if (menuKey === "product-manage" || menuKey === "vendor-manage") {
-            return canManageRegisters();
+            return isStaffRole(getRole());
         }
         if (menuKey === "work-manage") return isSupervisorStaff();
         if (menuKey === "order-manage") {
