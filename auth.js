@@ -458,12 +458,13 @@
     ) {
         authSet(AUTH_KEY, "1");
         authSet(USER_ID_KEY, userId || "");
-        authSet(ROLE_KEY, role || "");
+        var roleNorm = normalizeLoginRole(role) || String(role || "").trim();
+        authSet(ROLE_KEY, roleNorm);
         try {
             if (userId) localStorage.setItem(LOGIN_ID_HINT_KEY, userId);
         } catch (e) {}
         authSet("thejhon_auth_provider", "form");
-        if (role === "vendor") {
+        if (roleNorm === "vendor") {
             authSet(VENDOR_GRADE_KEY, parseVendorGrade(vendorGrade));
             var regBy = String(vendorRegisteredBy || "").trim();
             if (regBy) authSet(VENDOR_REGISTERED_BY_KEY, regBy);
@@ -485,19 +486,19 @@
             authRemove(VENDOR_MGR_TEL_KEY);
             authRemove(VENDOR_MGR_EMAIL_KEY);
         }
-        if (role === "admin" && staffOrderEnabled) {
+        if (roleNorm === "admin" && staffOrderEnabled) {
             authSet(STAFF_ORDER_ENABLED_KEY, "1");
         } else {
             authRemove(STAFF_ORDER_ENABLED_KEY);
         }
-        if (isStaffRole(role)) {
+        if (isStaffRole(roleNorm)) {
             staffNavSet("hub");
         } else {
             staffNavClear();
         }
         var label = companyName || "";
         var brandLabel = String(brandCompanyName || "").trim();
-        if (role === "vendor") {
+        if (roleNorm === "vendor") {
             if (label) {
                 authSet(COMPANY_KEY, label);
                 authSet(DISPLAY_KEY, label);
@@ -510,7 +511,7 @@
             } else {
                 authRemove(BRAND_COMPANY_KEY);
             }
-        } else if (isStaffRole(role)) {
+        } else if (isStaffRole(roleNorm)) {
             if (label) {
                 authSet(COMPANY_KEY, label);
                 authSet(DISPLAY_KEY, label);
@@ -528,8 +529,8 @@
             authRemove(BRAND_COMPANY_KEY);
         }
         if (global.THEJHON_API && THEJHON_API.setToken) THEJHON_API.setToken(token || "");
-        if (usesStaffLogoRole(role)) {
-            var headerLabel = role === "vendor" ? label || brandLabel : brandLabel || label;
+        if (usesStaffLogoRole(roleNorm)) {
+            var headerLabel = roleNorm === "vendor" ? label || brandLabel : brandLabel || label;
             cacheStaffLogo(staffLogo, headerLabel);
             if (typeof global.__thejhonApplySiteLogo === "function") {
                 try {
@@ -1508,10 +1509,24 @@
         syncStaffOrderEnabledFromSession(sess);
     }
 
+    /** 세션 API — DB 역할·주문 권한을 클라이언트에 반영 */
+    function syncRoleFromSession(sess) {
+        if (!sessionMatchesCurrentAccount(sess)) return;
+        var r = normalizeLoginRole(sess.role);
+        if (r === "admin" || r === "supervisor" || r === "vendor" || r === "guest") {
+            authSet(ROLE_KEY, r);
+        }
+    }
+
     /** 관리자 리스트 「주문」/「비주문」 — 세션 API → 허브·발주 메뉴 */
     function syncStaffOrderEnabledFromSession(sess) {
         if (!sess || !sess.loggedIn) return;
-        if (normalizeLoginRole(sess.role) !== "admin") return;
+        var r = normalizeLoginRole(sess.role);
+        if (r === "supervisor") {
+            authRemove(STAFF_ORDER_ENABLED_KEY);
+            return;
+        }
+        if (r !== "admin") return;
         if (sess.staffOrderEnabled) {
             authSet(STAFF_ORDER_ENABLED_KEY, "1");
         } else {
@@ -1563,6 +1578,7 @@
                     return sess;
                 }
                 if (sess && sess.loggedIn && sessionMatchesCurrentAccount(sess)) {
+                    syncRoleFromSession(sess);
                     syncVendorGradeFromSessionApi(sess);
                     syncStaffOrderEnabledFromSession(sess);
                     syncSessionCompanyFromApi(sess);
@@ -1885,17 +1901,27 @@
         return { allowed: true, role: getRole() };
     }
 
+    /**
+     * work-hub 메뉴 표시 (관리자 리스트 주문/비주문 = st_order_enabled)
+     * | 메뉴                         | 슈퍼바이저 | 관리자(주문) | 관리자(비주문) |
+     * | view-home, manage-home       | ○         | ○           | ○             |
+     * | product-manage, vendor-manage| ○         | ○           | ○             |
+     * | order-manage                 | ○         | ○           | 숨김          |
+     * | work-manage                  | ○         | 숨김        | 숨김          |
+     */
     function canAccessWorkHubMenu(menuKey) {
         if (!getWorkHubAccess().allowed) return false;
         var key = String(menuKey || "").trim();
+        var role = normalizeLoginRole(getRole());
         if (key === "view-home" || key === "manage-home") return true;
         if (key === "product-manage" || key === "vendor-manage") {
-            return isStaffRole(getRole());
+            return role === "admin" || role === "supervisor";
         }
-        if (key === "work-manage") return isSupervisorStaff();
+        if (key === "work-manage") return role === "supervisor";
         if (key === "order-manage") {
-            if (isSupervisorStaff()) return true;
-            return isAdminStaff() && isStaffOrderEnabled();
+            if (role === "supervisor") return true;
+            if (role === "admin") return isStaffOrderEnabled();
+            return false;
         }
         return false;
     }

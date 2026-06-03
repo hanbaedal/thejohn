@@ -18,9 +18,16 @@
     ];
 
     var menuByKey = {};
+    var hubPermsReady = false;
     MENUS.forEach(function (item) {
         menuByKey[item.key] = item;
     });
+
+    function currentRole() {
+        return String(Auth && Auth.getRole ? Auth.getRole() : "")
+            .trim()
+            .toLowerCase();
+    }
 
     function initHubMedia() {
         var media = global.THEJHON_HOME_INTRO_MEDIA;
@@ -58,7 +65,17 @@
     }
 
     function menuAllowed(key) {
-        return !!(Auth && Auth.canAccessWorkHubMenu && Auth.canAccessWorkHubMenu(key));
+        if (!Auth || !Auth.canAccessWorkHubMenu) return false;
+        var role = currentRole();
+        if (key === "work-manage" && role !== "supervisor") return false;
+        if (key === "order-manage") {
+            if (role === "supervisor") return true;
+            if (role === "admin") {
+                return !!(Auth.isStaffOrderEnabled && Auth.isStaffOrderEnabled());
+            }
+            return false;
+        }
+        return Auth.canAccessWorkHubMenu(key);
     }
 
     function refreshHeaderCompany() {
@@ -102,6 +119,12 @@
             var key = card.getAttribute("data-wh-menu");
             var item = menuByKey[key];
             var allowed = hubOk && menuAllowed(key);
+            if (
+                !hubPermsReady &&
+                (key === "order-manage" || key === "work-manage")
+            ) {
+                allowed = false;
+            }
             setCardVisible(card, allowed);
             if (!allowed || !item) return;
             card.href = menuHref(item);
@@ -126,6 +149,8 @@
 
         setStatus("");
         if (Auth.setStaffNavMode) Auth.setStaffNavMode("hub");
+        hubPermsReady = false;
+        if (gridEl) gridEl.classList.add("wh-menu-await-perms");
         applyMenus();
         refreshHeaderCompany();
 
@@ -139,11 +164,16 @@
         if (Auth.refreshBrandFromStaffProfileAsync) {
             tasks.push(Auth.refreshBrandFromStaffProfileAsync());
         }
+        function finishPerms() {
+            hubPermsReady = true;
+            if (gridEl) gridEl.classList.remove("wh-menu-await-perms");
+            applyMenus();
+            refreshHeaderCompany();
+        }
         if (tasks.length) {
-            Promise.all(tasks).then(function () {
-                applyMenus();
-                refreshHeaderCompany();
-            });
+            Promise.all(tasks).then(finishPerms).catch(finishPerms);
+        } else {
+            finishPerms();
         }
     }
 

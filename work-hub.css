@@ -153,6 +153,23 @@ body.page-work-hub .header-session-company--hub[hidden] {
     gap: 0.85rem;
 }
 
+/* 권한 확인 전 — 주문·업무 메뉴는 노출하지 않음 */
+.wh-menu-grid.wh-menu-await-perms [data-wh-menu="order-manage"],
+.wh-menu-grid.wh-menu-await-perms [data-wh-menu="work-manage"] {
+    display: none !important;
+}
+
+.wh-main {
+    pointer-events: auto;
+}
+
+.wh-menu-grid a.wh-card {
+    position: relative;
+    z-index: 2;
+    pointer-events: auto;
+    cursor: pointer;
+}
+
 .wh-card {
     display: flex;
     align-items: center;
@@ -193,6 +210,28 @@ body.page-work-hub .site-footer {
     z-index: 10;
     flex: 0 0 auto;
     margin-top: auto;
+}
+
+/* 배경음악 — index와 동일 아이콘, 우하단 고정 (메뉴 클릭 방해 없음) */
+body.page-work-hub .wh-bgm-wrap {
+    position: fixed;
+    right: max(0.75rem, env(safe-area-inset-right, 0));
+    bottom: max(0.75rem, env(safe-area-inset-bottom, 0));
+    z-index: 50;
+    pointer-events: none;
+}
+
+body.page-work-hub .wh-bgm-wrap .home-bgm-toggle,
+body.page-work-hub .wh-bgm-wrap .home-bgm-hint {
+    pointer-events: auto;
+}
+
+body.page-work-hub audio#whHubBgm {
+    position: fixed;
+    width: 0;
+    height: 0;
+    opacity: 0;
+    pointer-events: none;
 }
 
 @media (max-width: 720px) {

@@ -235,6 +235,7 @@ router.get("/session", async function (req, res) {
         }
         var vendorOrderEnabled = !!payload.vendorOrderEnabled;
         var staffOrderEnabled = !!payload.staffOrderEnabled;
+        var effectiveRole = String(payload.role || "").trim();
         var companyName = "";
         var brandCompanyName = "";
         var displayName = "";
@@ -262,11 +263,17 @@ router.get("/session", async function (req, res) {
                     }
                 } else if (payload.role === "admin" || payload.role === "supervisor") {
                     const staff = await findStaffByLoginId(payload.userId || "");
-                    staffOrderEnabled = staffOrderEnabledFromDoc(staff);
                     if (staff) {
+                        const dbRole = String(staff.role || "").trim().toLowerCase();
+                        if (dbRole === "admin" || dbRole === "supervisor") {
+                            effectiveRole = dbRole;
+                        }
+                        staffOrderEnabled = staffOrderEnabledFromDoc(staff);
                         companyName = getStaffCompanyName(staff);
                         brandCompanyName = companyName;
                         displayName = companyName || payload.userId || "";
+                    } else {
+                        staffOrderEnabled = false;
                     }
                 }
             } catch (refreshErr) {
@@ -276,7 +283,7 @@ router.get("/session", async function (req, res) {
         return res.json({
             ok: true,
             loggedIn: true,
-            role: payload.role,
+            role: effectiveRole,
             userId: payload.userId,
             vendorGrade: payload.vendorGrade || "",
             vendorRegisteredBy: payload.vendorRegisteredBy || "",
