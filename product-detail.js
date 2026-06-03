@@ -128,19 +128,26 @@
         });
     }
 
+    function productHasPhoto(it) {
+        if (!it) return false;
+        return !!(it.pd_has_image || (it.pd_image_count && it.pd_image_count > 0));
+    }
+
+    /** 사진은 항상 /images API로 전체 로드(여러 장·pd_image 1장만 표시 방지) */
     function heroHtml(it) {
-        if (it.pd_image) {
-            return (
-                '<img class="pd-hero-img" src="' +
-                escapeHtml(it.pd_image) +
-                '" alt="">'
-            );
-        }
-        if (it.pd_has_image || (it.pd_image_count && it.pd_image_count > 0)) {
+        if (productHasPhoto(it)) {
             return (
                 '<div class="pd-hero-img pd-hero-img--empty" data-pd-gallery="' +
                 escapeHtml(it.id) +
                 '" role="img" aria-label="사진 로딩">사진 불러오는 중…</div>'
+            );
+        }
+        var legacy = String(it.pd_image || "").trim();
+        if (legacy && !/^data:/i.test(legacy)) {
+            return (
+                '<img class="pd-hero-img" src="' +
+                escapeHtml(legacy) +
+                '" alt="">'
             );
         }
         return (
@@ -238,19 +245,24 @@
 
     function loadProductGalleries(container) {
         if (!api || !api.get || !container) return;
-        container.querySelectorAll("[data-pd-gallery]").forEach(function (el) {
-            var id = el.getAttribute("data-pd-gallery");
+        container.querySelectorAll("article[data-product-id]").forEach(function (article) {
+            var el = article.querySelector("[data-pd-gallery]");
+            if (!el) return;
+            var id = article.getAttribute("data-product-id") || el.getAttribute("data-pd-gallery");
             if (!id) return;
+            var wrap = el.closest(".pd-hero-wrap");
+            if (!wrap || !wrap.contains(el)) return;
             api.get("api/products/" + encodeURIComponent(id) + "/images")
                 .then(function (data) {
+                    if (!document.body.contains(article)) return;
                     var imgs = (data && data.images) || [];
                     if (!imgs.length) {
                         el.textContent = "사진 없음";
                         return;
                     }
-                    var wrap = el.closest(".pd-hero-wrap");
-                    if (!wrap) return;
-                    wrap.innerHTML = "";
+                    var liveWrap = el.closest(".pd-hero-wrap");
+                    if (!liveWrap || liveWrap !== wrap) return;
+                    liveWrap.innerHTML = "";
                     var scroll = document.createElement("div");
                     scroll.className = "pd-hero-scroll";
                     scroll.setAttribute("role", "region");
@@ -265,18 +277,18 @@
                         slide.appendChild(img);
                         scroll.appendChild(slide);
                     });
-                    wrap.appendChild(scroll);
+                    liveWrap.appendChild(scroll);
                     if (imgs.length > 1) {
-                        attachHeroClickZones(wrap, scroll, imgs.length);
+                        attachHeroClickZones(liveWrap, scroll, imgs.length);
                         var hint = document.createElement("p");
                         hint.className = "pd-hero-scroll-hint";
                         hint.textContent =
                             "사진 왼쪽·오른쪽을 누르거나 좌우로 밀어 넘겨 보세요";
-                        wrap.appendChild(hint);
+                        liveWrap.appendChild(hint);
                     }
                 })
                 .catch(function () {
-                    el.textContent = "사진 없음";
+                    if (document.body.contains(el)) el.textContent = "사진 없음";
                 });
         });
     }
@@ -318,10 +330,6 @@
         loadProductGalleries(root);
         bindProductInfoButtons(root);
         bindDetailOrders(items);
-
-        requestAnimationFrame(function () {
-            scrollToProduct(focusId);
-        });
     }
 
     function renderSingle(it) {
@@ -347,41 +355,19 @@
                     showMissing("해당 상품이 없거나 삭제되었습니다.");
                     return;
                 }
-                var dept = it.pd_dept && String(it.pd_dept).trim();
-                var listHref = productsListHref(it);
-                if (!dept || !api.listProducts) {
-                    renderSingle(it);
-                    return;
+                if (it.pd_has_image == null && it.pd_image_count == null && it.pd_image) {
+                    it.pd_has_image = true;
+                    it.pd_image_count = 1;
                 }
-                return api.listProducts({ dept: dept }).then(function (items) {
-                    var list = (items || []).filter(function (row) {
-                        return row && row.id;
-                    });
-                    if (!list.length) {
-                        renderSingle(it);
-                        return;
-                    }
-                    var found = list.some(function (row) {
-                        return row.id === it.id;
-                    });
-                    if (!found) list.unshift(it);
-                    list = list.map(function (row) {
-                        if (row.id !== it.id) return row;
-                        return Object.assign({}, row, {
-                            per_name: it.per_name || row.per_name,
-                            "per-number": it["per-number"] || row["per-number"],
-                            "per-email": it["per-email"] || row["per-email"],
-                            pd_registered_by_name:
-                                it.pd_registered_by_name || row.pd_registered_by_name,
-                            pd_registered_by: it.pd_registered_by || row.pd_registered_by
-                        });
-                    });
-                    renderFeed(list, it.id, listHref);
-                });
+                renderSingle(it);
             })
             .catch(function (err) {
                 showMissing((err && err.message) || "상품 정보를 불러오지 못했습니다.");
             });
+    }
+
+    if (window.THEJHON_PRODUCT_INFO && THEJHON_PRODUCT_INFO.ensureModal) {
+        THEJHON_PRODUCT_INFO.ensureModal();
     }
 
     render();

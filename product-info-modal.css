@@ -75,32 +75,36 @@
 .pinfo-modal--readonly .pinfo-modal__foot {
     display: none;
 }
-.pinfo-modal--readonly .pinfo-row__input input,
-.pinfo-modal--readonly .pinfo-row__input textarea {
-    border: none;
-    background: #f8fafc;
-    resize: none;
-    color: #1e3a52;
-    cursor: default;
-}
 .pinfo-modal--readonly .pinfo-row {
-    align-items: start;
+    align-items: stretch;
 }
 .pinfo-modal--readonly .pinfo-row__label {
     align-items: center;
     justify-content: center;
     text-align: center;
-    padding-top: 0.55rem;
     line-height: 1.35;
+}
+.pinfo-modal--readonly .pinfo-row__input {
+    padding: 0.45rem 0.55rem;
+    background: #fff;
 }
 .pinfo-modal--readonly .pinfo-row__input input,
 .pinfo-modal--readonly .pinfo-row__input textarea {
+    border: none;
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+    resize: none;
+    color: #1e3a52;
+    cursor: default;
     line-height: 1.5;
     white-space: pre-wrap;
     word-break: break-word;
+    padding: 0;
+    margin: 0;
 }
 .pinfo-modal--readonly .pinfo-row__input textarea {
-    min-height: 2.75rem;
+    min-height: 2.5rem;
 }
 .pinfo-modal--readonly .pinfo-row__input input::placeholder,
 .pinfo-modal--readonly .pinfo-row__input textarea::placeholder {
@@ -129,7 +133,7 @@
     }
     .pinfo-modal--readonly .pinfo-row {
         grid-template-columns: minmax(5.25rem, 32%) minmax(0, 1fr);
-        align-items: start;
+        align-items: stretch;
     }
     .pinfo-modal--readonly .pinfo-row__label {
         border-right: 1px solid #d4e0eb;
@@ -144,15 +148,15 @@
         justify-content: center;
     }
     .pinfo-modal--readonly .pinfo-row__input {
-        padding: 0.4rem 0.45rem 0.45rem 0.35rem;
+        padding: 0.4rem 0.45rem;
     }
     .pinfo-modal--readonly .pinfo-row__input input,
     .pinfo-modal--readonly .pinfo-row__input textarea {
         font-size: 0.8rem;
         line-height: 1.48;
-        padding: 0.3rem 0.35rem;
-        background: #fff;
-        border-radius: 4px;
+        padding: 0;
+        background: transparent;
+        border-radius: 0;
     }
     .pinfo-modal--readonly .pinfo-row__input textarea {
         min-height: 2.5rem;

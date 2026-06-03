@@ -62,9 +62,21 @@ function emptyValues() {
     return o;
 }
 
+function notesHasMandatory(text) {
+    const t = String(text || "");
+    return t.includes("공정거래위원회 고시 소비자 분쟁해결") && t.includes("1399");
+}
+
+function ensureMandatoryNotes(notes) {
+    const text = str(notes);
+    if (!text) return DEFAULT_NOTES;
+    if (notesHasMandatory(text)) return text.slice(0, 4000);
+    return (text + "\n\n" + DEFAULT_NOTES).slice(0, 4000);
+}
+
 function withDefaultNotes(values) {
     const o = Object.assign(emptyValues(), values || {});
-    if (!str(o.notes)) o.notes = DEFAULT_NOTES;
+    o.notes = ensureMandatoryNotes(o.notes);
     return o;
 }
 
@@ -74,7 +86,7 @@ function buildFromBody(body) {
     FIELD_DEFS.forEach(function (def) {
         if (body[def.key] != null) values[def.key] = str(body[def.key]).slice(0, def.max);
     });
-    return values;
+    return withDefaultNotes(values);
 }
 
 function valuesToDb(values) {

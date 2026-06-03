@@ -34,9 +34,22 @@
         return o;
     }
 
+    function notesHasMandatory(text) {
+        var t = String(text || "");
+        return t.indexOf("공정거래위원회 고시 소비자 분쟁해결") >= 0 && t.indexOf("1399") >= 0;
+    }
+
+    /** 확인사항 — 법정 고지 문구는 항상 포함 */
+    function ensureMandatoryNotes(notes) {
+        var text = String(notes || "").trim();
+        if (!text) return DEFAULT_NOTES;
+        if (notesHasMandatory(text)) return text;
+        return text + "\n\n" + DEFAULT_NOTES;
+    }
+
     function withDefaultNotes(values) {
         var o = Object.assign(emptyValues(), values || {});
-        if (!String(o.notes || "").trim()) o.notes = DEFAULT_NOTES;
+        o.notes = ensureMandatoryNotes(o.notes);
         return o;
     }
 
@@ -92,7 +105,12 @@
     };
 
     function ensureModal() {
-        if (modalEl) return modalEl;
+        if (modalEl && formEl) return modalEl;
+        if (modalEl) {
+            formEl = document.getElementById("pinfoForm");
+            statusEl = document.getElementById("pinfoModalStatus");
+            return modalEl;
+        }
         modalEl = document.createElement("div");
         modalEl.id = "pinfoModal";
         modalEl.className = "pinfo-modal";
@@ -202,7 +220,7 @@
 
     function fillForm(values, options) {
         options = options || {};
-        values = values || emptyValues();
+        values = withDefaultNotes(values || {});
         if (!formEl) return;
         formEl.querySelectorAll("[data-pinfo-key]").forEach(function (el) {
             var key = el.getAttribute("data-pinfo-key");
@@ -237,7 +255,7 @@
     }
 
     function applyFromForm() {
-        state.values = readFormValues();
+        state.values = withDefaultNotes(readFormValues());
         if (state.productId && state.api && state.api.saveProductInfo) {
             setModalStatus("저장 중…");
             state.api
@@ -286,7 +304,7 @@
         setModalTitle(MODAL_TITLE_VIEW);
         setReadOnlyMode(true);
         state.productId = productId;
-        fillForm(applyProductContext(emptyValues(), opts), { emptyPlaceholder: true });
+        fillForm(applyProductContext(emptyValues(), opts), { emptyPlaceholder: false });
         setModalStatus("불러오는 중…");
         modalEl.hidden = false;
         document.body.style.overflow = "hidden";
@@ -308,12 +326,12 @@
                     opts
                 );
                 setValues(values);
-                fillForm(state.values, { emptyPlaceholder: true });
+                fillForm(state.values, { emptyPlaceholder: false });
                 setModalStatus("");
             })
             .catch(function () {
                 setValues(applyProductContext(emptyValues(), opts));
-                fillForm(state.values, { emptyPlaceholder: true });
+                fillForm(state.values, { emptyPlaceholder: false });
                 setModalStatus("");
             });
     }
@@ -399,13 +417,14 @@
                 api.deleteProductInfo(productId).catch(function () {})
             :   Promise.resolve();
         }
-        return api.saveProductInfo(productId, state.values);
+        return api.saveProductInfo(productId, withDefaultNotes(state.values));
     }
 
     global.THEJHON_PRODUCT_INFO = {
         FIELD_DEFS: FIELD_DEFS,
         emptyValues: emptyValues,
         hasAnyValue: hasAnyValue,
+        ensureModal: ensureModal,
         bindOpenButton: bindOpenButton,
         openReadOnly: openReadOnly,
         open: open,

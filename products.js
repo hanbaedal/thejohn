@@ -64,11 +64,21 @@
     }
 
     function cardPhotoHtml(it) {
+        var count = Number(it.pd_image_count);
+        var countBadge =
+            it.pd_has_image && isFinite(count) && count > 1 ?
+                '<span class="ps-photo-count" title="등록 사진 ' + count + '장">' +
+                count +
+                "장</span>"
+            :   "";
         if (it.pd_has_image) {
             return (
+                '<div class="ps-card-photo-wrap">' +
                 '<img class="ps-card-photo ps-card-photo--loading" alt="" loading="lazy" data-ps-cover="' +
                 escapeHtml(it.id) +
-                '">'
+                '">' +
+                countBadge +
+                "</div>"
             );
         }
         return (
