@@ -1,0 +1,88 @@
+/* 인트로 영상·배경음악 — index, work-hub 공통 */
+.home-intro,
+.wh-hub-intro {
+    position: relative;
+    width: 100%;
+    overflow: hidden;
+    background: #0a1a2e;
+}
+
+.home-intro-media,
+.wh-hub-intro-media {
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+}
+
+.home-intro-video,
+.wh-hub-intro .home-intro-video {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
+.home-intro-overlay,
+.wh-hub-intro-overlay {
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    background: linear-gradient(
+        180deg,
+        rgba(255, 255, 255, 0.72) 0%,
+        rgba(255, 255, 255, 0.55) 45%,
+        rgba(255, 255, 255, 0.65) 100%
+    );
+    pointer-events: none;
+}
+
+.home-bgm-wrap {
+    position: absolute;
+    right: max(0.75rem, env(safe-area-inset-right, 0));
+    bottom: max(0.75rem, env(safe-area-inset-bottom, 0));
+    z-index: 3;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 0.35rem;
+}
+
+.home-bgm-toggle {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.5rem;
+    height: 2.5rem;
+    padding: 0;
+    border: 2px solid rgba(10, 77, 156, 0.35);
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.92);
+    color: var(--dz-blue, #0a4d9c);
+    cursor: pointer;
+    font-family: inherit;
+    box-shadow: 0 2px 10px rgba(10, 40, 80, 0.12);
+}
+
+.home-bgm-toggle:hover {
+    background: #fff;
+}
+
+.home-bgm-toggle svg {
+    display: block;
+}
+
+.home-bgm-hint {
+    margin: 0;
+    font-size: 0.68rem;
+    color: #3d5166;
+    background: rgba(255, 255, 255, 0.88);
+    padding: 0.2rem 0.45rem;
+    border-radius: 4px;
+    max-width: 10rem;
+    text-align: right;
+    line-height: 1.35;
+}
+
+.home-bgm-hint[hidden] {
+    display: none !important;
+}

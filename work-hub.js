@@ -1,72 +1,16 @@
 (function () {
     var Auth = window.THEJHON_AUTH;
     var statusEl = document.getElementById("wh-status");
-    var videoEl = document.getElementById("whHubVideo");
-    var musicEl = document.getElementById("whHubMusic");
-    var musicBtn = document.getElementById("whMusicToggle");
-    var musicLabel = document.getElementById("whMusicToggleLabel");
-    var musicStarted = false;
 
     function initHubMedia() {
-        if (videoEl) {
-            videoEl.muted = true;
-            var playVideo = function () {
-                var p = videoEl.play();
-                if (p && typeof p.catch === "function") p.catch(function () {});
-            };
-            if (videoEl.readyState >= 2) playVideo();
-            else videoEl.addEventListener("loadeddata", playVideo, { once: true });
-        }
-
-        if (!musicEl || !musicBtn) return;
-
-        function setMusicUi(playing) {
-            musicBtn.setAttribute("aria-pressed", playing ? "true" : "false");
-            musicBtn.setAttribute("aria-label", playing ? "배경음악 끄기" : "배경음악 켜기");
-            if (musicLabel) {
-                musicLabel.textContent = playing ? "배경음악 끄기" : "배경음악 켜기";
-            }
-        }
-
-        function tryPlayMusic() {
-            musicEl.volume = 0.45;
-            return musicEl.play().then(function () {
-                musicStarted = true;
-                setMusicUi(true);
-            });
-        }
-
-        function pauseMusic() {
-            musicEl.pause();
-            setMusicUi(false);
-        }
-
-        musicBtn.addEventListener("click", function () {
-            if (musicEl.paused) {
-                tryPlayMusic().catch(function () {
-                    setMusicUi(false);
-                });
-            } else {
-                pauseMusic();
-            }
-        });
-
-        function startMusicOnce() {
-            if (musicStarted || !musicEl.paused) return;
-            tryPlayMusic().catch(function () {});
-        }
-
-        document.addEventListener(
-            "pointerdown",
-            function onFirstInteract() {
-                startMusicOnce();
-                document.removeEventListener("pointerdown", onFirstInteract);
-            },
-            { once: true, passive: true }
-        );
-
-        tryPlayMusic().catch(function () {
-            setMusicUi(false);
+        if (!global.THEJHON_HOME_INTRO_MEDIA || !THEJHON_HOME_INTRO_MEDIA.init) return;
+        THEJHON_HOME_INTRO_MEDIA.init({
+            videoSelector: ".wh-hub-intro .home-intro-video",
+            introSelector: ".wh-hub-intro",
+            bgmId: "whHubMusic",
+            bgmBtnId: "whBgmToggle",
+            bgmHintId: "whBgmHint",
+            volume: 0.28
         });
     }
 

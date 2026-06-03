@@ -11,6 +11,7 @@
     <meta name="apple-mobile-web-app-title" content="더존">
     <title>더존</title>
     <link rel="stylesheet" href="common.css">
+    <link rel="stylesheet" href="home-intro-media.css">
     <style>
         .company-main--home {
             justify-content: center;
@@ -23,38 +24,11 @@
             flex-direction: column;
         }
         .home-intro {
-            position: relative;
-            width: 100%;
             flex: 1;
             min-height: min(72vh, calc(100dvh - 11rem));
             display: flex;
             align-items: center;
             justify-content: center;
-            overflow: hidden;
-            background: #0a1a2e;
-        }
-        .home-intro-media {
-            position: absolute;
-            inset: 0;
-            z-index: 0;
-        }
-        .home-intro-video {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-            display: block;
-        }
-        .home-intro-overlay {
-            position: absolute;
-            inset: 0;
-            z-index: 1;
-            background: linear-gradient(
-                180deg,
-                rgba(255, 255, 255, 0.72) 0%,
-                rgba(255, 255, 255, 0.55) 45%,
-                rgba(255, 255, 255, 0.65) 100%
-            );
-            pointer-events: none;
         }
         .home-intro-copy {
             position: relative;
@@ -68,51 +42,6 @@
         }
         .home-intro-copy .company-taglines p {
             text-shadow: 0 1px 8px rgba(255, 255, 255, 0.85);
-        }
-        .home-bgm-wrap {
-            position: absolute;
-            right: max(0.75rem, env(safe-area-inset-right, 0));
-            bottom: max(0.75rem, env(safe-area-inset-bottom, 0));
-            z-index: 3;
-            display: flex;
-            flex-direction: column;
-            align-items: flex-end;
-            gap: 0.35rem;
-        }
-        .home-bgm-toggle {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            width: 2.5rem;
-            height: 2.5rem;
-            padding: 0;
-            border: 2px solid rgba(10, 77, 156, 0.35);
-            border-radius: 50%;
-            background: rgba(255, 255, 255, 0.92);
-            color: var(--dz-blue);
-            cursor: pointer;
-            font-family: inherit;
-            box-shadow: 0 2px 10px rgba(10, 40, 80, 0.12);
-        }
-        .home-bgm-toggle:hover {
-            background: #fff;
-        }
-        .home-bgm-toggle svg {
-            display: block;
-        }
-        .home-bgm-hint {
-            margin: 0;
-            font-size: 0.68rem;
-            color: #3d5166;
-            background: rgba(255, 255, 255, 0.88);
-            padding: 0.2rem 0.45rem;
-            border-radius: 4px;
-            max-width: 10rem;
-            text-align: right;
-            line-height: 1.35;
-        }
-        .home-bgm-hint[hidden] {
-            display: none !important;
         }
         /* index — 로그인 전 placeholder만 숨김 (게스트·관리자·슈퍼바이저 포함 로그인 시 표시) */
         html.page-home-doc:not(.site-brand-has-logo):not(.site-brand-active) .dz-logo-img {
@@ -297,6 +226,7 @@
             <p class="site-footer-company-msg" id="siteFooterCompanyMsg" hidden></p>
 </div>
     </footer>
+    <script src="home-intro-media.js"></script>
     <script>
         (function () {
             var todayEl = document.getElementById("headerToday");
@@ -386,101 +316,9 @@
             }
             window.addEventListener("pageshow", syncHomeHeaderLogo);
 
-            (function homeIntroMedia() {
-                var video = document.querySelector(".home-intro-video");
-                if (video) {
-                    video.muted = true;
-                    var playV = function () {
-                        var p = video.play();
-                        if (p && p.catch) p.catch(function () {});
-                    };
-                    playV();
-                    document.addEventListener("visibilitychange", function () {
-                        if (!document.hidden) playV();
-                    });
-                }
-
-                var bgm = document.getElementById("homeBgm");
-                var bgmBtn = document.getElementById("homeBgmToggle");
-                var bgmHint = document.getElementById("homeBgmHint");
-                var homeIntro = document.querySelector(".home-intro");
-                if (!bgm || !bgmBtn) return;
-
-                var bgmReady = false;
-                var bgmOn = false;
-                var iconOn = bgmBtn.querySelector(".home-bgm-icon-on");
-                var iconOff = bgmBtn.querySelector(".home-bgm-icon-off");
-
-                function setBgmUi() {
-                    bgmBtn.setAttribute("aria-label", bgmOn ? "배경음악 끄기" : "배경음악 켜기");
-                    bgmBtn.title = bgmOn ? "배경음악 끄기" : "배경음악 켜기";
-                    if (iconOn) iconOn.hidden = !bgmOn;
-                    if (iconOff) iconOff.hidden = bgmOn;
-                    if (bgmHint) bgmHint.hidden = bgmOn || !bgmReady;
-                }
-
-                function markBgmReady() {
-                    bgmReady = true;
-                    bgmBtn.hidden = false;
-                    setBgmUi();
-                }
-
-                function playBgm() {
-                    if (!bgmReady) return;
-                    var p = bgm.play();
-                    if (p && p.then) {
-                        p.then(function () {
-                            bgmOn = true;
-                            setBgmUi();
-                        }).catch(function () {});
-                    } else {
-                        bgmOn = true;
-                        setBgmUi();
-                    }
-                }
-
-                function pauseBgm() {
-                    bgm.pause();
-                    bgmOn = false;
-                    setBgmUi();
-                }
-
-                bgm.volume = 0.28;
-
-                bgm.addEventListener("loadeddata", markBgmReady);
-                bgm.addEventListener("canplaythrough", markBgmReady);
-                bgm.addEventListener("error", function () {
-                    bgmReady = false;
-                    bgmBtn.hidden = true;
-                    if (bgmHint) {
-                        bgmHint.textContent = "배경음악을 불러오지 못했습니다.";
-                        bgmHint.hidden = false;
-                    }
-                });
-
-                if (bgm.readyState >= 2) markBgmReady();
-
-                function toggleBgm() {
-                    if (!bgmReady) return;
-                    if (bgmOn) pauseBgm();
-                    else playBgm();
-                }
-
-                bgmBtn.addEventListener("click", function (e) {
-                    e.stopPropagation();
-                    toggleBgm();
-                });
-
-                if (homeIntro) {
-                    homeIntro.addEventListener("click", function (e) {
-                        if (e.target.closest(".home-bgm-wrap")) return;
-                        if (!bgmReady || bgmOn) return;
-                        playBgm();
-                    });
-                }
-
-                setBgmUi();
-            })();
+            if (window.THEJHON_HOME_INTRO_MEDIA && THEJHON_HOME_INTRO_MEDIA.init) {
+                THEJHON_HOME_INTRO_MEDIA.init();
+            }
 
             try {
                 var sp = new URLSearchParams(window.location.search);

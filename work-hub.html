@@ -12,6 +12,7 @@
     <title>그룹 마케팅 관리 — 더존</title>
     <link rel="stylesheet" href="common.css">
     <link rel="stylesheet" href="staff-hub.css">
+    <link rel="stylesheet" href="home-intro-media.css">
     <link rel="stylesheet" href="work-hub.css">
     <script src="api-config.js"></script>
     <script src="thejhon-api.js"></script>
@@ -37,60 +38,53 @@
         </div>
 
         <div class="wh-hub-shell">
-            <section class="wh-hub-video-wrap" aria-label="소개 영상">
-                <video
-                    class="wh-hub-video"
-                    id="whHubVideo"
-                    src="img/hub_intro.mp4"
-                    playsinline
-                    autoplay
-                    loop
-                    muted
-                    controls
-                    preload="auto"
-                    poster=""
-                >
-                    브라우저가 동영상을 지원하지 않습니다.
-                </video>
-            </section>
+            <section class="wh-hub-intro home-intro" aria-label="소개">
+                <div class="wh-hub-intro-media home-intro-media" aria-hidden="true">
+                    <video class="home-intro-video" autoplay muted loop playsinline preload="auto">
+                        <source src="img/hub_intro.mp4" type="video/mp4">
+                    </video>
+                </div>
+                <div class="wh-hub-intro-overlay home-intro-overlay" aria-hidden="true"></div>
 
-            <section class="wh-hub-menus" aria-label="업무 메뉴">
-                <div class="company-divisions wh-hub-rows">
-                    <div class="wh-hub-row">
-                        <a href="index.html" class="company-division-card wh-hub-card" id="wh-menu-view-home" data-wh-menu="view-home">
-                            <h2>홈페이지</h2>
-                        </a>
-                        <a href="homepage-manage-hub.html" class="company-division-card wh-hub-card" id="wh-menu-manage-home" data-wh-menu="manage-home">
-                            <h2>홈페이지 관리하기</h2>
-                        </a>
+                <section class="wh-hub-menus" aria-label="업무 메뉴">
+                    <div class="company-divisions wh-hub-rows">
+                        <div class="wh-hub-row">
+                            <a href="index.html" class="company-division-card wh-hub-card" id="wh-menu-view-home" data-wh-menu="view-home">
+                                <h2>홈페이지</h2>
+                            </a>
+                            <a href="homepage-manage-hub.html" class="company-division-card wh-hub-card" id="wh-menu-manage-home" data-wh-menu="manage-home">
+                                <h2>홈페이지 관리하기</h2>
+                            </a>
+                        </div>
+                        <div class="wh-hub-row">
+                            <a href="product-manage.html" class="company-division-card wh-hub-card" id="wh-menu-product-manage" data-wh-menu="product-manage" hidden>
+                                <h2>상품관리</h2>
+                            </a>
+                            <a href="vendor-manage.html" class="company-division-card wh-hub-card" id="wh-menu-vendor-manage" data-wh-menu="vendor-manage" hidden>
+                                <h2>업체관리</h2>
+                            </a>
+                        </div>
+                        <div class="wh-hub-row">
+                            <a href="supervisor-order-list.html" class="company-division-card wh-hub-card" id="wh-menu-order-manage" data-wh-menu="order-manage" hidden>
+                                <h2>발주서 관리</h2>
+                            </a>
+                            <a href="staff-manage-hub.html" class="company-division-card wh-hub-card" id="wh-menu-work-manage" data-wh-menu="work-manage" hidden>
+                                <h2>업무관리</h2>
+                            </a>
+                        </div>
                     </div>
-                    <div class="wh-hub-row">
-                        <a href="product-manage.html" class="company-division-card wh-hub-card" id="wh-menu-product-manage" data-wh-menu="product-manage" hidden>
-                            <h2>상품관리</h2>
-                        </a>
-                        <a href="vendor-manage.html" class="company-division-card wh-hub-card" id="wh-menu-vendor-manage" data-wh-menu="vendor-manage" hidden>
-                            <h2>업체관리</h2>
-                        </a>
-                    </div>
-                    <div class="wh-hub-row">
-                        <a href="supervisor-order-list.html" class="company-division-card wh-hub-card" id="wh-menu-order-manage" data-wh-menu="order-manage" hidden>
-                            <h2>발주서 관리</h2>
-                        </a>
-                        <a href="staff-manage-hub.html" class="company-division-card wh-hub-card" id="wh-menu-work-manage" data-wh-menu="work-manage" hidden>
-                            <h2>업무관리</h2>
-                        </a>
-                    </div>
+                </section>
+
+                <div class="home-bgm-wrap">
+                    <p class="home-bgm-hint" id="whBgmHint" hidden>인트로 영역을 누르거나 아이콘으로 배경음악</p>
+                    <button type="button" class="home-bgm-toggle" id="whBgmToggle" aria-label="배경음악 켜기" title="배경음악">
+                        <svg class="home-bgm-icon-on" width="22" height="22" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path fill="currentColor" d="M3 10v4h4l5 5V5L7 10H3zm13.5 2c0-1.77-1.02-3.29-2.5-4.03v8.06c1.48-.74 2.5-2.26 2.5-4.03zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/></svg>
+                        <svg class="home-bgm-icon-off" width="22" height="22" viewBox="0 0 24 24" aria-hidden="true" focusable="false" hidden><path fill="currentColor" d="M3.27 3L2 4.27l6.01 6.01L7 10v4h4l5 5v-6.73l4.25 4.25 1.41-1.41L3.27 3zM14 3.23v2.06c2.89.86 5 3.54 5 6.71 0 1.02-.31 1.96-.84 2.75L19.73 16c1.48-.74 2.5-2.26 2.5-4.03 0-4.01-2.99-7.86-7-8.77z"/></svg>
+                    </button>
                 </div>
             </section>
-
-            <div class="wh-hub-audio-bar">
-                <button type="button" class="wh-hub-music-btn" id="whMusicToggle" aria-pressed="false" aria-label="배경음악 켜기" title="배경음악">
-                    <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path fill="currentColor" d="M3 10v4h4l5 5V5L7 10H3zm13.5 2c0-1.77-1.02-3.29-2.5-4.03v8.06c1.48-.74 2.5-2.26 2.5-4.03zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/></svg>
-                    <span id="whMusicToggleLabel">배경음악 켜기</span>
-                </button>
-                <audio id="whHubMusic" src="img/hub_music.mp3" loop preload="auto" aria-label="허브 배경음악"></audio>
-            </div>
         </div>
+        <audio id="whHubMusic" src="img/hub_music.mp3" loop preload="auto" aria-label="허브 배경음악"></audio>
     </main>
     <footer class="site-footer">
         <div class="site-footer-inner">
@@ -98,6 +92,7 @@
             <p class="site-footer-company-msg" id="siteFooterCompanyMsg" hidden></p>
         </div>
     </footer>
+    <script src="home-intro-media.js"></script>
     <script src="work-hub.js"></script>
 </body>
 </html>
