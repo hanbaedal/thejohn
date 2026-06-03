@@ -1879,6 +1879,59 @@
         return WORK_HUB_PAGE;
     }
 
+    function normalizeLoginRole(role) {
+        return String(role || "")
+            .trim()
+            .toLowerCase();
+    }
+
+    function isStaffLandingRole(role) {
+        var r = normalizeLoginRole(role);
+        return r === "admin" || r === "supervisor";
+    }
+
+    function isPublicHomeLandingRole(role) {
+        var r = normalizeLoginRole(role);
+        return r === "guest" || r === "vendor";
+    }
+
+    /** next가 홈(index)·루트·빈 경로인지 */
+    function isHomeLandingPath(path) {
+        if (!path || path === "/") return true;
+        var seg = "";
+        try {
+            var u = new URL(path, window.location.href);
+            seg = (u.pathname || "").replace(/\\/g, "/").split("/").pop().toLowerCase();
+        } catch (e) {
+            seg = String(path).split("?")[0].split("/").pop().toLowerCase();
+        }
+        return !seg || seg === "index.html";
+    }
+
+    /**
+     * 로그인·게스트 완료 후 이동 경로
+     * - 게스트·등록 업체 → index (홈)
+     * - 슈퍼바이저·관리자 → work-hub (단, next가 홈이면 허브로 보정)
+     */
+    function getPostLoginLandingPath(role, nextRaw) {
+        var r = normalizeLoginRole(role);
+        if (nextRaw) {
+            var dest = safeNextPath(nextRaw);
+            if (isStaffLandingRole(r) && isHomeLandingPath(dest)) {
+                return getStaffLandingPath();
+            }
+            if (isPublicHomeLandingRole(r)) {
+                var hubSeg = "work-hub.html";
+                if (String(dest).toLowerCase().indexOf(hubSeg) >= 0) {
+                    return "index.html";
+                }
+            }
+            return dest;
+        }
+        if (isStaffLandingRole(r)) return getStaffLandingPath();
+        return "index.html";
+    }
+
     function getVendorUnitPriceForProduct(it) {
         if (!it || !canSeeProductPrices()) return { unitPrice: 0, priceLabel: "" };
         if (isStaffRole(getRole())) {
@@ -2373,6 +2426,7 @@
         staffNavClearInjected: staffNavClearInjected,
         getWorkHubOrderManageHref: getWorkHubOrderManageHref,
         getStaffLandingPath: getStaffLandingPath,
+        getPostLoginLandingPath: getPostLoginLandingPath,
         getStaffNavMode: getStaffNavMode,
         setStaffNavMode: setStaffNavMode,
         applyStaffNavMode: applyStaffNavMode,

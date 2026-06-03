@@ -10,23 +10,11 @@
 
     function goNext(role) {
         var Auth = global.THEJHON_AUTH;
-        var nextParam = params.get("next");
-        if (nextParam) {
-            global.location.href =
-                Auth && Auth.safeNextPath
-                    ? Auth.safeNextPath(nextParam)
-                    : "index.html";
-            return;
-        }
-        if (
-            (role === "admin" || role === "supervisor") &&
-            Auth &&
-            Auth.getStaffLandingPath
-        ) {
-            global.location.href = Auth.getStaffLandingPath();
-            return;
-        }
-        global.location.href = "index.html";
+        var dest =
+            Auth && Auth.getPostLoginLandingPath
+                ? Auth.getPostLoginLandingPath(role, params.get("next"))
+                : "index.html";
+        global.location.href = dest;
     }
 
     function initGuest() {
@@ -155,22 +143,22 @@
         }
 
         var role = Auth.getRole ? Auth.getRole() : "";
+        var roleNorm = String(role || "")
+            .trim()
+            .toLowerCase();
         if (
             Auth.isLoggedIn &&
             Auth.isLoggedIn() &&
-            (role === "admin" || role === "supervisor" || role === "vendor")
+            (roleNorm === "guest" ||
+                roleNorm === "vendor" ||
+                roleNorm === "admin" ||
+                roleNorm === "supervisor")
         ) {
-            var nextParam = params.get("next");
-            if (nextParam) {
-                global.location.replace(Auth.safeNextPath(nextParam));
-            } else if (
-                (role === "admin" || role === "supervisor") &&
-                Auth.getStaffLandingPath
-            ) {
-                global.location.replace(Auth.getStaffLandingPath());
-            } else {
-                global.location.replace("index.html");
-            }
+            var dest =
+                Auth.getPostLoginLandingPath
+                    ? Auth.getPostLoginLandingPath(role, params.get("next"))
+                    : "index.html";
+            global.location.replace(dest);
             return;
         }
 
