@@ -75,8 +75,17 @@
         if (nav.parentNode !== track) {
             track.appendChild(nav);
         }
-        if (actions && actions.parentNode !== track) {
-            track.appendChild(actions);
+        var isWorkHub =
+            document.body && document.body.classList.contains("page-work-hub");
+        if (actions) {
+            if (isWorkHub) {
+                if (actions.parentNode !== header) {
+                    header.appendChild(actions);
+                }
+                header.classList.add("header-shell-work-hub");
+            } else if (actions.parentNode !== track) {
+                track.appendChild(actions);
+            }
         }
 
         header.dataset.headerShell = "2";
@@ -362,10 +371,9 @@
             loginBtn = document.createElement("a");
             loginBtn.id = "btnLogin";
             loginBtn.href = "login.html";
-            loginBtn.className = "header-login-link";
-            loginBtn.textContent = "로그인";
             actions.insertBefore(loginBtn, logoutBtn || actions.firstChild);
         }
+        applyAuthIconButton(loginBtn, "login");
         if (logoutBtn) applyAuthIconButton(logoutBtn, "logout");
         if (logoutBtn && logoutBtn.dataset.logoutBound !== "1") {
             logoutBtn.dataset.logoutBound = "1";

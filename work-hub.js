@@ -231,6 +231,8 @@
 
     bootHubMediaWhenReady();
     scheduleWorkHubHeaderCompany();
+    syncWorkHubAuthUi();
+    window.addEventListener("pageshow", syncWorkHubAuthUi);
 
     if (!Auth || !Auth.getWorkHubAccess) {
         setStatus("인증 스크립트 오류", "err");
@@ -247,7 +249,6 @@
     applyMenus();
     if (Auth.setStaffNavMode) Auth.setStaffNavMode("hub");
     syncWorkHubAuthUi();
-    window.addEventListener("pageshow", syncWorkHubAuthUi);
 
     if (Auth.refreshSessionPermissionsAsync) {
         Auth.refreshSessionPermissionsAsync().then(function () {

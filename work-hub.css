@@ -39,11 +39,29 @@ body.page-work-hub .site-header {
     top: 0;
     z-index: 500;
     flex: 0 0 auto;
+    display: flex;
+    align-items: center;
+    flex-wrap: nowrap;
+    gap: 0.5rem;
+    isolation: isolate;
     background: transparent;
     border-bottom-color: transparent;
     -webkit-backdrop-filter: none;
     backdrop-filter: none;
     pointer-events: auto;
+}
+
+/* 허브는 헤더 가로 메뉴 없음 — 빈 스크롤 영역이 로고·버튼을 가리지 않게 */
+body.page-work-hub .site-header-menu-scroll {
+    display: none !important;
+}
+
+body.page-work-hub .site-header > .site-header-actions {
+    display: flex !important;
+    margin-left: auto;
+    flex-shrink: 0;
+    position: relative;
+    z-index: 6;
 }
 
 body.page-work-hub .site-header .header-date,
@@ -237,7 +255,34 @@ body.page-work-hub .wh-hub-bgm-wrap .home-bgm-hint {
     pointer-events: auto;
 }
 
+body.page-work-hub audio#whHubMusic {
+    position: fixed;
+    width: 0;
+    height: 0;
+    opacity: 0;
+    pointer-events: none;
+}
+
 @media (max-width: 720px) {
+    body.page-work-hub .site-header {
+        display: grid;
+        grid-template-columns: auto minmax(0, 1fr);
+        grid-template-rows: auto;
+        align-items: center;
+    }
+    body.page-work-hub .site-header-brand {
+        grid-column: 1;
+        grid-row: 1;
+    }
+    body.page-work-hub .site-header > .site-header-actions {
+        grid-column: 2;
+        grid-row: 1;
+        justify-self: end;
+        display: flex !important;
+    }
+    body.page-work-hub .site-header-menu-scroll-track .site-header-actions {
+        display: none !important;
+    }
     .company-main--work-hub .wh-hub-row {
         grid-template-columns: 1fr;
     }
