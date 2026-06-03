@@ -488,38 +488,64 @@ async function ensureOptionalOrderAdminSeed(col) {
     console.log("[staff] order admin seed created:", doc.loginId, doc.id);
 }
 
+function staffNeedsFieldMigration(doc) {
+    if (!doc || !doc.id) return false;
+    if (!str(doc[F.company]) && (doc.companyName || doc.st_company)) return true;
+    if (doc.companyName) return true;
+    if (doc.name && !str(doc[F.ceo])) return true;
+    if (doc.ceo && !str(doc[F.ceo])) return true;
+    if (doc.ceoPhone && !str(doc[F.ceoTel])) return true;
+    if (doc.address && !str(doc[F.addr]) && !str(doc.st_addr)) return true;
+    if (doc.st_address && !str(doc[F.addr]) && !str(doc.st_addr)) return true;
+    return false;
+}
+
+function staffMigrationBodyFromDoc(doc) {
+    const body = {
+        st_company: doc[F.company] || doc.companyName,
+        st_phone: doc[F.phone] || doc.st_phone,
+        st_fax: doc[F.fax] || doc.st_fax,
+        st_ceo: doc[F.ceo] || doc.name || doc.ceo,
+        st_ceo_tel: doc[F.ceoTel] || doc.ceoPhone,
+        st_email: doc[F.email] || doc.st_email,
+        st_web: doc[F.web] || doc.st_web,
+        st_biz_no: doc[F.bizNo] || doc.st_biz_no,
+        st_biz_type: doc[F.bizType] || doc.st_biz_type,
+        st_biz_item: doc[F.bizItem] || doc.st_biz_item,
+        st_facebook: doc[F.facebook] || doc.st_facebook,
+        st_instagram: doc[F.instagram] || doc.st_instagram,
+        st_naver_cafe: doc[F.naverCafe] || doc.st_naver_cafe,
+        st_youtube: doc[F.youtube] || doc.st_youtube,
+        st_kakao: doc[F.kakao] || doc.st_kakao,
+        role: doc.role
+    };
+    const zip = str(doc[F.zip] || doc.st_zip);
+    const addr = str(doc[F.addr] || doc.st_addr);
+    const detail = str(doc[F.addrDetail] || doc.st_addr_detail);
+    const legacy = str(doc[F.address] || doc.st_address || doc.address);
+    if (zip) body.st_zip = zip;
+    if (addr) body.st_addr = addr;
+    if (detail) body.st_addr_detail = detail;
+    if (legacy) body.st_address = legacy;
+    return body;
+}
+
 async function migrateStaffCollection(db) {
     const col = db.collection("staff");
     const docs = await col.find({}).toArray();
     let n = 0;
+    let skipped = 0;
     for (const doc of docs) {
         if (!doc.id) continue;
         if (DEFAULT_STAFF_IDS.includes(doc.id)) continue;
+        if (!staffNeedsFieldMigration(doc)) {
+            skipped++;
+            continue;
+        }
 
         const pw = getStoredPassword(doc);
         const built = buildFromBody(
-            {
-                st_company: doc[F.company] || doc.companyName,
-                st_phone: doc[F.phone] || doc.st_phone,
-                st_fax: doc[F.fax] || doc.st_fax,
-                st_ceo: doc[F.ceo] || doc.name || doc.ceo,
-                st_ceo_tel: doc[F.ceoTel] || doc.ceoPhone,
-                st_email: doc[F.email] || doc.st_email,
-                st_web: doc[F.web] || doc.st_web,
-                st_biz_no: doc[F.bizNo] || doc.st_biz_no,
-                st_biz_type: doc[F.bizType] || doc.st_biz_type,
-                st_biz_item: doc[F.bizItem] || doc.st_biz_item,
-                st_zip: doc[F.zip] || doc.st_zip,
-                st_addr: doc[F.addr] || doc.st_addr,
-                st_addr_detail: doc[F.addrDetail] || doc.st_addr_detail,
-                st_address: doc[F.address] || doc.st_address,
-                st_facebook: doc[F.facebook] || doc.st_facebook,
-                st_instagram: doc[F.instagram] || doc.st_instagram,
-                st_naver_cafe: doc[F.naverCafe] || doc.st_naver_cafe,
-                st_youtube: doc[F.youtube] || doc.st_youtube,
-                st_kakao: doc[F.kakao] || doc.st_kakao,
-                role: doc.role
-            },
+            staffMigrationBodyFromDoc(doc),
             doc,
             doc.loginId || "",
             pw
@@ -527,7 +553,7 @@ async function migrateStaffCollection(db) {
         await col.replaceOne({ id: doc.id }, toDbDoc(doc.id, built, doc));
         n++;
     }
-    if (n) console.log("[staff] migrated field names:", n);
+    if (n) console.log("[staff] migrated field names:", n, "skipped:", skipped);
     await migrateStaffOrderEnabled(col);
 }
 

@@ -409,29 +409,32 @@ async function migrateVendorsCollection(db) {
             skipped++;
             continue;
         }
-        const built = buildFromBody(
-            {
-                vn_company: doc[F.company] || doc.companyName,
-                vn_depts: doc[F.depts] || doc.vn_depts,
-                vn_ceo: doc[F.ceo] || doc.ceo,
-                vn_ceo_tel: doc[F.ceoTel] || doc.ceoPhone,
-                vn_grade: doc[F.grade] || "1",
-                vn_room_count: doc[F.roomCount] || doc.vn_room_count || "",
-                vn_web: doc[F.web] || doc.website,
-                vn_email: doc[F.email] || doc.email,
-                vn_phone: doc[F.phone] || doc.phone,
-                vn_addr: doc[F.addr] || doc.address,
-                vn_mgr_name: doc[F.mgrName] || doc.manager,
-                vn_mgr_tel: doc[F.mgrTel] || doc.managerPhone,
-                vn_mgr_email: doc[F.mgrEmail] || doc.mgrEmail,
-                vn_logo: doc[F.logo] || doc.logo,
-                vn_note: doc[F.note] || doc.note,
-                password: pw
-            },
-            doc,
-            doc.loginId || "",
-            pw
-        );
+        const splitZip = str(doc[F.zip] || doc.vn_zip);
+        const splitAddr = str(doc[F.addr] || doc.vn_addr);
+        const splitDetail = str(doc[F.addrDetail] || doc.vn_addr_detail);
+        const legacyAddr = str(doc.address);
+        const migBody = {
+            vn_company: doc[F.company] || doc.companyName,
+            vn_depts: doc[F.depts] || doc.vn_depts,
+            vn_ceo: doc[F.ceo] || doc.ceo,
+            vn_ceo_tel: doc[F.ceoTel] || doc.ceoPhone,
+            vn_grade: doc[F.grade] || "1",
+            vn_room_count: doc[F.roomCount] || doc.vn_room_count || "",
+            vn_web: doc[F.web] || doc.website,
+            vn_email: doc[F.email] || doc.email,
+            vn_phone: doc[F.phone] || doc.phone,
+            vn_mgr_name: doc[F.mgrName] || doc.manager,
+            vn_mgr_tel: doc[F.mgrTel] || doc.managerPhone,
+            vn_mgr_email: doc[F.mgrEmail] || doc.mgrEmail,
+            vn_logo: doc[F.logo] || doc.logo,
+            vn_note: doc[F.note] || doc.note,
+            password: pw
+        };
+        if (splitZip) migBody.vn_zip = splitZip;
+        if (splitAddr) migBody.vn_addr = splitAddr;
+        else if (!splitZip && legacyAddr) migBody.vn_addr = legacyAddr;
+        if (splitDetail) migBody.vn_addr_detail = splitDetail;
+        const built = buildFromBody(migBody, doc, doc.loginId || "", pw);
         if (!doc.id) {
             await col.updateOne({ _id: doc._id }, { $set: { id: id } });
         }

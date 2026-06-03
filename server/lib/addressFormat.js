@@ -44,6 +44,22 @@ function hasBodyField(body, key) {
     return !!key && Object.prototype.hasOwnProperty.call(body, key);
 }
 
+/** 요청에 필드가 없거나 undefined면 prev 유지. 빈 문자열은 의도적 삭제로 처리 */
+function readBodyField(body, prev, key) {
+    if (!key) return "";
+    const p = prev || {};
+    if (!hasBodyField(body, key) || body[key] === undefined) {
+        return str(p[key]);
+    }
+    return str(body[key]);
+}
+
+/** 레거시 한 줄 주소 앞 5자리 우편번호 */
+function extractZipFromLine(line) {
+    const m = str(line).match(/^(\d{5})(?:\s+|$)/);
+    return m ? m[1] : "";
+}
+
 /** st_addr에 우편번호·상세가 합쳐 저장된 경우 분리 필드로 복구 */
 function repairMergedAddressFields(zip, addr, detail) {
     let z = str(zip);
@@ -79,14 +95,26 @@ function pickAddressFromBody(body, prev, fieldNames) {
     const legacyK = fn.legacy || "st_address";
 
     const p = prev || {};
-    let zip = hasBodyField(body, zipK) ? str(body[zipK]) : str(p[zipK]);
-    let addr = hasBodyField(body, addrK) ? str(body[addrK]) : str(p[addrK]);
-    let detail = hasBodyField(body, detailK) ? str(body[detailK]) : str(p[detailK]);
+    let zip = readBodyField(body, p, zipK);
+    let addr = readBodyField(body, p, addrK);
+    let detail = readBodyField(body, p, detailK);
 
-    if (!addr && legacyK && hasBodyField(body, legacyK)) {
-        addr = str(body[legacyK]);
-    } else if (!addr && legacyK) {
-        addr = str(p[legacyK] || "");
+    if (!addr && legacyK) {
+        const legacyLine = readBodyField(body, p, legacyK);
+        if (legacyLine) addr = legacyLine;
+    }
+
+    if (!zip && addr) {
+        const parsedZip = extractZipFromLine(addr);
+        if (parsedZip) {
+            zip = parsedZip;
+            const prefix = parsedZip + " ";
+            if (addr === parsedZip) {
+                addr = "";
+            } else if (addr.startsWith(prefix)) {
+                addr = addr.slice(prefix.length).trim();
+            }
+        }
     }
 
     const repaired = repairMergedAddressFields(zip, addr, detail);
@@ -101,9 +129,9 @@ function pickAddressFromBody(body, prev, fieldNames) {
     out[addrK] = addr;
     out[detailK] = detail;
     if (legacyK) {
-        out[legacyK] =
-            legacy ||
-            (hasBodyField(body, legacyK) ? str(body[legacyK]) : str(p[legacyK] || ""));
+        const prevLegacy = str(p[legacyK] || "");
+        const bodyLegacy = readBodyField(body, p, legacyK);
+        out[legacyK] = legacy || bodyLegacy || prevLegacy;
     }
     return out;
 }
@@ -113,5 +141,7 @@ module.exports = {
     formatFullAddress,
     hydrateAddressFields,
     repairMergedAddressFields,
+    readBodyField,
+    extractZipFromLine,
     pickAddressFromBody
 };

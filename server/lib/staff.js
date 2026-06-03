@@ -64,6 +64,12 @@ function canAssignStaffLoginId(loginId, existingStaff) {
     return loginIdsEquivalent(loginId, existingStaff.loginId);
 }
 
+function copyIfDefined(target, source, keys) {
+    for (const key of keys) {
+        if (source[key] !== undefined) target[key] = source[key];
+    }
+}
+
 function pickStaffBody(body) {
     const picked = {
         loginId: body.loginId,
@@ -77,10 +83,6 @@ function pickStaffBody(body) {
         st_biz_no: body.st_biz_no,
         st_biz_type: body.st_biz_type,
         st_biz_item: body.st_biz_item,
-        st_zip: body.st_zip,
-        st_addr: body.st_addr,
-        st_addr_detail: body.st_addr_detail,
-        st_address: body.st_address,
         st_facebook: body.st_facebook,
         st_instagram: body.st_instagram,
         st_naver_cafe: body.st_naver_cafe,
@@ -90,9 +92,13 @@ function pickStaffBody(body) {
         loginEnabled: body.loginEnabled,
         orderEnabled: body.orderEnabled
     };
-    if (body.st_logo !== undefined) {
-        picked.st_logo = body.st_logo;
-    }
+    copyIfDefined(picked, body, [
+        "st_zip",
+        "st_addr",
+        "st_addr_detail",
+        "st_address",
+        "st_logo"
+    ]);
     return picked;
 }
 
@@ -175,36 +181,29 @@ async function createStaffAccount(body, creatorRole) {
     }
 
     const picked = pickStaffBody(body);
-    const built = buildFromBody(
-        {
-            st_company: picked.st_company || picked.name,
-            st_phone: picked.st_phone,
-            st_fax: picked.st_fax,
-            st_ceo: picked.st_ceo || picked.name,
-            st_ceo_tel: picked.st_ceo_tel,
-            st_email: picked.st_email,
-            st_web: picked.st_web,
-            st_biz_no: picked.st_biz_no,
-            st_biz_type: picked.st_biz_type,
-            st_biz_item: picked.st_biz_item,
-            st_zip: picked.st_zip,
-            st_addr: picked.st_addr,
-            st_addr_detail: picked.st_addr_detail,
-            st_address: picked.st_address,
-            st_facebook: picked.st_facebook,
-            st_instagram: picked.st_instagram,
-            st_naver_cafe: picked.st_naver_cafe,
-            st_youtube: picked.st_youtube,
-            st_kakao: picked.st_kakao,
-            st_logo: picked.st_logo !== undefined ? picked.st_logo : "",
-            role: "admin",
-            loginEnabled: true,
-            orderEnabled: picked.orderEnabled === true
-        },
-        null,
-        loginId,
-        password
-    );
+    const buildBody = {
+        st_company: picked.st_company || picked.name,
+        st_phone: picked.st_phone,
+        st_fax: picked.st_fax,
+        st_ceo: picked.st_ceo || picked.name,
+        st_ceo_tel: picked.st_ceo_tel,
+        st_email: picked.st_email,
+        st_web: picked.st_web,
+        st_biz_no: picked.st_biz_no,
+        st_biz_type: picked.st_biz_type,
+        st_biz_item: picked.st_biz_item,
+        st_facebook: picked.st_facebook,
+        st_instagram: picked.st_instagram,
+        st_naver_cafe: picked.st_naver_cafe,
+        st_youtube: picked.st_youtube,
+        st_kakao: picked.st_kakao,
+        st_logo: picked.st_logo !== undefined ? picked.st_logo : "",
+        role: "admin",
+        loginEnabled: true,
+        orderEnabled: picked.orderEnabled === true
+    };
+    copyIfDefined(buildBody, picked, ["st_zip", "st_addr", "st_addr_detail", "st_address"]);
+    const built = buildFromBody(buildBody, null, loginId, password);
     const doc = toDbDoc(newStaffId(), built, null);
     await staffCol.insertOne(doc);
     return toPublic(doc);
@@ -244,44 +243,35 @@ async function updateStaffAccount(id, body, creatorRole) {
             : getStoredPassword(existing);
     if (!password) throw new Error("비밀번호를 확인할 수 없습니다.");
 
-    const built = buildFromBody(
-        {
-            st_company: picked.st_company,
-            st_phone: picked.st_phone,
-            st_fax: picked.st_fax,
-            st_ceo: picked.st_ceo,
-            st_ceo_tel: picked.st_ceo_tel,
-            st_email: picked.st_email,
-            st_web: picked.st_web,
-            st_biz_no: picked.st_biz_no,
-            st_biz_type: picked.st_biz_type,
-            st_biz_item: picked.st_biz_item,
-            st_zip: picked.st_zip,
-            st_addr: picked.st_addr,
-            st_addr_detail: picked.st_addr_detail,
-            st_address: picked.st_address,
-            st_facebook: picked.st_facebook,
-            st_instagram: picked.st_instagram,
-            st_naver_cafe: picked.st_naver_cafe,
-            st_youtube: picked.st_youtube,
-            ...(picked.st_kakao !== undefined ? { st_kakao: picked.st_kakao } : {}),
-            ...(picked.st_logo !== undefined ? { st_logo: picked.st_logo } : {}),
-            role: existing.role || "admin",
-            loginEnabled:
-                picked.loginEnabled !== undefined
-                    ? picked.loginEnabled
-                    : existing.loginEnabled !== false,
-            orderEnabled:
-                picked.orderEnabled !== undefined
-                    ? picked.orderEnabled
-                    : existing
-                      ? existing.st_order_enabled === true || existing[SF.orderEnabled] === true
-                      : false
-        },
-        existing,
-        nextLoginId,
-        password
-    );
+    const buildBody = {
+        st_company: picked.st_company,
+        st_phone: picked.st_phone,
+        st_fax: picked.st_fax,
+        st_ceo: picked.st_ceo,
+        st_ceo_tel: picked.st_ceo_tel,
+        st_email: picked.st_email,
+        st_web: picked.st_web,
+        st_biz_no: picked.st_biz_no,
+        st_biz_type: picked.st_biz_type,
+        st_biz_item: picked.st_biz_item,
+        st_facebook: picked.st_facebook,
+        st_instagram: picked.st_instagram,
+        st_naver_cafe: picked.st_naver_cafe,
+        st_youtube: picked.st_youtube,
+        role: existing.role || "admin",
+        loginEnabled:
+            picked.loginEnabled !== undefined
+                ? picked.loginEnabled
+                : existing.loginEnabled !== false,
+        orderEnabled:
+            picked.orderEnabled !== undefined
+                ? picked.orderEnabled
+                : existing
+                  ? existing.st_order_enabled === true || existing[SF.orderEnabled] === true
+                  : false
+    };
+    copyIfDefined(buildBody, picked, ["st_zip", "st_addr", "st_addr_detail", "st_address", "st_kakao", "st_logo"]);
+    const built = buildFromBody(buildBody, existing, nextLoginId, password);
     const doc = toDbDoc(existing.id, built, existing);
     if (loginChanged) {
         doc.previousLoginIds = appendPreviousLoginIds(existing, existing.loginId);
