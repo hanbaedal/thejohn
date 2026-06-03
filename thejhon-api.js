@@ -159,6 +159,19 @@
                 return d.item;
             });
         },
+        getProductInfo: function (productId) {
+            return request("GET", "/api/products/" + encodeURIComponent(productId) + "/info");
+        },
+        saveProductInfo: function (productId, values) {
+            return request("PUT", "/api/products/" + encodeURIComponent(productId) + "/info", values || {}).then(
+                function (d) {
+                    return d.item;
+                }
+            );
+        },
+        deleteProductInfo: function (productId) {
+            return request("DELETE", "/api/products/" + encodeURIComponent(productId) + "/info");
+        },
         deleteProduct: function (id) {
             return request("DELETE", "/api/products/" + encodeURIComponent(id));
         },

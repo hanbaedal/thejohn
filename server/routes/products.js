@@ -28,6 +28,15 @@ const { normalizeStaffLoginId, isStaffAuth, isSupervisorAuth } = require("../lib
 const { trimStaffLoginId, registeredByInFilter } = require("../lib/staffLoginId");
 const { findVendorByLoginId } = require("../lib/loginResolve");
 const { normalizeDept, deptQuery } = require("../lib/productDept");
+const {
+    ensureIndexes: ensureProductInfoIndexes,
+    findByProductId: findProductInfoByProductId,
+    upsertForProduct: upsertProductInfo,
+    removeForProduct: removeProductInfo,
+    toPublic: toPublicProductInfo,
+    FIELD_DEFS: PRODUCT_INFO_FIELD_DEFS,
+    F: PRODUCT_INFO_F
+} = require("../lib/productInfo");
 
 const router = express.Router();
 
@@ -245,6 +254,54 @@ router.get("/check-code", requireRole("supervisor", "admin"), async (req, res) =
     }
 });
 
+router.get("/:id/info", requireRole("supervisor", "admin"), async (req, res) => {
+    try {
+        const pid = String(req.params.id || "").trim();
+        const db = getDb();
+        await ensureProductInfoIndexes(db);
+        const existing = await db.collection("products").findOne({ id: pid });
+        if (!existing) {
+            return res.status(404).json({ ok: false, error: "상품을 찾을 수 없습니다." });
+        }
+        const doc = await findProductInfoByProductId(db, pid);
+        res.json({
+            ok: true,
+            item: doc ? toPublicProductInfo(doc) : null,
+            fieldDefs: PRODUCT_INFO_FIELD_DEFS.map(function (d) {
+                return { key: d.key, label: d.label, multiline: !!d.multiline, max: d.max };
+            })
+        });
+    } catch (e) {
+        console.error("GET /api/products/:id/info", e);
+        res.status(e.status || 500).json({ ok: false, error: e.message || "상품정보를 불러오지 못했습니다." });
+    }
+});
+
+router.put("/:id/info", requireRole("supervisor", "admin"), async (req, res) => {
+    try {
+        const pid = String(req.params.id || "").trim();
+        const db = getDb();
+        await ensureProductInfoIndexes(db);
+        const item = await upsertProductInfo(db, req.auth, pid, req.body || {});
+        res.json({ ok: true, item: item });
+    } catch (e) {
+        console.error("PUT /api/products/:id/info", e);
+        res.status(e.status || 500).json({ ok: false, error: e.message || "상품정보 저장에 실패했습니다." });
+    }
+});
+
+router.delete("/:id/info", requireRole("supervisor", "admin"), async (req, res) => {
+    try {
+        const pid = String(req.params.id || "").trim();
+        const db = getDb();
+        await removeProductInfo(db, req.auth, pid);
+        res.json({ ok: true });
+    } catch (e) {
+        console.error("DELETE /api/products/:id/info", e);
+        res.status(e.status || 500).json({ ok: false, error: e.message || "상품정보 삭제에 실패했습니다." });
+    }
+});
+
 router.get("/:id", async (req, res) => {
     try {
         const auth = optionalAuth(req);
@@ -390,9 +447,15 @@ router.delete("/:id", requireRole("supervisor", "admin"), async (req, res) => {
                 error: "다른 관리자가 등록한 상품은 삭제할 수 없습니다."
             });
         }
-        const result = await getDb().collection("products").deleteOne({ id: req.params.id });
+        const db = getDb();
+        const result = await db.collection("products").deleteOne({ id: req.params.id });
         if (result.deletedCount === 0) {
             return res.status(404).json({ ok: false, error: "상품을 찾을 수 없습니다." });
+        }
+        try {
+            await db.collection("product_info").deleteOne({ [PRODUCT_INFO_F.productId]: req.params.id });
+        } catch (delInfoErr) {
+            console.warn("DELETE product_info", delInfoErr.message);
         }
         res.json({ ok: true });
     } catch (e) {

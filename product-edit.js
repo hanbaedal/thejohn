@@ -2,6 +2,7 @@
     var api = window.THEJHON_API;
     var PF = window.THEJHON_PRODUCT_FORM;
     var catalog = window.THEJHON_PRODUCT_CATALOG;
+    var PInfo = window.THEJHON_PRODUCT_INFO;
 
     var statusEl = document.getElementById("pe-status");
     var backListLink = document.getElementById("pe-back-list");
@@ -157,6 +158,19 @@
         setStatus("사진을 1:1·1MB 이하로 맞춰 적용했습니다.");
     }
 
+    if (PInfo && PInfo.bindOpenButton) {
+        PInfo.bindOpenButton({
+            api: api,
+            openBtn: document.getElementById("pe-btn-product-info"),
+            getProductName: function () {
+                return nameInput ? nameInput.value.trim() : "";
+            },
+            getNetWeight: function () {
+                return sizeInput ? sizeInput.value.trim() : "";
+            }
+        });
+    }
+
     if (PF && PF.initProductPhotoPicker) {
         photoPicker = PF.initProductPhotoPicker({
             galleryInput: document.getElementById("pe-pd-image-gallery"),
@@ -205,10 +219,16 @@
             submitBtn.disabled = true;
             api.updateProduct(id, body)
                 .then(function () {
-                    setStatus("수정했습니다. 리스트로 이동합니다…");
-                    setTimeout(function () {
-                        location.href = listReturnUrl();
-                    }, 350);
+                    var infoP =
+                        PInfo && PInfo.saveToServer ?
+                            PInfo.saveToServer(api, id)
+                        :   Promise.resolve();
+                    return infoP.then(function () {
+                        setStatus("수정했습니다. 리스트로 이동합니다…");
+                        setTimeout(function () {
+                            location.href = listReturnUrl();
+                        }, 350);
+                    });
                 })
                 .catch(function (err2) {
                     setStatus(err2.message || "저장에 실패했습니다.", true);
@@ -266,6 +286,10 @@
                 throw new Error("다른 관리자가 등록한 상품은 수정할 수 없습니다.");
             }
             fillFormFromItem(it);
+            if (PInfo) {
+                PInfo.setProductId(it.id);
+                return PInfo.loadFromServer(api, it.id);
+            }
         })
         .catch(function (err) {
             setStatus(err.message || "상품 정보를 불러오지 못했습니다.", true);

@@ -15,7 +15,9 @@
 
 **상세 아키텍처·디렉터리·권한·PDF·배포**: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)
 
-**관리용 Word·PPT**: [docs/thejohn-system-structure-management.docx](docs/thejohn-system-structure-management.docx) · [docs/thejohn-system-structure-management.pptx](docs/thejohn-system-structure-management.pptx) (`python scripts/generate-management-docs.py` 로 재생성)
+**사용자 매뉴얼 (Word)**: [docs/thejohn-user-manual.docx](docs/thejohn-user-manual.docx) (`python scripts/generate-user-manual.py`)
+
+**관리용 Word·PPT**: [docs/thejohn-system-structure-management.docx](docs/thejohn-system-structure-management.docx) · [docs/thejohn-system-structure-management.pptx](docs/thejohn-system-structure-management.pptx) (`python scripts/generate-management-docs.py`)
 
 ## 로컬 실행
 

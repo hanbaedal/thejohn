@@ -74,6 +74,7 @@
         .pr-card-actions button { font-size: 0.8125rem; padding: 0.35rem 0.65rem; border-radius: 6px; cursor: pointer; font-family: inherit; font-weight: 600; border: 1px solid #c5d0dc; background: #fff; color: #3d5166; }
         .pr-card-actions button.pr-btn-del { border-color: #e8a4a4; color: #a12c2c; background: #fff8f8; }
     </style>
+    <link rel="stylesheet" href="product-info-modal.css">
     <script src="api-config.js"></script>
     <script src="thejhon-api.js"></script>
     <link rel="stylesheet" href="staff-hub.css">
@@ -142,9 +143,12 @@
                     </div>
                 </div>
             </div>
-            <div class="pr-field">
-                <label for="pe-pd-size">상품 규격</label>
-                <input type="text" id="pe-pd-size" name="pd_size" maxlength="120" autocomplete="off" placeholder="예: 500g, 1박스 20입">
+            <div class="pr-field pr-size-row">
+                <div class="pr-field-size-wrap">
+                    <label for="pe-pd-size">상품 규격</label>
+                    <input type="text" id="pe-pd-size" name="pd_size" maxlength="120" autocomplete="off" placeholder="예: 500g, 1박스 20입">
+                </div>
+                <button type="button" class="btn btn-secondary pr-btn-pinfo" id="pe-btn-product-info">상품정보</button>
             </div>
             <div class="pr-field pr-photo-field">
                 <span class="pr-photo-label" id="pe-photo-label">상품 사진</span>
@@ -212,6 +216,7 @@
             syncAuthUi();
         })();
     </script>
+    <script src="product-info-modal.js"></script>
     <script src="product-edit.js"></script>
 </body>
 </html>

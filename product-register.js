@@ -2,6 +2,7 @@
     var api = window.THEJHON_API;
     var PF = window.THEJHON_PRODUCT_FORM;
     var catalog = window.THEJHON_PRODUCT_CATALOG;
+    var PInfo = window.THEJHON_PRODUCT_INFO;
 
     var form = document.getElementById("pr-form");
     var statusEl = document.getElementById("pr-status");
@@ -92,6 +93,19 @@
         setStatus("사진을 1:1·1MB 이하로 맞춰 적용했습니다.");
     }
 
+    if (PInfo && PInfo.bindOpenButton) {
+        PInfo.bindOpenButton({
+            api: api,
+            openBtn: document.getElementById("pr-btn-product-info"),
+            getProductName: function () {
+                return nameInput ? nameInput.value.trim() : "";
+            },
+            getNetWeight: function () {
+                return sizeInput ? sizeInput.value.trim() : "";
+            }
+        });
+    }
+
     if (PF && PF.initProductPhotoPicker) {
         photoPicker = PF.initProductPhotoPicker({
             galleryInput: document.getElementById("pr-pd-image-gallery"),
@@ -134,15 +148,25 @@
         function saveProduct() {
             submitBtn.disabled = true;
             api.createProduct(body)
-                .then(function () {
-                    form.reset();
-                    pendingImageData = "";
-                    if (photoPicker) photoPicker.clear();
-                    if (nameDupCheck) nameDupCheck.reset();
-                    if (codeDupCheck) codeDupCheck.reset();
-                    updatePhotoPreview("");
-                    if (deptPicker) deptPicker.clear();
-                    setStatus("저장했습니다. 계속 등록하거나 상품 리스트에서 확인하세요.");
+                .then(function (item) {
+                    var infoP =
+                        PInfo && PInfo.saveToServer && item && item.id ?
+                            PInfo.saveToServer(api, item.id)
+                        :   Promise.resolve();
+                    return infoP.then(function () {
+                        if (PInfo) {
+                            PInfo.setProductId("");
+                            PInfo.setValues(PInfo.emptyValues());
+                        }
+                        form.reset();
+                        pendingImageData = "";
+                        if (photoPicker) photoPicker.clear();
+                        if (nameDupCheck) nameDupCheck.reset();
+                        if (codeDupCheck) codeDupCheck.reset();
+                        updatePhotoPreview("");
+                        if (deptPicker) deptPicker.clear();
+                        setStatus("저장했습니다. 계속 등록하거나 상품 리스트에서 확인하세요.");
+                    });
                 })
                 .catch(function (err2) {
                     setStatus(err2.message || "저장에 실패했습니다.", true);
