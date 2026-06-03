@@ -17,7 +17,8 @@
             list: document.getElementById("omh-link-list"),
             orderPdf: document.getElementById("omh-link-order-pdf"),
             transactionPdf: document.getElementById("omh-link-transaction-pdf"),
-            transactionManual: document.getElementById("omh-link-transaction-manual")
+            transactionManual: document.getElementById("omh-link-transaction-manual"),
+            transactionManualList: document.getElementById("omh-link-transaction-manual-list")
         };
         if (map.list && links.list) map.list.setAttribute("href", links.list);
         if (map.orderPdf && links.orderPdf) map.orderPdf.setAttribute("href", links.orderPdf);
@@ -35,6 +36,14 @@
                 map.transactionManual.hidden = false;
             } else {
                 map.transactionManual.hidden = true;
+            }
+        }
+        if (map.transactionManualList) {
+            if (links.transactionManualList) {
+                map.transactionManualList.setAttribute("href", links.transactionManualList);
+                map.transactionManualList.hidden = false;
+            } else {
+                map.transactionManualList.hidden = true;
             }
         }
     }

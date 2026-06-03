@@ -850,7 +850,8 @@
         "supervisor-order-list.html",
         "supervisor-order-pdf.html",
         "supervisor-transaction-pdf.html",
-        "transaction-manual-register.html"
+        "transaction-manual-register.html",
+        "transaction-manual-list.html"
     ];
     var WORK_HUB_PAGE = "work-hub.html";
     var WORK_HUB_LABEL = "그룹 마케팅 관리";
@@ -890,7 +891,8 @@
         "supervisor-order-pdf.html": true,
         "supervisor-transaction-pdf.html": true,
         "supervisor-transaction-list.html": true,
-        "transaction-manual-register.html": true
+        "transaction-manual-register.html": true,
+        "transaction-manual-list.html": true
     };
     var STAFF_NAV_PRODUCT_PAGES = {};
     var STAFF_NAV_WORK_PAGES = {
@@ -1182,6 +1184,9 @@
         }
         if (links.transactionManual) {
             items.push({ href: links.transactionManual, label: "거래명세서 수기" });
+        }
+        if (links.transactionManualList) {
+            items.push({ href: links.transactionManualList, label: "수기 명세 목록" });
         }
         return items;
     }
@@ -2164,7 +2169,8 @@
                 list: "supervisor-order-list.html",
                 orderPdf: "supervisor-order-pdf.html",
                 transactionPdf: "supervisor-transaction-pdf.html",
-                transactionManual: "transaction-manual-register.html"
+                transactionManual: "transaction-manual-register.html",
+                transactionManualList: "transaction-manual-list.html"
             };
         }
         if (canShowOrderManageMenu()) {
@@ -2172,14 +2178,16 @@
                 list: "order-list-admin.html",
                 orderPdf: "supervisor-order-pdf.html",
                 transactionPdf: "supervisor-transaction-pdf.html",
-                transactionManual: "transaction-manual-register.html"
+                transactionManual: "transaction-manual-register.html",
+                transactionManualList: "transaction-manual-list.html"
             };
         }
         return {
             list: ORDER_MANAGE_HUB_PAGE,
             orderPdf: ORDER_MANAGE_HUB_PAGE,
             transactionPdf: "",
-            transactionManual: ""
+            transactionManual: "",
+            transactionManualList: ""
         };
     }
 

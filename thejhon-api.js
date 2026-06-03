@@ -440,8 +440,12 @@
                 return res.blob();
             });
         },
-        listTransactionManual: function () {
-            return request("GET", "/api/transaction-manual").then(function (d) {
+        listTransactionManual: function (opts) {
+            var q = "";
+            if (opts && opts.issuerStaffId) {
+                q = "?issuerStaffId=" + encodeURIComponent(String(opts.issuerStaffId));
+            }
+            return request("GET", "/api/transaction-manual" + q).then(function (d) {
                 return d.items || [];
             });
         },

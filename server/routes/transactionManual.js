@@ -78,7 +78,7 @@ router.get("/", async function (req, res) {
         await ensureIndexes(db);
         const docs = await db
             .collection(COL)
-            .find(listFilter(req.auth))
+            .find(listFilter(req.auth, req.query))
             .sort({ updatedAt: -1 })
             .limit(200)
             .toArray();

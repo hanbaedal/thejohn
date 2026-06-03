@@ -1,6 +1,6 @@
 const { prepareManualTransactionForPdf } = require("./orderEnrich");
 const { buildTransactionPdfBuffer } = require("./transactionPdf");
-const { trimStaffLoginId, staffLoginIdsEqual } = require("./staffLoginId");
+const { trimStaffLoginId, staffLoginIdsEqual, registeredByInFilter } = require("./staffLoginId");
 const { staffCanAccessOrderManage, supervisorCanAccessAllOrders } = require("./orderAccess");
 
 const COL = "transaction_manual";
@@ -105,8 +105,15 @@ function toPdfOrder(doc) {
     };
 }
 
-function listFilter(auth) {
-    if (supervisorCanAccessAllOrders(auth)) return {};
+function listFilter(auth, query) {
+    query = query || {};
+    if (supervisorCanAccessAllOrders(auth)) {
+        const issuer = trimStaffLoginId(query.issuerStaffId || query.adminStaffId || "");
+        if (issuer) {
+            return { issuerStaffLoginId: registeredByInFilter(issuer) };
+        }
+        return {};
+    }
     return { createdBy: trimStaffLoginId(auth.userId) };
 }
 
@@ -139,6 +146,7 @@ async function ensureIndexes(db) {
     const col = db.collection(COL);
     await col.createIndex({ id: 1 }, { unique: true });
     await col.createIndex({ createdBy: 1, updatedAt: -1 });
+    await col.createIndex({ issuerStaffLoginId: 1, updatedAt: -1 });
 }
 
 module.exports = {
