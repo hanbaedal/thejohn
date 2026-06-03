@@ -832,6 +832,7 @@
         if (!isStaffRole(getRole())) return;
         staffNavSet(mode);
         applyStaffNavMode(mode);
+        applySiteFooterVisibility();
     }
 
     function staffNavSetVisible(el, show) {
@@ -1988,11 +1989,32 @@
         return { allowed: true, role: getRole() };
     }
 
+    /** 그룹 마케팅 관리 허브 메뉴(홈페이지·index 제외) 및 하위 관리 페이지에서만 푸터 숨김 */
+    function shouldHideSiteFooter(file) {
+        if (!file) file = currentPageFile();
+        if (file === "index.html") return false;
+        if (file === WORK_HUB_PAGE || file === HOMEPAGE_MANAGE_HUB_PAGE) return true;
+        if (STAFF_NAV_ORDER_PAGES[file]) return true;
+        if (STAFF_NAV_WORK_PAGES[file]) return true;
+        if (!STAFF_NAV_MANAGE_HOME_PAGES[file]) return false;
+        if (file === "support-inquiry.html") {
+            return isStaffRole(getRole()) && resolveStaffNavMode() === "manage-home";
+        }
+        return true;
+    }
+
+    function applySiteFooterVisibility() {
+        if (!document.body) return;
+        document.body.classList.toggle("site-footer-hidden", shouldHideSiteFooter());
+    }
+
     function applyNavRegisterVisibility() {
         try {
             normalizeLegacySession();
+            applySiteFooterVisibility();
             if (isStaffRole(getRole())) {
                 applyStaffNavMode();
+                applySiteFooterVisibility();
                 return;
             }
             var showAdmin = canShowAdminNavMenus();

@@ -24,8 +24,8 @@ body {
     padding-left: env(safe-area-inset-left, 0);
     padding-right: env(safe-area-inset-right, 0);
 }
-/* 방문자 홈(index.html · body.page-home)만 푸터 표시 */
-body:not(.page-home) footer.site-footer {
+/* 그룹 마케팅 관리 허브·관리자 업무 페이지만 푸터 숨김 (auth.js가 body.site-footer-hidden 부여) */
+body.site-footer-hidden footer.site-footer {
     display: none !important;
 }
 .site-footer {
