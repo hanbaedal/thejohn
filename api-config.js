@@ -7,9 +7,8 @@
     var base = "";
     if (typeof location !== "undefined" && location.hostname) {
         var host = String(location.hostname).toLowerCase();
-        if (host === "thejohn.co.kr") {
-            base = "https://www.thejohn.co.kr";
-        } else if (host === "www.thejohn.co.kr") {
+        // Render 통합 배포: 같은 도메인에서 /api 호출 (세션·메뉴 권한 동기화)
+        if (host === "thejohn.co.kr" || host === "www.thejohn.co.kr") {
             base = "";
         }
     }
