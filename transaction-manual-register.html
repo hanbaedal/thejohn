@@ -11,6 +11,7 @@
     <link rel="stylesheet" href="common.css">
     <link rel="stylesheet" href="admin-manage.css">
     <link rel="stylesheet" href="staff-hub.css">
+    <link rel="stylesheet" href="order-manage-layout.css">
     <link rel="stylesheet" href="transaction-manual-register.css">
     <script src="api-config.js"></script>
     <script src="thejhon-api.js"></script>
@@ -30,7 +31,7 @@
             <button type="button" class="btn btn-auth-icon btn-logout" id="btnLogout" hidden aria-label="로그아웃" title="로그아웃"></button>
         </nav>
     </header>
-    <main class="page-main page-main--hide-scrollbar shub-page tmr-page">
+    <main class="page-main page-main--hide-scrollbar shub-page om-page tmr-page">
         <p class="shub-subnav"><a href="order-manage-hub.html">← 주문서 관리</a></p>
         <h1>거래명세서 수기 작성</h1>
         <p id="tmr-status" class="tmr-status" role="status" aria-live="polite"></p>
@@ -84,13 +85,14 @@
 
             <h2 style="margin-top:1.25rem">품목 (최대 10행)</h2>
             <p class="tmr-items-hint" id="tmr-items-hint">품목코드·품명 입력란을 누르면 등록 상품 목록에서 선택할 수 있습니다.</p>
-            <div class="tmr-field tmr-field--full">
+            <div class="tmr-field tmr-field--full tmr-items-section">
+                <div class="tmr-items-wrap">
                 <table class="tmr-items-table" aria-label="거래명세 품목">
                     <thead>
                         <tr>
                             <th class="tmr-col-code">품목코드</th>
-                            <th>품명</th>
-                            <th>규격</th>
+                            <th class="tmr-col-name">품명</th>
+                            <th class="tmr-col-size">규격</th>
                             <th class="tmr-col-qty">수량</th>
                             <th class="tmr-col-price">단가</th>
                             <th class="tmr-col-line">공급가액</th>
@@ -99,6 +101,7 @@
                     </thead>
                     <tbody id="tmr-items-body"></tbody>
                 </table>
+                </div>
                 <div class="tmr-items-foot">
                     <button type="button" class="btn btn-secondary" id="tmr-add-row">품목 행 추가</button>
                     <span class="tmr-total" id="tmr-total-label">합계 0원</span>
@@ -155,6 +158,7 @@
         </div>
     </div>
     <script src="address-fields.js"></script>
+    <script src="qty-stepper.js"></script>
     <script src="transaction-manual-register.js"></script>
 </body>
 </html>

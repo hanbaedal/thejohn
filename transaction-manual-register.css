@@ -7,7 +7,7 @@
     background: #fff;
     border: 1px solid #e0e6ed;
     border-radius: 10px;
-    padding: 1rem 1.1rem 1.15rem;
+    padding: 1.2rem 1.5rem 1.35rem;
     margin-bottom: 1.25rem;
 }
 .tmr-panel h2 {
@@ -17,8 +17,13 @@
 }
 .tmr-grid {
     display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 0.65rem 0.85rem;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0.75rem 1rem;
+}
+@media (max-width: 1100px) {
+    .tmr-grid {
+        grid-template-columns: 1fr 1fr;
+    }
 }
 @media (max-width: 720px) {
     .tmr-grid {
@@ -91,7 +96,7 @@
     display: none !important;
 }
 .tmr-picker-panel {
-    width: min(100%, 34rem);
+    width: min(100%, 42rem);
     max-height: min(80vh, 44rem);
     background: #fff;
     border-radius: 12px;
@@ -166,15 +171,26 @@
     font-family: inherit;
     box-sizing: border-box;
 }
+.tmr-items-wrap {
+    width: 100%;
+    overflow-x: auto;
+}
+@media (min-width: 721px) {
+    .tmr-items-wrap {
+        overflow-x: visible;
+    }
+}
 .tmr-items-table {
     width: 100%;
+    min-width: 52rem;
     border-collapse: collapse;
-    font-size: 0.88rem;
+    font-size: 0.92rem;
+    table-layout: fixed;
 }
 .tmr-items-table th,
 .tmr-items-table td {
     border: 1px solid #d4e0eb;
-    padding: 0.35rem 0.4rem;
+    padding: 0.45rem 0.55rem;
     vertical-align: middle;
 }
 .tmr-items-table th {
@@ -203,17 +219,39 @@
     color: #7a8fa0;
 }
 .tmr-items-table .tmr-col-code {
-    width: 6.5rem;
+    width: 9%;
 }
-.tmr-items-table .tmr-col-qty,
+.tmr-items-table .tmr-col-name {
+    width: 32%;
+}
+.tmr-items-table .tmr-col-size {
+    width: 14%;
+}
+.tmr-items-table .tmr-col-qty {
+    width: 12%;
+}
 .tmr-items-table .tmr-col-price {
-    width: 5rem;
+    width: 11%;
+}
+.tmr-items-table .tmr-qty-stepper.qty-stepper {
+    width: 100%;
+    max-width: none;
+}
+.tmr-items-table .tmr-qty-stepper .qty-stepper__btn {
+    min-width: 1.65rem;
+    padding: 0.2rem 0.25rem;
+    font-size: 1rem;
+}
+.tmr-items-table .tmr-qty-stepper .qty-stepper__input {
+    min-width: 2rem;
+    padding: 0.25rem 0.15rem;
+    font-size: 15px;
 }
 .tmr-items-table .tmr-col-line {
-    width: 6.5rem;
+    width: 13%;
 }
 .tmr-items-table .tmr-col-act {
-    width: 3rem;
+    width: 4.5rem;
     text-align: center;
 }
 .tmr-items-foot {

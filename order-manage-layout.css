@@ -1,0 +1,75 @@
+/**
+ * 주문서 관리 — PC·노트북 우선 넓은 본문 (모바일은 참고용)
+ */
+body.staff-nav-order .page-main,
+.page-main.om-page {
+    max-width: min(100%, 78rem);
+    margin-left: auto;
+    margin-right: auto;
+    width: 100%;
+    padding-left: 1.5rem;
+    padding-right: 1.5rem;
+    overflow-x: visible;
+    box-sizing: border-box;
+}
+
+body.staff-nav-order .page-main.company-main,
+.page-main.om-page.company-main {
+    align-items: stretch;
+}
+
+body.staff-nav-order .company-main--support-hub .company-divisions,
+body.staff-nav-order .omh-hub-rows,
+.page-main.om-page .company-main--support-hub .company-divisions,
+.page-main.om-page .omh-hub-rows {
+    max-width: none;
+    width: 100%;
+    margin-left: 0;
+    margin-right: 0;
+}
+
+body.staff-nav-order .omh-hub-rows .sm-hub-row--triple,
+.page-main.om-page .omh-hub-rows .sm-hub-row--triple {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+body.staff-nav-order .shub-panel,
+.page-main.om-page .shub-panel {
+    width: 100%;
+    box-sizing: border-box;
+}
+
+@media (min-width: 721px) {
+    body.staff-nav-order .ol-list-scroll,
+    .page-main.om-page .ol-list-scroll {
+        max-height: 28rem;
+    }
+}
+
+@media (min-width: 900px) {
+    body.staff-nav-order .ol-query-filters,
+    .page-main.om-page .ol-query-filters {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 0.85rem 1.5rem;
+        align-items: start;
+    }
+    body.staff-nav-order .ol-query-filters__section + .ol-query-filters__section,
+    .page-main.om-page .ol-query-filters__section + .ol-query-filters__section {
+        margin-top: 0;
+        padding-top: 0;
+        border-top: none;
+    }
+}
+
+body.staff-nav-order .ol-picker-panel,
+.page-main.om-page .ol-picker-panel {
+    width: min(100%, 42rem);
+}
+
+@media (max-width: 900px) {
+    body.staff-nav-order .omh-hub-rows .sm-hub-row--triple,
+    .page-main.om-page .omh-hub-rows .sm-hub-row--triple {
+        grid-template-columns: 1fr;
+    }
+}

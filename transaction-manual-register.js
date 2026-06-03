@@ -5,6 +5,7 @@
     var api = window.THEJHON_API;
     var OU = window.THEJHON_ORDER_UI;
     var Auth = window.THEJHON_AUTH;
+    var QS = window.THEJHON_QTY_STEPPER;
     var statusEl = document.getElementById("tmr-status");
     var form = document.getElementById("tmr-form");
     var itemsBody = document.getElementById("tmr-items-body");
@@ -174,20 +175,25 @@
         return isFinite(n) ? n : 0;
     }
 
+    function qtyInputInRow(tr) {
+        if (!tr) return null;
+        return tr.querySelector(".qty-stepper__input") || tr.querySelector('[data-f="qty"]');
+    }
+
     function readRow(tr) {
         if (!tr) return null;
         return {
             pd_code: String(tr.querySelector('[data-f="code"]')?.value || "").trim(),
             productName: String(tr.querySelector('[data-f="name"]')?.value || "").trim(),
             pd_size: String(tr.querySelector('[data-f="size"]')?.value || "").trim(),
-            quantity: parseNum(tr.querySelector('[data-f="qty"]')?.value),
+            quantity: parseNum(qtyInputInRow(tr)?.value),
             unitPrice: parseNum(tr.querySelector('[data-f="price"]')?.value),
             lineTotal: parseNum(tr.querySelector('[data-f="line"]')?.value)
         };
     }
 
     function syncLineTotal(tr) {
-        var qty = parseNum(tr.querySelector('[data-f="qty"]')?.value);
+        var qty = parseNum(qtyInputInRow(tr)?.value);
         var price = parseNum(tr.querySelector('[data-f="price"]')?.value);
         var lineEl = tr.querySelector('[data-f="line"]');
         if (lineEl && qty && price) {
@@ -208,6 +214,49 @@
         return sum;
     }
 
+    function qtyStepperHtml(quantity) {
+        var q = parseInt(quantity, 10);
+        if (!isFinite(q) || q < 0) q = 0;
+        if (QS && QS.html) {
+            return QS.html(q, { min: 0, className: "tmr-qty-stepper" });
+        }
+        return (
+            '<input type="text" data-f="qty" inputmode="numeric" value="' +
+            escapeHtml(q ? String(q) : "") +
+            '">'
+        );
+    }
+
+    function bindQtyStepper(tr) {
+        if (!QS || !QS.bind || !tr) return;
+        var root = tr.querySelector(".tmr-qty-stepper");
+        if (!root) return;
+        QS.bind(root, {
+            min: 0,
+            onChange: function () {
+                syncLineTotal(tr);
+            },
+            onInput: function () {
+                syncLineTotal(tr);
+            }
+        });
+    }
+
+    function setRowQty(tr, n) {
+        var inp = qtyInputInRow(tr);
+        if (!inp) return;
+        var v = Math.max(0, parseInt(n, 10) || 0);
+        inp.value = String(v);
+    }
+
+    function clearRowFields(tr) {
+        if (!tr) return;
+        tr.querySelectorAll("input").forEach(function (inp) {
+            if (!inp.closest(".qty-stepper")) inp.value = "";
+        });
+        setRowQty(tr, 0);
+    }
+
     function createRow(data) {
         data = data || {};
         var tr = document.createElement("tr");
@@ -221,9 +270,9 @@
             '<td><input type="text" data-f="size" maxlength="80" value="' +
             escapeHtml(data.pd_size || "") +
             '"></td>' +
-            '<td><input type="text" data-f="qty" inputmode="numeric" value="' +
-            escapeHtml(data.quantity ? String(data.quantity) : "") +
-            '"></td>' +
+            "<td>" +
+            qtyStepperHtml(data.quantity) +
+            "</td>" +
             '<td><input type="text" data-f="price" inputmode="numeric" value="' +
             escapeHtml(data.unitPrice ? String(data.unitPrice) : "") +
             '"></td>' +
@@ -232,22 +281,22 @@
             '"></td>' +
             '<td><button type="button" class="btn btn-secondary tmr-row-del" title="행 삭제">×</button></td>';
         tr.querySelectorAll("input").forEach(function (inp) {
+            if (inp.closest(".qty-stepper")) return;
             inp.addEventListener("input", function () {
-                if (inp.getAttribute("data-f") === "qty" || inp.getAttribute("data-f") === "price") {
+                if (inp.getAttribute("data-f") === "price") {
                     syncLineTotal(tr);
                 } else if (inp.getAttribute("data-f") === "line") {
                     updateTotal();
                 }
             });
         });
+        bindQtyStepper(tr);
         bindProductPickers(tr);
         var delBtn = tr.querySelector(".tmr-row-del");
         if (delBtn) {
             delBtn.addEventListener("click", function () {
                 if (itemsBody.querySelectorAll("tr").length <= MIN_ROWS) {
-                    tr.querySelectorAll("input").forEach(function (inp) {
-                        inp.value = "";
-                    });
+                    clearRowFields(tr);
                     updateTotal();
                     return;
                 }
@@ -479,6 +528,7 @@
         if (nameEl) nameEl.value = product.pd_name || "";
         if (sizeEl) sizeEl.value = product.pd_size || "";
         if (priceEl && unit) priceEl.value = String(unit);
+        if (!parseNum(qtyInputInRow(tr)?.value)) setRowQty(tr, 1);
         syncLineTotal(tr);
     }
 
