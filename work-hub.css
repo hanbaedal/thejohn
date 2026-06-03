@@ -1,58 +1,121 @@
-/* 그룹 마케팅 관리 허브 — 홈과 동일 인트로·배경음악, 메뉴 중앙 */
-.company-main--work-hub.company-main:has(.wh-hub-shell) {
-    justify-content: flex-start;
-    padding: 0;
-    max-width: none;
-    width: 100%;
-    min-height: calc(100dvh - 3.75rem);
-    box-sizing: border-box;
-}
-
-.company-main--work-hub .wh-hub-head {
-    flex: 0 0 auto;
-    width: 100%;
-    max-width: 36rem;
-    margin: 0 auto;
-    padding: 0.65rem max(0.75rem, env(safe-area-inset-left, 0)) 0.35rem
-        max(0.75rem, env(safe-area-inset-right, 0));
-    box-sizing: border-box;
-}
-
-.company-main--work-hub .wh-hub-head h1 {
-    margin: 0 0 0.25rem;
-    font-size: 1.35rem;
-    color: #052a4d;
-}
-
-.company-main--work-hub .wh-hub-head .shub-status {
-    margin: 0;
-}
-
-.wh-hub-shell {
+/* 그룹 마케팅 관리 — 바디 전체 배경 영상, 제목·메뉴 중앙 */
+body.page-work-hub {
+    min-height: 100dvh;
     display: flex;
     flex-direction: column;
-    flex: 1 1 auto;
-    width: 100%;
-    min-height: 0;
+    overflow-x: hidden;
 }
 
-.wh-hub-intro {
+.wh-hub-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    overflow: hidden;
+    background: #0a1a2e;
+    pointer-events: none;
+}
+
+.wh-hub-backdrop-video {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
+.wh-hub-backdrop-overlay {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+        180deg,
+        rgba(255, 255, 255, 0.28) 0%,
+        rgba(255, 255, 255, 0.52) 38%,
+        rgba(255, 255, 255, 0.68) 100%
+    );
+}
+
+/* 헤더 영역에도 배경 영상이 비치도록 — 내용만 위에 표시 */
+body.page-work-hub .site-header {
+    position: relative;
+    z-index: 20;
+    flex: 0 0 auto;
+    background: linear-gradient(
+        180deg,
+        rgba(255, 255, 255, 0.55) 0%,
+        rgba(255, 255, 255, 0.28) 100%
+    );
+    border-bottom-color: rgba(255, 255, 255, 0.45);
+    -webkit-backdrop-filter: blur(4px);
+    backdrop-filter: blur(4px);
+}
+
+body.page-work-hub .site-header .header-date,
+body.page-work-hub .site-header .header-nav-link,
+body.page-work-hub .site-header .nav-dropdown-trigger,
+body.page-work-hub .site-header .btn-auth-icon {
+    text-shadow: 0 1px 8px rgba(255, 255, 255, 0.95);
+}
+
+body.page-work-hub .site-header .dz-logo {
+    filter: drop-shadow(0 1px 6px rgba(255, 255, 255, 0.85));
+}
+
+.company-main--work-hub.company-main:has(.company-divisions),
+.company-main--work-hub.wh-hub-stage {
+    justify-content: center;
+}
+
+.company-main--work-hub.wh-hub-stage {
+    position: relative;
+    z-index: 10;
     flex: 1 1 auto;
-    min-height: min(72vh, calc(100dvh - 11rem));
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
+    width: 100%;
+    max-width: none;
+    min-height: 0;
+    margin: 0;
+    padding: 1rem max(0.75rem, env(safe-area-inset-left, 0)) max(1.25rem, env(safe-area-inset-bottom, 0))
+        max(0.75rem, env(safe-area-inset-right, 0));
+    box-sizing: border-box;
+    background: transparent;
+}
+
+.wh-hub-center {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    max-width: 36rem;
+    gap: 1.35rem;
+    text-align: center;
+}
+
+.wh-hub-title-block {
+    width: 100%;
+}
+
+.wh-hub-title-block h1 {
+    margin: 0 0 0.35rem;
+    font-size: clamp(1.35rem, 4vw, 1.75rem);
+    font-weight: 800;
+    color: #052a4d;
+    letter-spacing: -0.03em;
+    text-shadow: 0 1px 14px rgba(255, 255, 255, 0.95);
+}
+
+.wh-hub-title-block .shub-status {
+    margin: 0 auto;
+    max-width: 28rem;
+    text-align: center;
+    text-shadow: 0 1px 8px rgba(255, 255, 255, 0.9);
 }
 
 .wh-hub-menus {
-    position: relative;
-    z-index: 2;
     width: 100%;
-    max-width: 36rem;
-    padding: 1.25rem max(0.75rem, env(safe-area-inset-left, 0)) 3.25rem
-        max(0.75rem, env(safe-area-inset-right, 0));
-    box-sizing: border-box;
+    text-align: left;
 }
 
 .company-main--work-hub .wh-hub-menus .company-divisions {
@@ -76,12 +139,13 @@
     display: none !important;
 }
 
+.wh-hub-stage .wh-hub-bgm-wrap {
+    position: fixed;
+    z-index: 30;
+}
+
 @media (max-width: 720px) {
     .wh-hub-row {
         grid-template-columns: 1fr;
-    }
-
-    .wh-hub-intro {
-        min-height: min(68vh, calc(100dvh - 10rem));
     }
 }

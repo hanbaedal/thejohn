@@ -44,14 +44,19 @@
             bgmReady = true;
             bgmBtn.hidden = false;
             setBgmUi();
+            if (options.autoplayBgm) {
+                playBgm(true);
+            }
         }
 
-        function playBgm() {
-            if (!bgmReady) return;
+        function playBgm(allowBeforeReady) {
+            if (!bgmReady && !allowBeforeReady) return;
             var p = bgm.play();
             if (p && p.then) {
                 p.then(function () {
                     bgmOn = true;
+                    bgmReady = true;
+                    bgmBtn.hidden = false;
                     setBgmUi();
                 }).catch(function () {});
             } else {
@@ -82,23 +87,44 @@
         if (bgm.readyState >= 2) markBgmReady();
 
         function toggleBgm() {
-            if (!bgmReady) return;
-            if (bgmOn) pauseBgm();
-            else playBgm();
+            if (bgmOn) {
+                pauseBgm();
+                return;
+            }
+            playBgm(true);
         }
 
         bgmBtn.addEventListener("click", function (e) {
             e.stopPropagation();
+            if (!bgmReady) {
+                try {
+                    bgm.load();
+                } catch (loadErr) {}
+            }
             toggleBgm();
         });
 
         if (introRoot) {
             introRoot.addEventListener("click", function (e) {
                 if (e.target.closest(".home-bgm-wrap")) return;
-                if (!bgmReady || bgmOn) return;
-                playBgm();
+                if (e.target.closest("a.wh-hub-card, a.company-division-card")) return;
+                if (bgmOn) return;
+                playBgm(true);
             });
         }
+
+        function unlockBgmOnce() {
+            if (!bgmOn) playBgm(true);
+        }
+
+        document.addEventListener(
+            "pointerdown",
+            function onUnlock() {
+                unlockBgmOnce();
+                document.removeEventListener("pointerdown", onUnlock);
+            },
+            { once: true, passive: true }
+        );
 
         setBgmUi();
     }

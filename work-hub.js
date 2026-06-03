@@ -5,12 +5,13 @@
     function initHubMedia() {
         if (!global.THEJHON_HOME_INTRO_MEDIA || !THEJHON_HOME_INTRO_MEDIA.init) return;
         THEJHON_HOME_INTRO_MEDIA.init({
-            videoSelector: ".wh-hub-intro .home-intro-video",
-            introSelector: ".wh-hub-intro",
+            videoSelector: ".wh-hub-backdrop-video",
+            introSelector: ".wh-hub-stage",
             bgmId: "whHubMusic",
             bgmBtnId: "whBgmToggle",
             bgmHintId: "whBgmHint",
-            volume: 0.28
+            volume: 0.38,
+            autoplayBgm: true
         });
     }
 
@@ -60,6 +61,8 @@
         });
     }
 
+    initHubMedia();
+
     if (!Auth || !Auth.getWorkHubAccess) {
         setStatus("인증 스크립트 오류", "err");
         return;
@@ -73,7 +76,6 @@
     }
 
     applyMenus();
-    initHubMedia();
     if (Auth.setStaffNavMode) Auth.setStaffNavMode("hub");
 
     if (Auth.refreshSessionPermissionsAsync) {
