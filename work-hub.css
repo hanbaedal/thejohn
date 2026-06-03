@@ -55,9 +55,40 @@ body.page-work-hub .site-header .dz-logo {
     filter: drop-shadow(0 1px 6px rgba(255, 255, 255, 0.85));
 }
 
-.company-main--work-hub.company-main:has(.company-divisions),
-.company-main--work-hub.wh-hub-stage {
-    justify-content: center;
+/* work-hub만 — 상호를 로고 바로 오른쪽 */
+body.page-work-hub .site-header-brand {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    flex-shrink: 0;
+    min-width: 0;
+    max-width: min(52vw, 20rem);
+}
+
+body.page-work-hub .header-session-company--wide,
+body.page-work-hub .header-session-company--mobile {
+    display: none !important;
+}
+
+body.page-work-hub .header-session-company--hub {
+    display: block;
+    margin: 0;
+    padding: 0;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    /* 로고(.dz-logo--compact 2.5rem) 높이의 70% */
+    font-size: calc(2.5rem * 0.7);
+    line-height: 1;
+    font-weight: 800;
+    color: #ffd400;
+    text-shadow: 0 1px 6px rgba(0, 0, 0, 0.45), 0 0 12px rgba(255, 212, 0, 0.35);
+    align-self: center;
+}
+
+body.page-work-hub .header-session-company--hub[hidden] {
+    display: none !important;
 }
 
 .company-main--work-hub.wh-hub-stage {
@@ -141,10 +172,6 @@ body.page-work-hub .site-header .dz-logo {
 .company-main--work-hub .wh-hub-row:empty,
 .company-main--work-hub .wh-hub-row[hidden] {
     display: none !important;
-}
-
-.company-main--work-hub .wh-hub-row:not(:has(.wh-hub-card:not([hidden]))) {
-    display: none;
 }
 
 .company-main--work-hub a.company-division-card.wh-hub-card {
