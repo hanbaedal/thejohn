@@ -16,17 +16,29 @@
 
             function applyVideoPlaybackRate() {
                 try {
-                    video.playbackRate = playbackRate;
+                    video.defaultPlaybackRate = playbackRate;
+                    if (Math.abs(video.playbackRate - playbackRate) > 0.001) {
+                        video.playbackRate = playbackRate;
+                    }
                 } catch (e) {}
             }
 
             applyVideoPlaybackRate();
-            video.addEventListener("loadedmetadata", applyVideoPlaybackRate);
+            ["loadedmetadata", "loadeddata", "playing", "play"].forEach(function (ev) {
+                video.addEventListener(ev, applyVideoPlaybackRate);
+            });
+            video.addEventListener("ratechange", function () {
+                if (Math.abs(video.playbackRate - playbackRate) > 0.001) {
+                    applyVideoPlaybackRate();
+                }
+            });
 
             var playV = function () {
                 applyVideoPlaybackRate();
                 var p = video.play();
-                if (p && p.catch) p.catch(function () {});
+                if (p && typeof p.then === "function") {
+                    p.then(applyVideoPlaybackRate).catch(function () {});
+                }
             };
             playV();
             document.addEventListener("visibilitychange", function () {

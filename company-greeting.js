@@ -78,63 +78,19 @@
     return document.getElementById("companyIntroGalleryAek");
   }
 
-  function akGallerySlideWidth(track) {
-    return track.clientWidth || 1;
-  }
-
-  function akGalleryCurrentIndex(track) {
-    var idx = Math.round(track.scrollLeft / akGallerySlideWidth(track)) + 1;
-    if (idx < 1) idx = 1;
-    if (idx > AEK_GALLERY_COUNT) idx = AEK_GALLERY_COUNT;
-    return idx;
-  }
-
-  function akGalleryGoTo(track, index) {
-    var idx = Math.max(1, Math.min(AEK_GALLERY_COUNT, index));
-    var left = (idx - 1) * akGallerySlideWidth(track);
-    if (track.scrollTo) {
-      track.scrollTo({ left: left, behavior: "smooth" });
-    } else {
-      track.scrollLeft = left;
+  function bindAkGalleryScroll(track, pageEl) {
+    if (!track || track.dataset.scrollBound) return;
+    track.dataset.scrollBound = "1";
+    function updatePage() {
+      if (!pageEl) return;
+      var w = track.clientWidth || 1;
+      var idx = Math.round(track.scrollLeft / w) + 1;
+      if (idx < 1) idx = 1;
+      if (idx > AEK_GALLERY_COUNT) idx = AEK_GALLERY_COUNT;
+      pageEl.textContent = idx + " / " + AEK_GALLERY_COUNT;
     }
-  }
-
-  function bindAkGalleryControls(track, pageEl) {
-    if (!track || track.dataset.controlsBound) return;
-    track.dataset.controlsBound = "1";
-    var prevBtn = document.getElementById("companyIntroGalleryAekPrev");
-    var nextBtn = document.getElementById("companyIntroGalleryAekNext");
-
-    function refreshGalleryUi() {
-      var idx = akGalleryCurrentIndex(track);
-      if (pageEl) pageEl.textContent = idx + " / " + AEK_GALLERY_COUNT;
-      if (prevBtn) prevBtn.disabled = idx <= 1;
-      if (nextBtn) nextBtn.disabled = idx >= AEK_GALLERY_COUNT;
-    }
-
-    track.addEventListener("scroll", refreshGalleryUi, { passive: true });
-    window.addEventListener(
-      "resize",
-      function () {
-        refreshGalleryUi();
-      },
-      { passive: true }
-    );
-
-    if (prevBtn) {
-      prevBtn.hidden = false;
-      prevBtn.addEventListener("click", function () {
-        akGalleryGoTo(track, akGalleryCurrentIndex(track) - 1);
-      });
-    }
-    if (nextBtn) {
-      nextBtn.hidden = false;
-      nextBtn.addEventListener("click", function () {
-        akGalleryGoTo(track, akGalleryCurrentIndex(track) + 1);
-      });
-    }
-
-    refreshGalleryUi();
+    track.addEventListener("scroll", updatePage, { passive: true });
+    updatePage();
   }
 
   function buildAkGallery() {
@@ -157,7 +113,7 @@
         "</figure>";
     }
     track.innerHTML = html;
-    bindAkGalleryControls(track, document.getElementById("companyIntroGalleryAekPage"));
+    bindAkGalleryScroll(track, document.getElementById("companyIntroGalleryAekPage"));
     track.scrollLeft = 0;
   }
 
@@ -166,10 +122,6 @@
     if (!section) return;
     if (!show) {
       section.hidden = true;
-      var prevHide = document.getElementById("companyIntroGalleryAekPrev");
-      var nextHide = document.getElementById("companyIntroGalleryAekNext");
-      if (prevHide) prevHide.hidden = true;
-      if (nextHide) nextHide.hidden = true;
       return;
     }
     buildAkGallery();
@@ -209,7 +161,9 @@
     section.hidden = false;
   }
 
-  function fillDefaultGreetingContent(subject) {
+  function applyDefaultGreeting(subject) {
+    setWooilPhilosophyVisible(false);
+    setAkGalleryVisible(false);
     var name = stripTrailingTopicParticle(subject || COMPANY_GREETING_SUBJECT);
     var eu = josaEunNeun(name);
     var paras = greetingParas();
@@ -243,12 +197,6 @@
     }
   }
 
-  function applyDefaultGreeting(subject) {
-    setWooilPhilosophyVisible(false);
-    setAkGalleryVisible(false);
-    fillDefaultGreetingContent(subject);
-  }
-
   function applyWooilFoodGreeting(company) {
     var name = String(company || "(주)우일푸드").trim();
     setAkGalleryVisible(false);
@@ -276,8 +224,8 @@
   function applyAkSangsaIntro(company) {
     var name = String(company || "(주)에이케이상사").trim() || "(주)에이케이상사";
     setWooilPhilosophyVisible(false);
-    fillDefaultGreetingContent(name);
     setAkGalleryVisible(true);
+    applyDefaultGreeting(name);
   }
 
   function applyForStaff(st) {
