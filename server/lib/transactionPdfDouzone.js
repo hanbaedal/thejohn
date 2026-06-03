@@ -10,7 +10,7 @@ const CUT_LINE_Y = PAGE_HALF_H;
 const DOC_TOP_LINES = 2;
 const ROW_H = 15;
 const HEADER_ROW_H = 16;
-const SEAL_DRAW_SIZE = 56;
+const SEAL_DRAW_SIZE = 45;
 const SUPPLIER_ROWS = 5;
 const HEADER_BLOCK_H = HEADER_ROW_H * SUPPLIER_ROWS;
 const MAX_ITEM_ROWS = 10;
@@ -242,9 +242,9 @@ function drawSlip(doc, slipY, order, issuer, theme, pageLabel) {
         pageLabel,
         formatIssueDate(order.createdAt),
         order.vendorCompany || "",
-        order.vendorMgrName || ""
+        order.vendorCeo || ""
     ];
-    var leftLabels = ["Page", "발행일자", "거래처", "담당자"];
+    var leftLabels = ["Page", "발행일자", "거래처", "대표"];
     for (var lr = 0; lr < 4; lr++) {
         drawLabel(doc, leftLabels[lr], x0, y + lr * leftRowH, leftLabelW, leftRowH, "#EEEEEE");
         drawValue(
@@ -262,9 +262,10 @@ function drawSlip(doc, slipY, order, issuer, theme, pageLabel) {
     strokeRect(doc, tx, y, titleW, headerH, null);
     var titleTextH = 36;
     var titleY = y + (headerH - titleTextH) / 2;
-    doc.fontSize(FONT_TITLE).fillColor("#000000");
+    doc.font(doc._krBold ? "KR-Bold" : "KR").fontSize(FONT_TITLE).fillColor("#000000");
     doc.text("거래명세서", tx, titleY, { width: titleW, align: "center" });
-    doc.fontSize(FONT_SMALL).text(theme.subtitle, tx, titleY + 20, { width: titleW, align: "center" });
+    doc.font("KR").fontSize(FONT_SMALL).fillColor("#000000");
+    doc.text(theme.subtitle, tx, titleY + 20, { width: titleW, align: "center" });
 
     var mgrRowY = y + 3 * HEADER_ROW_H;
     var totalRowY = y + 4 * HEADER_ROW_H;
