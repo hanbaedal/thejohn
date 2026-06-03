@@ -24,8 +24,15 @@
     var productModalCloseBtn = document.getElementById("tmr-product-modal-close");
     var productSearchEl = document.getElementById("tmr-product-search");
     var productListEl = document.getElementById("tmr-product-list");
+    var issuerWrap = document.getElementById("tmr-issuer-wrap");
+    var issuerNoteEl = document.getElementById("tmr-issuer-note");
+    var itemsHintEl = document.getElementById("tmr-items-hint");
+    var isSupervisor = false;
+    var adminIssuerName = "";
     var allVendors = [];
     var allProducts = [];
+    var productsLoadedForIssuer = "";
+    var vendorsLoadedForIssuer = "";
     var selectedVendorDetail = null;
     var activeProductRow = null;
     var currentId = "";
@@ -187,8 +194,59 @@
         updateTotal();
     }
 
+    function getIssuerLoginId() {
+        if (!isSupervisor) {
+            return Auth && Auth.getUserId ? String(Auth.getUserId() || "").trim() : "";
+        }
+        return String(issuerSelect?.value || "").trim();
+    }
+
+    function getIssuerStaffName() {
+        if (!isSupervisor) {
+            return adminIssuerName || getIssuerLoginId();
+        }
+        var opt = issuerSelect && issuerSelect.selectedOptions[0];
+        return opt ? String(opt.textContent || "").trim() : "";
+    }
+
+    function productListOpts() {
+        var issuer = getIssuerLoginId();
+        if (isSupervisor && issuer) {
+            return { registeredBy: issuer };
+        }
+        return {};
+    }
+
+    function productMatchesIssuer(p, issuerId) {
+        if (!p || !issuerId) return false;
+        return staffIdsEqual(p.pd_registered_by, issuerId);
+    }
+
+    function vendorMatchesIssuer(v, issuerId) {
+        if (!v || !issuerId) return false;
+        return staffIdsEqual(v.registeredBy, issuerId);
+    }
+
+    function vendorsForPicker() {
+        var issuer = getIssuerLoginId();
+        if (!isSupervisor || !issuer) return allVendors;
+        return allVendors.filter(function (v) {
+            return vendorMatchesIssuer(v, issuer);
+        });
+    }
+
+    function invalidateProductCache() {
+        allProducts = [];
+        productsLoadedForIssuer = "";
+    }
+
+    function invalidateVendorCache() {
+        allVendors = [];
+        vendorsLoadedForIssuer = "";
+        selectedVendorDetail = null;
+    }
+
     function readBody() {
-        var issuerOpt = issuerSelect && issuerSelect.selectedOptions[0];
         var items = [];
         if (itemsBody) {
             itemsBody.querySelectorAll("tr").forEach(function (tr) {
@@ -205,8 +263,8 @@
         return {
             title: String(document.getElementById("tmr-title")?.value || "").trim(),
             issueDate: issueDateToMs(document.getElementById("tmr-issue-date")?.value),
-            issuerStaffLoginId: String(issuerSelect?.value || "").trim(),
-            issuerStaffName: issuerOpt ? String(issuerOpt.textContent || "").trim() : "",
+            issuerStaffLoginId: getIssuerLoginId(),
+            issuerStaffName: getIssuerStaffName(),
             vendorCompany: String(document.getElementById("tmr-vendor-company")?.value || "").trim(),
             vendorCeo: String(document.getElementById("tmr-vendor-ceo")?.value || "").trim(),
             vendorAddr: String(document.getElementById("tmr-vendor-addr")?.value || "").trim(),
@@ -309,11 +367,13 @@
         var v = selectedVendorDetail;
         var vReg = v ? v.registeredBy : "";
         var pReg = product.pd_registered_by || "";
+        var issuer = getIssuerLoginId();
         if (
+            issuer &&
+            staffIdsEqual(pReg, issuer) &&
             v &&
             !isLegacyRegistrar(vReg) &&
-            !isLegacyRegistrar(pReg) &&
-            staffIdsEqual(vReg, pReg)
+            staffIdsEqual(vReg, issuer)
         ) {
             var g = parseVendorGrade(v.grade);
             if (g === "2") return product.pd_price2 || 0;
@@ -375,6 +435,32 @@
         });
     }
 
+    function loadProductsForIssuer() {
+        var issuer = getIssuerLoginId();
+        if (isSupervisor && !issuer) {
+            return Promise.reject(new Error("먼저 공급자(발행 관리자)를 선택해 주세요."));
+        }
+        var cacheKey = issuer || "__self__";
+        if (allProducts.length && productsLoadedForIssuer === cacheKey) {
+            return Promise.resolve();
+        }
+        return api.listProducts(productListOpts()).then(function (items) {
+            var list = (items || []).map(mapProductFromApi).filter(Boolean);
+            if (isSupervisor && issuer) {
+                list = list.filter(function (p) {
+                    return productMatchesIssuer(p, issuer);
+                });
+            }
+            allProducts = list.sort(function (a, b) {
+                var ac = String(a.pd_code || "");
+                var bc = String(b.pd_code || "");
+                if (ac !== bc) return ac.localeCompare(bc, "ko");
+                return String(a.pd_name || "").localeCompare(String(b.pd_name || ""), "ko");
+            });
+            productsLoadedForIssuer = cacheKey;
+        });
+    }
+
     function renderProductList(query) {
         if (!productListEl) return;
         var q = String(query || "")
@@ -388,7 +474,13 @@
         });
         if (!items.length) {
             productListEl.innerHTML =
-                '<li><p class="tmr-picker-empty">표시할 등록 상품이 없습니다. 상품 등록 메뉴에서 먼저 등록해 주세요.</p></li>';
+                '<li><p class="tmr-picker-empty">' +
+                escapeHtml(
+                    isSupervisor && !getIssuerLoginId()
+                        ? "먼저 공급자(발행 관리자)를 선택해 주세요."
+                        : "표시할 등록 상품이 없습니다. 해당 관리자가 등록한 상품이 없습니다."
+                ) +
+                "</p></li>";
             return;
         }
         productListEl.innerHTML = items
@@ -416,6 +508,10 @@
 
     function openProductModal(tr, field) {
         if (!api || !api.listProducts || !productModal || !tr) return;
+        if (isSupervisor && !getIssuerLoginId()) {
+            setStatus("먼저 공급자(발행 관리자)를 선택해 주세요.", "err");
+            return;
+        }
         activeProductRow = tr;
         var inp = tr.querySelector('[data-f="' + (field === "code" ? "code" : "name") + '"]');
         var seed = inp ? String(inp.value || "").trim() : "";
@@ -430,28 +526,19 @@
             }
         }
         if (productSearchEl) productSearchEl.value = seed;
-        if (allProducts.length) {
+        if (allProducts.length && productsLoadedForIssuer) {
             showList();
             return;
         }
         setStatus("상품 목록 불러오는 중…");
-        api
-            .listProducts()
-            .then(function (items) {
-                allProducts = (items || [])
-                    .map(mapProductFromApi)
-                    .filter(Boolean)
-                    .sort(function (a, b) {
-                        var ac = String(a.pd_code || "");
-                        var bc = String(b.pd_code || "");
-                        if (ac !== bc) return ac.localeCompare(bc, "ko");
-                        return String(a.pd_name || "").localeCompare(String(b.pd_name || ""), "ko");
-                    });
+        loadProductsForIssuer()
+            .then(function () {
                 showList();
                 setStatus("");
             })
             .catch(function (e) {
                 allProducts = [];
+                productsLoadedForIssuer = "";
                 renderProductList(seed);
                 setStatus((e && e.message) || "상품 목록을 불러오지 못했습니다.", "err");
             });
@@ -475,16 +562,42 @@
         });
     }
 
+    function loadVendorsForIssuer() {
+        var issuer = getIssuerLoginId();
+        var cacheKey = isSupervisor ? issuer || "" : "__self__";
+        if (allVendors.length && vendorsLoadedForIssuer === cacheKey) {
+            return Promise.resolve();
+        }
+        return api.listVendors().then(function (items) {
+            var list = (items || []).map(mapVendorFromApi).filter(Boolean);
+            if (isSupervisor && issuer) {
+                list = list.filter(function (v) {
+                    return vendorMatchesIssuer(v, issuer);
+                });
+            }
+            allVendors = list.sort(function (a, b) {
+                return a.companyName.localeCompare(b.companyName, "ko");
+            });
+            vendorsLoadedForIssuer = cacheKey;
+        });
+    }
+
     function renderVendorList(query) {
         if (!vendorListEl) return;
         var q = String(query || "").trim().toLowerCase();
-        var items = allVendors.filter(function (v) {
+        var items = vendorsForPicker().filter(function (v) {
             var name = String((v && v.companyName) || "").toLowerCase();
             return !q || name.indexOf(q) >= 0;
         });
         if (!items.length) {
             vendorListEl.innerHTML =
-                '<li><p class="tmr-picker-empty">표시할 등록 업체가 없습니다. 업체 등록 메뉴에서 먼저 등록해 주세요.</p></li>';
+                '<li><p class="tmr-picker-empty">' +
+                escapeHtml(
+                    isSupervisor && !getIssuerLoginId()
+                        ? "먼저 공급자(발행 관리자)를 선택해 주세요."
+                        : "표시할 등록 업체가 없습니다. 해당 관리자가 등록한 업체가 없습니다."
+                ) +
+                "</p></li>";
             return;
         }
         vendorListEl.innerHTML = items
@@ -507,37 +620,39 @@
 
     function openVendorModal() {
         if (!api || !api.listVendors || !vendorModal) return;
+        if (isSupervisor && !getIssuerLoginId()) {
+            setStatus("먼저 공급자(발행 관리자)를 선택해 주세요.", "err");
+            return;
+        }
         vendorModal.hidden = false;
         if (vendorSearchEl) {
             vendorSearchEl.value = "";
             vendorSearchEl.focus();
         }
-        if (allVendors.length) {
+        if (allVendors.length && vendorsLoadedForIssuer) {
             renderVendorList("");
             return;
         }
         setStatus("업체 목록 불러오는 중…");
-        api
-            .listVendors()
-            .then(function (items) {
-                allVendors = (items || [])
-                    .map(mapVendorFromApi)
-                    .filter(Boolean)
-                    .sort(function (a, b) {
-                        return a.companyName.localeCompare(b.companyName, "ko");
-                    });
+        loadVendorsForIssuer()
+            .then(function () {
                 renderVendorList("");
                 setStatus("");
             })
             .catch(function (e) {
                 allVendors = [];
+                vendorsLoadedForIssuer = "";
                 renderVendorList("");
                 setStatus((e && e.message) || "업체 목록을 불러오지 못했습니다.", "err");
             });
     }
 
     function validate(body) {
-        if (!body.issuerStaffLoginId) return "공급자(발행 관리자)를 선택해 주세요.";
+        if (!body.issuerStaffLoginId) {
+            return isSupervisor
+                ? "공급자(발행 관리자)를 선택해 주세요."
+                : "로그인 정보를 확인할 수 없습니다.";
+        }
         if (!body.vendorCompany) return "거래처(업체명)을 선택해 주세요.";
         if (!body.items.length) return "품목을 1개 이상 입력해 주세요.";
         return "";
@@ -551,7 +666,8 @@
 
     function resetForm() {
         setEditMode("");
-        selectedVendorDetail = null;
+        invalidateProductCache();
+        invalidateVendorCache();
         closeProductModal();
         if (form) form.reset();
         var dateEl = document.getElementById("tmr-issue-date");
@@ -578,9 +694,9 @@
     function loadStaffOptions() {
         if (!api || !api.listStaff || !issuerSelect) return Promise.resolve();
         return api.listStaff().then(function (items) {
-            var html = '<option value="">선택</option>';
+            var html = '<option value="">관리자 선택</option>';
             (items || []).forEach(function (st) {
-                if (!st || st.role === "vendor") return;
+                if (!st || st.role !== "admin") return;
                 var id = String(st.loginId || "").trim();
                 if (!id) return;
                 var label = (st.st_company || id) + " (" + id + ")";
@@ -592,11 +708,53 @@
                     "</option>";
             });
             issuerSelect.innerHTML = html;
-            if (Auth && Auth.getUserId) {
-                var me = Auth.getUserId();
-                if (me) issuerSelect.value = me;
-            }
         });
+    }
+
+    function loadAdminIssuerProfile() {
+        var me = Auth && Auth.getUserId ? String(Auth.getUserId() || "").trim() : "";
+        adminIssuerName = me;
+        if (!me || !api || !api.getStaffProfile) return Promise.resolve();
+        return api.getStaffProfile().then(function (p) {
+            if (p) {
+                adminIssuerName = String(p.st_company || p.loginId || me).trim() || me;
+            }
+        }).catch(function () {
+            adminIssuerName = me;
+        });
+    }
+
+    function setupIssuerUi() {
+        isSupervisor = !!(Auth && Auth.isSupervisorStaff && Auth.isSupervisorStaff());
+        if (issuerWrap) issuerWrap.hidden = !isSupervisor;
+        if (issuerSelect) {
+            if (isSupervisor) {
+                issuerSelect.hidden = false;
+                issuerSelect.setAttribute("required", "required");
+            } else {
+                issuerSelect.hidden = true;
+                issuerSelect.removeAttribute("required");
+            }
+        }
+        if (issuerNoteEl) issuerNoteEl.hidden = !isSupervisor;
+        if (itemsHintEl) {
+            itemsHintEl.textContent = isSupervisor
+                ? "공급자(관리자)를 선택한 뒤, 품목코드·품명 입력란을 누르면 해당 관리자가 등록한 상품만 표시됩니다."
+                : "품목코드·품명 입력란을 누르면 본인이 등록한 상품만 표시됩니다.";
+        }
+        if (isSupervisor) {
+            return loadStaffOptions();
+        }
+        return loadAdminIssuerProfile();
+    }
+
+    function onIssuerChanged() {
+        invalidateProductCache();
+        invalidateVendorCache();
+        if (vendorCompanyEl) vendorCompanyEl.value = "";
+        document.getElementById("tmr-vendor-ceo").value = "";
+        document.getElementById("tmr-vendor-addr").value = "";
+        document.getElementById("tmr-vendor-phone").value = "";
     }
 
     function renderSavedList(items) {
@@ -746,6 +904,9 @@
             renderVendorList(vendorSearchEl.value);
         });
     }
+    if (issuerSelect) {
+        issuerSelect.addEventListener("change", onIssuerChanged);
+    }
     if (productModalCloseBtn) productModalCloseBtn.addEventListener("click", closeProductModal);
     if (productModal) {
         productModal.addEventListener("click", function (e) {
@@ -787,7 +948,7 @@
     if (Auth.refreshOrderHeader) Auth.refreshOrderHeader();
 
     resetForm();
-    loadStaffOptions()
+    setupIssuerUi()
         .then(refreshSavedList)
         .then(function () {
             var params = new URLSearchParams(window.location.search);

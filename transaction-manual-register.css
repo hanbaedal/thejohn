@@ -33,6 +33,15 @@
 .tmr-field--full {
     grid-column: 1 / -1;
 }
+.tmr-field-issuer[hidden] {
+    display: none !important;
+}
+.tmr-field-note {
+    margin: 0.15rem 0 0;
+    font-size: 0.78rem;
+    color: #5a6d7e;
+    font-weight: 400;
+}
 .tmr-vendor-pick {
     display: flex;
     flex-wrap: wrap;

@@ -24,7 +24,8 @@ const {
     stampNewProductRegistration,
     applyProductRegistrationOnUpdate
 } = require("../lib/productAccess");
-const { normalizeStaffLoginId, isStaffAuth } = require("../lib/vendorAccess");
+const { normalizeStaffLoginId, isStaffAuth, isSupervisorAuth } = require("../lib/vendorAccess");
+const { trimStaffLoginId, registeredByInFilter } = require("../lib/staffLoginId");
 const { findVendorByLoginId } = require("../lib/loginResolve");
 const { normalizeDept, deptQuery } = require("../lib/productDept");
 
@@ -52,8 +53,11 @@ async function buildListFindQuery(auth, reqQuery, vendorDoc) {
         base = buildVendorCatalogProductQuery(vendorDoc, auth);
     } else {
         /** ?dept= 만 있으면 사업부문 카탈로그(부문 전체). ?registeredBy= 있으면 담당 관리자 필터 */
-        const catalogByDept = !!reqQuery.dept && !reqQuery.registeredBy;
-        if (catalogByDept) {
+        const regBy = trimStaffLoginId(reqQuery.registeredBy || "");
+        const catalogByDept = !!reqQuery.dept && !regBy;
+        if (regBy && auth && isSupervisorAuth(auth)) {
+            base = { [F.registeredBy]: registeredByInFilter(regBy) };
+        } else if (catalogByDept) {
             base = {};
         } else if (auth && auth.role === "admin" && isStaffAuth(auth)) {
             base = await buildProductListQueryAsync(auth);
