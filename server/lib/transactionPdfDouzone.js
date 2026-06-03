@@ -8,14 +8,15 @@ const MARGIN_X = 24;
 const SLIP_GAP = 8;
 const SLIP_H = (PAGE_H - SLIP_GAP) / 2;
 const ROW_H = 15;
+const TABLE_TOP_GAP_ROWS = 2;
 const HEADER_ROW_H = 16;
+const SEAL_DRAW_SIZE = 56;
 const SUPPLIER_ROWS = 5;
 const HEADER_BLOCK_H = HEADER_ROW_H * SUPPLIER_ROWS;
 const MAX_ITEM_ROWS = 10;
 const FONT_BODY = 8;
 const FONT_TITLE = 17;
 const FONT_SMALL = 7;
-const TOTAL_LABEL_W = 52;
 
 const THEME_RECIPIENT = {
     subtitle: "(공급받는자 보관용)",
@@ -145,12 +146,13 @@ function supplierColumnWidths(supplierW) {
     var nameLbl = 30;
     var inLbl = 22;
     var seal = 32;
-    var halfLbl = 30;
+    var pairLbl = 30;
     var inner = supplierW - lbl;
     var row2Mid = inner - nameLbl - inLbl - seal;
     var companyW = Math.max(48, Math.floor(row2Mid * 0.58));
     var ceoW = row2Mid - companyW;
-    var halfVal = Math.max(40, Math.floor((inner - halfLbl * 2) / 2));
+    var pairVal = Math.max(40, Math.floor((inner - pairLbl) / 2));
+    var pairVal2 = inner - pairLbl - pairVal;
     return {
         lbl: lbl,
         nameLbl: nameLbl,
@@ -159,9 +161,10 @@ function supplierColumnWidths(supplierW) {
         ceoW: ceoW,
         inLbl: inLbl,
         seal: seal,
-        halfLbl: halfLbl,
-        halfVal: halfVal,
-        halfVal2: inner - halfLbl * 2 - halfVal
+        pairLbl: pairLbl,
+        pairVal: pairVal,
+        pairVal2: pairVal2,
+        valueW: inner
     };
 }
 
@@ -175,7 +178,6 @@ function drawSlip(doc, slipY, order, issuer, theme, pageLabel) {
     var titleW = 148;
     var supplierW = slipW - leftW - titleW;
     var leftRowH = HEADER_ROW_H;
-    var leftH = leftRowH * 3;
     var headerH = HEADER_BLOCK_H;
     var leftLabelW = 44;
     var leftValues = [pageLabel, formatIssueDate(order.createdAt), order.vendorCompany || ""];
@@ -192,6 +194,17 @@ function drawSlip(doc, slipY, order, issuer, theme, pageLabel) {
             "center"
         );
     }
+    var totalRowY = y + 3 * leftRowH;
+    drawLabel(doc, "합계금액", x0, totalRowY, leftLabelW, leftRowH, theme.labelBg);
+    drawValue(
+        doc,
+        "₩  " + formatNum(order.totalAmount),
+        x0 + leftLabelW,
+        totalRowY,
+        leftW - leftLabelW,
+        leftRowH,
+        "right"
+    );
 
     var tx = x0 + leftW;
     strokeRect(doc, tx, y, titleW, headerH, null);
@@ -222,14 +235,13 @@ function drawSlip(doc, slipY, order, issuer, theme, pageLabel) {
     strokeRect(doc, sealX, sy, sc.seal, HEADER_ROW_H, null);
     if (issuer.sealPath && fs.existsSync(issuer.sealPath)) {
         try {
-            var sealPad = 1;
-            var sealBox = Math.min(sc.seal, HEADER_ROW_H) - sealPad * 2;
-            doc.image(
-                issuer.sealPath,
-                sealX + (sc.seal - sealBox) / 2,
-                sy + (HEADER_ROW_H - sealBox) / 2,
-                { width: sealBox, height: sealBox, fit: [sealBox, sealBox] }
-            );
+            var sealLeft = sx + supplierW - SEAL_DRAW_SIZE;
+            var sealTop = sy + (HEADER_ROW_H - SEAL_DRAW_SIZE) / 2;
+            doc.image(issuer.sealPath, sealLeft, sealTop, {
+                width: SEAL_DRAW_SIZE,
+                height: SEAL_DRAW_SIZE,
+                fit: [SEAL_DRAW_SIZE, SEAL_DRAW_SIZE]
+            });
         } catch (e) {
             /* ignore */
         }
@@ -237,48 +249,29 @@ function drawSlip(doc, slipY, order, issuer, theme, pageLabel) {
     sy += HEADER_ROW_H;
 
     drawLabel(doc, "주소", sx, sy, sc.lbl, HEADER_ROW_H, theme.labelBg);
-    drawValue(doc, issuer.address, sx + sc.lbl, sy, supplierW - sc.lbl, HEADER_ROW_H);
+    drawValue(doc, issuer.address, sx + sc.lbl, sy, sc.valueW, HEADER_ROW_H);
     sy += HEADER_ROW_H;
 
     cx = sx;
     drawLabel(doc, "업태", cx, sy, sc.lbl, HEADER_ROW_H, theme.labelBg);
     cx += sc.lbl;
-    drawValue(doc, issuer.bizType, cx, sy, sc.halfVal, HEADER_ROW_H);
-    cx += sc.halfVal;
-    drawLabel(doc, "종목", cx, sy, sc.halfLbl, HEADER_ROW_H, theme.labelBg);
-    cx += sc.halfLbl;
-    drawValue(doc, issuer.bizItem, cx, sy, sc.halfVal2, HEADER_ROW_H);
+    drawValue(doc, issuer.bizType, cx, sy, sc.pairVal, HEADER_ROW_H);
+    cx += sc.pairVal;
+    drawLabel(doc, "종목", cx, sy, sc.pairLbl, HEADER_ROW_H, theme.labelBg);
+    cx += sc.pairLbl;
+    drawValue(doc, issuer.bizItem, cx, sy, sc.pairVal2, HEADER_ROW_H);
     sy += HEADER_ROW_H;
 
     cx = sx;
     drawLabel(doc, "전화번호", cx, sy, sc.lbl, HEADER_ROW_H, theme.labelBg);
     cx += sc.lbl;
-    drawValue(doc, issuer.phone, cx, sy, sc.halfVal, HEADER_ROW_H);
-    cx += sc.halfVal;
-    drawLabel(doc, "팩스", cx, sy, sc.halfLbl, HEADER_ROW_H, theme.labelBg);
-    cx += sc.halfLbl;
-    drawValue(doc, issuer.fax, cx, sy, sc.halfVal2, HEADER_ROW_H);
+    drawValue(doc, issuer.phone, cx, sy, sc.pairVal, HEADER_ROW_H);
+    cx += sc.pairVal;
+    drawLabel(doc, "팩스", cx, sy, sc.pairLbl, HEADER_ROW_H, theme.labelBg);
+    cx += sc.pairLbl;
+    drawValue(doc, issuer.fax, cx, sy, sc.pairVal2, HEADER_ROW_H);
 
-    y += headerH + 4;
-
-    var totalRowH = ROW_H + 2;
-    strokeRect(doc, x0, y, slipW, totalRowH, theme.labelBg);
-    drawTextInCell(doc, "합계금액", x0, y, TOTAL_LABEL_W, totalRowH, { align: "center" });
-    doc
-        .strokeColor("#333333")
-        .moveTo(x0 + TOTAL_LABEL_W, y)
-        .lineTo(x0 + TOTAL_LABEL_W, y + totalRowH)
-        .stroke();
-    drawTextInCell(
-        doc,
-        "₩  " + formatNum(order.totalAmount),
-        x0 + TOTAL_LABEL_W,
-        y,
-        slipW - TOTAL_LABEL_W,
-        totalRowH,
-        { align: "right" }
-    );
-    y += totalRowH + 4;
+    y += headerH + 4 + ROW_H * TABLE_TOP_GAP_ROWS;
 
     var cols = tableColumnWidths(slipW);
     var headers = ["월일", "품목코드", "품명", "규격", "수량", "단가", "공급가액", "세액"];
