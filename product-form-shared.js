@@ -368,7 +368,7 @@
         };
     }
 
-    var MAX_PRODUCT_PHOTOS = 3;
+    var MAX_PRODUCT_PHOTOS = 5;
 
     function hasProductImages(data) {
         if (!data) return false;
@@ -381,7 +381,7 @@
     }
 
     /**
-     * 상품 사진 최대 3장 — 슬롯 미리보기·삭제, 앨범/카메라로 추가
+     * 상품 사진 최대 5장 — 슬롯 미리보기·삭제, 앨범/카메라로 추가
      * options: { slotsRoot, countEl, hintEl, btnGallery, btnCamera, galleryInput, cameraInput,
      *   maxPhotos?, onChange(images[]), onError(err), onStatus?(msg) }
      */

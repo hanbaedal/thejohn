@@ -63,7 +63,7 @@ function jsonSafeStr(v) {
 }
 
 const PRODUCT_CODE_MAX_LEN = 16;
-const MAX_PRODUCT_IMAGES = 3;
+const MAX_PRODUCT_IMAGES = 5;
 
 function normalizeProductCode(v) {
     return str(v).slice(0, PRODUCT_CODE_MAX_LEN);
@@ -120,7 +120,7 @@ function fromLegacyDoc(doc) {
     return d;
 }
 
-/** 저장·응답용 이미지 URL 배열 (최대 3장, 레거시 pd_image 호환) */
+/** 저장·응답용 이미지 URL 배열 (최대 5장, 레거시 pd_image 호환) */
 function readImagesFromDoc(doc) {
     const d = fromLegacyDoc(doc) || doc || {};
     let arr = [];
