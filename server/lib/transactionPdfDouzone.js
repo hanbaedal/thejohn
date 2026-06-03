@@ -238,9 +238,14 @@ function drawSlip(doc, slipY, order, issuer, theme, pageLabel) {
     var leftRowH = HEADER_ROW_H;
     var headerH = HEADER_BLOCK_H;
     var leftLabelW = 44;
-    var leftValues = [pageLabel, formatIssueDate(order.createdAt), order.vendorCompany || ""];
-    var leftLabels = ["Page", "발행일자", "거래처"];
-    for (var lr = 0; lr < 3; lr++) {
+    var leftValues = [
+        pageLabel,
+        formatIssueDate(order.createdAt),
+        order.vendorCompany || "",
+        order.vendorMgrName || ""
+    ];
+    var leftLabels = ["Page", "발행일자", "거래처", "담당자"];
+    for (var lr = 0; lr < 4; lr++) {
         drawLabel(doc, leftLabels[lr], x0, y + lr * leftRowH, leftLabelW, leftRowH, "#EEEEEE");
         drawValue(
             doc,
@@ -261,7 +266,8 @@ function drawSlip(doc, slipY, order, issuer, theme, pageLabel) {
     doc.text("거래명세서", tx, titleY, { width: titleW, align: "center" });
     doc.fontSize(FONT_SMALL).text(theme.subtitle, tx, titleY + 20, { width: titleW, align: "center" });
 
-    var totalRowY = y + 3 * HEADER_ROW_H;
+    var mgrRowY = y + 3 * HEADER_ROW_H;
+    var totalRowY = y + 4 * HEADER_ROW_H;
     drawTotalAmountRow(doc, x0, totalRowY, leftW, leftLabelW, order.totalAmount, theme);
 
     var sx = tx + titleW;
@@ -310,23 +316,22 @@ function drawSlip(doc, slipY, order, issuer, theme, pageLabel) {
     sy += HEADER_ROW_H;
 
     cx = sx;
-    drawLabel(doc, "업태", cx, totalRowY, sc.lbl, HEADER_ROW_H, theme.labelBg);
+    drawLabel(doc, "업태", cx, mgrRowY, sc.lbl, HEADER_ROW_H, theme.labelBg);
     cx += sc.lbl;
-    drawValue(doc, issuer.bizType, cx, totalRowY, sc.pairVal, HEADER_ROW_H);
+    drawValue(doc, issuer.bizType, cx, mgrRowY, sc.pairVal, HEADER_ROW_H);
     cx += sc.pairVal;
-    drawLabel(doc, "종목", cx, totalRowY, sc.pairLbl, HEADER_ROW_H, theme.labelBg);
+    drawLabel(doc, "종목", cx, mgrRowY, sc.pairLbl, HEADER_ROW_H, theme.labelBg);
     cx += sc.pairLbl;
-    drawValue(doc, issuer.bizItem, cx, totalRowY, sc.pairVal2, HEADER_ROW_H);
-    sy = totalRowY + HEADER_ROW_H;
+    drawValue(doc, issuer.bizItem, cx, mgrRowY, sc.pairVal2, HEADER_ROW_H);
 
     cx = sx;
-    drawLabel(doc, "전화번호", cx, sy, sc.lbl, HEADER_ROW_H, theme.labelBg);
+    drawLabel(doc, "전화번호", cx, totalRowY, sc.lbl, HEADER_ROW_H, theme.labelBg);
     cx += sc.lbl;
-    drawValue(doc, issuer.phone, cx, sy, sc.pairVal, HEADER_ROW_H);
+    drawValue(doc, issuer.phone, cx, totalRowY, sc.pairVal, HEADER_ROW_H);
     cx += sc.pairVal;
-    drawLabel(doc, "팩스", cx, sy, sc.pairLbl, HEADER_ROW_H, theme.labelBg);
+    drawLabel(doc, "팩스", cx, totalRowY, sc.pairLbl, HEADER_ROW_H, theme.labelBg);
     cx += sc.pairLbl;
-    drawValue(doc, issuer.fax, cx, sy, sc.pairVal2, HEADER_ROW_H);
+    drawValue(doc, issuer.fax, cx, totalRowY, sc.pairVal2, HEADER_ROW_H);
 
     y += headerH + 4;
 
