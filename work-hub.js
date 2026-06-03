@@ -32,6 +32,14 @@
         "work-manage": "work"
     };
 
+    function syncHubRows() {
+        var rows = document.querySelectorAll(".wh-hub-row");
+        rows.forEach(function (row) {
+            var visible = row.querySelectorAll("[data-wh-menu]:not([hidden])");
+            row.hidden = visible.length === 0;
+        });
+    }
+
     function applyMenus() {
         if (!Auth || !Auth.canAccessWorkHubMenu) return;
         var cards = document.querySelectorAll("[data-wh-menu]");
@@ -59,6 +67,7 @@
                 });
             }
         });
+        syncHubRows();
     }
 
     initHubMedia();
@@ -81,6 +90,7 @@
     if (Auth.refreshSessionPermissionsAsync) {
         Auth.refreshSessionPermissionsAsync().then(function () {
             applyMenus();
+            syncHubRows();
         });
     }
 
