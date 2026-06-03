@@ -11,7 +11,7 @@ const {
     getCeoName: getStaffCeoName,
     F: SF
 } = require("./staffFields");
-const { resolveDouzoneIssuer } = require("./transactionIssuer");
+const { resolveIssuerForOrder } = require("./transactionIssuer");
 
 function str(v) {
     return String(v ?? "").trim();
@@ -174,10 +174,10 @@ async function prepareOrderForPdf(db, order) {
     return o;
 }
 
-/** 거래명세서 PDF — 발주 보강 + 더존 공급자 정보 */
+/** 거래명세서 PDF — 발주 보강 + 담당 관리자(staff) 공급자·인감 */
 async function prepareOrderForTransactionPdf(db, order) {
     const o = await prepareOrderForPdf(db, order);
-    o.issuer = await resolveDouzoneIssuer(db);
+    o.issuer = await resolveIssuerForOrder(db, o);
     return o;
 }
 

@@ -1,13 +1,59 @@
 const path = require("path");
+const fs = require("fs");
 const { fromLegacyDoc: staffFromLegacy, F: SF } = require("./staffFields");
 const { formatFullAddress } = require("./addressFormat");
+const { findStaffByRegisteredBy } = require("./staffRegisteredBy");
+const { trimStaffLoginId } = require("./staffLoginId");
 
-/** 거래명세서 공급자 인감 (더존푸드) */
+/** 거래명세서 공급자 인감 */
 const DOUZONE_SEAL_PATH = path.join(__dirname, "..", "assets", "douzone-seal.png");
-const DOUZONE_LOGIN_IDS = ["thejohn"];
+const AK_SEAL_PATH = path.join(__dirname, "..", "assets", "ak-seal.png");
+const DOUZONE_LOGIN_IDS = ["thejohn", "thejhon"];
+const AK_LOGIN_IDS = ["ak20140516"];
 
 function str(v) {
     return String(v ?? "").trim();
+}
+
+function normalizeCompanyKey(company) {
+    return str(company)
+        .replace(/\s+/g, "")
+        .replace(/\(주\)/gi, "")
+        .toLowerCase();
+}
+
+function staffCompany(staff) {
+    if (!staff) return "";
+    const d = staffFromLegacy(staff) || {};
+    return str(d[SF.company] || staff.st_company);
+}
+
+function matchesAkSangsaStaff(staff) {
+    if (!staff) return false;
+    const loginKey = str(staff.loginId).toLowerCase();
+    if (AK_LOGIN_IDS.indexOf(loginKey) >= 0) return true;
+    if (staff.id && String(staff.id).toLowerCase().indexOf("aksangsa") >= 0) return true;
+    const c = normalizeCompanyKey(staffCompany(staff));
+    if (!c) return false;
+    return c.indexOf("에이케이") >= 0 || c.indexOf("에이메이") >= 0;
+}
+
+function matchesDouzoneStaff(staff) {
+    if (!staff) return false;
+    const loginKey = str(staff.loginId).toLowerCase();
+    if (DOUZONE_LOGIN_IDS.indexOf(loginKey) >= 0) return true;
+    const c = normalizeCompanyKey(staffCompany(staff));
+    return c.indexOf("더존") >= 0;
+}
+
+function resolveSealPath(staff) {
+    if (matchesAkSangsaStaff(staff) && fs.existsSync(AK_SEAL_PATH)) {
+        return AK_SEAL_PATH;
+    }
+    if (matchesDouzoneStaff(staff) && fs.existsSync(DOUZONE_SEAL_PATH)) {
+        return DOUZONE_SEAL_PATH;
+    }
+    return "";
 }
 
 function formatBizNo(raw) {
@@ -18,13 +64,23 @@ function formatBizNo(raw) {
     return str(raw);
 }
 
+function bankAccountForStaff(staff) {
+    if (matchesAkSangsaStaff(staff)) {
+        return str(process.env.AK_BANK_ACCOUNT || process.env.AEK_BANK_ACCOUNT || "");
+    }
+    if (matchesDouzoneStaff(staff)) {
+        return str(process.env.DOUZONE_BANK_ACCOUNT || "");
+    }
+    return "";
+}
+
 function staffToIssuer(staff) {
     if (!staff) return null;
     var d = staffFromLegacy(staff) || {};
     return {
         templateId: "douzone",
         loginId: str(staff.loginId),
-        company: str(d[SF.company] || staff.st_company),
+        company: staffCompany(staff),
         bizNo: formatBizNo(d[SF.bizNo] || staff.st_biz_no),
         ceo: str(d[SF.ceo] || staff.st_ceo),
         phone: str(d[SF.phone] || staff.st_phone),
@@ -34,13 +90,57 @@ function staffToIssuer(staff) {
         address:
             formatFullAddress(d[SF.zip], d[SF.addr], d[SF.addrDetail]) ||
             str(d[SF.address] || staff.st_address),
-        sealPath: DOUZONE_SEAL_PATH,
-        bankAccount: str(process.env.DOUZONE_BANK_ACCOUNT || "")
+        sealPath: resolveSealPath(staff),
+        bankAccount: bankAccountForStaff(staff)
     };
 }
 
+async function resolveIssuerFromStaffLoginId(db, loginId) {
+    const reg = trimStaffLoginId(loginId);
+    if (!reg) return null;
+    const staff = await findStaffByRegisteredBy(reg);
+    if (!staff) return null;
+    const issuer = staffToIssuer(staff);
+    return issuer && issuer.company ? issuer : null;
+}
+
+function dominantProductRegistrar(order) {
+    const items = Array.isArray(order && order.items) ? order.items : [];
+    const seen = {};
+    let chosen = "";
+    for (let i = 0; i < items.length; i++) {
+        const reg = trimStaffLoginId(items[i].productRegisteredBy);
+        if (!reg) continue;
+        if (!seen[reg]) seen[reg] = 0;
+        seen[reg]++;
+        if (!chosen || seen[reg] > seen[chosen]) chosen = reg;
+    }
+    const keys = Object.keys(seen);
+    if (keys.length === 1) return keys[0];
+    return chosen;
+}
+
 /**
- * 더존 거래명세서 공급자 — staff 컬렉션 (주)더존 관리자 계정
+ * 거래명세서 공급자 — 주문 업체 담당 관리자(staff) 기준. 없으면 상품 담당자, 최종 더존 폴백
+ */
+async function resolveIssuerForOrder(db, order) {
+    const supplierLogin =
+        str(order && order.vendorRegisteredBy) ||
+        str(order && order.supplier && order.supplier.loginId);
+    if (supplierLogin) {
+        const fromVendor = await resolveIssuerFromStaffLoginId(db, supplierLogin);
+        if (fromVendor) return fromVendor;
+    }
+    const productReg = dominantProductRegistrar(order);
+    if (productReg && productReg !== supplierLogin) {
+        const fromProduct = await resolveIssuerFromStaffLoginId(db, productReg);
+        if (fromProduct) return fromProduct;
+    }
+    return resolveDouzoneIssuer(db);
+}
+
+/**
+ * 더존 거래명세서 공급자 — staff 컬렉션 (주)더존 관리자 계정 (폴백)
  */
 async function resolveDouzoneIssuer(db) {
     const col = db.collection("staff");
@@ -71,14 +171,18 @@ async function resolveDouzoneIssuer(db) {
         bizType: "",
         bizItem: "",
         address: "",
-        sealPath: DOUZONE_SEAL_PATH,
+        sealPath: fs.existsSync(DOUZONE_SEAL_PATH) ? DOUZONE_SEAL_PATH : "",
         bankAccount: str(process.env.DOUZONE_BANK_ACCOUNT || "")
     };
 }
 
 module.exports = {
     DOUZONE_SEAL_PATH,
+    AK_SEAL_PATH,
     resolveDouzoneIssuer,
+    resolveIssuerForOrder,
+    resolveIssuerFromStaffLoginId,
     staffToIssuer,
+    matchesAkSangsaStaff,
     formatBizNo
 };
