@@ -58,7 +58,10 @@
             <div class="tmr-grid">
                 <div class="tmr-field">
                     <label for="tmr-vendor-company">거래처(업체명)</label>
-                    <input type="text" id="tmr-vendor-company" name="vendorCompany" required maxlength="200">
+                    <div class="tmr-vendor-pick">
+                        <input type="text" id="tmr-vendor-company" name="vendorCompany" required maxlength="200" readonly placeholder="업체 선택">
+                        <button type="button" class="btn btn-secondary" id="tmr-btn-vendor-pick">업체 선택</button>
+                    </div>
                 </div>
                 <div class="tmr-field">
                     <label for="tmr-vendor-ceo">대표자명</label>
@@ -75,6 +78,7 @@
             </div>
 
             <h2 style="margin-top:1.25rem">품목 (최대 10행)</h2>
+            <p class="tmr-items-hint">품목코드·품명 입력란을 누르면 등록 상품 목록에서 선택할 수 있습니다.</p>
             <div class="tmr-field tmr-field--full">
                 <table class="tmr-items-table" aria-label="거래명세 품목">
                     <thead>
@@ -121,6 +125,31 @@
             <p class="site-footer-company-msg" id="siteFooterCompanyMsg" hidden></p>
         </div>
     </footer>
+    <div id="tmr-product-modal" class="tmr-picker-modal" hidden role="dialog" aria-modal="true" aria-labelledby="tmr-product-modal-title">
+        <div class="tmr-picker-panel">
+            <h2 id="tmr-product-modal-title" class="tmr-picker-title">등록 상품 선택</h2>
+            <p class="tmr-picker-hint">관리자가 등록한 상품에서 선택합니다. 코드·품명으로 검색하세요.</p>
+            <label for="tmr-product-search" class="sr-only">상품 검색</label>
+            <input type="search" id="tmr-product-search" class="tmr-picker-search" placeholder="품목코드·품명 검색" autocomplete="off">
+            <ul id="tmr-product-list" class="tmr-picker-list"></ul>
+            <div class="tmr-picker-actions">
+                <button type="button" class="btn" id="tmr-product-modal-close">닫기</button>
+            </div>
+        </div>
+    </div>
+    <div id="tmr-vendor-modal" class="tmr-picker-modal" hidden role="dialog" aria-modal="true" aria-labelledby="tmr-vendor-modal-title">
+        <div class="tmr-picker-panel">
+            <h2 id="tmr-vendor-modal-title" class="tmr-picker-title">등록 업체 선택</h2>
+            <p class="tmr-picker-hint">관리자가 등록한 업체명에서 선택합니다. 검색 후 항목을 누르세요.</p>
+            <label for="tmr-vendor-search" class="sr-only">업체 검색</label>
+            <input type="search" id="tmr-vendor-search" class="tmr-picker-search" placeholder="업체명 검색" autocomplete="off">
+            <ul id="tmr-vendor-list" class="tmr-picker-list"></ul>
+            <div class="tmr-picker-actions">
+                <button type="button" class="btn" id="tmr-vendor-modal-close">닫기</button>
+            </div>
+        </div>
+    </div>
+    <script src="address-fields.js"></script>
     <script src="transaction-manual-register.js"></script>
 </body>
 </html>

@@ -33,10 +33,101 @@
 .tmr-field--full {
     grid-column: 1 / -1;
 }
+.tmr-vendor-pick {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.45rem;
+    align-items: stretch;
+}
+.tmr-vendor-pick input {
+    flex: 1;
+    min-width: 10rem;
+    cursor: pointer;
+    background: #f7fafc;
+}
 .tmr-field label {
     font-size: 0.85rem;
     font-weight: 600;
     color: #2a4a5e;
+}
+.tmr-picker-modal {
+    position: fixed;
+    inset: 0;
+    z-index: 10020;
+    background: rgba(5, 42, 77, 0.45);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+}
+.tmr-picker-modal[hidden] {
+    display: none !important;
+}
+.tmr-picker-panel {
+    width: min(100%, 34rem);
+    max-height: min(80vh, 44rem);
+    background: #fff;
+    border-radius: 12px;
+    padding: 0.95rem;
+    box-shadow: 0 16px 38px rgba(0, 0, 0, 0.18);
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+}
+.tmr-picker-title {
+    margin: 0;
+    font-size: 1.1rem;
+    color: #052a4d;
+}
+.tmr-picker-hint {
+    margin: 0;
+    font-size: 0.82rem;
+    color: #5a6d7e;
+}
+.tmr-picker-search {
+    padding: 0.5rem 0.6rem;
+    border: 1px solid #c5d0dc;
+    border-radius: 8px;
+    font-size: 16px;
+    font-family: inherit;
+}
+.tmr-picker-list {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    overflow-y: auto;
+    max-height: 45vh;
+    border: 1px solid #e5ebf2;
+    border-radius: 8px;
+}
+.tmr-picker-item-btn {
+    width: 100%;
+    border: none;
+    background: #fff;
+    text-align: left;
+    padding: 0.55rem 0.7rem;
+    border-bottom: 1px solid #edf2f7;
+    cursor: pointer;
+    font: inherit;
+}
+.tmr-picker-item-btn:hover {
+    background: #f7fbff;
+}
+.tmr-picker-item-meta {
+    display: block;
+    font-size: 0.78rem;
+    color: #5a6d7e;
+    margin-top: 0.15rem;
+}
+.tmr-picker-actions {
+    display: flex;
+    justify-content: flex-end;
+}
+.tmr-picker-empty {
+    margin: 0;
+    padding: 0.7rem;
+    font-size: 0.88rem;
+    color: #5a6d7e;
 }
 .tmr-field input,
 .tmr-field select,
@@ -64,6 +155,11 @@
     font-weight: 600;
     color: #2a4a5e;
 }
+.tmr-items-hint {
+    margin: -0.35rem 0 0.55rem;
+    font-size: 0.82rem;
+    color: #5a6d7e;
+}
 .tmr-items-table input {
     width: 100%;
     min-width: 0;
@@ -71,6 +167,13 @@
     border: 1px solid #c5d0dc;
     border-radius: 6px;
     font-size: 15px;
+}
+.tmr-items-table input.tmr-item-pick {
+    cursor: pointer;
+    background: #f7fafc;
+}
+.tmr-items-table input.tmr-item-pick::placeholder {
+    color: #7a8fa0;
 }
 .tmr-items-table .tmr-col-code {
     width: 6.5rem;

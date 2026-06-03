@@ -13,6 +13,21 @@
     var totalLabel = document.getElementById("tmr-total-label");
     var btnPdf = document.getElementById("tmr-btn-pdf");
     var btnDelete = document.getElementById("tmr-btn-delete");
+    var vendorCompanyEl = document.getElementById("tmr-vendor-company");
+    var vendorModal = document.getElementById("tmr-vendor-modal");
+    var vendorModalCloseBtn = document.getElementById("tmr-vendor-modal-close");
+    var vendorSearchEl = document.getElementById("tmr-vendor-search");
+    var vendorListEl = document.getElementById("tmr-vendor-list");
+    var btnVendorPick = document.getElementById("tmr-btn-vendor-pick");
+    var AF = window.THEJHON_ADDRESS_FIELDS;
+    var productModal = document.getElementById("tmr-product-modal");
+    var productModalCloseBtn = document.getElementById("tmr-product-modal-close");
+    var productSearchEl = document.getElementById("tmr-product-search");
+    var productListEl = document.getElementById("tmr-product-list");
+    var allVendors = [];
+    var allProducts = [];
+    var selectedVendorDetail = null;
+    var activeProductRow = null;
     var currentId = "";
 
     var MAX_ROWS = 10;
@@ -133,6 +148,7 @@
                 }
             });
         });
+        bindProductPickers(tr);
         var delBtn = tr.querySelector(".tmr-row-del");
         if (delBtn) {
             delBtn.addEventListener("click", function () {
@@ -201,9 +217,328 @@
         };
     }
 
+    function formatVendorAddr(it) {
+        if (!it) return "";
+        if (AF && AF.formatFullAddress) {
+            return (
+                AF.formatFullAddress(it.vn_zip, it.vn_addr, it.vn_addr_detail) ||
+                String(it.vn_addr || "").trim()
+            );
+        }
+        var parts = [it.vn_zip, it.vn_addr, it.vn_addr_detail].filter(function (p) {
+            return String(p || "").trim();
+        });
+        return parts.join(" ").trim();
+    }
+
+    function mapVendorFromApi(it) {
+        if (!it) return null;
+        var company = String(it.vn_company || "").trim();
+        if (!company) return null;
+        return {
+            id: String(it.id || it.loginId || company).trim(),
+            companyName: company,
+            ceo: String(it.vn_ceo || "").trim(),
+            phone: String(it.vn_phone || "").trim(),
+            addr: formatVendorAddr(it),
+            grade: String(it.vn_grade != null ? it.vn_grade : "1").trim(),
+            registeredBy: String(it.vn_registered_by || "").trim()
+        };
+    }
+
+    function applyVendor(v) {
+        if (!v) return;
+        selectedVendorDetail = v;
+        if (vendorCompanyEl) vendorCompanyEl.value = v.companyName || "";
+        document.getElementById("tmr-vendor-ceo").value = v.ceo || "";
+        document.getElementById("tmr-vendor-addr").value = v.addr || "";
+        document.getElementById("tmr-vendor-phone").value = v.phone || "";
+    }
+
+    function isCatalogProduct(it) {
+        return (
+            String((it && it.pd_record_type) || "catalog")
+                .trim()
+                .toLowerCase() !== "new"
+        );
+    }
+
+    function mapProductFromApi(it) {
+        if (!it || !isCatalogProduct(it)) return null;
+        var name = String(it.pd_name || "").trim();
+        if (!name) return null;
+        return {
+            id: String(it.id || "").trim(),
+            pd_code: String(it.pd_code || "").trim(),
+            pd_name: name,
+            pd_size: String(it.pd_size || "").trim(),
+            pd_price1: Number(it.pd_price1) || 0,
+            pd_price2: Number(it.pd_price2) || 0,
+            pd_price3: Number(it.pd_price3) || 0,
+            pd_price4: Number(it.pd_price4) || 0,
+            pd_registered_by: String(it.pd_registered_by || "").trim()
+        };
+    }
+
+    function parseVendorGrade(grade) {
+        var n = parseInt(grade, 10);
+        if (n === 4) n = 3;
+        if (n >= 1 && n <= 3) return String(n);
+        return "1";
+    }
+
+    function isLegacyRegistrar(id) {
+        var s = String(id || "")
+            .trim()
+            .toLowerCase();
+        return !s || s === "legacy";
+    }
+
+    function staffIdsEqual(a, b) {
+        var x = String(a || "")
+            .trim()
+            .toLowerCase();
+        var y = String(b || "")
+            .trim()
+            .toLowerCase();
+        return !!x && x === y;
+    }
+
+    function resolveProductUnitPrice(product) {
+        if (!product) return 0;
+        var v = selectedVendorDetail;
+        var vReg = v ? v.registeredBy : "";
+        var pReg = product.pd_registered_by || "";
+        if (
+            v &&
+            !isLegacyRegistrar(vReg) &&
+            !isLegacyRegistrar(pReg) &&
+            staffIdsEqual(vReg, pReg)
+        ) {
+            var g = parseVendorGrade(v.grade);
+            if (g === "2") return product.pd_price2 || 0;
+            if (g === "3") return product.pd_price3 || 0;
+            return product.pd_price1 || 0;
+        }
+        return product.pd_price1 || 0;
+    }
+
+    function applyProductToRow(tr, product) {
+        if (!tr || !product) return;
+        var codeEl = tr.querySelector('[data-f="code"]');
+        var nameEl = tr.querySelector('[data-f="name"]');
+        var sizeEl = tr.querySelector('[data-f="size"]');
+        var priceEl = tr.querySelector('[data-f="price"]');
+        var unit = resolveProductUnitPrice(product);
+        if (codeEl) codeEl.value = product.pd_code || "";
+        if (nameEl) nameEl.value = product.pd_name || "";
+        if (sizeEl) sizeEl.value = product.pd_size || "";
+        if (priceEl && unit) priceEl.value = String(unit);
+        syncLineTotal(tr);
+    }
+
+    function bindProductPickers(tr) {
+        ["code", "name"].forEach(function (field) {
+            var inp = tr.querySelector('[data-f="' + field + '"]');
+            if (!inp) return;
+            inp.classList.add("tmr-item-pick");
+            inp.setAttribute(
+                "placeholder",
+                field === "code" ? "코드·선택" : "품명·선택"
+            );
+            inp.setAttribute("autocomplete", "off");
+            inp.addEventListener("click", function () {
+                openProductModal(tr, field);
+            });
+            inp.addEventListener("focus", function () {
+                openProductModal(tr, field);
+            });
+        });
+    }
+
+    function closeProductModal() {
+        if (productModal) productModal.hidden = true;
+        activeProductRow = null;
+    }
+
+    function bindProductPickerButtons() {
+        if (!productListEl) return;
+        productListEl.querySelectorAll("[data-product-id]").forEach(function (btn) {
+            btn.addEventListener("click", function () {
+                var id = String(btn.getAttribute("data-product-id") || "").trim();
+                var picked = allProducts.find(function (p) {
+                    return p.id === id;
+                });
+                if (picked && activeProductRow) applyProductToRow(activeProductRow, picked);
+                closeProductModal();
+            });
+        });
+    }
+
+    function renderProductList(query) {
+        if (!productListEl) return;
+        var q = String(query || "")
+            .trim()
+            .toLowerCase();
+        var items = allProducts.filter(function (p) {
+            if (!q) return true;
+            var code = String(p.pd_code || "").toLowerCase();
+            var name = String(p.pd_name || "").toLowerCase();
+            return code.indexOf(q) >= 0 || name.indexOf(q) >= 0;
+        });
+        if (!items.length) {
+            productListEl.innerHTML =
+                '<li><p class="tmr-picker-empty">표시할 등록 상품이 없습니다. 상품 등록 메뉴에서 먼저 등록해 주세요.</p></li>';
+            return;
+        }
+        productListEl.innerHTML = items
+            .map(function (p) {
+                var unit = resolveProductUnitPrice(p);
+                var meta = [];
+                if (p.pd_size) meta.push(p.pd_size);
+                if (unit) meta.push(formatWon(unit));
+                var title =
+                    (p.pd_code ? "[" + p.pd_code + "] " : "") + (p.pd_name || "");
+                return (
+                    '<li><button type="button" class="tmr-picker-item-btn" data-product-id="' +
+                    escapeHtml(p.id) +
+                    '">' +
+                    escapeHtml(title) +
+                    (meta.length
+                        ? '<span class="tmr-picker-item-meta">' + escapeHtml(meta.join(" · ")) + "</span>"
+                        : "") +
+                    "</button></li>"
+                );
+            })
+            .join("");
+        bindProductPickerButtons();
+    }
+
+    function openProductModal(tr, field) {
+        if (!api || !api.listProducts || !productModal || !tr) return;
+        activeProductRow = tr;
+        var inp = tr.querySelector('[data-f="' + (field === "code" ? "code" : "name") + '"]');
+        var seed = inp ? String(inp.value || "").trim() : "";
+        productModal.hidden = false;
+        function showList() {
+            renderProductList(seed);
+            if (productSearchEl) {
+                productSearchEl.focus();
+                try {
+                    productSearchEl.select();
+                } catch (e) {}
+            }
+        }
+        if (productSearchEl) productSearchEl.value = seed;
+        if (allProducts.length) {
+            showList();
+            return;
+        }
+        setStatus("상품 목록 불러오는 중…");
+        api
+            .listProducts()
+            .then(function (items) {
+                allProducts = (items || [])
+                    .map(mapProductFromApi)
+                    .filter(Boolean)
+                    .sort(function (a, b) {
+                        var ac = String(a.pd_code || "");
+                        var bc = String(b.pd_code || "");
+                        if (ac !== bc) return ac.localeCompare(bc, "ko");
+                        return String(a.pd_name || "").localeCompare(String(b.pd_name || ""), "ko");
+                    });
+                showList();
+                setStatus("");
+            })
+            .catch(function (e) {
+                allProducts = [];
+                renderProductList(seed);
+                setStatus((e && e.message) || "상품 목록을 불러오지 못했습니다.", "err");
+            });
+    }
+
+    function closeVendorModal() {
+        if (vendorModal) vendorModal.hidden = true;
+    }
+
+    function bindVendorPickerButtons() {
+        if (!vendorListEl) return;
+        vendorListEl.querySelectorAll("[data-vendor-id]").forEach(function (btn) {
+            btn.addEventListener("click", function () {
+                var id = String(btn.getAttribute("data-vendor-id") || "").trim();
+                var picked = allVendors.find(function (v) {
+                    return v.id === id;
+                });
+                if (picked) applyVendor(picked);
+                closeVendorModal();
+            });
+        });
+    }
+
+    function renderVendorList(query) {
+        if (!vendorListEl) return;
+        var q = String(query || "").trim().toLowerCase();
+        var items = allVendors.filter(function (v) {
+            var name = String((v && v.companyName) || "").toLowerCase();
+            return !q || name.indexOf(q) >= 0;
+        });
+        if (!items.length) {
+            vendorListEl.innerHTML =
+                '<li><p class="tmr-picker-empty">표시할 등록 업체가 없습니다. 업체 등록 메뉴에서 먼저 등록해 주세요.</p></li>';
+            return;
+        }
+        vendorListEl.innerHTML = items
+            .map(function (v) {
+                var meta = [v.ceo, v.phone].filter(Boolean).join(" · ");
+                return (
+                    '<li><button type="button" class="tmr-picker-item-btn" data-vendor-id="' +
+                    escapeHtml(v.id) +
+                    '">' +
+                    escapeHtml(v.companyName) +
+                    (meta
+                        ? '<span class="tmr-picker-item-meta">' + escapeHtml(meta) + "</span>"
+                        : "") +
+                    "</button></li>"
+                );
+            })
+            .join("");
+        bindVendorPickerButtons();
+    }
+
+    function openVendorModal() {
+        if (!api || !api.listVendors || !vendorModal) return;
+        vendorModal.hidden = false;
+        if (vendorSearchEl) {
+            vendorSearchEl.value = "";
+            vendorSearchEl.focus();
+        }
+        if (allVendors.length) {
+            renderVendorList("");
+            return;
+        }
+        setStatus("업체 목록 불러오는 중…");
+        api
+            .listVendors()
+            .then(function (items) {
+                allVendors = (items || [])
+                    .map(mapVendorFromApi)
+                    .filter(Boolean)
+                    .sort(function (a, b) {
+                        return a.companyName.localeCompare(b.companyName, "ko");
+                    });
+                renderVendorList("");
+                setStatus("");
+            })
+            .catch(function (e) {
+                allVendors = [];
+                renderVendorList("");
+                setStatus((e && e.message) || "업체 목록을 불러오지 못했습니다.", "err");
+            });
+    }
+
     function validate(body) {
         if (!body.issuerStaffLoginId) return "공급자(발행 관리자)를 선택해 주세요.";
-        if (!body.vendorCompany) return "거래처(업체명)을 입력해 주세요.";
+        if (!body.vendorCompany) return "거래처(업체명)을 선택해 주세요.";
         if (!body.items.length) return "품목을 1개 이상 입력해 주세요.";
         return "";
     }
@@ -216,6 +551,8 @@
 
     function resetForm() {
         setEditMode("");
+        selectedVendorDetail = null;
+        closeProductModal();
         if (form) form.reset();
         var dateEl = document.getElementById("tmr-issue-date");
         if (dateEl) dateEl.value = todayDateInput();
@@ -396,6 +733,31 @@
     document.getElementById("tmr-btn-preview")?.addEventListener("click", previewPdf);
     document.getElementById("tmr-btn-save")?.addEventListener("click", saveDoc);
     document.getElementById("tmr-btn-pdf")?.addEventListener("click", downloadPdf);
+    if (vendorCompanyEl) vendorCompanyEl.addEventListener("click", openVendorModal);
+    if (btnVendorPick) btnVendorPick.addEventListener("click", openVendorModal);
+    if (vendorModalCloseBtn) vendorModalCloseBtn.addEventListener("click", closeVendorModal);
+    if (vendorModal) {
+        vendorModal.addEventListener("click", function (e) {
+            if (e.target === vendorModal) closeVendorModal();
+        });
+    }
+    if (vendorSearchEl) {
+        vendorSearchEl.addEventListener("input", function () {
+            renderVendorList(vendorSearchEl.value);
+        });
+    }
+    if (productModalCloseBtn) productModalCloseBtn.addEventListener("click", closeProductModal);
+    if (productModal) {
+        productModal.addEventListener("click", function (e) {
+            if (e.target === productModal) closeProductModal();
+        });
+    }
+    if (productSearchEl) {
+        productSearchEl.addEventListener("input", function () {
+            renderProductList(productSearchEl.value);
+        });
+    }
+
     document.getElementById("tmr-btn-delete")?.addEventListener("click", function () {
         if (!currentId) return;
         if (!window.confirm("이 수기 거래명세서를 삭제할까요?")) return;
