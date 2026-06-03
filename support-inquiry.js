@@ -222,9 +222,9 @@
             adminBlock =
                 '<div class="si-admin-reply">' +
                 '<h3 class="si-reply-block__title">관리자 답변</h3>' +
-                '<div class="sp-field">' +
+                '<div class="sp-field sp-field--reply">' +
                 '<label for="si-admin-reply-ta">답변 내용</label>' +
-                '<textarea id="si-admin-reply-ta" rows="5" maxlength="12000">' +
+                '<textarea id="si-admin-reply-ta" rows="10" maxlength="12000">' +
                 U.escapeHtml(String(it.reply || "")) +
                 "</textarea></div>" +
                 '<div class="sp-field">' +

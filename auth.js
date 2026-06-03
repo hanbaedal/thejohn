@@ -136,20 +136,55 @@
         if (global.THEJHON_API && THEJHON_API.setToken) THEJHON_API.setToken("");
     }
 
-    function clearSession() {
-        bumpAuthSessionEpoch();
+    function captureApiToken() {
         try {
-            if (
-                global.THEJHON_API &&
-                THEJHON_API.getToken &&
-                THEJHON_API.getToken() &&
-                THEJHON_API.logoutAsync
-            ) {
-                THEJHON_API.logoutAsync().catch(function () {});
-            }
-        } catch (e) {}
+            return global.THEJHON_API && THEJHON_API.getToken
+                ? String(THEJHON_API.getToken() || "").trim()
+                : "";
+        } catch (e) {
+            return "";
+        }
+    }
+
+    function revokeApiTokenAsync(token) {
+        if (!token || !global.THEJHON_API || !THEJHON_API.logoutAsync) {
+            return Promise.resolve();
+        }
+        return THEJHON_API.logoutAsync(token).catch(function () {});
+    }
+
+    /** 로컬 로그인 표시는 있는데 JWT가 없을 때(로그아웃·탭 전환 직후 등) — 게스트는 제외 */
+    function repairInconsistentAuthState() {
+        if (authGet(AUTH_KEY) === "1" && !authGet(ROLE_KEY)) {
+            clearSession();
+            return true;
+        }
+        if (authGet(AUTH_KEY) !== "1" || !authGet(ROLE_KEY)) return false;
+        var role = authGet(ROLE_KEY);
+        if (role === "guest" || role === "oauth") return false;
+        if (captureApiToken()) return false;
+        clearSession();
+        return true;
+    }
+
+    function clearSession() {
+        var token = captureApiToken();
+        bumpAuthSessionEpoch();
+        sessionInvalidHandled = false;
         clearAuthStorageLocal();
+        clearLocalAuthPersist();
         clearVendorCartIfAny();
+        revokeApiTokenAsync(token);
+    }
+
+    function clearSessionAsync() {
+        var token = captureApiToken();
+        bumpAuthSessionEpoch();
+        sessionInvalidHandled = false;
+        clearAuthStorageLocal();
+        clearLocalAuthPersist();
+        clearVendorCartIfAny();
+        return revokeApiTokenAsync(token);
     }
 
     function usesStaffLogoRole(role) {
@@ -190,6 +225,7 @@
     }
 
     function normalizeLegacySession() {
+        repairInconsistentAuthState();
         if (authGet(AUTH_KEY) === "1" && !authGet(ROLE_KEY)) {
             clearSession();
         }
@@ -395,7 +431,7 @@
             });
     }
 
-    function setFormSession(
+    function applyFormSessionState(
         userId,
         role,
         token,
@@ -411,18 +447,6 @@
         staffLogo,
         brandCompanyName
     ) {
-        var prevUser = authGet(USER_ID_KEY);
-        var hadToken =
-            global.THEJHON_API && THEJHON_API.getToken && !!THEJHON_API.getToken();
-        bumpAuthSessionEpoch();
-        if (hadToken && THEJHON_API.logoutAsync) {
-            THEJHON_API.logoutAsync().catch(function () {});
-        }
-        clearAuthStorageLocal();
-        if (prevUser && prevUser !== (userId || "")) {
-            clearVendorCartIfAny();
-        }
-
         authSet(AUTH_KEY, "1");
         authSet(USER_ID_KEY, userId || "");
         authSet(ROLE_KEY, role || "");
@@ -524,6 +548,94 @@
         if (role === "vendor" && !label) {
             refreshVendorCompanyFromProfileAsync();
         }
+        sessionInvalidHandled = false;
+    }
+
+    function setFormSession(
+        userId,
+        role,
+        token,
+        companyName,
+        displayName,
+        vendorGrade,
+        vendorRegisteredBy,
+        vendorOrderEnabled,
+        vendorMgrName,
+        vendorMgrTel,
+        vendorMgrEmail,
+        staffOrderEnabled,
+        staffLogo,
+        brandCompanyName
+    ) {
+        var prevUser = authGet(USER_ID_KEY);
+        var oldToken = captureApiToken();
+        bumpAuthSessionEpoch();
+        clearAuthStorageLocal();
+        if (prevUser && prevUser !== (userId || "")) {
+            clearVendorCartIfAny();
+        }
+        applyFormSessionState(
+            userId,
+            role,
+            token,
+            companyName,
+            displayName,
+            vendorGrade,
+            vendorRegisteredBy,
+            vendorOrderEnabled,
+            vendorMgrName,
+            vendorMgrTel,
+            vendorMgrEmail,
+            staffOrderEnabled,
+            staffLogo,
+            brandCompanyName
+        );
+        if (oldToken && oldToken !== String(token || "").trim()) {
+            revokeApiTokenAsync(oldToken);
+        }
+    }
+
+    function setFormSessionAsync(
+        userId,
+        role,
+        token,
+        companyName,
+        displayName,
+        vendorGrade,
+        vendorRegisteredBy,
+        vendorOrderEnabled,
+        vendorMgrName,
+        vendorMgrTel,
+        vendorMgrEmail,
+        staffOrderEnabled,
+        staffLogo,
+        brandCompanyName
+    ) {
+        var prevUser = authGet(USER_ID_KEY);
+        var oldToken = captureApiToken();
+        bumpAuthSessionEpoch();
+        return revokeApiTokenAsync(oldToken).then(function () {
+            clearAuthStorageLocal();
+            if (prevUser && prevUser !== (userId || "")) {
+                clearVendorCartIfAny();
+            }
+            applyFormSessionState(
+                userId,
+                role,
+                token,
+                companyName,
+                displayName,
+                vendorGrade,
+                vendorRegisteredBy,
+                vendorOrderEnabled,
+                vendorMgrName,
+                vendorMgrTel,
+                vendorMgrEmail,
+                staffOrderEnabled,
+                staffLogo,
+                brandCompanyName
+            );
+        });
     }
 
     function syncVendorCompanyFromProfile(item) {
@@ -652,10 +764,7 @@
     }
 
     function enterGuestSessionAsync() {
-        var hadToken =
-            global.THEJHON_API &&
-            THEJHON_API.getToken &&
-            !!THEJHON_API.getToken();
+        var oldToken = captureApiToken();
         function finish() {
             var guestId = setGuestSession();
             if (!global.THEJHON_API || !THEJHON_API.logGuestLogin) {
@@ -669,10 +778,8 @@
                     return guestId;
                 });
         }
-        if (hadToken && THEJHON_API.logoutAsync) {
-            return THEJHON_API.logoutAsync()
-                .catch(function () {})
-                .then(finish);
+        if (oldToken) {
+            return revokeApiTokenAsync(oldToken).then(finish);
         }
         return finish();
     }
@@ -1950,8 +2057,9 @@
 
     /** 로그아웃 — 서버 세션 해제 후 로그인 페이지로 */
     function logout() {
-        clearSession();
-        window.location.replace("login.html");
+        clearSessionAsync().finally(function () {
+            window.location.replace("login.html");
+        });
     }
 
     var sessionInvalidHandled = false;
@@ -2122,8 +2230,11 @@
         isStaffRole: isStaffRole,
         verifyFormCredentialsAsync: verifyFormCredentialsAsync,
         setFormSession: setFormSession,
+        setFormSessionAsync: setFormSessionAsync,
         setOAuthSession: setOAuthSession,
         clearSession: clearSession,
+        clearSessionAsync: clearSessionAsync,
+        repairInconsistentAuthState: repairInconsistentAuthState,
         logout: logout,
         usesStaffLogoRole: usesStaffLogoRole,
         cacheStaffLogo: cacheStaffLogo,

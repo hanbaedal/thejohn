@@ -101,7 +101,7 @@
     }
 
     function applySession(ok) {
-        THEJHON_AUTH.setFormSession(
+        var args = [
             ok.userId,
             ok.role,
             ok.token,
@@ -116,7 +116,12 @@
             ok.staffOrderEnabled,
             ok.stLogo,
             ok.brandCompanyName || ok.vendorRegisteredByName
-        );
+        ];
+        if (THEJHON_AUTH.setFormSessionAsync) {
+            return THEJHON_AUTH.setFormSessionAsync.apply(THEJHON_AUTH, args);
+        }
+        THEJHON_AUTH.setFormSession.apply(THEJHON_AUTH, args);
+        return Promise.resolve();
     }
 
     function initPasswordToggle() {
@@ -145,6 +150,10 @@
         var Auth = global.THEJHON_AUTH;
         if (!Auth) return;
 
+        if (Auth.repairInconsistentAuthState) {
+            Auth.repairInconsistentAuthState();
+        }
+
         var role = Auth.getRole ? Auth.getRole() : "";
         if (
             Auth.isLoggedIn &&
@@ -170,8 +179,11 @@
 
         var userIdInput = $("userId");
 
+        var loginSubmitting = false;
+
         form.addEventListener("submit", function (e) {
             e.preventDefault();
+            if (loginSubmitting) return;
             var id = userIdInput ? userIdInput.value.trim() : "";
             var pwEl = $("password");
             var pw = pwEl ? String(pwEl.value || "").trim() : "";
@@ -181,20 +193,20 @@
             }
 
             var submitBtn = form.querySelector(".login-submit");
+            loginSubmitting = true;
             if (submitBtn) submitBtn.disabled = true;
 
             Auth.verifyFormCredentialsAsync(id, pw)
                 .then(function (ok) {
                     if (!ok) {
-                        if (submitBtn) submitBtn.disabled = false;
                         alert("아이디 또는 비밀번호가 올바르지 않습니다.");
                         return;
                     }
-                    applySession(ok);
-                    goAfterLogin(ok);
+                    return applySession(ok).then(function () {
+                        goAfterLogin(ok);
+                    });
                 })
                 .catch(function (err) {
-                    if (submitBtn) submitBtn.disabled = false;
                     if (err && err.code === "NOT_REGISTERED") {
                         alert(
                             (err && err.message) ||
@@ -223,6 +235,10 @@
                         (err && err.message) ||
                             "아이디 또는 비밀번호가 올바르지 않습니다. 업체등록 시 입력한 비밀번호(8~16자)를 확인해 주세요."
                     );
+                })
+                .finally(function () {
+                    loginSubmitting = false;
+                    if (submitBtn) submitBtn.disabled = false;
                 });
         });
     }

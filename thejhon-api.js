@@ -301,8 +301,28 @@
         login: function (loginId, password) {
             return request("POST", "/api/auth/login", { loginId: loginId, password: password });
         },
-        logoutAsync: function () {
-            return request("POST", "/api/auth/logout", {});
+        logoutAsync: function (tokenOverride) {
+            var opts = {
+                method: "POST",
+                headers: { Accept: "application/json", "Content-Type": "application/json" }
+            };
+            var token =
+                tokenOverride != null && String(tokenOverride).trim()
+                    ? String(tokenOverride).trim()
+                    : getToken();
+            if (token) opts.headers.Authorization = "Bearer " + token;
+            return fetch(apiUrl("/api/auth/logout"), opts).then(function (res) {
+                return parseJson(res).then(function (data) {
+                    if (!res.ok || (data && data.ok === false)) {
+                        var msg = (data && data.error) || "로그아웃에 실패했습니다.";
+                        var err = new Error(msg);
+                        err.status = res.status;
+                        err.data = data;
+                        throw err;
+                    }
+                    return data;
+                });
+            });
         },
         checkSession: function () {
             return request("GET", "/api/auth/session");
