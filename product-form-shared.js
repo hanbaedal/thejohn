@@ -368,6 +368,121 @@
         };
     }
 
+    var MAX_PRODUCT_PHOTOS = 3;
+
+    function hasProductImages(data) {
+        if (!data) return false;
+        if (Array.isArray(data.pd_images)) {
+            for (var i = 0; i < data.pd_images.length; i++) {
+                if (data.pd_images[i]) return true;
+            }
+        }
+        return !!data.pd_image;
+    }
+
+    /**
+     * 상품 사진 최대 3장 — 슬롯 미리보기·삭제, 앨범/카메라로 추가
+     * options: { slotsRoot, countEl, hintEl, btnGallery, btnCamera, galleryInput, cameraInput,
+     *   maxPhotos?, onChange(images[]), onError(err), onStatus?(msg) }
+     */
+    function initProductPhotoGallery(options) {
+        options = options || {};
+        var maxPhotos = options.maxPhotos || MAX_PRODUCT_PHOTOS;
+        var slotsRoot = options.slotsRoot;
+        var countEl = options.countEl;
+        var hintEl = options.hintEl;
+        var onChange = options.onChange;
+        var onStatus = options.onStatus || function () {};
+        var images = [];
+
+        function notify() {
+            if (countEl) {
+                countEl.textContent = images.length + " / " + maxPhotos + "장";
+            }
+            if (hintEl) {
+                hintEl.textContent =
+                    images.length >= maxPhotos
+                        ? "최대 " + maxPhotos + "장까지 등록할 수 있습니다. 삭제 후 다시 추가할 수 있습니다."
+                        : "앨범·카메라로 추가하면 1:1 정사각형·1MB 이하로 자동 맞춥니다. (최대 " +
+                          maxPhotos +
+                          "장)";
+            }
+            if (typeof onChange === "function") onChange(images.slice());
+        }
+
+        function updateButtons(disabled) {
+            if (options.btnGallery) options.btnGallery.disabled = !!disabled;
+            if (options.btnCamera) options.btnCamera.disabled = !!disabled;
+        }
+
+        function renderSlots() {
+            if (!slotsRoot) return;
+            slotsRoot.innerHTML = "";
+            images.forEach(function (src, idx) {
+                var slot = document.createElement("div");
+                slot.className = "pr-photo-slot";
+                var img = document.createElement("img");
+                img.className = "pr-photo-slot-img tj-image-preview";
+                img.alt = "상품 사진 " + (idx + 1);
+                img.width = 96;
+                img.height = 96;
+                img.src = src;
+                var del = document.createElement("button");
+                del.type = "button";
+                del.className = "pr-photo-slot-del";
+                del.setAttribute("aria-label", "사진 " + (idx + 1) + " 삭제");
+                del.textContent = "삭제";
+                del.addEventListener("click", function () {
+                    images.splice(idx, 1);
+                    renderSlots();
+                    notify();
+                    onStatus("사진을 삭제했습니다.");
+                });
+                slot.appendChild(img);
+                slot.appendChild(del);
+                slotsRoot.appendChild(slot);
+            });
+            updateButtons(images.length >= maxPhotos);
+            notify();
+        }
+
+        var picker = initProductPhotoPicker({
+            galleryInput: options.galleryInput,
+            cameraInput: options.cameraInput,
+            btnGallery: options.btnGallery,
+            btnCamera: options.btnCamera,
+            onSelect: function (dataUrl) {
+                if (images.length >= maxPhotos) {
+                    var err = new Error("상품 사진은 최대 " + maxPhotos + "장까지 등록할 수 있습니다.");
+                    if (options.onError) options.onError(err);
+                    return;
+                }
+                images.push(dataUrl);
+                renderSlots();
+                onStatus("사진을 추가했습니다. (" + images.length + "/" + maxPhotos + ")");
+            },
+            onError: options.onError
+        });
+
+        renderSlots();
+
+        return {
+            getImages: function () {
+                return images.slice();
+            },
+            setImages: function (arr) {
+                images = (arr || []).slice(0, maxPhotos);
+                renderSlots();
+            },
+            clear: function () {
+                images = [];
+                renderSlots();
+                if (picker) picker.clear();
+            },
+            picker: picker
+        };
+    }
+
     function deptLabel(catalog, deptId) {
         if (!deptId) return "";
         var norm = String(deptId).trim().toLowerCase();
@@ -445,8 +560,11 @@
         if (!data.pd_name) return "상품 명칭을 입력해 주세요.";
         if (!data.pd_explain) return "상품 설명을 입력해 주세요.";
         if (!data.pd_dept) return "사업부문을 선택해 주세요.";
-        if (options.requireImage && !data.pd_image) {
-            return "신규 등록 시 상품 사진을 선택해 주세요.";
+        if (options.requireImage && !hasProductImages(data)) {
+            return "신규 등록 시 상품 사진을 1장 이상 선택해 주세요.";
+        }
+        if (Array.isArray(data.pd_images) && data.pd_images.length > MAX_PRODUCT_PHOTOS) {
+            return "상품 사진은 최대 " + MAX_PRODUCT_PHOTOS + "장까지 등록할 수 있습니다.";
         }
         return "";
     }
@@ -768,6 +886,9 @@
         showImagePreview: showImagePreview,
         readFileAsDataURL: readFileAsDataURL,
         initProductPhotoPicker: initProductPhotoPicker,
+        initProductPhotoGallery: initProductPhotoGallery,
+        MAX_PRODUCT_PHOTOS: MAX_PRODUCT_PHOTOS,
+        hasProductImages: hasProductImages,
         deptLabel: deptLabel,
         initDeptPicker: initDeptPicker,
         initProductNameDuplicateCheck: initProductNameDuplicateCheck,

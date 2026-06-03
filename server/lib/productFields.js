@@ -14,6 +14,7 @@ const F = {
     price4: "pd_price4",
     size: "pd_size",
     image: "pd_image",
+    images: "pd_images",
     explain: "pd_explain",
     dept: "pd_dept",
     group: "pd_group",
@@ -62,6 +63,7 @@ function jsonSafeStr(v) {
 }
 
 const PRODUCT_CODE_MAX_LEN = 16;
+const MAX_PRODUCT_IMAGES = 3;
 
 function normalizeProductCode(v) {
     return str(v).slice(0, PRODUCT_CODE_MAX_LEN);
@@ -118,10 +120,40 @@ function fromLegacyDoc(doc) {
     return d;
 }
 
+/** 저장·응답용 이미지 URL 배열 (최대 3장, 레거시 pd_image 호환) */
+function readImagesFromDoc(doc) {
+    const d = fromLegacyDoc(doc) || doc || {};
+    let arr = [];
+    if (Array.isArray(d[F.images])) arr = d[F.images];
+    else if (Array.isArray(d.pd_images)) arr = d.pd_images;
+    arr = arr.map((x) => str(x)).filter(Boolean).slice(0, MAX_PRODUCT_IMAGES);
+    const legacy = str(d[F.image] || d.pd_image);
+    if (!arr.length && legacy) arr = [legacy];
+    return arr;
+}
+
+function normalizeImagesFromBody(body, existing) {
+    body = body && typeof body === "object" ? body : {};
+    const prev = fromLegacyDoc(existing) || existing || {};
+    let arr = [];
+    if (Array.isArray(body.pd_images)) {
+        arr = body.pd_images.map((x) => str(x)).filter(Boolean);
+    } else if (body.pd_image !== undefined && body.pd_image !== null) {
+        const one = str(body.pd_image);
+        if (one) arr = [one];
+    } else if (body.image !== undefined && body.image !== null) {
+        const one = str(body.image);
+        if (one) arr = [one];
+    } else if (body.pd_images === null || body.pd_image === "") {
+        arr = [];
+    } else {
+        arr = readImagesFromDoc(prev);
+    }
+    return arr.slice(0, MAX_PRODUCT_IMAGES);
+}
+
 function productHasImage(doc) {
-    const d = fromLegacyDoc(doc);
-    if (!d) return false;
-    return !!str(d[F.image]);
+    return readImagesFromDoc(doc).length > 0;
 }
 
 /** 목록 API용 — products 컬렉션(pd_*, per-*, id) 그대로 매핑, 이미지 본문은 제외 */
@@ -131,9 +163,10 @@ function toPublicListItem(doc) {
     const id = ensureProductId(d);
     if (!id) return null;
     const prices = readPricesFromDoc(d);
+    const images = readImagesFromDoc(d);
     const hasImage =
         d.pd_has_image === true ||
-        (d.pd_has_image !== false && !!str(d[F.image] || d.pd_image));
+        (d.pd_has_image !== false && images.length > 0);
     const pd_dept = readDeptFromDoc(d) || normalizeDeptForStorage(d[F.dept] || d.pd_dept);
     return {
         id: id,
@@ -147,6 +180,7 @@ function toPublicListItem(doc) {
         pd_dept: pd_dept,
         pd_explain: str(d[F.explain] || d.pd_explain).slice(0, 120),
         pd_has_image: hasImage,
+        pd_image_count: images.length,
         pd_record_type: normalizeRecordType(d[F.recordType] || d.pd_record_type),
         pd_registered_by: str(d[F.registeredBy] || d.pd_registered_by),
         pd_registered_by_name: str(d[F.registeredByName] || d.pd_registered_by_name),
@@ -185,6 +219,7 @@ function toPublic(doc) {
     const d = fromLegacyDoc(doc);
     if (!d) return null;
     const prices = readPricesFromDoc(d);
+    const images = readImagesFromDoc(d);
     return {
         id: d.id,
         pd_name: str(d[F.name]),
@@ -194,7 +229,10 @@ function toPublic(doc) {
         pd_price3: prices.pd_price3,
         pd_price4: prices.pd_price4,
         pd_size: str(d[F.size]),
-        pd_image: String(d[F.image] || ""),
+        pd_images: images,
+        pd_image: images[0] || "",
+        pd_has_image: images.length > 0,
+        pd_image_count: images.length,
         pd_explain: str(d[F.explain]),
         pd_dept: normalizeDeptForStorage(d[F.dept]) || str(d[F.dept]),
         pd_group: str(d[F.group]),
@@ -236,12 +274,8 @@ function buildFromBody(body, existing) {
     );
     const pd_explain = str(body.pd_explain != null ? body.pd_explain : body.content);
     const pd_size = str(body.pd_size != null ? body.pd_size : body.spec);
-    let pd_image =
-        body.pd_image !== undefined && body.pd_image !== null
-            ? String(body.pd_image)
-            : body.image !== undefined && body.image !== null
-              ? String(body.image)
-              : String(prev[F.image] || "");
+    const pd_images = normalizeImagesFromBody(body, existing);
+    const pd_image = pd_images[0] || "";
 
     const per_name = str(body.per_name != null ? body.per_name : prev[F.personName]);
     const perNumber = str(
@@ -266,6 +300,7 @@ function buildFromBody(body, existing) {
         pd_size,
         pd_dept,
         pd_group,
+        pd_images,
         pd_image,
         per_name,
         perNumber,
@@ -289,6 +324,7 @@ function toDbDoc(id, built, existing) {
         [F.price4]: built.pd_price4,
         [F.size]: built.pd_size,
         [F.image]: built.pd_image,
+        [F.images]: built.pd_images,
         [F.explain]: built.pd_explain,
         [F.dept]: built.pd_dept,
         [F.group]: built.pd_group,
@@ -296,7 +332,7 @@ function toDbDoc(id, built, existing) {
         [F.personPhone]: built.perNumber,
         [F.personEmail]: built.perEmail,
         [F.recordType]: built.pd_record_type,
-        pd_has_image: !!str(built.pd_image),
+        pd_has_image: built.pd_images.length > 0,
         updatedAt: Date.now()
     };
     if (existing && existing.createdAt) doc.createdAt = existing.createdAt;
@@ -351,7 +387,12 @@ function validateBuilt(built, requireImage) {
     const prices = [built.pd_price1, built.pd_price2, built.pd_price3, built.pd_price4];
     if (prices.some((p) => !isFinite(p))) return "가격 1~4를 올바르게 입력해 주세요.";
     if (!built.pd_dept) return "사업부문을 선택해 주세요.";
-    if (requireImage && !built.pd_image) return "신규 등록 시 상품 사진이 필요합니다.";
+    if (requireImage && !built.pd_images.length) {
+        return "신규 등록 시 상품 사진을 1장 이상 선택해 주세요.";
+    }
+    if (built.pd_images.length > MAX_PRODUCT_IMAGES) {
+        return "상품 사진은 최대 " + MAX_PRODUCT_IMAGES + "장까지 등록할 수 있습니다.";
+    }
     return "";
 }
 
@@ -359,6 +400,62 @@ function ensureProductId(doc) {
     if (doc.id && str(doc.id)) return str(doc.id);
     if (doc._id) return "pr_" + String(doc._id);
     return "pr_" + Date.now().toString(36) + "_" + Math.random().toString(36).slice(2, 8);
+}
+
+/** 목록 API — 이미지 본문 없이 pd_has_image 만 정확히 계산 */
+async function findProductsForList(db, query) {
+    const imgKey = F.image;
+    return db
+        .collection("products")
+        .aggregate([
+            { $match: query || {} },
+            { $sort: { updatedAt: -1 } },
+            {
+                $addFields: {
+                    pd_has_image: {
+                        $cond: [
+                            { $eq: ["$pd_has_image", true] },
+                            true,
+                            {
+                                $cond: [
+                                    { $eq: ["$pd_has_image", false] },
+                                    false,
+                                    {
+                                        $or: [
+                                            {
+                                                $gt: [
+                                                    {
+                                                        $size: {
+                                                            $ifNull: ["$pd_images", []]
+                                                        }
+                                                    },
+                                                    0
+                                                ]
+                                            },
+                                            {
+                                                $gt: [
+                                                    {
+                                                        $strLenCP: {
+                                                            $ifNull: [
+                                                                "$" + imgKey,
+                                                                { $ifNull: ["$pd_image", ""] }
+                                                            ]
+                                                        }
+                                                    },
+                                                    0
+                                                ]
+                                            }
+                                        ]
+                                    }
+                                ]
+                            }
+                        ]
+                    }
+                }
+            },
+            { $project: { [imgKey]: 0, pd_images: 0, pd_image: 0, image: 0 } }
+        ])
+        .toArray();
 }
 
 async function migrateProductsCollection(db) {
@@ -399,8 +496,10 @@ async function migrateProductsCollection(db) {
             await col.updateOne({ _id: doc._id }, { $set: { id: id } });
         }
         const next = toDbDoc(id, built, doc);
-        const img = str(next[F.image]);
-        next.pd_has_image = !!img;
+        const imgs = readImagesFromDoc(next);
+        next[F.images] = imgs;
+        next[F.image] = imgs[0] || "";
+        next.pd_has_image = imgs.length > 0;
         await col.replaceOne({ id: id }, next, { upsert: true });
         n++;
     }
@@ -439,12 +538,16 @@ module.exports = {
     toPublic,
     toPublicListItem,
     productHasImage,
+    readImagesFromDoc,
+    normalizeImagesFromBody,
+    MAX_PRODUCT_IMAGES,
     buildFromBody,
     toDbDoc,
     validateBuilt,
     findDuplicateProductByName,
     findDuplicateProductByCode,
     migrateProductsCollection,
+    findProductsForList,
     fromLegacyDoc,
     readPricesFromDoc,
     applyStaffContactFallback

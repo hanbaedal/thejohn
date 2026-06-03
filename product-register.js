@@ -10,8 +10,7 @@
     var deptPickerRoot = document.getElementById("pr-dept-picker");
     var codeInput = document.getElementById("pr-pd-code");
     var nameInput = document.getElementById("pr-pd-name");
-    var photoPreview = document.getElementById("pr-photo-preview");
-    var photoPicker = null;
+    var photoGallery = null;
     var explainInput = document.getElementById("pr-pd-explain");
     var price1Input = document.getElementById("pr-pd-price1");
     var price2Input = document.getElementById("pr-pd-price2");
@@ -23,7 +22,6 @@
     var perEmailInput = document.getElementById("pr-per-email");
     var submitBtn = document.getElementById("pr-submit");
 
-    var pendingImageData = "";
     var deptPicker = null;
     var nameDupCheck = null;
     var codeDupCheck = null;
@@ -34,19 +32,8 @@
         statusEl.style.color = isError ? "#a12c2c" : "#3d5166";
     }
 
-    function updatePhotoPreview(src) {
-        if (PF && PF.showImagePreview) {
-            PF.showImagePreview(photoPreview, src);
-            return;
-        }
-        if (!photoPreview) return;
-        if (src) {
-            photoPreview.src = src;
-            photoPreview.removeAttribute("hidden");
-        } else {
-            photoPreview.removeAttribute("src");
-            photoPreview.setAttribute("hidden", "");
-        }
+    function getPendingImages() {
+        return photoGallery ? photoGallery.getImages() : [];
     }
 
     if (PF && deptPickerRoot && deptHidden) {
@@ -87,12 +74,6 @@
         });
     }
 
-    function handlePhotoFile(dataUrl) {
-        pendingImageData = dataUrl;
-        updatePhotoPreview(dataUrl);
-        setStatus("사진을 1:1·1MB 이하로 맞춰 적용했습니다.");
-    }
-
     if (PInfo && PInfo.bindOpenButton) {
         PInfo.bindOpenButton({
             api: api,
@@ -106,22 +87,27 @@
         });
     }
 
-    if (PF && PF.initProductPhotoPicker) {
-        photoPicker = PF.initProductPhotoPicker({
+    if (PF && PF.initProductPhotoGallery) {
+        photoGallery = PF.initProductPhotoGallery({
+            slotsRoot: document.getElementById("pr-photo-gallery"),
+            countEl: document.getElementById("pr-photo-count"),
+            hintEl: document.getElementById("pr-photo-hint"),
             galleryInput: document.getElementById("pr-pd-image-gallery"),
             cameraInput: document.getElementById("pr-pd-image-camera"),
             btnGallery: document.getElementById("pr-photo-gallery-btn"),
             btnCamera: document.getElementById("pr-photo-camera-btn"),
-            onSelect: handlePhotoFile,
             onError: function (err) {
                 setStatus((err && err.message) || "이미지 오류", true);
-                updatePhotoPreview("");
+            },
+            onStatus: function (msg) {
+                setStatus(msg, false);
             }
         });
     }
 
     form.addEventListener("submit", function (e) {
         e.preventDefault();
+        var imgs = getPendingImages();
         var body = {
             pd_code: codeInput ? codeInput.value.trim() : "",
             pd_name: nameInput.value.trim(),
@@ -133,7 +119,8 @@
             pd_price2: PF.parsePriceInput(price2Input),
             pd_price3: PF.parsePriceInput(price3Input),
             pd_price4: PF.parsePriceInput(price4Input),
-            pd_image: pendingImageData || "",
+            pd_images: imgs,
+            pd_image: imgs[0] || "",
             pd_record_type: "catalog",
             per_name: perNameInput ? perNameInput.value.trim() : "",
             "per-number": perNumberInput ? perNumberInput.value.trim() : "",
@@ -159,11 +146,9 @@
                             PInfo.setValues(PInfo.emptyValues());
                         }
                         form.reset();
-                        pendingImageData = "";
-                        if (photoPicker) photoPicker.clear();
+                        if (photoGallery) photoGallery.clear();
                         if (nameDupCheck) nameDupCheck.reset();
                         if (codeDupCheck) codeDupCheck.reset();
-                        updatePhotoPreview("");
                         if (deptPicker) deptPicker.clear();
                         setStatus("저장했습니다. 계속 등록하거나 상품 리스트에서 확인하세요.");
                     });

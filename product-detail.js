@@ -136,9 +136,9 @@
                 '" alt="">'
             );
         }
-        if (it.pd_has_image) {
+        if (it.pd_has_image || (it.pd_image_count && it.pd_image_count > 0)) {
             return (
-                '<div class="pd-hero-img pd-hero-img--empty" data-pd-cover="' +
+                '<div class="pd-hero-img pd-hero-img--empty" data-pd-gallery="' +
                 escapeHtml(it.id) +
                 '" role="img" aria-label="사진 로딩">사진 불러오는 중…</div>'
             );
@@ -184,25 +184,53 @@
         );
     }
 
-    function loadCoverImages(container) {
+    function loadProductGalleries(container) {
         if (!api || !api.get || !container) return;
-        container.querySelectorAll("[data-pd-cover]").forEach(function (el) {
-            var id = el.getAttribute("data-pd-cover");
+        container.querySelectorAll("[data-pd-gallery]").forEach(function (el) {
+            var id = el.getAttribute("data-pd-gallery");
             if (!id) return;
-            api.get("api/products/" + encodeURIComponent(id) + "/cover")
+            api.get("api/products/" + encodeURIComponent(id) + "/images")
                 .then(function (data) {
-                    if (!data || !data.pd_image) {
+                    var imgs = (data && data.images) || [];
+                    if (!imgs.length) {
                         el.textContent = "사진 없음";
                         return;
                     }
                     var wrap = el.closest(".pd-hero-wrap");
-                    var img = document.createElement("img");
-                    img.className = "pd-hero-img";
-                    img.alt = "";
-                    img.src = data.pd_image;
-                    if (wrap) {
-                        wrap.innerHTML = "";
-                        wrap.appendChild(img);
+                    if (!wrap) return;
+                    wrap.innerHTML = "";
+                    var main = document.createElement("img");
+                    main.className = "pd-hero-img";
+                    main.alt = "";
+                    main.src = imgs[0];
+                    wrap.appendChild(main);
+                    if (imgs.length > 1) {
+                        var nav = document.createElement("div");
+                        nav.className = "pd-hero-thumbs";
+                        nav.setAttribute("role", "tablist");
+                        nav.setAttribute("aria-label", "상품 사진");
+                        imgs.forEach(function (src, i) {
+                            var btn = document.createElement("button");
+                            btn.type = "button";
+                            btn.className = "pd-hero-thumb" + (i === 0 ? " is-active" : "");
+                            btn.setAttribute("role", "tab");
+                            btn.setAttribute("aria-selected", i === 0 ? "true" : "false");
+                            var thumb = document.createElement("img");
+                            thumb.alt = "사진 " + (i + 1);
+                            thumb.src = src;
+                            btn.appendChild(thumb);
+                            btn.addEventListener("click", function () {
+                                main.src = src;
+                                var tabs = nav.querySelectorAll(".pd-hero-thumb");
+                                for (var t = 0; t < tabs.length; t++) {
+                                    var on = tabs[t] === btn;
+                                    tabs[t].classList.toggle("is-active", on);
+                                    tabs[t].setAttribute("aria-selected", on ? "true" : "false");
+                                }
+                            });
+                            nav.appendChild(btn);
+                        });
+                        wrap.appendChild(nav);
                     }
                 })
                 .catch(function () {
@@ -245,7 +273,7 @@
                 .join("") +
             "</div></div>";
 
-        loadCoverImages(root);
+        loadProductGalleries(root);
         bindDetailOrders(items);
 
         requestAnimationFrame(function () {

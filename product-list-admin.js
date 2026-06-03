@@ -82,6 +82,43 @@
         );
     }
 
+    function thumbHtml(it) {
+        if (it.pd_has_image) {
+            return (
+                '<div class="pl-admin-thumb">' +
+                '<img alt="" loading="lazy" data-pl-cover="' +
+                escapeHtml(it.id) +
+                '">' +
+                "</div>"
+            );
+        }
+        return (
+            '<div class="pl-admin-thumb pl-admin-thumb--empty" aria-hidden="true">사진<br>없음</div>'
+        );
+    }
+
+    function bindCoverImages() {
+        if (!listEl || !api || !api.get) return;
+        listEl.querySelectorAll("img[data-pl-cover]").forEach(function (img) {
+            var id = img.getAttribute("data-pl-cover");
+            if (!id) return;
+            api
+                .get("api/products/" + encodeURIComponent(id) + "/cover")
+                .then(function (data) {
+                    if (data && data.pd_image) {
+                        img.src = data.pd_image;
+                    }
+                })
+                .catch(function () {
+                    var box = img.parentElement;
+                    if (box) {
+                        box.className = "pl-admin-thumb pl-admin-thumb--empty";
+                        box.innerHTML = "사진<br>없음";
+                    }
+                });
+        });
+    }
+
     function bindDeleteButtons() {
         if (!listEl || !api || !api.deleteProduct) return;
         listEl.querySelectorAll("[data-pl-delete]").forEach(function (btn) {
@@ -144,6 +181,7 @@
                     if (!canWriteItem(it)) {
                         return (
                             '<li class="pl-admin-row pl-admin-row--readonly">' +
+                            thumbHtml(it) +
                             '<div class="pl-admin-row__main pl-admin-row__main--readonly">' +
                             '<span class="vl-admin-name">' +
                             escapeHtml(namePlain) +
@@ -156,6 +194,7 @@
                     var href = editHref(it);
                     return (
                         '<li class="pl-admin-row">' +
+                        thumbHtml(it) +
                         '<a class="pl-admin-row__main" href="' +
                         escapeHtml(href) +
                         '"><span class="vl-admin-name">' +
@@ -178,6 +217,7 @@
                 .join("") +
             "</ul>";
         bindDeleteButtons();
+        bindCoverImages();
         setStatus("");
     }
 

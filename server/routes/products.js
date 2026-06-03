@@ -10,6 +10,9 @@ const {
     findDuplicateProductByName,
     findDuplicateProductByCode,
     applyStaffContactFallback,
+    findProductsForList,
+    readImagesFromDoc,
+    MAX_PRODUCT_IMAGES,
     F
 } = require("../lib/productFields");
 const { findStaffByLoginId } = require("../lib/loginResolve");
@@ -135,11 +138,7 @@ router.get("/", async (req, res) => {
                 console.error("GET /api/products writeChecker", checkerErr.message);
             }
         }
-        const items = await getDb()
-            .collection("products")
-            .find(query, { projection: { [F.image]: 0, pd_image: 0, image: 0 } })
-            .sort({ updatedAt: -1 })
-            .toArray();
+        const items = await findProductsForList(getDb(), query);
         const rows = [];
         for (const doc of items) {
             try {
@@ -185,7 +184,43 @@ router.get("/", async (req, res) => {
     }
 });
 
-/** 목록 썸네일 — pd_image 만 반환(사업부문 카드용) */
+/** 상품 사진 전체(최대 3장) — 상세·수정 폼용 */
+router.get("/:id/images", async function (req, res) {
+    try {
+        const auth = optionalAuth(req);
+        const vendorDoc = await resolveVendorForAuth(auth);
+        const doc = await getDb()
+            .collection("products")
+            .findOne(
+                { id: req.params.id },
+                {
+                    projection: {
+                        [F.image]: 1,
+                        [F.images]: 1,
+                        pd_image: 1,
+                        pd_images: 1,
+                        [F.registeredBy]: 1
+                    }
+                }
+            );
+        if (!doc) {
+            return res.status(404).json({ ok: false, error: "상품을 찾을 수 없습니다." });
+        }
+        if (auth && auth.role === "vendor" && !vendorCanAccessProduct(vendorDoc, doc, auth)) {
+            return res.status(404).json({ ok: false, error: "상품을 찾을 수 없습니다." });
+        }
+        const images = readImagesFromDoc(doc);
+        if (!images.length) {
+            return res.status(404).json({ ok: false, error: "사진이 없습니다." });
+        }
+        res.json({ ok: true, images: images, count: images.length });
+    } catch (e) {
+        console.error("GET /api/products/:id/images", e);
+        res.status(500).json({ ok: false, error: "사진을 불러오지 못했습니다." });
+    }
+});
+
+/** 목록 썸네일 — index 쿼리(0~2)로 해당 장 반환 */
 router.get("/:id/cover", async function (req, res) {
     try {
         const auth = optionalAuth(req);
@@ -194,7 +229,15 @@ router.get("/:id/cover", async function (req, res) {
             .collection("products")
             .findOne(
                 { id: req.params.id },
-                { projection: { [F.image]: 1, pd_image: 1, [F.registeredBy]: 1 } }
+                {
+                    projection: {
+                        [F.image]: 1,
+                        [F.images]: 1,
+                        pd_image: 1,
+                        pd_images: 1,
+                        [F.registeredBy]: 1
+                    }
+                }
             );
         if (!doc) {
             return res.status(404).json({ ok: false, error: "상품을 찾을 수 없습니다." });
@@ -202,11 +245,15 @@ router.get("/:id/cover", async function (req, res) {
         if (auth && auth.role === "vendor" && !vendorCanAccessProduct(vendorDoc, doc, auth)) {
             return res.status(404).json({ ok: false, error: "상품을 찾을 수 없습니다." });
         }
-        const img = String(doc[F.image] || doc.pd_image || "");
+        const images = readImagesFromDoc(doc);
+        let idx = parseInt(String(req.query.index || "0"), 10);
+        if (!isFinite(idx) || idx < 0) idx = 0;
+        if (idx >= MAX_PRODUCT_IMAGES) idx = MAX_PRODUCT_IMAGES - 1;
+        const img = images[idx] || "";
         if (!img) {
             return res.status(404).json({ ok: false, error: "사진이 없습니다." });
         }
-        res.json({ ok: true, pd_image: img });
+        res.json({ ok: true, pd_image: img, index: idx, count: images.length });
     } catch (e) {
         console.error("GET /api/products/:id/cover", e);
         res.status(500).json({ ok: false, error: "사진을 불러오지 못했습니다." });
@@ -321,13 +368,15 @@ router.get("/:id", async (req, res) => {
             return res.status(404).json({ ok: false, error: "상품을 찾을 수 없습니다." });
         }
         let item = toPublic(doc);
-        const img = String(item.pd_image || "");
-        if (img.length > 400 || /^data:/i.test(img)) {
-            item.pd_has_image = true;
-            item.pd_image = "";
-        } else {
-            item.pd_has_image = !!img;
-        }
+        const rawImages = readImagesFromDoc(doc);
+        item.pd_image_count = rawImages.length;
+        item.pd_has_image = rawImages.length > 0;
+        item.pd_images = rawImages.map(function (u) {
+            const s = String(u || "");
+            if (s.length > 400 || /^data:/i.test(s)) return "";
+            return s;
+        });
+        item.pd_image = item.pd_images[0] || "";
         if (contactNeedsStaffFallback(item)) {
             const staff = await findStaffByLoginId(String(item.pd_registered_by || "").trim());
             item = applyStaffContactFallback(item, staff);
