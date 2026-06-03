@@ -221,7 +221,10 @@
     }
 
     function isStaffRole(role) {
-        return role === "admin" || role === "supervisor";
+        var r = String(role != null ? role : getRole() || "")
+            .trim()
+            .toLowerCase();
+        return r === "admin" || r === "supervisor";
     }
 
     function normalizeLegacySession() {

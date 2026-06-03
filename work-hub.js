@@ -6,7 +6,9 @@
 
     function initHubMedia() {
         if (hubMediaInited) return;
-        if (!global.THEJHON_HOME_INTRO_MEDIA || !THEJHON_HOME_INTRO_MEDIA.init) return;
+        var g = typeof window !== "undefined" ? window : this;
+        if (!g.THEJHON_HOME_INTRO_MEDIA || !g.THEJHON_HOME_INTRO_MEDIA.init) return;
+        var THEJHON_HOME_INTRO_MEDIA = g.THEJHON_HOME_INTRO_MEDIA;
         if (!document.getElementById("whHubMusic") || !document.getElementById("whBgmToggle")) return;
         hubMediaInited = true;
         THEJHON_HOME_INTRO_MEDIA.init({
@@ -67,25 +69,24 @@
         });
     }
 
+    function normalizeHubRole() {
+        return String(Auth && Auth.getRole ? Auth.getRole() : "")
+            .trim()
+            .toLowerCase();
+    }
+
     function hubMenuAllowed(menuKey) {
         if (!Auth || !Auth.getWorkHubAccess) return false;
         if (!Auth.getWorkHubAccess().allowed) return false;
-        if (Auth.canAccessWorkHubMenu) return Auth.canAccessWorkHubMenu(menuKey);
-        var role = Auth.getRole ? Auth.getRole() : "";
-        if (menuKey === "view-home" || menuKey === "manage-home") {
-            return Auth.isStaffRole && Auth.isStaffRole(role);
-        }
-        if (menuKey === "product-manage" || menuKey === "vendor-manage") {
-            return Auth.isStaffRole && Auth.isStaffRole(role);
-        }
+        var role = normalizeHubRole();
+        var staff = role === "admin" || role === "supervisor";
+        if (!staff) return false;
+        if (menuKey === "view-home" || menuKey === "manage-home") return true;
+        if (menuKey === "product-manage" || menuKey === "vendor-manage") return true;
         if (menuKey === "work-manage") return role === "supervisor";
         if (menuKey === "order-manage") {
             if (role === "supervisor") return true;
-            return (
-                role === "admin" &&
-                Auth.isStaffOrderEnabled &&
-                Auth.isStaffOrderEnabled()
-            );
+            return role === "admin" && Auth.isStaffOrderEnabled && Auth.isStaffOrderEnabled();
         }
         return false;
     }
@@ -93,13 +94,21 @@
     function applyMenus() {
         if (!Auth || !Auth.getWorkHubAccess) return;
         var access = Auth.getWorkHubAccess();
-        if (!access.allowed) return;
-
         var cards = document.querySelectorAll("[data-wh-menu]");
+        if (!access.allowed) {
+            cards.forEach(function (card) {
+                card.hidden = true;
+                card.style.display = "none";
+            });
+            syncHubRows();
+            return;
+        }
+
         cards.forEach(function (card) {
             var key = card.getAttribute("data-wh-menu");
             var allowed = hubMenuAllowed(key);
             card.hidden = !allowed;
+            card.style.display = allowed ? "" : "none";
             if (!allowed) {
                 card.setAttribute("aria-hidden", "true");
                 card.setAttribute("tabindex", "-1");
@@ -194,33 +203,51 @@
         if (loginBtn) loginBtn.hidden = !!loggedIn;
     }
 
+    function bootWorkHub() {
+        syncWorkHubAuthUi();
+        if (!Auth || !Auth.getWorkHubAccess) {
+            setStatus("인증 스크립트 오류", "err");
+            applyMenus();
+            return;
+        }
+        if (Auth.normalizeLegacySession) Auth.normalizeLegacySession();
+
+        var access = Auth.getWorkHubAccess();
+        if (!access.allowed) {
+            setStatus(access.reason || "이용할 수 없습니다.", "err");
+            applyMenus();
+            return;
+        }
+
+        setStatus("", "");
+        applyMenus();
+        if (Auth.setStaffNavMode) Auth.setStaffNavMode("hub");
+        syncWorkHubAuthUi();
+
+        if (Auth.refreshSessionPermissionsAsync) {
+            Auth.refreshSessionPermissionsAsync().then(function () {
+                applyMenus();
+                initWorkHubHeaderCompany();
+            });
+        }
+    }
+
+    function scheduleApplyMenus() {
+        bootWorkHub();
+        window.setTimeout(applyMenus, 0);
+        window.setTimeout(applyMenus, 350);
+    }
+
     bootHubMediaWhenReady();
     scheduleWorkHubHeaderCompany();
-    syncWorkHubAuthUi();
-    window.addEventListener("pageshow", syncWorkHubAuthUi);
 
-    if (!Auth || !Auth.getWorkHubAccess) {
-        setStatus("인증 스크립트 오류", "err");
-        return;
+    if (document.readyState === "loading") {
+        document.addEventListener("DOMContentLoaded", scheduleApplyMenus, { once: true });
+    } else {
+        scheduleApplyMenus();
     }
-    if (Auth.normalizeLegacySession) Auth.normalizeLegacySession();
-
-    var access = Auth.getWorkHubAccess();
-    if (!access.allowed) {
-        setStatus(access.reason || "이용할 수 없습니다.", "err");
-        return;
-    }
-
-    applyMenus();
-    if (Auth.setStaffNavMode) Auth.setStaffNavMode("hub");
-    syncWorkHubAuthUi();
-
-    if (Auth.refreshSessionPermissionsAsync) {
-        Auth.refreshSessionPermissionsAsync().then(function () {
-            applyMenus();
-            initWorkHubHeaderCompany();
-        });
-    }
+    window.addEventListener("load", scheduleApplyMenus);
+    window.addEventListener("pageshow", scheduleApplyMenus);
 
     try {
         window.addEventListener("thejhon-auth-permissions-updated", function () {
@@ -228,5 +255,4 @@
             refreshWorkHubHeaderCompany();
         });
     } catch (e2) {}
-    window.addEventListener("pageshow", refreshWorkHubHeaderCompany);
 })();
