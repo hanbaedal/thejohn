@@ -336,25 +336,45 @@
             });
     }
 
-    function open(opts) {
-        opts = opts || {};
-        ensureModal();
-        setModalTitle(MODAL_TITLE_EDIT);
-        setReadOnlyMode(false);
-        state.values = applyProductContext(
-            Object.assign({}, state.values, readFormValues()),
-            opts
-        );
+    function showEditModal(values, opts) {
+        state.values = applyProductContext(withDefaultNotes(values), opts);
         fillForm(state.values);
         setModalStatus(
             state.productId ?
                 "저장된 상품입니다. 적용 후 상품 저장 시 서버에 반영됩니다."
             :   "신규 등록입니다. 상품 저장 후 상품 필수 정보가 DB에 저장됩니다."
         );
-        modalEl.hidden = false;
-        document.body.style.overflow = "hidden";
         var first = formEl && formEl.querySelector("input, textarea");
         if (first) first.focus();
+    }
+
+    function open(opts) {
+        opts = opts || {};
+        ensureModal();
+        setModalTitle(MODAL_TITLE_EDIT);
+        setReadOnlyMode(false);
+        modalEl.hidden = false;
+        document.body.style.overflow = "hidden";
+
+        if (state.productId && state.api && state.api.getProductInfo) {
+            setModalStatus("불러오는 중…");
+            state.api
+                .getProductInfo(state.productId)
+                .then(function (data) {
+                    var values =
+                        data && data.item && data.item.values ?
+                            data.item.values
+                        :   state.values || emptyValues();
+                    showEditModal(values, opts);
+                })
+                .catch(function () {
+                    showEditModal(state.values || emptyValues(), opts);
+                });
+            return;
+        }
+
+        var merged = Object.assign({}, state.values || emptyValues(), readFormValues());
+        showEditModal(merged, opts);
     }
 
     function setValues(values) {
@@ -400,10 +420,9 @@
         }
         return api.getProductInfo(productId).then(function (data) {
             if (data && data.item && data.item.values) {
-                setValues(withDefaultNotes(data.item.values));
-            }
-            if (data && data.fieldDefs && data.fieldDefs.length) {
-                /* 서버 정의와 동기 — 현재 클라이언트 FIELD_DEFS 사용 */
+                setValues(data.item.values);
+            } else {
+                setValues(emptyValues());
             }
         });
     }
