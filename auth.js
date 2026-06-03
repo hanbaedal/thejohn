@@ -1084,7 +1084,7 @@
         if (file === HOMEPAGE_MANAGE_HUB_PAGE) {
             var hubItems = collectBodyNavCards(document);
             if (hubItems.length) saveManageHomeSubnav(section, hubItems);
-            return [];
+            return hubItems;
         }
 
         var bodyItems = collectBodyNavCards(document);
@@ -1124,13 +1124,7 @@
 
         var section = getHomepageManageNavSectionForPage(currentPageFile());
         var items = collectManageHomeSubnavFromBody();
-        var existingSubnav = nav.querySelectorAll("a[data-hmh-subnav]");
-
-        if (existingSubnav.length > 0) {
-            if (!items.length) items = loadManageHomeSubnav(section);
-            syncManageHomeSubnavCurrent(nav, items);
-            return;
-        }
+        if (!items.length) items = loadManageHomeSubnav(section);
 
         staffNavClearInjected(nav, true);
         if (!items.length) return;
