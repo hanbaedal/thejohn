@@ -74,6 +74,10 @@
     flex-shrink: 0;
     border: 0;
 }
+.pr-form-page .pr-section-block--core > .pr-divider--core {
+    margin-top: var(--pr-section-gap);
+    margin-bottom: var(--pr-section-gap);
+}
 .pr-form-page .pr-section-block {
     padding: var(--pr-section-gap) 0;
 }
@@ -460,20 +464,24 @@
         box-sizing: border-box;
     }
 
-    .pr-form-page .pr-pinfo-field {
+    .pr-form-page .pr-section-block--core .pr-field.pr-pinfo-field {
         display: grid;
         grid-template-columns: var(--pr-label-w) minmax(0, 1fr);
         gap: 0.3rem 0.45rem;
         align-items: center;
         margin-bottom: 0;
     }
-    .pr-form-page .pr-pinfo-caption {
+    .pr-form-page .pr-section-block--core .pr-pinfo-caption {
         grid-column: 1;
+        grid-row: 1;
         margin: 0;
+        white-space: nowrap;
     }
-    .pr-form-page .pr-btn-pinfo {
+    .pr-form-page .pr-section-block--core .pr-btn-pinfo {
         grid-column: 2;
+        grid-row: 1;
         justify-self: start;
+        width: auto;
         min-height: var(--pr-input-min-h);
         padding: 0.35rem 0.65rem;
         font-size: var(--pr-desc-size);
@@ -547,5 +555,35 @@
 
     .pr-form-page .pr-section-title {
         font-size: var(--pr-desc-size);
+    }
+}
+
+/* 태블릿·가로 화면: 상품 필수 정보도 항목 | 버튼 한 줄 */
+@media (min-width: 641px) and (max-width: 767px) {
+    .pr-form-page .pr-section-block--core .pr-field.pr-pinfo-field {
+        display: grid;
+        grid-template-columns: var(--pr-label-w) minmax(0, 1fr);
+        gap: 0.3rem 0.45rem;
+        align-items: center;
+        margin-bottom: 0;
+    }
+    .pr-form-page .pr-section-block--core .pr-pinfo-caption {
+        grid-column: 1;
+        grid-row: 1;
+        margin: 0;
+        white-space: nowrap;
+        font-size: 0.72rem;
+        font-weight: 700;
+        color: #2a4560;
+    }
+    .pr-form-page .pr-section-block--core .pr-btn-pinfo {
+        grid-column: 2;
+        grid-row: 1;
+        justify-self: start;
+        min-height: 2rem;
+        padding: 0.35rem 0.65rem;
+        font-size: 0.72rem;
+        font-weight: 700;
+        border-radius: 4px;
     }
 }

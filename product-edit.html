@@ -144,9 +144,10 @@
                         <input type="text" id="pe-pd-size" name="pd_size" maxlength="120" autocomplete="off" placeholder="예: 500g, 1박스 20입">
                     </div>
                 </div>
+                <div class="pr-divider pr-divider--core" role="separator" aria-hidden="true"></div>
                 <div class="pr-field pr-pinfo-field">
                     <span class="pr-pinfo-caption" id="pe-pinfo-label">상품 필수 정보</span>
-                    <button type="button" class="btn btn-secondary pr-btn-pinfo" id="pe-btn-product-info" aria-labelledby="pe-pinfo-label">입력</button>
+                    <button type="button" class="btn btn-secondary pr-btn-pinfo" id="pe-btn-product-info" aria-labelledby="pe-pinfo-label">정보수정</button>
                 </div>
             </div>
             <div class="pr-divider" role="separator" aria-hidden="true"></div>
@@ -202,6 +203,17 @@
             </div>
         </form>
         </section>
+
+        <div id="pe-save-modal" class="pr-save-modal" hidden role="dialog" aria-modal="true" aria-labelledby="pe-save-modal-title">
+            <div class="pr-save-modal__panel">
+                <h2 id="pe-save-modal-title" class="pr-save-modal__title">수정 완료</h2>
+                <p class="pr-save-modal__lead">수정되었습니다.</p>
+                <div class="pr-save-modal__actions">
+                    <button type="button" class="btn btn-primary" id="pe-save-ok">목록으로</button>
+                    <button type="button" class="btn btn-secondary" id="pe-save-continue">계속 수정</button>
+                </div>
+            </div>
+        </div>
 
         <div id="pe-dept-modal" class="vr-dept-modal" hidden role="dialog" aria-modal="true" aria-labelledby="pe-dept-modal-title">
             <div class="vr-dept-modal__panel">

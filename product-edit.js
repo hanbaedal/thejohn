@@ -40,6 +40,9 @@
     var deptPicker = null;
     var nameDupCheck = null;
     var codeDupCheck = null;
+    var saveModal = document.getElementById("pe-save-modal");
+    var saveOkBtn = document.getElementById("pe-save-ok");
+    var saveContinueBtn = document.getElementById("pe-save-continue");
 
     function setStatus(msg, isError) {
         if (!statusEl) return;
@@ -53,6 +56,24 @@
 
     function getPendingImages() {
         return photoGallery ? photoGallery.getImages() : [];
+    }
+
+    function showSaveModal() {
+        if (!saveModal) return;
+        saveModal.hidden = false;
+        if (PF && PF.speakKorean) PF.speakKorean("수정되었습니다");
+    }
+
+    if (saveOkBtn) {
+        saveOkBtn.addEventListener("click", function () {
+            location.href = listReturnUrl();
+        });
+    }
+    if (saveContinueBtn) {
+        saveContinueBtn.addEventListener("click", function () {
+            if (saveModal) saveModal.hidden = true;
+            setStatus("");
+        });
     }
 
     function applyProductImages(imgs) {
@@ -241,10 +262,8 @@
                             PInfo.saveToServer(api, id)
                         :   Promise.resolve();
                     return infoP.then(function () {
-                        setStatus("수정했습니다. 리스트로 이동합니다…");
-                        setTimeout(function () {
-                            location.href = listReturnUrl();
-                        }, 350);
+                        setStatus("");
+                        showSaveModal();
                     });
                 })
                 .catch(function (err2) {
