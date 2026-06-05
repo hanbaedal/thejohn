@@ -5,8 +5,8 @@
     var VENDOR_MANAGE_PAGE = "vendor-manage.html";
 
     var LABEL_SPECS = {
-        large: { w: 160, h: 60, pageW: 320, pageH: 60, name: "대봉투 라벨 (160×60mm)" },
-        regular: { w: 99.1, h: 38.1, pageW: 198.2, pageH: 38.1, name: "일반봉투 라벨 (99.1×38.1mm)" }
+        large: { w: 160, h: 60, name: "대봉투 라벨 (160×60mm)" },
+        regular: { w: 99.1, h: 38.1, name: "일반봉투 라벨 (99.1×38.1mm)" }
     };
 
     var SENDER = {
@@ -338,7 +338,7 @@
         return jobs;
     }
 
-    function renderLabelBlock(kind, zip, lines, names) {
+    function renderLabelHalf(kind, zip, lines, names) {
         var zipHtml = zip
             ? '<p class="vdm-label__zip">' + escapeHtml(zip) + "</p>"
             : "";
@@ -354,7 +354,7 @@
             })
             .join("");
         return (
-            '<div class="vdm-label">' +
+            '<div class="vdm-label-half">' +
             '<p class="vdm-label__kind">' + escapeHtml(kind) + "</p>" +
             zipHtml +
             bodyHtml +
@@ -372,23 +372,41 @@
         return addrText ? [addrText] : [];
     }
 
-    function renderLabelSheetHtml(job, envelopeType) {
-        var sheetCls = envelopeType === "regular" ? "vdm-label-sheet--regular" : "vdm-label-sheet--large";
-        var senderBlock = renderLabelBlock("발송인 (관리자)", SENDER.zip, SENDER.lines, []);
+    function senderContent(envelopeType) {
+        if (envelopeType === "large") {
+            return {
+                zip: SENDER.zip,
+                lines: [
+                    "(주)더존 · 대표 이상범",
+                    "경기도 부천시 원미구 부천로 130번길 5, 삼도빌딩 1층",
+                    "032-666-5255"
+                ]
+            };
+        }
+        return SENDER;
+    }
+
+    function renderLabelPairHtml(job, envelopeType) {
+        var pairCls =
+            envelopeType === "regular" ? "vdm-label-pair vdm-label-pair--regular" : "vdm-label-pair vdm-label-pair--large";
+        var sender = senderContent(envelopeType);
         var recipientNames = [job.recipient];
         if (job.sub) recipientNames.push(job.sub);
-        var recipientBlock = renderLabelBlock(
-            "수신인 (업체)",
-            job.zip,
-            recipientAddressLines(job),
-            recipientNames
-        );
         return (
-            '<section class="vdm-label-sheet ' + sheetCls + '">' +
-            senderBlock +
-            recipientBlock +
-            "</section>"
+            '<article class="' + pairCls + '">' +
+            renderLabelHalf("발송인", sender.zip, sender.lines, []) +
+            renderLabelHalf("수신인", job.zip, recipientAddressLines(job), recipientNames) +
+            "</article>"
         );
+    }
+
+    function renderAllLabelsHtml(jobs, envelopeType) {
+        var inner = jobs
+            .map(function (job) {
+                return renderLabelPairHtml(job, envelopeType);
+            })
+            .join("");
+        return '<div class="vdm-label-grid">' + inner + "</div>";
     }
 
     function getLabelSpec(envelopeType) {
@@ -406,15 +424,13 @@
         return true;
     }
 
-    function injectPrintPageSize(envelopeType) {
+    function injectPrintPageSize() {
         var id = "vdm-print-page-size";
         var old = document.getElementById(id);
         if (old) old.remove();
-        var spec = getLabelSpec(envelopeType);
         var style = document.createElement("style");
         style.id = id;
-        style.textContent =
-            "@media print { @page { size: " + spec.pageW + "mm " + spec.pageH + "mm; margin: 0; } }";
+        style.textContent = "@media print { @page { size: A4 portrait; margin: 5mm; } }";
         document.head.appendChild(style);
     }
 
@@ -440,13 +456,9 @@
 
         var envelopeType = getEnvelopeType();
         if (!printArea) return;
-        printArea.innerHTML = jobs
-            .map(function (job) {
-                return renderLabelSheetHtml(job, envelopeType);
-            })
-            .join("");
+        printArea.innerHTML = renderAllLabelsHtml(jobs, envelopeType);
 
-        injectPrintPageSize(envelopeType);
+        injectPrintPageSize();
 
         document.body.classList.remove("vdm-printing");
         document.body.classList.add("vdm-printing");
@@ -460,7 +472,7 @@
 
         var spec = getLabelSpec(envelopeType);
         setStatus(
-            spec.name + " · 업체 " + jobs.length + "건 (발송·수신 라벨 각 " + jobs.length + "장) 인쇄합니다.",
+            spec.name + " · 선택 업체 " + jobs.length + "건을 한 장(A4)에 배열해 인쇄합니다.",
             false
         );
         window.print();
