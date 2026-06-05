@@ -64,6 +64,15 @@
     flex: 0 0 auto;
     white-space: nowrap;
 }
+.ol-query-filters__row--actions {
+    justify-content: flex-end;
+    margin-top: 0.1rem;
+    margin-bottom: 0;
+}
+.ol-query-filters__row--actions .btn {
+    flex: 0 0 auto;
+    white-space: nowrap;
+}
 .shub-page .ol-query-filters {
     margin-bottom: 1rem;
 }

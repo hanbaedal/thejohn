@@ -9,6 +9,7 @@
     <link rel="stylesheet" href="common.css">
     <link rel="stylesheet" href="admin-manage.css">
     <link rel="stylesheet" href="staff-hub.css">
+    <link rel="stylesheet" href="order-list-filters.css">
     <script src="api-config.js"></script>
     <script src="thejhon-api.js"></script>
     <script src="auth.js"></script>
@@ -45,14 +46,23 @@
         <p class="shub-subnav"><a href="staff-manage-hub.html">← 관리자관리</a></p>
         <h1>접속통계 관리</h1>
         <p id="sas-status" class="shub-status" role="status"></p>
+        <div class="ol-query-filters" aria-label="접속통계 조회 조건">
+            <section class="ol-query-filters__section" aria-labelledby="sas-filter-period-heading">
+                <h2 id="sas-filter-period-heading" class="ol-query-filters__heading">기간으로조회</h2>
+                <div class="ol-query-filters__row">
+                    <label for="sas-date-from">시작일</label>
+                    <input type="date" id="sas-date-from">
+                </div>
+                <div class="ol-query-filters__row">
+                    <label for="sas-date-to">종료일</label>
+                    <input type="date" id="sas-date-to">
+                </div>
+                <div class="ol-query-filters__row ol-query-filters__row--actions">
+                    <button type="button" class="btn btn-primary" id="sas-search">조회</button>
+                </div>
+            </section>
+        </div>
         <section class="shub-panel">
-            <div class="shub-filters">
-                <label for="sas-date-from">시작일</label>
-                <input type="date" id="sas-date-from">
-                <label for="sas-date-to">종료일</label>
-                <input type="date" id="sas-date-to">
-                <button type="button" class="btn btn-primary" id="sas-search">조회</button>
-            </div>
             <div id="sas-summary" class="shub-summary" hidden></div>
             <h2>날짜별 요약</h2>
             <div id="sas-by-day" class="shub-table-wrap"></div>

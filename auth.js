@@ -1476,7 +1476,7 @@
         if (!canManageRegisters()) return [];
         return [
             { href: VENDOR_MANAGE_HUB_PAGE, label: "업체관리" },
-            { href: "vendor-register.html", label: "업체 등록" },
+            { href: "vendor-register.html", label: "업체등록" },
             { href: "vendor-list-admin.html", label: "업체 리스트" },
             { href: "vendor-email-broadcast.html", label: "이메일 보내기" },
             { href: "vendor-email-history.html", label: "이메일 발송 내역" },
@@ -1484,6 +1484,25 @@
             { href: "vendor-new-list.html", label: "신규업체 리스트" },
             { href: "vendor-prospect-list.html", label: "예비업체 리스트" }
         ];
+    }
+
+    function mergeVendorSubnavWithDefaults(items) {
+        var primary = Array.isArray(items) ? items : [];
+        var defaults = getDefaultVendorSubnavItems();
+        var merged = [];
+        var seen = {};
+        var lists = [primary, defaults];
+        for (var s = 0; s < lists.length; s++) {
+            var list = lists[s];
+            for (var i = 0; i < list.length; i++) {
+                var it = list[i] || {};
+                var file = staffNavHrefFile(it.href);
+                if (!file || seen[file] || !vendorSubnavItemAllowed(it.href)) continue;
+                seen[file] = true;
+                merged.push({ href: it.href, label: String(it.label || "").trim() || file });
+            }
+        }
+        return merged;
     }
 
     function collectVendorSubnavFromBody() {
@@ -1497,26 +1516,32 @@
                 var f = staffNavHrefFile(fromBody[i].href);
                 if (!f || seen[f] || !vendorSubnavItemAllowed(fromBody[i].href)) continue;
                 seen[f] = true;
-                items.push(fromBody[i]);
+                var label = fromBody[i].label;
+                if (f === "vendor-register.html") label = "업체등록";
+                items.push({ href: fromBody[i].href, label: label });
             }
+            items = mergeVendorSubnavWithDefaults(items);
             saveVendorSubnav(items);
             return items;
         }
         var bodyItems = collectBodyNavCards(document);
         if (bodyItems.length) {
-            var merged = [{ href: VENDOR_MANAGE_HUB_PAGE, label: "업체관리" }];
+            var mergedBody = [{ href: VENDOR_MANAGE_HUB_PAGE, label: "업체관리" }];
             var seen2 = {};
             seen2[VENDOR_MANAGE_HUB_PAGE] = true;
             for (var j = 0; j < bodyItems.length; j++) {
                 var f2 = staffNavHrefFile(bodyItems[j].href);
                 if (!f2 || seen2[f2] || !vendorSubnavItemAllowed(bodyItems[j].href)) continue;
                 seen2[f2] = true;
-                merged.push(bodyItems[j]);
+                var label2 = bodyItems[j].label;
+                if (f2 === "vendor-register.html") label2 = "업체등록";
+                mergedBody.push({ href: bodyItems[j].href, label: label2 });
             }
-            saveVendorSubnav(merged);
-            return merged;
+            mergedBody = mergeVendorSubnavWithDefaults(mergedBody);
+            saveVendorSubnav(mergedBody);
+            return mergedBody;
         }
-        var cached = loadVendorSubnav();
+        var cached = mergeVendorSubnavWithDefaults(loadVendorSubnav());
         saveVendorSubnav(cached);
         return cached;
     }
@@ -1544,7 +1569,7 @@
 
     function syncStaffNavVendorSubnav(nav) {
         if (!nav) return;
-        var items = collectVendorSubnavFromBody();
+        var items = mergeVendorSubnavWithDefaults(collectVendorSubnavFromBody());
         if (!items.length) items = getDefaultVendorSubnavItems();
         clearVendorSubnavLinks(nav);
         if (!items.length) return;

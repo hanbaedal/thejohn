@@ -7,6 +7,17 @@
     var listEl = document.getElementById("veh-list");
     var refreshBtn = document.getElementById("veh-refresh-btn");
 
+    function bindDatePickerOpen(el) {
+        if (!el) return;
+        function openPicker() {
+            try {
+                if (typeof el.showPicker === "function") el.showPicker();
+            } catch (e) {}
+        }
+        el.addEventListener("click", openPicker);
+        el.addEventListener("focus", openPicker);
+    }
+
     function setStatus(msg, isError) {
         if (!statusEl) return;
         statusEl.textContent = msg || "";
@@ -94,6 +105,8 @@
         return;
     }
 
+    bindDatePickerOpen(fromEl);
+    bindDatePickerOpen(toEl);
     loadHistory();
     if (refreshBtn) refreshBtn.addEventListener("click", loadHistory);
     if (fromEl) fromEl.addEventListener("change", loadHistory);

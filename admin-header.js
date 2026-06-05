@@ -35,7 +35,7 @@
             '<div class="nav-dropdown" data-nav-dropdown="vendor-manage">' +
             '<a href="vendor-manage.html" class="header-nav-link nav-dropdown-trigger" aria-haspopup="true" aria-expanded="false" aria-controls="vendorManageSubmenu">업체관리</a>' +
             '<div id="vendorManageSubmenu" class="nav-dropdown-panel" role="menu" aria-label="업체관리 하위 메뉴">' +
-            '<a href="vendor-register.html" class="nav-dropdown-item" role="menuitem">업체 등록</a>' +
+            '<a href="vendor-register.html" class="nav-dropdown-item" role="menuitem">업체등록</a>' +
             '<a href="vendor-list-admin.html" class="nav-dropdown-item" role="menuitem">업체 리스트</a>' +
             orderItem +
             '<a href="vendor-email-broadcast.html" class="nav-dropdown-item" role="menuitem">이메일 보내기</a>' +

@@ -10,15 +10,8 @@
     <link rel="stylesheet" href="common.css">
     <link rel="stylesheet" href="staff-hub.css">
     <link rel="stylesheet" href="admin-manage.css">
+    <link rel="stylesheet" href="order-list-filters.css">
     <style>
-        .veh-filter {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 0.5rem;
-            align-items: center;
-            margin-bottom: 0.85rem;
-        }
-        .veh-date-input { min-width: 10rem; }
         .veh-list {
             list-style: none;
             margin: 0;
@@ -60,15 +53,23 @@
         <p class="am-subnav"><a href="vendor-manage.html">← 업체관리</a></p>
         <h1>이메일 발송 내역</h1>
         <p id="veh-status" class="vl-status" role="status" aria-live="polite"></p>
+        <div class="ol-query-filters" aria-label="이메일 발송 이력 조회 조건">
+            <section class="ol-query-filters__section" aria-labelledby="veh-filter-period-heading">
+                <h2 id="veh-filter-period-heading" class="ol-query-filters__heading">기간으로조회</h2>
+                <div class="ol-query-filters__row">
+                    <label for="veh-date-from">시작일</label>
+                    <input type="date" id="veh-date-from">
+                </div>
+                <div class="ol-query-filters__row">
+                    <label for="veh-date-to">종료일</label>
+                    <input type="date" id="veh-date-to">
+                </div>
+                <div class="ol-query-filters__row ol-query-filters__row--actions">
+                    <button type="button" class="btn btn-primary" id="veh-refresh-btn">조회</button>
+                </div>
+            </section>
+        </div>
         <section class="vei-panel">
-            <div class="veh-filter">
-                <label for="veh-date-from" class="sr-only">시작일</label>
-                <input type="date" id="veh-date-from" class="veh-date-input">
-                <span>~</span>
-                <label for="veh-date-to" class="sr-only">종료일</label>
-                <input type="date" id="veh-date-to" class="veh-date-input">
-                <button type="button" class="btn" id="veh-refresh-btn">조회</button>
-            </div>
             <ul id="veh-list" class="veh-list" aria-live="polite"></ul>
         </section>
     </main>

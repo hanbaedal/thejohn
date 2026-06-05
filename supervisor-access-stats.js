@@ -8,6 +8,17 @@
     var dateFromEl = document.getElementById("sas-date-from");
     var dateToEl = document.getElementById("sas-date-to");
 
+    function bindDatePickerOpen(el) {
+        if (!el) return;
+        function openPicker() {
+            try {
+                if (typeof el.showPicker === "function") el.showPicker();
+            } catch (e) {}
+        }
+        el.addEventListener("click", openPicker);
+        el.addEventListener("focus", openPicker);
+    }
+
     function escapeHtml(s) {
         return String(s)
             .replace(/&/g, "&amp;")
@@ -137,6 +148,10 @@
     }
     Auth.normalizeLegacySession();
     defaultDates();
+    bindDatePickerOpen(dateFromEl);
+    bindDatePickerOpen(dateToEl);
     document.getElementById("sas-search").addEventListener("click", load);
+    if (dateFromEl) dateFromEl.addEventListener("change", load);
+    if (dateToEl) dateToEl.addEventListener("change", load);
     load();
 })();

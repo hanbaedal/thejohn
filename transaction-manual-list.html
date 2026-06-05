@@ -11,6 +11,7 @@
     <link rel="stylesheet" href="common.css">
     <link rel="stylesheet" href="staff-hub.css">
     <link rel="stylesheet" href="order-manage-layout.css">
+    <link rel="stylesheet" href="order-list-filters.css">
     <link rel="stylesheet" href="transaction-manual-list.css">
     <script src="api-config.js"></script>
     <script src="thejhon-api.js"></script>
@@ -39,14 +40,17 @@
             <a href="transaction-manual-register.html" class="btn btn-primary">새로 작성</a>
         </div>
 
-        <div class="tml-filter" id="tml-filter-wrap" hidden>
-            <div class="tml-filter-row">
-                <label for="tml-admin-filter">발행 관리자</label>
-                <select id="tml-admin-filter">
-                    <option value="">전체 관리자</option>
-                </select>
-                <button type="button" class="btn btn-primary" id="tml-btn-search">조회</button>
-            </div>
+        <div class="ol-query-filters" id="tml-filter-wrap" aria-label="수기 거래명세서 조회 조건" hidden>
+            <section class="ol-query-filters__section" aria-labelledby="tml-filter-admin-heading">
+                <h2 id="tml-filter-admin-heading" class="ol-query-filters__heading">발행 관리자조회</h2>
+                <div class="ol-query-filters__row ol-query-filters__row--query">
+                    <label for="tml-admin-filter">발행 관리자</label>
+                    <select id="tml-admin-filter">
+                        <option value="">전체 관리자</option>
+                    </select>
+                    <button type="button" class="btn btn-primary" id="tml-btn-search">조회</button>
+                </div>
+            </section>
         </div>
 
         <section class="shub-panel">

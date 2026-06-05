@@ -1340,9 +1340,9 @@ a.company-org-node:focus-visible {
     .header-nav-link {
         flex-shrink: 0;
     }
-    /* 스마트폰: 상품등록·업체등록은 헤더에서 숨김(노트북 등에서는 관리자에게 표시) */
-    .site-header-nav .header-nav-link[href="product-register.html"],
-    .site-header-nav .header-nav-link[href="vendor-register.html"] {
+    /* 스마트폰: 공개 헤더의 상품등록·업체등록만 숨김 (업체·상품관리 하위 탭은 유지) */
+    .site-header-nav .header-nav-link[href="product-register.html"]:not(.is-product-subnav):not(.is-vendor-subnav),
+    .site-header-nav .header-nav-link[href="vendor-register.html"]:not(.is-product-subnav):not(.is-vendor-subnav) {
         display: none !important;
     }
     .header-session-company--wide {
