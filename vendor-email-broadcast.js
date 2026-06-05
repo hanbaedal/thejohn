@@ -5,7 +5,14 @@
     var VENDOR_MANAGE_PAGE = "vendor-manage.html";
     var MAX_ATTACH = 5;
     var GREETING_MAX = 400;
+    var MAX_FILE_BYTES = 10 * 1024 * 1024;
+    var TARGET_FILE_BYTES = Math.floor(9.5 * 1024 * 1024);
+    var MAX_TOTAL_BYTES = MAX_FILE_BYTES * MAX_ATTACH;
     var ALLOWED_EXTS = [".pdf", ".hwp", ".hwpx", ".doc", ".docx", ".xls", ".xlsx", ".jpg", ".jpeg", ".png"];
+    var PDF_JS_URL = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js";
+    var PDF_WORKER_URL = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+    var JSPDF_URL = "https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js";
+    var pdfLibsPromise = null;
 
     var statusEl = document.getElementById("veb-status");
     var srcVendorsEl = document.getElementById("veb-src-vendors");
@@ -13,8 +20,10 @@
     var subjectEl = document.getElementById("veb-subject");
     var greetingEl = document.getElementById("veb-greeting");
     var greetingCountEl = document.getElementById("veb-greeting-count");
-    var filesEl = document.getElementById("veb-files");
-    var filePickBtn = document.getElementById("veb-file-pick-btn");
+    var filesGalleryEl = document.getElementById("veb-files-gallery");
+    var filesCameraEl = document.getElementById("veb-files-camera");
+    var fileGalleryBtn = document.getElementById("veb-file-gallery-btn");
+    var fileCameraBtn = document.getElementById("veb-file-camera-btn");
     var attachListEl = document.getElementById("veb-attach-list");
     var sendBtn = document.getElementById("veb-send-btn");
     var pickBtn = document.getElementById("veb-pick-btn");
@@ -356,10 +365,305 @@
         return idx >= 0 ? s.slice(idx) : "";
     }
 
-    function validateFile(file) {
+    function extFromMime(type) {
+        var map = {
+            "image/jpeg": ".jpg",
+            "image/jpg": ".jpg",
+            "image/png": ".png"
+        };
+        return map[String(type || "").toLowerCase()] || "";
+    }
+
+    function normalizeAttachmentFile(file) {
+        if (!file) return file;
+        if (getExt(file.name)) return file;
+        var ext = extFromMime(file.type);
+        if (!ext) return file;
+        try {
+            return new File([file], "camera-" + Date.now() + ext, {
+                type: file.type,
+                lastModified: file.lastModified
+            });
+        } catch (e) {
+            return file;
+        }
+    }
+
+    function formatFileSize(bytes) {
+        var n = Number(bytes) || 0;
+        if (n < 1024) return n + "B";
+        if (n < 1024 * 1024) return (n / 1024).toFixed(1) + "KB";
+        return (n / (1024 * 1024)).toFixed(1) + "MB";
+    }
+
+    function maxFileSizeText() {
+        return formatFileSize(MAX_FILE_BYTES);
+    }
+
+    function maxTotalSizeText() {
+        return formatFileSize(MAX_TOTAL_BYTES);
+    }
+
+    function loadScript(src) {
+        return new Promise(function (resolve, reject) {
+            if (document.querySelector('script[src="' + src + '"]')) {
+                resolve();
+                return;
+            }
+            var script = document.createElement("script");
+            script.src = src;
+            script.async = true;
+            script.onload = function () { resolve(); };
+            script.onerror = function () { reject(new Error("스크립트를 불러오지 못했습니다.")); };
+            document.head.appendChild(script);
+        });
+    }
+
+    function loadPdfLibs() {
+        if (!pdfLibsPromise) {
+            pdfLibsPromise = loadScript(PDF_JS_URL).then(function () {
+                if (window.pdfjsLib) {
+                    window.pdfjsLib.GlobalWorkerOptions.workerSrc = PDF_WORKER_URL;
+                }
+                return loadScript(JSPDF_URL);
+            });
+        }
+        return pdfLibsPromise;
+    }
+
+    function isImageFile(file) {
+        if (!file) return false;
+        var type = String(file.type || "").toLowerCase();
+        if (type.indexOf("image/") === 0) return true;
         var ext = getExt(file.name);
-        if (ALLOWED_EXTS.indexOf(ext) < 0) throw new Error("허용되지 않는 첨부 형식입니다: " + file.name);
-        if (file.size > 4 * 1024 * 1024) throw new Error("파일당 4MB 이하만 첨부해 주세요.");
+        return ext === ".jpg" || ext === ".jpeg" || ext === ".png";
+    }
+
+    function isPdfFile(file) {
+        if (!file) return false;
+        return getExt(file.name) === ".pdf" || String(file.type || "").toLowerCase() === "application/pdf";
+    }
+
+    function validateFileType(file) {
+        var ext = getExt(file.name);
+        if (ALLOWED_EXTS.indexOf(ext) < 0) {
+            ext = extFromMime(file.type);
+            if (ALLOWED_EXTS.indexOf(ext) < 0) {
+                throw new Error("허용되지 않는 첨부 형식입니다: " + (file.name || file.type || "파일"));
+            }
+        }
+    }
+
+    function loadImageFromFile(file) {
+        return new Promise(function (resolve, reject) {
+            if (!isImageFile(file)) {
+                reject(new Error("이미지 파일이 아닙니다."));
+                return;
+            }
+            var url = URL.createObjectURL(file);
+            var img = new Image();
+            img.onload = function () {
+                resolve({ img: img, revokeUrl: url });
+            };
+            img.onerror = function () {
+                URL.revokeObjectURL(url);
+                reject(new Error("이미지를 읽을 수 없습니다."));
+            };
+            img.src = url;
+        });
+    }
+
+    function drawImageJpeg(img, maxDim, quality) {
+        var w = img.naturalWidth || img.width;
+        var h = img.naturalHeight || img.height;
+        if (!w || !h) throw new Error("이미지 크기를 확인할 수 없습니다.");
+        var scale = Math.min(1, maxDim / Math.max(w, h));
+        var cw = Math.max(1, Math.round(w * scale));
+        var ch = Math.max(1, Math.round(h * scale));
+        var canvas = document.createElement("canvas");
+        canvas.width = cw;
+        canvas.height = ch;
+        var ctx = canvas.getContext("2d");
+        if (!ctx) throw new Error("이미지 처리를 지원하지 않는 브라우저입니다.");
+        ctx.fillStyle = "#ffffff";
+        ctx.fillRect(0, 0, cw, ch);
+        ctx.drawImage(img, 0, 0, cw, ch);
+        return canvas.toDataURL("image/jpeg", quality);
+    }
+
+    function dataUrlToFile(dataUrl, filename, mime) {
+        var parts = String(dataUrl).split(",");
+        var bin = atob(parts[1] || "");
+        var len = bin.length;
+        var arr = new Uint8Array(len);
+        for (var i = 0; i < len; i++) arr[i] = bin.charCodeAt(i);
+        return new File([arr], filename, { type: mime || "application/octet-stream" });
+    }
+
+    function outputNameForImage(file) {
+        var base = String(file.name || "image").replace(/\.[^.]+$/i, "") || "image";
+        return base + ".jpg";
+    }
+
+    function compressImageAttachment(file) {
+        return loadImageFromFile(file).then(function (payload) {
+            var img = payload.img;
+            var revokeUrl = payload.revokeUrl;
+            var dim = 2400;
+            var quality = 0.88;
+            var outName = outputNameForImage(file);
+            var dataUrl = "";
+            var lastSize = Infinity;
+
+            function finish(resultFile) {
+                if (revokeUrl) URL.revokeObjectURL(revokeUrl);
+                return resultFile;
+            }
+
+            for (var attempt = 0; attempt < 30; attempt++) {
+                dataUrl = drawImageJpeg(img, dim, quality);
+                var outFile = dataUrlToFile(dataUrl, outName, "image/jpeg");
+                if (outFile.size <= TARGET_FILE_BYTES) return finish(outFile);
+                if (quality > 0.55) {
+                    quality = Math.max(0.55, quality - 0.06);
+                } else if (dim > 900) {
+                    dim = Math.max(900, Math.round(dim * 0.86));
+                    quality = 0.82;
+                } else if (outFile.size >= lastSize) {
+                    break;
+                } else {
+                    quality = Math.max(0.42, quality - 0.05);
+                }
+                lastSize = outFile.size;
+            }
+
+            var finalFile = dataUrlToFile(dataUrl, outName, "image/jpeg");
+            if (revokeUrl) URL.revokeObjectURL(revokeUrl);
+            if (finalFile.size <= MAX_FILE_BYTES) return finalFile;
+            throw new Error(
+                file.name + " 이미지를 " + maxFileSizeText() + " 이하로 줄이지 못했습니다. 해상도를 낮춘 뒤 다시 선택해 주세요."
+            );
+        });
+    }
+
+    function renderPdfWithProfile(pdfDoc, profile) {
+        var jsPDF = window.jspdf && window.jspdf.jsPDF;
+        if (!jsPDF) throw new Error("PDF 라이브러리를 불러오지 못했습니다.");
+        var doc = null;
+        var chain = Promise.resolve();
+        for (var pageNum = 1; pageNum <= pdfDoc.numPages; pageNum++) {
+            (function (n) {
+                chain = chain.then(function () {
+                    return pdfDoc.getPage(n).then(function (page) {
+                        var viewport = page.getViewport({ scale: profile.scale });
+                        var canvas = document.createElement("canvas");
+                        canvas.width = Math.floor(viewport.width);
+                        canvas.height = Math.floor(viewport.height);
+                        var ctx = canvas.getContext("2d");
+                        if (!ctx) throw new Error("PDF 미리보기를 처리할 수 없습니다.");
+                        ctx.fillStyle = "#ffffff";
+                        ctx.fillRect(0, 0, canvas.width, canvas.height);
+                        return page.render({ canvasContext: ctx, viewport: viewport }).promise.then(function () {
+                            var imgData = canvas.toDataURL("image/jpeg", profile.quality);
+                            var w = canvas.width;
+                            var h = canvas.height;
+                            if (!doc) {
+                                doc = new jsPDF({
+                                    unit: "px",
+                                    format: [w, h],
+                                    compress: true,
+                                    orientation: w >= h ? "l" : "p"
+                                });
+                            } else {
+                                doc.addPage([w, h], w >= h ? "l" : "p");
+                            }
+                            doc.addImage(imgData, "JPEG", 0, 0, w, h, undefined, "FAST");
+                        });
+                    });
+                });
+            })(pageNum);
+        }
+        return chain.then(function () {
+            if (!doc) throw new Error("PDF 페이지가 없습니다.");
+            return doc.output("blob");
+        });
+    }
+
+    function compressPdfAttachment(file) {
+        return loadPdfLibs().then(function () {
+            if (!window.pdfjsLib) throw new Error("PDF 라이브러리를 불러오지 못했습니다.");
+            return file.arrayBuffer();
+        }).then(function (buffer) {
+            return window.pdfjsLib.getDocument({ data: buffer }).promise;
+        }).then(function (pdfDoc) {
+            var profiles = [
+                { scale: 1.35, quality: 0.82 },
+                { scale: 1.15, quality: 0.74 },
+                { scale: 1.0, quality: 0.66 },
+                { scale: 0.85, quality: 0.58 },
+                { scale: 0.72, quality: 0.5 },
+                { scale: 0.6, quality: 0.42 }
+            ];
+            var outName = String(file.name || "catalog.pdf").replace(/\.pdf$/i, "") + ".pdf";
+            var chain = Promise.reject(new Error("start"));
+            profiles.forEach(function (profile) {
+                chain = chain.catch(function () {
+                    return renderPdfWithProfile(pdfDoc, profile).then(function (blob) {
+                        if (blob.size <= TARGET_FILE_BYTES) {
+                            return new File([blob], outName, { type: "application/pdf" });
+                        }
+                        if (blob.size <= MAX_FILE_BYTES) {
+                            return new File([blob], outName, { type: "application/pdf" });
+                        }
+                        throw new Error("too-large");
+                    });
+                });
+            });
+            return chain.catch(function () {
+                throw new Error(
+                    file.name + " PDF를 " + maxFileSizeText() + " 이하로 줄이지 못했습니다. 페이지 수를 줄이거나 이미지 해상도를 낮춘 뒤 다시 선택해 주세요."
+                );
+            });
+        });
+    }
+
+    function prepareAttachmentFile(file) {
+        var normalized = normalizeAttachmentFile(file);
+        validateFileType(normalized);
+        var originalSize = normalized.size;
+        if (originalSize <= MAX_FILE_BYTES) {
+            return Promise.resolve({ file: normalized, optimized: false, originalSize: originalSize });
+        }
+        if (isImageFile(normalized)) {
+            return compressImageAttachment(normalized).then(function (out) {
+                return { file: out, optimized: true, originalSize: originalSize };
+            });
+        }
+        if (isPdfFile(normalized)) {
+            return compressPdfAttachment(normalized).then(function (out) {
+                return { file: out, optimized: true, originalSize: originalSize };
+            });
+        }
+        return Promise.reject(
+            new Error(
+                normalized.name +
+                    " 파일이 너무 큽니다(" +
+                    formatFileSize(originalSize) +
+                    "). HWP·DOC·XLS 등은 자동 조정이 어렵습니다. " + maxFileSizeText() + " 이하로 줄인 뒤 다시 선택해 주세요."
+            )
+        );
+    }
+
+    function canAddMoreAttachments() {
+        return attachmentFiles.length < MAX_ATTACH;
+    }
+
+    function bindAttachmentInput(inputEl) {
+        if (!inputEl) return;
+        inputEl.addEventListener("change", function () {
+            addAttachmentFiles(inputEl.files);
+            inputEl.value = "";
+        });
     }
 
     function renderAttachmentList() {
@@ -370,10 +674,19 @@
         }
         attachListEl.innerHTML = attachmentFiles
             .map(function (file, idx) {
+                var note = "";
+                if (file._vebOptimized && file._vebOriginalSize) {
+                    note =
+                        "<span class=\"veb-attach-note\">용량 조정: " +
+                        formatFileSize(file._vebOriginalSize) +
+                        " → " +
+                        formatFileSize(file.size) +
+                        "</span>";
+                }
                 return (
                     "<li class=\"veb-attach-item\">" +
                     "<span class=\"veb-attach-num\">" + (idx + 1) + ".</span>" +
-                    "<span class=\"veb-attach-name\">" + escapeHtml(file.name) + "</span>" +
+                    "<span class=\"veb-attach-name\">" + escapeHtml(file.name) + note + "</span>" +
                     "<span class=\"veb-attach-actions\">" +
                     "<button type=\"button\" class=\"btn\" data-veb-view=\"" + idx + "\">보기</button>" +
                     "<button type=\"button\" class=\"btn\" data-veb-del=\"" + idx + "\">삭제</button>" +
@@ -437,22 +750,56 @@
         document.body.style.overflow = "hidden";
     }
 
-    function addAttachmentFiles(fileList) {
+    function setAttachPickersDisabled(disabled) {
+        if (fileGalleryBtn) fileGalleryBtn.disabled = !!disabled;
+        if (fileCameraBtn) fileCameraBtn.disabled = !!disabled;
+    }
+
+    async function addAttachmentFiles(fileList) {
         var incoming = Array.from(fileList || []);
         if (!incoming.length) return;
+        var optimizedNotes = [];
         try {
+            setAttachPickersDisabled(true);
+            setStatus("첨부 파일 준비 중…");
             for (var i = 0; i < incoming.length; i++) {
                 if (attachmentFiles.length >= MAX_ATTACH) {
                     throw new Error("첨부는 최대 " + MAX_ATTACH + "개까지 가능합니다.");
                 }
-                validateFile(incoming[i]);
-                var total = attachmentFiles.reduce(function (s, f) { return s + f.size; }, 0) + incoming[i].size;
-                if (total > 12 * 1024 * 1024) throw new Error("첨부 총 용량은 12MB 이하로 제한됩니다.");
-                attachmentFiles.push(incoming[i]);
+                var isLargePdf = isPdfFile(incoming[i]) && incoming[i].size > MAX_FILE_BYTES;
+                if (isLargePdf) {
+                    setStatus("PDF 용량 조정 중… 페이지가 많으면 시간이 걸릴 수 있습니다.");
+                }
+                var prepared = await prepareAttachmentFile(incoming[i]);
+                var file = prepared.file;
+                if (file.size > MAX_FILE_BYTES) {
+                    throw new Error(file.name + " 파일을 " + maxFileSizeText() + " 이하로 줄이지 못했습니다.");
+                }
+                var total = attachmentFiles.reduce(function (s, f) { return s + f.size; }, 0) + file.size;
+                if (total > MAX_TOTAL_BYTES) {
+                    throw new Error("첨부 총 용량은 " + maxTotalSizeText() + " 이하로 제한됩니다.");
+                }
+                file._vebOriginalSize = prepared.originalSize;
+                file._vebOptimized = prepared.optimized;
+                attachmentFiles.push(file);
+                if (prepared.optimized) {
+                    optimizedNotes.push(
+                        file.name + " (" + formatFileSize(prepared.originalSize) + " → " + formatFileSize(file.size) + ")"
+                    );
+                }
             }
             renderAttachmentList();
+            if (optimizedNotes.length) {
+                setStatus("용량을 조정해 첨부했습니다: " + optimizedNotes.join(", "), false);
+            } else if (attachmentFiles.length) {
+                setStatus("첨부 " + attachmentFiles.length + "개 준비됨", false);
+            } else {
+                setStatus("", false);
+            }
         } catch (e) {
             setStatus((e && e.message) || "첨부 파일 오류", true);
+        } finally {
+            setAttachPickersDisabled(false);
         }
     }
 
@@ -573,11 +920,23 @@
         if (btn) btn.addEventListener("click", function () { applyBulk(pair[1]); });
     });
 
-    if (filePickBtn && filesEl) {
-        filePickBtn.addEventListener("click", function () { filesEl.click(); });
-        filesEl.addEventListener("change", function () {
-            addAttachmentFiles(filesEl.files);
-            filesEl.value = "";
+    bindAttachmentInput(filesGalleryEl);
+    bindAttachmentInput(filesCameraEl);
+
+    if (fileGalleryBtn && filesGalleryEl) {
+        fileGalleryBtn.addEventListener("click", function () {
+            if (!canAddMoreAttachments()) {
+                return setStatus("첨부는 최대 " + MAX_ATTACH + "개까지 가능합니다.", true);
+            }
+            filesGalleryEl.click();
+        });
+    }
+    if (fileCameraBtn && filesCameraEl) {
+        fileCameraBtn.addEventListener("click", function () {
+            if (!canAddMoreAttachments()) {
+                return setStatus("첨부는 최대 " + MAX_ATTACH + "개까지 가능합니다.", true);
+            }
+            filesCameraEl.click();
         });
     }
 

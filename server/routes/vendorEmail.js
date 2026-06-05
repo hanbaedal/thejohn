@@ -8,8 +8,8 @@ const router = express.Router();
 const HISTORY_COLLECTION = "vendor_email_history";
 const MAX_ATTACHMENTS = 5;
 const GREETING_MAX = 400;
-const MAX_FILE_SIZE = 4 * 1024 * 1024;
-const MAX_TOTAL_SIZE = 12 * 1024 * 1024;
+const MAX_FILE_SIZE = 10 * 1024 * 1024;
+const MAX_TOTAL_SIZE = MAX_FILE_SIZE * MAX_ATTACHMENTS;
 const ALLOWED_EXTS = [".pdf", ".hwp", ".hwpx", ".doc", ".docx", ".xls", ".xlsx", ".jpg", ".jpeg", ".png"];
 
 function trim(v) {
@@ -88,11 +88,11 @@ function validateAndBuildAttachments(attachments) {
         const buf = Buffer.from(content, "base64");
         if (!buf.length) continue;
         if (buf.length > MAX_FILE_SIZE) {
-            throw new Error("파일당 4MB 이하만 첨부해 주세요: " + filename);
+            throw new Error("파일당 10MB 이하만 첨부해 주세요: " + filename);
         }
         total += buf.length;
         if (total > MAX_TOTAL_SIZE) {
-            throw new Error("첨부 총 용량은 12MB 이하로 제한됩니다.");
+            throw new Error("첨부 총 용량은 50MB 이하로 제한됩니다.");
         }
         files.push({
             filename: filename,
