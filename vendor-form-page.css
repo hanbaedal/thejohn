@@ -365,21 +365,73 @@
     .vr-form-page { --vr-label-w: 9.5rem; }
 }
 
-/* 3열 행: 1열은 긴 제목용 고정폭, 2·3열은 제목 길이에 맞춰 입력란을 가깝게 */
+/* PC 3열 행: 제목·입력 붙이고, 열 사이 한글 5자 간격, 입력란은 필요 폭만 */
 @media (min-width: 521px) {
-    .vr-form-page .vr-form .vr-row--3 > .vr-slot:nth-child(2),
-    .vr-form-page .vr-form .vr-row--3 > .vr-slot:nth-child(3) {
-        grid-template-columns: auto minmax(0, 1fr);
-        gap: 0.3rem 0.4rem;
+    .vr-form-page { --vr-col-gap: 5em; }
+
+    .vr-form-page .vr-form .vr-row--3 {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        column-gap: var(--vr-col-gap);
+        row-gap: 0.35rem;
     }
-    .vr-form-page .vr-form .vr-row--3 > .vr-slot:nth-child(2) > label,
-    .vr-form-page .vr-form .vr-row--3 > .vr-slot:nth-child(3) > label {
-        min-width: 5em;
+
+    .vr-form-page .vr-form .vr-row--3 > .vr-slot {
+        display: inline-grid;
+        grid-template-columns: auto auto;
+        gap: 0.3rem 0.4rem;
+        align-items: center;
+        flex: 0 0 auto;
+        width: auto;
+    }
+
+    .vr-form-page .vr-form .vr-row--3 > .vr-slot > label {
         white-space: nowrap;
+    }
+
+    .vr-form-page .vr-form .vr-row--3 > .vr-slot > input,
+    .vr-form-page .vr-form .vr-row--3 > .vr-slot > select {
+        width: 9.5rem;
+    }
+
+    .vr-form-page .vr-form .vr-row--3 > .vr-slot > .vr-pw-wrap {
+        width: 9rem;
+    }
+
+    .vr-form-page .vr-form .vr-row--3 > .vr-slot > input[type="number"] {
+        width: 5.25rem;
+    }
+
+    .vr-form-page .vr-form .vr-row--3 > .vr-slot > select.vr-select {
+        width: 7rem;
+    }
+
+    .vr-form-page .vr-form .vr-row--3 #vr-login-id { width: 8.25rem; }
+    .vr-form-page .vr-form .vr-row--3 #vr-company { width: 11.5rem; }
+    .vr-form-page .vr-form .vr-row--3 #vr-web,
+    .vr-form-page .vr-form .vr-row--3 #vr-email,
+    .vr-form-page .vr-form .vr-row--3 #vr-mgr-email { width: 11rem; }
+    .vr-form-page .vr-form .vr-row--3 #vr-biz-no { width: 9.5rem; }
+    .vr-form-page .vr-form .vr-row--3 #vr-ceo,
+    .vr-form-page .vr-form .vr-row--3 #vr-mgr-name { width: 8rem; }
+    .vr-form-page .vr-form .vr-row--3 #vr-ceo-tel,
+    .vr-form-page .vr-form .vr-row--3 #vr-phone,
+    .vr-form-page .vr-form .vr-row--3 #vr-mgr-tel { width: 9.5rem; }
+    .vr-form-page .vr-form .vr-row--3 #vr-biz-item,
+    .vr-form-page .vr-form .vr-row--3 #vr-biz-type { width: 7rem; }
+
+    .vr-form-page .vr-form .vr-row--3 > .vr-slot > .vr-id-dup-hint,
+    .vr-form-page .vr-form .vr-row--3 > .vr-slot > .vr-pw-match-hint {
+        grid-column: 1 / -1;
+        margin-top: 0;
     }
 }
 
 @media (min-width: 768px) {
+    .vr-form-page .vr-form .vr-row--3 {
+        flex-wrap: nowrap;
+    }
     .vr-form-page {
         max-width: min(100%, 72rem);
         margin-left: auto;
