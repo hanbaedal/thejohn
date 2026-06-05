@@ -56,6 +56,9 @@
     font-size: 0.98rem;
     line-height: 1.28;
 }
+.hmh-card:not(:has(> p)) h3 {
+    margin: 0;
+}
 .hmh-card p {
     margin: 0;
     font-size: 0.82rem;

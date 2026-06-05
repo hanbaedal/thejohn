@@ -128,6 +128,10 @@ body.staff-nav-order .omh-hub-page .omh-group .company-division-card h2 {
     font-size: 0.98rem;
     line-height: 1.28;
 }
+.page-main.omh-hub-page .omh-group .company-division-card:not(:has(> p)) h2,
+body.staff-nav-order .omh-hub-page .omh-group .company-division-card:not(:has(> p)) h2 {
+    margin: 0;
+}
 .page-main.omh-hub-page .omh-group .company-division-card p,
 body.staff-nav-order .omh-hub-page .omh-group .company-division-card p {
     margin: 0;

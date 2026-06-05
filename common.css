@@ -753,6 +753,10 @@ a.company-division-card h2 {
     color: #052a4d;
     letter-spacing: -0.03em;
 }
+a.company-division-card:not(:has(> p)) h2,
+a.company-division-card:not(:has(> p)) h3 {
+    margin: 0;
+}
 a.company-division-card p {
     margin: 0;
     font-size: 0.9rem;
@@ -798,6 +802,10 @@ a.company-division-card p {
     margin: 0 0 0.22rem;
     font-size: 0.98rem;
     line-height: 1.28;
+}
+.company-main--support-hub a.company-division-card:not(:has(> p)) h2,
+.company-main--support-hub a.company-division-card:not(:has(> p)) h3 {
+    margin: 0;
 }
 .company-main--support-hub a.company-division-card p {
     margin: 0;
