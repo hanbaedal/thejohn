@@ -111,6 +111,10 @@
     border-radius: 14px;
     box-shadow: 0 8px 32px rgba(10, 77, 156, 0.22);
 }
+.vdm-preview-panel.vdm-modal__panel {
+    width: min(100%, 56rem);
+    max-height: min(94vh, 52rem);
+}
 .vdm-picker-head {
     display: flex;
     align-items: center;
@@ -214,18 +218,19 @@
 }
 
 /*
- * A4 라벨 용지 — 대봉투 119.3×42.8mm ×6(가로) / 소봉투 99.1×33.9mm ×16(세로)
- * 라벨 1칸 = 발신(왼쪽) + 수신(오른쪽)
+ * A4 라벨 — 대봉투 119.3×42.8 (가로 2×3) / 소봉투 99.1×33.9 (세로 2×8)
+ * 칸 1개 = 왼쪽 발신 · 오른쪽 수신 (글자 축소 없음, pt 고정)
  */
 .vdm-label-page {
     box-sizing: border-box;
-    margin: 0;
+    margin: 0 auto 1rem;
     page-break-after: always;
     background: #fff;
     color: #111;
     font-family: "Malgun Gothic", "Apple SD Gothic Neo", sans-serif;
     -webkit-print-color-adjust: exact;
     print-color-adjust: exact;
+    box-shadow: 0 0 0 0.2mm #ccc;
 }
 .vdm-label-page:last-child {
     page-break-after: auto;
@@ -257,10 +262,10 @@
     display: flex;
     flex-direction: row;
     align-items: stretch;
-    overflow: hidden;
     page-break-inside: avoid;
     break-inside: avoid;
-    border: 0.15mm dashed #bbb;
+    border: 0.2mm solid #999;
+    background: #fff;
 }
 .vdm-label-pair--large {
     width: 119.3mm;
@@ -270,67 +275,122 @@
     width: 99.1mm;
     height: 33.9mm;
 }
+.vdm-label-pair--empty {
+    border-style: dashed;
+    border-color: #ccc;
+    background: #fafafa;
+    align-items: center;
+    justify-content: center;
+}
+.vdm-label-empty-mark {
+    font-size: 8pt;
+    color: #aaa;
+}
 .vdm-label-half {
     flex: 1 1 50%;
     min-width: 0;
-    min-height: 0;
     box-sizing: border-box;
-    overflow: hidden;
     display: flex;
     flex-direction: column;
-    justify-content: center;
-    padding: 0.8mm 1.2mm;
+    justify-content: flex-start;
+    padding: 1mm 1.5mm;
 }
 .vdm-label-half + .vdm-label-half {
-    border-left: 0.12mm solid #888;
+    border-left: 0.15mm solid #666;
 }
 .vdm-label__kind {
-    margin: 0 0 0.3mm;
+    margin: 0 0 0.5mm;
     font-weight: 700;
-    letter-spacing: 0.02em;
-    color: #555;
-    line-height: 1.15;
+    color: #333;
+    line-height: 1.2;
 }
 .vdm-label-pair--large .vdm-label__kind {
-    font-size: 5pt;
+    font-size: 7pt;
 }
 .vdm-label-pair--small .vdm-label__kind {
-    font-size: 4.5pt;
-}
-.vdm-label__zip {
-    margin: 0 0 0.25mm;
-    font-weight: 700;
-    letter-spacing: 0.04em;
-    line-height: 1.1;
-}
-.vdm-label-pair--large .vdm-label__zip {
     font-size: 6.5pt;
 }
+.vdm-label__zip {
+    margin: 0 0 0.5mm;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    line-height: 1.2;
+}
+.vdm-label-pair--large .vdm-label__zip {
+    font-size: 9pt;
+}
 .vdm-label-pair--small .vdm-label__zip {
-    font-size: 5.5pt;
+    font-size: 8pt;
 }
 .vdm-label__line {
     margin: 0;
     word-break: keep-all;
-    overflow: hidden;
+    line-height: 1.35;
 }
 .vdm-label-pair--large .vdm-label__line {
-    font-size: 6pt;
-    line-height: 1.2;
+    font-size: 8.5pt;
 }
 .vdm-label-pair--small .vdm-label__line {
-    font-size: 5pt;
-    line-height: 1.18;
+    font-size: 7.5pt;
 }
 .vdm-label__line--name {
-    margin-top: 0.25mm;
+    margin-top: 0.5mm;
     font-weight: 700;
 }
 .vdm-label-pair--large .vdm-label__line--name {
-    font-size: 6.5pt;
+    font-size: 9pt;
 }
 .vdm-label-pair--small .vdm-label__line--name {
-    font-size: 5.5pt;
+    font-size: 8pt;
+}
+
+/* 출력 미리보기 */
+.vdm-preview-head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 0.75rem;
+    padding: 0.85rem 1rem;
+    border-bottom: 1px solid #e7edf4;
+}
+.vdm-preview-head-text h2 {
+    margin: 0;
+    font-size: 1.05rem;
+    color: #052a4d;
+}
+.vdm-preview-meta {
+    margin: 0.35rem 0 0;
+    font-size: 0.84rem;
+    color: #3d5166;
+    line-height: 1.45;
+}
+.vdm-preview-note {
+    margin: 0;
+    padding: 0.55rem 1rem;
+    font-size: 0.82rem;
+    color: #5a6d7e;
+    background: #f8fbff;
+    border-bottom: 1px solid #eef2f7;
+}
+.vdm-preview-scroll {
+    flex: 1 1 auto;
+    overflow: auto;
+    padding: 1rem;
+    background: #e8edf2;
+    -webkit-overflow-scrolling: touch;
+}
+.vdm-preview-inner {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+.vdm-preview-foot {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    justify-content: flex-end;
+    padding: 0.75rem 1rem 1rem;
+    border-top: 1px solid #e7edf4;
 }
 
 @media print {
@@ -346,7 +406,14 @@
         overflow: visible;
         pointer-events: auto;
     }
+    .vdm-label-page {
+        box-shadow: none;
+        margin: 0;
+    }
     .vdm-label-pair {
         border-color: transparent;
+    }
+    .vdm-label-pair--empty {
+        display: none !important;
     }
 }

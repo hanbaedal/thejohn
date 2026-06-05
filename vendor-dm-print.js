@@ -15,7 +15,7 @@
             gridClass: "vdm-label-grid--large",
             pairClass: "vdm-label-pair--large",
             pageOrient: "landscape",
-            name: "대봉투 라벨 (119.3×42.8mm · A4 6칸)"
+            name: "대봉투 라벨 (119.3×42.8mm · A4 가로 2열×3행 6칸)"
         },
         small: {
             w: 99.1,
@@ -33,7 +33,13 @@
 
     var SENDER = {
         zip: "14548",
-        lines: ["(주)더존", "대표 이상범", "경기도 부천시 원미구 부천로 130번길 5, 삼도빌딩 1층", "032-666-5255"]
+        lines: [
+            "(주)더존",
+            "대표 이상범",
+            "경기도 부천시 원미구",
+            "부천로 130번길 5, 삼도빌딩 1층",
+            "032-666-5255"
+        ]
     };
 
     var statusEl = document.getElementById("vdm-status");
@@ -50,6 +56,12 @@
     var envLargeEl = document.getElementById("vdm-env-large");
     var envSmallEl = document.getElementById("vdm-env-small");
 
+    var previewModal = document.getElementById("vdm-preview-modal");
+    var previewBody = document.getElementById("vdm-preview-body");
+    var previewMeta = document.getElementById("vdm-preview-meta");
+    var previewPrintBtn = document.getElementById("vdm-preview-print");
+    var pendingPrintJobs = [];
+    var pendingEnvelopeType = "large";
     var pickerRows = [];
     var appliedSelections = [];
     var appliedSourcesKey = "";
@@ -402,22 +414,9 @@
         return addrText ? [addrText] : [];
     }
 
-    function senderContent(envelopeType) {
-        if (envelopeType === "small") {
-            return {
-                zip: SENDER.zip,
-                lines: ["(주)더존", "부천 삼도빌딩 1층", "032-666-5255"]
-            };
-        }
-        return {
-            zip: SENDER.zip,
-            lines: ["(주)더존 · 이상범", "부천로 130번길 5", "032-666-5255"]
-        };
-    }
-
     function renderLabelPairHtml(job, envelopeType) {
         var spec = getLabelSpec(envelopeType);
-        var sender = senderContent(envelopeType);
+        var sender = senderContent();
         var recipientNames = [job.recipient];
         if (job.sub) recipientNames.push(job.sub);
         return (
@@ -428,24 +427,129 @@
         );
     }
 
-    function renderAllLabelsHtml(jobs, envelopeType) {
+    function senderContent() {
+        return SENDER;
+    }
+
+    function renderEmptyLabelPair(envelopeType) {
+        var spec = getLabelSpec(envelopeType);
+        return (
+            '<article class="vdm-label-pair vdm-label-pair--empty ' +
+            spec.pairClass +
+            '" aria-hidden="true"><span class="vdm-label-empty-mark">빈 칸</span></article>'
+        );
+    }
+
+    function renderPageHtml(pageJobs, envelopeType, showEmptySlots) {
+        var spec = getLabelSpec(envelopeType);
+        var html = pageJobs
+            .map(function (job) {
+                return renderLabelPairHtml(job, envelopeType);
+            })
+            .join("");
+        if (showEmptySlots) {
+            var emptyCount = spec.perPage - pageJobs.length;
+            for (var i = 0; i < emptyCount; i++) {
+                html += renderEmptyLabelPair(envelopeType);
+            }
+        }
+        return (
+            '<section class="vdm-label-page ' +
+            spec.pageClass +
+            '">' +
+            '<div class="vdm-label-grid ' +
+            spec.gridClass +
+            '">' +
+            html +
+            "</div></section>"
+        );
+    }
+
+    function renderAllLabelsHtml(jobs, envelopeType, showEmptySlots) {
         var spec = getLabelSpec(envelopeType);
         var pages = chunkJobs(jobs, spec.perPage);
         return pages
             .map(function (pageJobs) {
-                var labels = pageJobs
-                    .map(function (job) {
-                        return renderLabelPairHtml(job, envelopeType);
-                    })
-                    .join("");
-                return (
-                    '<section class="vdm-label-page ' + spec.pageClass + '">' +
-                    '<div class="vdm-label-grid ' + spec.gridClass + '">' +
-                    labels +
-                    "</div></section>"
-                );
+                return renderPageHtml(pageJobs, envelopeType, !!showEmptySlots);
             })
             .join("");
+    }
+
+    function fitPreviewScale() {
+        if (!previewBody) return;
+        var pages = previewBody.querySelectorAll(".vdm-label-page");
+        if (!pages.length) return;
+        var scroll = previewBody;
+        var availW = scroll.clientWidth - 24;
+        pages.forEach(function (page) {
+            page.style.transform = "";
+            page.style.marginBottom = "1.25rem";
+            var pageW = page.offsetWidth;
+            if (pageW > availW && availW > 0) {
+                var scale = Math.max(0.45, availW / pageW);
+                page.style.transform = "scale(" + scale + ")";
+                page.style.transformOrigin = "top center";
+                page.style.marginBottom = page.offsetHeight * scale * 0.15 + 12 + "px";
+            }
+        });
+    }
+
+    function openPreviewModal(html, envelopeType, jobCount) {
+        if (!previewModal || !previewBody) return;
+        pendingEnvelopeType = envelopeType;
+        var spec = getLabelSpec(envelopeType);
+        var pageCount = Math.ceil(jobCount / spec.perPage);
+        previewBody.innerHTML = '<div class="vdm-preview-inner">' + html + "</div>";
+        if (previewMeta) {
+            previewMeta.textContent =
+                spec.name +
+                " · " +
+                jobCount +
+                "건 · A4 " +
+                pageCount +
+                "장 · 2열 배치 · 칸당 발신(왼쪽)·수신(오른쪽)";
+        }
+        previewModal.hidden = false;
+        document.body.style.overflow = "hidden";
+        requestAnimationFrame(fitPreviewScale);
+    }
+
+    function closePreviewModal() {
+        if (!previewModal) return;
+        previewModal.hidden = true;
+        document.body.style.overflow = "";
+        if (previewBody) previewBody.innerHTML = "";
+        pendingPrintJobs = [];
+    }
+
+    function executePrint() {
+        if (!printArea || !pendingPrintJobs.length) return;
+        var envelopeType = pendingEnvelopeType;
+        printArea.innerHTML = renderAllLabelsHtml(pendingPrintJobs, envelopeType, false);
+        injectPrintPageSize(envelopeType);
+        document.body.classList.add("vdm-printing");
+        var cleanup = function () {
+            document.body.classList.remove("vdm-printing");
+            removePrintPageSize();
+            window.removeEventListener("afterprint", cleanup);
+        };
+        window.addEventListener("afterprint", cleanup);
+        window.print();
+    }
+
+    function showPreview() {
+        var key = sourcesKey(getSelectedSources());
+        if (!getSelectedSources().length) return setStatus("출력 대상 업체 분류를 하나 이상 선택해 주세요.", true);
+        if (appliedSourcesKey !== key || !appliedSelections.length) {
+            return setStatus("먼저 발송 업체 선택을 완료해 주세요.", true);
+        }
+        var jobs = buildPrintJobs();
+        if (!jobs.length) return setStatus("출력할 라벨이 없습니다. 주소가 있는 항목을 선택해 주세요.", true);
+        pendingPrintJobs = jobs;
+        var envelopeType = getEnvelopeType();
+        var html = renderAllLabelsHtml(jobs, envelopeType, true);
+        openPreviewModal(html, envelopeType, jobs.length);
+        setStatus("출력 양식을 확인한 뒤 「인쇄」를 눌러 주세요.", false);
     }
 
     function getLabelSpec(envelopeType) {
@@ -483,46 +587,8 @@
     function invalidateSelection() {
         appliedSelections = [];
         appliedSourcesKey = "";
+        pendingPrintJobs = [];
         renderSummary();
-    }
-
-    function doPrint() {
-        var key = sourcesKey(getSelectedSources());
-        if (!getSelectedSources().length) return setStatus("출력 대상 업체 분류를 하나 이상 선택해 주세요.", true);
-        if (appliedSourcesKey !== key || !appliedSelections.length) {
-            return setStatus("먼저 발송 업체 선택을 완료해 주세요.", true);
-        }
-        var jobs = buildPrintJobs();
-        if (!jobs.length) return setStatus("출력할 라벨이 없습니다. 주소가 있는 항목을 선택해 주세요.", true);
-
-        var envelopeType = getEnvelopeType();
-        if (!printArea) return;
-        printArea.innerHTML = renderAllLabelsHtml(jobs, envelopeType);
-
-        injectPrintPageSize(envelopeType);
-
-        document.body.classList.remove("vdm-printing");
-        document.body.classList.add("vdm-printing");
-
-        var cleanup = function () {
-            document.body.classList.remove("vdm-printing");
-            removePrintPageSize();
-            window.removeEventListener("afterprint", cleanup);
-        };
-        window.addEventListener("afterprint", cleanup);
-
-        var spec = getLabelSpec(envelopeType);
-        var pageCount = Math.ceil(jobs.length / spec.perPage);
-        setStatus(
-            spec.name +
-                " · " +
-                jobs.length +
-                "건 · A4 " +
-                pageCount +
-                "장 (칸당 발신·수신) 인쇄합니다.",
-            false
-        );
-        window.print();
     }
 
     if (!validateAccess()) return;
@@ -550,7 +616,20 @@
         if (btn) btn.addEventListener("click", function () { applyBulk(pair[1]); });
     });
 
-    if (printBtn) printBtn.addEventListener("click", doPrint);
+    if (printBtn) printBtn.addEventListener("click", showPreview);
+    if (previewPrintBtn) previewPrintBtn.addEventListener("click", executePrint);
+    ["vdm-preview-close", "vdm-preview-cancel"].forEach(function (id) {
+        var btn = document.getElementById(id);
+        if (btn) btn.addEventListener("click", closePreviewModal);
+    });
+    if (previewModal) {
+        previewModal.addEventListener("click", function (e) {
+            if (e.target === previewModal) closePreviewModal();
+        });
+    }
+    window.addEventListener("resize", function () {
+        if (previewModal && !previewModal.hidden) fitPreviewScale();
+    });
 
     if (pickerModal) {
         pickerModal.addEventListener("click", function (e) {
