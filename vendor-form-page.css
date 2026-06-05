@@ -365,6 +365,20 @@
     .vr-form-page { --vr-label-w: 9.5rem; }
 }
 
+/* 3열 행: 1열은 긴 제목용 고정폭, 2·3열은 제목 길이에 맞춰 입력란을 가깝게 */
+@media (min-width: 521px) {
+    .vr-form-page .vr-form .vr-row--3 > .vr-slot:nth-child(2),
+    .vr-form-page .vr-form .vr-row--3 > .vr-slot:nth-child(3) {
+        grid-template-columns: auto minmax(0, 1fr);
+        gap: 0.3rem 0.4rem;
+    }
+    .vr-form-page .vr-form .vr-row--3 > .vr-slot:nth-child(2) > label,
+    .vr-form-page .vr-form .vr-row--3 > .vr-slot:nth-child(3) > label {
+        min-width: 5em;
+        white-space: nowrap;
+    }
+}
+
 @media (min-width: 768px) {
     .vr-form-page {
         max-width: min(100%, 72rem);
