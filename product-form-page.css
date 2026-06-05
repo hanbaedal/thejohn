@@ -386,11 +386,23 @@
         border-radius: 4px;
     }
 
+    .pr-form-page .pr-section-block--core {
+        gap: 0;
+    }
+    .pr-form-page .pr-section-block--core .vr-dept-row,
+    .pr-form-page .pr-section-block--core .pr-field-row,
+    .pr-form-page .pr-section-block--core .pr-field-row.pr-row--name,
+    .pr-form-page .pr-section-block--core .pr-field-row.pr-row--price-size,
+    .pr-form-page .pr-section-block--core .pr-field.pr-pinfo-field {
+        margin-bottom: 0;
+        gap: 0;
+    }
+
     .pr-form-page .pr-row--name {
         display: flex;
         flex-direction: column;
-        gap: 0.55rem;
-        margin-bottom: 0.85rem;
+        gap: 0;
+        margin-bottom: 0;
     }
     .pr-form-page .pr-field-code,
     .pr-form-page .pr-field-name-wrap {
@@ -421,7 +433,7 @@
     .pr-form-page .pr-row--price-size {
         display: flex;
         flex-direction: column;
-        gap: 0.55rem;
+        gap: 0;
         margin-bottom: 0;
     }
     .pr-form-page .pr-field-half {
@@ -443,9 +455,11 @@
         grid-template-columns: var(--pr-label-w) minmax(0, 1fr);
         gap: 0.3rem 0.45rem;
         align-items: center;
+        margin-bottom: 0;
     }
     .pr-form-page .pr-pinfo-caption {
         grid-column: 1;
+        margin: 0;
     }
     .pr-form-page .pr-btn-pinfo {
         grid-column: 2;
@@ -457,10 +471,31 @@
         border-radius: 4px;
     }
 
+    .pr-form-page .pr-photo-toolbar {
+        display: grid;
+        grid-template-columns: var(--pr-label-w) minmax(0, 1fr) auto;
+        align-items: center;
+        gap: 0.3rem 0.45rem;
+        margin-bottom: 0.35rem;
+    }
     .pr-form-page .pr-photo-toolbar > .pr-photo-label {
+        grid-column: 1;
         font-size: var(--pr-desc-size);
         font-weight: 700;
         color: #2a4560;
+    }
+    .pr-form-page .pr-photo-toolbar .pr-photo-icon-actions {
+        grid-column: 2;
+        justify-self: start;
+    }
+    .pr-form-page .pr-photo-toolbar .pr-photo-count--inline {
+        grid-column: 3;
+        margin: 0;
+        white-space: nowrap;
+    }
+    .pr-form-page .pr-photo-field .pr-photo-gallery {
+        width: 100%;
+        justify-content: center;
     }
 
     .pr-form-page .pr-explain-field {

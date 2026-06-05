@@ -42,3 +42,23 @@
     margin: 0.25rem 0 0;
     font-weight: 600;
 }
+
+/* 스마트폰: 썸네일 겹침 방지·가운데 정렬 */
+@media (max-width: 640px) {
+    .pr-photo-gallery {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        align-items: flex-start;
+        gap: 0.5rem;
+        width: 100%;
+        box-sizing: border-box;
+        margin-top: 0.5rem;
+    }
+    .pr-photo-slot {
+        width: 5.25rem;
+        height: 5.25rem;
+        flex: 0 0 5.25rem;
+        box-sizing: border-box;
+    }
+}
