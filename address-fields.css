@@ -46,3 +46,34 @@
     color: #6b7c8f;
     line-height: 1.45;
 }
+
+/* 스마트폰: 우편번호·입력·주소 검색 한 줄 */
+@media (max-width: 640px) {
+    .tj-addr-row--zip {
+        display: grid;
+        grid-template-columns: minmax(3.5rem, 4.25rem) minmax(4.5rem, 5.25rem) minmax(0, 1fr);
+        align-items: center;
+        gap: 0.35rem;
+        flex-wrap: nowrap;
+    }
+    .tj-addr-row--zip > label {
+        flex: unset;
+        min-width: 0;
+        white-space: nowrap;
+        font-size: 0.8rem;
+    }
+    .tj-addr-row--zip .tj-addr-zip {
+        flex: unset;
+        width: 100%;
+        min-width: 0;
+        max-width: none;
+    }
+    .tj-addr-row--zip .tj-addr-search {
+        flex: unset;
+        width: 100%;
+        min-width: 0;
+        padding: 0.4rem 0.45rem;
+        font-size: 0.78rem;
+        white-space: nowrap;
+    }
+}
