@@ -229,10 +229,15 @@
                 ? THEJHON_AUTH.getLoggedInCompanyDisplayName()
                 : "";
             var uid = THEJHON_AUTH.getUserId ? THEJHON_AUTH.getUserId() : "";
-            hintEl.textContent =
-                "이 양식으로 저장되는 업체는 로그인한 관리자(" +
-                (who || uid) +
-                ") 담당으로 기록됩니다. 목록·주문 알림도 담당 관리자 기준으로 연결됩니다.";
+            var displayName = String(who || uid || "").trim();
+            var safeName =
+                PF && PF.escapeHtml
+                    ? PF.escapeHtml(displayName)
+                    : displayName.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+            hintEl.innerHTML =
+                "이 양식으로 저장되는 업체는 로그인한 관리자 (<strong class=\"vr-registrar-name\">" +
+                safeName +
+                "</strong>) 담당으로 기록됩니다. 목록·주문 알림도 담당 관리자 기준으로 연결됩니다.";
             hintEl.hidden = false;
         }
     }

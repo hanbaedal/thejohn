@@ -34,6 +34,27 @@
     border-color: #2d6a9f;
     color: #2d6a9f;
 }
+.vr-pw-toggle--icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2rem;
+    min-width: 2rem;
+    padding: 0;
+    color: #5a6d7e;
+    -webkit-tap-highlight-color: rgba(10, 77, 156, 0.12);
+}
+.vr-pw-toggle--icon:hover,
+.vr-pw-toggle--icon:focus-visible {
+    color: var(--dz-blue);
+    outline: none;
+}
+.vr-pw-toggle--icon:focus-visible {
+    box-shadow: 0 0 0 1px rgba(10, 77, 156, 0.25);
+}
+.vr-pw-toggle--icon .vr-pw-icon {
+    display: block;
+}
 .pr-name-dup-hint {
     margin: 0.35rem 0 0;
     font-size: 0.75rem;
