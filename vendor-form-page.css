@@ -190,6 +190,7 @@
 }
 .vr-form-page .vr-form .vr-section-gap-after { margin-bottom: var(--vr-section-gap); }
 .vr-form-page .vr-form .vr-section-gap-before { margin-top: var(--vr-section-gap); }
+.vr-form-page .vr-form .vr-gap-after-2lines { margin-bottom: 2.5rem; }
 .vr-form-page .vr-form .vr-slot > label,
 .vr-form-page .vr-form .vr-field > label,
 .vr-form-page .vr-form .vr-dept-caption,
