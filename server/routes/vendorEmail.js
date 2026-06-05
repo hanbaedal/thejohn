@@ -89,47 +89,71 @@ function validateAndBuildAttachments(attachments) {
     return files;
 }
 
-async function collectRecipients(db, opts, senderId) {
+function normalizeEmailSource(v) {
+    return String(v || "").trim() === "vendor_new" ? "vendor_new" : "vendors";
+}
+
+async function collectRecipientsFromSelections(db, source, selections, senderId) {
+    const collection = normalizeEmailSource(source) === "vendor_new" ? "vendor_new" : "vendors";
+    const registerFilter = senderId ? { vn_registered_by: registeredByInFilter(senderId) } : {};
+    const selMap = {};
+    const ids = [];
+    const src = Array.isArray(selections) ? selections : [];
+    for (let i = 0; i < src.length; i++) {
+        const row = src[i] || {};
+        const id = trim(row.id);
+        if (!id) continue;
+        if (!row.sendCompany && !row.sendManager) continue;
+        ids.push(id);
+        selMap[id] = {
+            sendCompany: !!row.sendCompany,
+            sendManager: !!row.sendManager
+        };
+    }
+    if (!ids.length) {
+        return { recipients: [], counts: { company: 0, manager: 0, total: 0, vendors: 0 } };
+    }
+    const docs = await db
+        .collection(collection)
+        .find(Object.assign({ id: { $in: ids } }, registerFilter), {
+            projection: { id: 1, vn_email: 1, vn_mgr_email: 1, vn_company: 1 }
+        })
+        .limit(5000)
+        .toArray();
     const set = new Set();
     const toList = [];
-    const counts = { vendors: 0, vendorNew: 0 };
-    const registerFilter = senderId ? { vn_registered_by: registeredByInFilter(senderId) } : {};
-    const useManager = String(opts.recipientMode || "company") === "manager";
-
-    if (opts.includeVendors) {
-        const docs = await db
-            .collection("vendors")
-            .find(registerFilter, { projection: { vn_email: 1, vn_mgr_email: 1 } })
-            .limit(5000)
-            .toArray();
-        for (let i = 0; i < docs.length; i++) {
-            const src = docs[i] || {};
-            const email = cleanEmail(useManager ? src.vn_mgr_email : src.vn_email);
-            if (!email || set.has(email)) continue;
-            set.add(email);
-            toList.push(email);
+    let companyCount = 0;
+    let managerCount = 0;
+    for (let j = 0; j < docs.length; j++) {
+        const doc = docs[j] || {};
+        const sel = selMap[doc.id];
+        if (!sel) continue;
+        if (sel.sendCompany) {
+            const companyEmail = cleanEmail(doc.vn_email);
+            if (companyEmail && !set.has(companyEmail)) {
+                set.add(companyEmail);
+                toList.push(companyEmail);
+                companyCount++;
+            }
         }
-        counts.vendors = toList.length;
-    }
-
-    if (opts.includeVendorNew) {
-        const before = toList.length;
-        const docs = await db
-            .collection("vendor_new")
-            .find(registerFilter, { projection: { vn_email: 1, vn_mgr_email: 1 } })
-            .limit(5000)
-            .toArray();
-        for (let i = 0; i < docs.length; i++) {
-            const src = docs[i] || {};
-            const email = cleanEmail(useManager ? src.vn_mgr_email : src.vn_email);
-            if (!email || set.has(email)) continue;
-            set.add(email);
-            toList.push(email);
+        if (sel.sendManager) {
+            const managerEmail = cleanEmail(doc.vn_mgr_email);
+            if (managerEmail && !set.has(managerEmail)) {
+                set.add(managerEmail);
+                toList.push(managerEmail);
+                managerCount++;
+            }
         }
-        counts.vendorNew = toList.length - before;
     }
-
-    return { recipients: toList, counts };
+    return {
+        recipients: toList,
+        counts: {
+            company: companyCount,
+            manager: managerCount,
+            total: toList.length,
+            vendors: docs.length
+        }
+    };
 }
 
 async function resolveSenderName(db, auth, requestedName) {
@@ -237,26 +261,26 @@ router.post("/broadcast", requireRole("admin"), async function (req, res) {
         const body = req.body || {};
         const subject = trim(body.subject);
         const greeting = trim(body.greeting);
-        const includeVendors = !!body.includeVendors;
-        const includeVendorNew = !!body.includeVendorNew;
+        const source = normalizeEmailSource(body.source);
+        const selections = Array.isArray(body.selections) ? body.selections : [];
         const onlyMine = body.onlyMine !== false;
-        const recipientMode = String(body.recipientMode || "company") === "manager" ? "manager" : "company";
         if (!subject) return res.status(400).json({ ok: false, error: "메일 제목을 입력해 주세요." });
         if (!greeting) return res.status(400).json({ ok: false, error: "인사말(본문)을 입력해 주세요." });
-        if (!includeVendors && !includeVendorNew) {
-            return res.status(400).json({ ok: false, error: "발송 대상을 최소 1개 선택해 주세요." });
+        if (!selections.length) {
+            return res.status(400).json({ ok: false, error: "수신자를 선택해 주세요." });
         }
         const senderId = onlyMine && req.auth && req.auth.userId ? String(req.auth.userId) : "";
         const db = getDb();
-        const { recipients, counts } = await collectRecipients(
+        const { recipients, counts } = await collectRecipientsFromSelections(
             db,
-            { includeVendors, includeVendorNew, recipientMode },
+            source,
+            selections,
             senderId
         );
         if (!recipients.length) {
             return res.status(400).json({
                 ok: false,
-                error: "발송 가능한 이메일 주소가 없습니다."
+                error: "선택한 수신자에 발송 가능한 이메일 주소가 없습니다."
             });
         }
         const files = validateAndBuildAttachments(body.attachments);
@@ -270,11 +294,11 @@ router.post("/broadcast", requireRole("admin"), async function (req, res) {
             senderRole: req.auth && req.auth.role ? String(req.auth.role) : "",
             subject: subject,
             greeting: greeting,
-            includeVendors: includeVendors,
-            includeVendorNew: includeVendorNew,
+            source: source,
             onlyMine: onlyMine,
-            recipientMode: recipientMode,
+            selectionCount: selections.length,
             requestedCount: recipients.length,
+            recipientCounts: counts,
             sentCount: sentResult.ok.length,
             failedCount: sentResult.failed.length,
             failed: sentResult.failed.slice(0, 200),
