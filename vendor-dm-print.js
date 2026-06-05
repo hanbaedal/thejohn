@@ -33,14 +33,15 @@
 
     var SENDER = {
         zip: "14548",
-        lines: [
-            "(주)더존",
-            "대표 이상범",
-            "경기도 부천시 원미구",
-            "부천로 130번길 5, 삼도빌딩 1층",
-            "032-666-5255"
-        ]
+        addr: "경기도 부천시 원미구 부천로 130번길 5",
+        addrDetail: "삼도빌딩 1층",
+        org: "(주)더존",
+        dept: "",
+        nameTitle: "대표 이상범"
     };
+
+    var LABEL_KIND_SENDER = "보내는 사람";
+    var LABEL_KIND_RECIPIENT = "받는 사람";
 
     var statusEl = document.getElementById("vdm-status");
     var srcVendorsEl = document.getElementById("vdm-src-vendors");
@@ -359,85 +360,101 @@
     function buildPrintJobs() {
         var jobs = [];
         appliedSelections.forEach(function (row) {
-            var fullAddr = formatAddress(row);
             if (row.sendCompany && hasValidAddress(row)) {
                 jobs.push({
                     zip: row.zip,
-                    address: fullAddr,
-                    recipient: row.name + " 귀하",
-                    sub: ""
+                    addr: row.addr,
+                    addrDetail: row.addrDetail,
+                    org: row.name,
+                    dept: "",
+                    nameTitle: "귀하"
                 });
             }
             if (row.sendManager && hasValidManager(row)) {
                 jobs.push({
                     zip: row.zip,
-                    address: fullAddr,
-                    recipient: row.mgrName + " 담당자님",
-                    sub: row.name
+                    addr: row.addr,
+                    addrDetail: row.addrDetail,
+                    org: row.name,
+                    dept: "",
+                    nameTitle: row.mgrName + " 담당자님"
                 });
             }
         });
         return jobs;
     }
 
-    function recipientAddressLines(job) {
-        var addrText = String(job.address || "").trim();
-        var zip = String(job.zip || "").trim();
-        if (zip && addrText.indexOf(zip) === 0) {
-            addrText = addrText.slice(zip.length).trim();
-        }
-        return addrText ? [addrText] : [];
+    function formatFullAddressLine(addr, addrDetail) {
+        var a = String(addr || "").trim();
+        var d = String(addrDetail || "").trim();
+        if (a && d) return a + " " + d;
+        return a || d;
     }
 
-    function renderLabelCellContent(kind, zip, lines, names) {
-        var zipHtml = zip
-            ? '<p class="vdm-label__zip">' + escapeHtml(zip) + "</p>"
-            : "";
-        var bodyHtml = (lines || [])
-            .map(function (line) {
-                return '<p class="vdm-label__line">' + escapeHtml(line) + "</p>";
-            })
-            .join("");
-        var nameHtml = (names || [])
-            .filter(Boolean)
-            .map(function (name) {
-                return '<p class="vdm-label__line vdm-label__line--name">' + escapeHtml(name) + "</p>";
-            })
-            .join("");
+    function formatOrgLine(org, dept) {
+        var o = String(org || "").trim();
+        var d = String(dept || "").trim();
+        if (o && d) return o + " " + d;
+        return o || d;
+    }
+
+    function buildLabelFields(data) {
+        data = data || {};
+        return {
+            line1: formatFullAddressLine(data.addr, data.addrDetail),
+            line2: formatOrgLine(data.org, data.dept),
+            line3: String(data.nameTitle || "").trim(),
+            zip: String(data.zip || "").trim()
+        };
+    }
+
+    function renderLabelCellContent(kind, fields) {
+        fields = fields || {};
+        function line(cls, text) {
+            if (!text) return "";
+            return '<p class="vdm-label__line ' + cls + '">' + escapeHtml(text) + "</p>";
+        }
+        var zip = fields.zip || "";
+        var bodyLines =
+            line("vdm-label__line--addr", fields.line1) +
+            line("vdm-label__line--org", fields.line2) +
+            line("vdm-label__line--name", fields.line3);
         return (
             '<div class="vdm-label-cell__body">' +
             '<p class="vdm-label__kind">' + escapeHtml(kind) + "</p>" +
-            zipHtml +
-            bodyHtml +
-            nameHtml +
-            "</div>"
+            '<div class="vdm-label__lines">' +
+            bodyLines +
+            (zip
+                ? '<p class="vdm-label__line vdm-label__line--zip">' + escapeHtml(zip) + "</p>"
+                : "") +
+            "</div></div>"
         );
     }
 
-    function renderLabelCell(envelopeType, kind, zip, lines, names, isEmpty) {
+    function renderLabelCell(envelopeType, kind, fields, isEmpty) {
         var spec = getLabelSpec(envelopeType);
         var cls = "vdm-label-cell " + spec.cellClass;
         if (isEmpty) cls += " vdm-label-cell--empty";
         var inner = isEmpty
             ? '<span class="vdm-label-empty-mark">빈 칸</span>'
-            : renderLabelCellContent(kind, zip, lines, names);
+            : renderLabelCellContent(kind, fields);
         return '<article class="' + cls + '">' + inner + "</article>";
     }
 
     function renderSenderCell(envelopeType) {
-        var sender = senderContent();
-        return renderLabelCell(envelopeType, "발신", sender.zip, sender.lines, [], false);
+        return renderLabelCell(
+            envelopeType,
+            LABEL_KIND_SENDER,
+            buildLabelFields(SENDER),
+            false
+        );
     }
 
     function renderRecipientCell(job, envelopeType) {
-        var recipientNames = [job.recipient];
-        if (job.sub) recipientNames.push(job.sub);
         return renderLabelCell(
             envelopeType,
-            "수신",
-            job.zip,
-            recipientAddressLines(job),
-            recipientNames,
+            LABEL_KIND_RECIPIENT,
+            buildLabelFields(job),
             false
         );
     }
@@ -447,12 +464,8 @@
     }
 
     function renderEmptyRowHtml(envelopeType) {
-        return renderLabelCell(envelopeType, "발신", "", [], [], true) +
-            renderLabelCell(envelopeType, "수신", "", [], [], true);
-    }
-
-    function senderContent() {
-        return SENDER;
+        return renderLabelCell(envelopeType, LABEL_KIND_SENDER, null, true) +
+            renderLabelCell(envelopeType, LABEL_KIND_RECIPIENT, null, true);
     }
 
     function renderPageHtml(pageJobs, envelopeType, showEmptySlots) {
@@ -522,7 +535,7 @@
                 jobCount +
                 "통 · A4 " +
                 pageCount +
-                "장 · 행마다 1열 발신 · 2열 수신";
+                "장 · 행마다 1열 보내는 사람 · 2열 받는 사람";
         }
         previewModal.hidden = false;
         document.body.style.overflow = "hidden";
