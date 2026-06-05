@@ -73,12 +73,19 @@
 }
 .vdm-output-options label {
     display: inline-flex;
-    align-items: center;
+    align-items: flex-start;
     gap: 0.45rem;
     font-size: 0.92rem;
     font-weight: 600;
     color: #2a4560;
     cursor: pointer;
+}
+.vdm-output-options label span small {
+    display: block;
+    margin-top: 0.15rem;
+    font-size: 0.76rem;
+    font-weight: 400;
+    color: #5a6d7e;
 }
 
 .vdm-modal {
@@ -205,85 +212,94 @@
     overflow: hidden;
     pointer-events: none;
 }
-.vdm-envelope {
-    position: relative;
+
+/* 라벨 규격 — 대봉투 160×60mm, 일반봉투 99.1×38.1mm (주소 3~4줄 가독성 기준) */
+.vdm-label-sheet {
+    display: flex;
+    flex-direction: row;
+    align-items: stretch;
     box-sizing: border-box;
     page-break-after: always;
     background: #fff;
     color: #111;
     font-family: "Malgun Gothic", "Apple SD Gothic Neo", sans-serif;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
 }
-.vdm-envelope:last-child {
+.vdm-label-sheet:last-child {
     page-break-after: auto;
 }
-.vdm-envelope__from {
-    position: absolute;
-    top: 12mm;
-    left: 12mm;
-    font-size: 9pt;
-    line-height: 1.55;
-    color: #333;
+.vdm-label-sheet--large {
+    width: 320mm;
+    height: 60mm;
 }
-.vdm-envelope__to {
-    position: absolute;
-    text-align: left;
-    line-height: 1.65;
+.vdm-label-sheet--regular {
+    width: 198.2mm;
+    height: 38.1mm;
 }
-.vdm-envelope__zip {
-    font-size: 16pt;
+.vdm-label {
+    box-sizing: border-box;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 2mm 2.5mm;
+    border: 0.2mm dashed #ccc;
+}
+.vdm-label-sheet--large .vdm-label {
+    width: 160mm;
+    height: 60mm;
+}
+.vdm-label-sheet--regular .vdm-label {
+    width: 99.1mm;
+    height: 38.1mm;
+    padding: 1.5mm 2mm;
+}
+.vdm-label__kind {
+    margin: 0 0 0.8mm;
+    font-size: 6pt;
     font-weight: 700;
-    letter-spacing: 0.08em;
-    margin-bottom: 0.35rem;
+    letter-spacing: 0.04em;
+    color: #555;
 }
-.vdm-envelope__addr {
-    font-size: 12pt;
-    word-break: keep-all;
-}
-.vdm-envelope__recipient {
-    margin-top: 0.55rem;
-    font-size: 14pt;
-    font-weight: 700;
-}
-.vdm-envelope__sub {
-    margin-top: 0.2rem;
-    font-size: 11pt;
-    font-weight: 500;
-    color: #333;
-}
-.vdm-envelope--large {
-    width: 330mm;
-    height: 245mm;
-    padding: 0;
-}
-.vdm-envelope--large .vdm-envelope__to {
-    right: 18mm;
-    bottom: 38mm;
-    left: 48mm;
-}
-.vdm-envelope--regular {
-    width: 220mm;
-    height: 110mm;
-    padding: 0;
-}
-.vdm-envelope--regular .vdm-envelope__from {
-    top: 8mm;
-    left: 8mm;
+.vdm-label-sheet--large .vdm-label__kind {
     font-size: 7pt;
+    margin-bottom: 1mm;
 }
-.vdm-envelope--regular .vdm-envelope__to {
-    left: 52mm;
-    top: 50%;
-    transform: translateY(-50%);
-    right: 10mm;
+.vdm-label__zip {
+    margin: 0 0 0.5mm;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    line-height: 1.2;
 }
-.vdm-envelope--regular .vdm-envelope__zip {
-    font-size: 12pt;
+.vdm-label-sheet--large .vdm-label__zip {
+    font-size: 11pt;
 }
-.vdm-envelope--regular .vdm-envelope__addr {
+.vdm-label-sheet--regular .vdm-label__zip {
+    font-size: 8pt;
+}
+.vdm-label__line {
+    margin: 0;
+    line-height: 1.35;
+    word-break: keep-all;
+    overflow: hidden;
+}
+.vdm-label-sheet--large .vdm-label__line {
+    font-size: 9pt;
+}
+.vdm-label-sheet--regular .vdm-label__line {
+    font-size: 7pt;
+    line-height: 1.28;
+}
+.vdm-label__line--name {
+    margin-top: 0.6mm;
+    font-weight: 700;
+}
+.vdm-label-sheet--large .vdm-label__line--name {
     font-size: 10pt;
 }
-.vdm-envelope--regular .vdm-envelope__recipient {
-    font-size: 11pt;
+.vdm-label-sheet--regular .vdm-label__line--name {
+    font-size: 7.5pt;
 }
 
 @media print {
@@ -298,5 +314,8 @@
         height: auto;
         overflow: visible;
         pointer-events: auto;
+    }
+    .vdm-label {
+        border-color: transparent;
     }
 }

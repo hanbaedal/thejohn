@@ -4,12 +4,15 @@
     var AF = window.THEJHON_ADDRESS_FIELDS;
     var VENDOR_MANAGE_PAGE = "vendor-manage.html";
 
-    var SENDER_LINES = [
-        "(주)더존",
-        "대표 이상범",
-        "경기도 부천시 원미구 부천로 130번길 5, 삼도빌딩 1층",
-        "032-666-5255"
-    ];
+    var LABEL_SPECS = {
+        large: { w: 160, h: 60, pageW: 320, pageH: 60, name: "대봉투 라벨 (160×60mm)" },
+        regular: { w: 99.1, h: 38.1, pageW: 198.2, pageH: 38.1, name: "일반봉투 라벨 (99.1×38.1mm)" }
+    };
+
+    var SENDER = {
+        zip: "14548",
+        lines: ["(주)더존", "대표 이상범", "경기도 부천시 원미구 부천로 130번길 5, 삼도빌딩 1층", "032-666-5255"]
+    };
 
     var statusEl = document.getElementById("vdm-status");
     var srcVendorsEl = document.getElementById("vdm-src-vendors");
@@ -335,24 +338,61 @@
         return jobs;
     }
 
-    function renderEnvelopeHtml(job, envelopeType) {
-        var cls = envelopeType === "regular" ? "vdm-envelope--regular" : "vdm-envelope--large";
-        var fromHtml = SENDER_LINES.map(function (line) {
-            return escapeHtml(line);
-        }).join("<br>");
-        var subHtml = job.sub
-            ? '<p class="vdm-envelope__sub">' + escapeHtml(job.sub) + "</p>"
+    function renderLabelBlock(kind, zip, lines, names) {
+        var zipHtml = zip
+            ? '<p class="vdm-label__zip">' + escapeHtml(zip) + "</p>"
             : "";
+        var bodyHtml = (lines || [])
+            .map(function (line) {
+                return '<p class="vdm-label__line">' + escapeHtml(line) + "</p>";
+            })
+            .join("");
+        var nameHtml = (names || [])
+            .filter(Boolean)
+            .map(function (name) {
+                return '<p class="vdm-label__line vdm-label__line--name">' + escapeHtml(name) + "</p>";
+            })
+            .join("");
         return (
-            '<section class="vdm-envelope ' + cls + '">' +
-            '<div class="vdm-envelope__from">' + fromHtml + "</div>" +
-            '<div class="vdm-envelope__to">' +
-            (job.zip ? '<p class="vdm-envelope__zip">' + escapeHtml(job.zip) + "</p>" : "") +
-            '<p class="vdm-envelope__addr">' + escapeHtml(job.address) + "</p>" +
-            '<p class="vdm-envelope__recipient">' + escapeHtml(job.recipient) + "</p>" +
-            subHtml +
-            "</div></section>"
+            '<div class="vdm-label">' +
+            '<p class="vdm-label__kind">' + escapeHtml(kind) + "</p>" +
+            zipHtml +
+            bodyHtml +
+            nameHtml +
+            "</div>"
         );
+    }
+
+    function recipientAddressLines(job) {
+        var addrText = String(job.address || "").trim();
+        var zip = String(job.zip || "").trim();
+        if (zip && addrText.indexOf(zip) === 0) {
+            addrText = addrText.slice(zip.length).trim();
+        }
+        return addrText ? [addrText] : [];
+    }
+
+    function renderLabelSheetHtml(job, envelopeType) {
+        var sheetCls = envelopeType === "regular" ? "vdm-label-sheet--regular" : "vdm-label-sheet--large";
+        var senderBlock = renderLabelBlock("발송인 (관리자)", SENDER.zip, SENDER.lines, []);
+        var recipientNames = [job.recipient];
+        if (job.sub) recipientNames.push(job.sub);
+        var recipientBlock = renderLabelBlock(
+            "수신인 (업체)",
+            job.zip,
+            recipientAddressLines(job),
+            recipientNames
+        );
+        return (
+            '<section class="vdm-label-sheet ' + sheetCls + '">' +
+            senderBlock +
+            recipientBlock +
+            "</section>"
+        );
+    }
+
+    function getLabelSpec(envelopeType) {
+        return LABEL_SPECS[envelopeType] || LABEL_SPECS.large;
     }
 
     function validateAccess() {
@@ -370,10 +410,11 @@
         var id = "vdm-print-page-size";
         var old = document.getElementById(id);
         if (old) old.remove();
-        var size = envelopeType === "regular" ? "220mm 110mm" : "330mm 245mm";
+        var spec = getLabelSpec(envelopeType);
         var style = document.createElement("style");
         style.id = id;
-        style.textContent = "@media print { @page { size: " + size + "; margin: 0; } }";
+        style.textContent =
+            "@media print { @page { size: " + spec.pageW + "mm " + spec.pageH + "mm; margin: 0; } }";
         document.head.appendChild(style);
     }
 
@@ -395,13 +436,13 @@
             return setStatus("먼저 발송 업체 선택을 완료해 주세요.", true);
         }
         var jobs = buildPrintJobs();
-        if (!jobs.length) return setStatus("출력할 봉투가 없습니다. 주소가 있는 항목을 선택해 주세요.", true);
+        if (!jobs.length) return setStatus("출력할 라벨이 없습니다. 주소가 있는 항목을 선택해 주세요.", true);
 
         var envelopeType = getEnvelopeType();
         if (!printArea) return;
         printArea.innerHTML = jobs
             .map(function (job) {
-                return renderEnvelopeHtml(job, envelopeType);
+                return renderLabelSheetHtml(job, envelopeType);
             })
             .join("");
 
@@ -417,8 +458,9 @@
         };
         window.addEventListener("afterprint", cleanup);
 
+        var spec = getLabelSpec(envelopeType);
         setStatus(
-            (envelopeType === "regular" ? "일반봉투" : "대봉투") + " " + jobs.length + "통 인쇄 대화상자를 엽니다.",
+            spec.name + " · 업체 " + jobs.length + "건 (발송·수신 라벨 각 " + jobs.length + "장) 인쇄합니다.",
             false
         );
         window.print();
