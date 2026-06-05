@@ -261,6 +261,30 @@
     min-width: 44px;
     min-height: 44px;
 }
+.sm-self-save-modal__panel {
+    text-align: center;
+}
+.sm-self-save-modal__panel .sm-modal__title {
+    margin-bottom: 0.75rem;
+}
+.sm-self-save-modal__lead {
+    margin: 0 0 1.1rem;
+    font-size: 1rem;
+    font-weight: 600;
+    color: #2a4560;
+}
+.sm-self-save-modal__hint {
+    margin: 0 0 1rem;
+    font-size: 0.88rem;
+    line-height: 1.5;
+    color: #6b4a12;
+}
+.sm-self-save-modal__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    justify-content: center;
+}
 .sm-section-label {
     margin: 0.35rem 0 0;
     font-size: 0.88rem;

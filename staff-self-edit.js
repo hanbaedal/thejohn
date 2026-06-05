@@ -13,6 +13,11 @@
     var logoTouched = false;
     var pendingSeal = null;
     var sealTouched = false;
+    var saveModal = document.getElementById("sm-self-save-modal");
+    var saveHintEl = document.getElementById("sm-self-save-hint");
+    var saveLogoutBtn = document.getElementById("sm-self-save-logout");
+    var saveContinueBtn = document.getElementById("sm-self-save-continue");
+    var WORK_HUB_PAGE = "work-hub.html";
 
     var addrPicker =
         AF && AF.mount
@@ -243,6 +248,61 @@
         if (sealPicker && sealPicker.clear) sealPicker.clear();
     }
 
+    function openSaveModal(extraHint) {
+        if (!saveModal) return;
+        if (saveHintEl) {
+            if (extraHint) {
+                saveHintEl.textContent = extraHint;
+                saveHintEl.hidden = false;
+            } else {
+                saveHintEl.textContent = "";
+                saveHintEl.hidden = true;
+            }
+        }
+        saveModal.hidden = false;
+        document.body.style.overflow = "hidden";
+        if (PF && PF.speakKorean) PF.speakKorean("저장되었습니다");
+        if (saveLogoutBtn) saveLogoutBtn.focus();
+    }
+
+    function closeSaveModal() {
+        if (!saveModal) return;
+        saveModal.hidden = true;
+        document.body.style.overflow = "";
+    }
+
+    function onSaveSuccess(result) {
+        if (result && result.staff) {
+            fillForm(result.staff);
+            loadedFromServer = true;
+        }
+        var hint = "";
+        if (result && result.loginIdChanged) {
+            hint = "아이디가 변경되었습니다. 새 아이디로 다시 로그인해 주세요.";
+        }
+        setStatus("", "");
+        openSaveModal(hint);
+    }
+
+    if (saveLogoutBtn) {
+        saveLogoutBtn.addEventListener("click", function () {
+            closeSaveModal();
+            var Auth = window.THEJHON_AUTH;
+            if (Auth && Auth.logout) {
+                Auth.logout();
+            } else {
+                window.location.replace("login.html");
+            }
+        });
+    }
+
+    if (saveContinueBtn) {
+        saveContinueBtn.addEventListener("click", function () {
+            closeSaveModal();
+            window.location.href = WORK_HUB_PAGE;
+        });
+    }
+
     function loadProfile() {
         if (!api || !api.getStaffProfile) {
             setStatus("API를 불러오지 못했습니다.", "err");
@@ -273,17 +333,11 @@
         api
             .updateStaffProfile(payload)
             .then(function (result) {
-                var msg = "저장했습니다.";
-                if (result && result.loginIdChanged) {
-                    msg += " 아이디가 변경되었습니다. 새 아이디로 다시 로그인해 주세요.";
-                }
-                setStatus(msg, "ok");
-                if (PF && PF.speakKorean) PF.speakKorean("저장되었습니다");
                 if (result && result.staff) {
-                    fillForm(result.staff);
-                    loadedFromServer = true;
+                    onSaveSuccess(result);
                 } else {
                     loadProfile();
+                    onSaveSuccess(result || {});
                 }
             })
             .catch(function (err) {

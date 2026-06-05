@@ -146,6 +146,19 @@
             </form>
         </section>
     </main>
+
+    <div id="sm-self-save-modal" class="sm-modal sm-self-save-modal" hidden role="dialog" aria-modal="true" aria-labelledby="sm-self-save-title">
+        <div class="sm-modal__panel sm-self-save-modal__panel">
+            <h2 id="sm-self-save-title" class="sm-modal__title">저장되었습니다!</h2>
+            <p class="sm-self-save-modal__lead">로그아웃하시겠습니까?</p>
+            <p id="sm-self-save-hint" class="sm-self-save-modal__hint" hidden></p>
+            <div class="sm-self-save-modal__actions">
+                <button type="button" class="btn btn-primary" id="sm-self-save-logout">로그아웃</button>
+                <button type="button" class="btn" id="sm-self-save-continue">그룹 마케팅 관리로</button>
+            </div>
+        </div>
+    </div>
+
     <script src="product-form-shared.js"></script>
     <script src="address-fields.js"></script>
     <script src="staff-self-edit.js"></script>
