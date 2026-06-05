@@ -432,16 +432,17 @@
 /* 업체 수정: 2열=대표자 이름, 3열=회사 전화 위치에 세로 정렬 */
 @media (min-width: 521px) {
     .vr-form-page--edit {
-        /* 1열 유지, 2열=대표자 이름·3열=회사 전화 기준 위치 */
-        --vr-e-col1: 14.5rem;
-        --vr-e-col2: 15.5rem;
-        --vr-e-col3: 12.5rem;
+        /* 3등분 기준선 + 열별 최장 라벨 기준 정렬 */
+        --vr-edit-col-gap: var(--vr-col-gap, 5em);
+        --vr-edit-label-w-col1: 7.6em; /* 사업자등록번호 */
+        --vr-edit-label-w-col2: 6.2em; /* 대표자 이름 / 회사 이메일 */
+        --vr-edit-label-w-col3: 7.2em; /* 비밀번호 확인 / 대표자 연락처 */
     }
 
     .vr-form-page--edit .vr-form .vr-row--3 {
         display: grid;
-        grid-template-columns: var(--vr-e-col1) var(--vr-e-col2) var(--vr-e-col3);
-        column-gap: var(--vr-col-gap, 5em);
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        column-gap: var(--vr-edit-col-gap);
         row-gap: 0.35rem;
         align-items: center;
         flex-wrap: unset;
@@ -451,6 +452,34 @@
         flex: unset;
         width: auto;
         min-width: 0;
+        display: grid;
+        grid-template-columns: var(--vr-edit-label-w, 6.5em) minmax(0, 1fr);
+        gap: 0.3rem 0.4rem;
+        align-items: center;
+    }
+
+    .vr-form-page--edit .vr-form .vr-row--3 > .vr-slot:nth-child(1) {
+        --vr-edit-label-w: var(--vr-edit-label-w-col1);
+    }
+    .vr-form-page--edit .vr-form .vr-row--3 > .vr-slot:nth-child(2) {
+        --vr-edit-label-w: var(--vr-edit-label-w-col2);
+    }
+    .vr-form-page--edit .vr-form .vr-row--3 > .vr-slot:nth-child(3) {
+        --vr-edit-label-w: var(--vr-edit-label-w-col3);
+    }
+
+    /* 업체 수정 화면에서는 입력 폭을 열 폭에 맞춰 자동으로 */
+    .vr-form-page--edit .vr-form .vr-row--3 > .vr-slot > input,
+    .vr-form-page--edit .vr-form .vr-row--3 > .vr-slot > select,
+    .vr-form-page--edit .vr-form .vr-row--3 > .vr-slot > .vr-pw-wrap {
+        width: 100%;
+        min-width: 0;
+    }
+
+    /* 힌트는 2번째 컬럼부터 */
+    .vr-form-page--edit .vr-form .vr-row--3 > .vr-slot > .vr-id-dup-hint,
+    .vr-form-page--edit .vr-form .vr-row--3 > .vr-slot > .vr-pw-match-hint {
+        grid-column: 2;
     }
 }
 
