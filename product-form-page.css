@@ -398,10 +398,21 @@
         gap: 0;
     }
 
-    .pr-form-page .pr-row--name {
+    .pr-form-page .pr-field-row.pr-row--name,
+    .pr-form-page .pr-field-row.pr-row--price-size {
         display: flex;
         flex-direction: column;
+        flex-wrap: nowrap;
+        align-items: stretch;
         gap: 0;
+        margin-bottom: 0;
+    }
+    .pr-form-page .pr-field-row .pr-field-half,
+    .pr-form-page .pr-field-code,
+    .pr-form-page .pr-field-name-wrap {
+        flex: none;
+        width: 100%;
+        max-width: 100%;
         margin-bottom: 0;
     }
     .pr-form-page .pr-field-code,
@@ -410,7 +421,6 @@
         grid-template-columns: var(--pr-label-w) minmax(0, 1fr);
         gap: 0.3rem 0.45rem;
         align-items: center;
-        margin-bottom: 0;
     }
     .pr-form-page .pr-field-code > label,
     .pr-form-page .pr-field-name-wrap > label {
@@ -430,24 +440,24 @@
         font-size: 0.6rem;
     }
 
-    .pr-form-page .pr-row--price-size {
-        display: flex;
-        flex-direction: column;
-        gap: 0;
-        margin-bottom: 0;
-    }
     .pr-form-page .pr-field-half {
         display: grid;
         grid-template-columns: var(--pr-label-w) minmax(0, 1fr);
         gap: 0.3rem 0.45rem;
         align-items: center;
+    }
+    .pr-form-page .pr-field-half > label,
+    .pr-form-page .pr-field-row.pr-row--name label {
+        grid-column: 1;
         margin-bottom: 0;
     }
-    .pr-form-page .pr-field-half > label {
-        grid-column: 1;
-    }
-    .pr-form-page .pr-field-half > input {
+    .pr-form-page .pr-field-half > input,
+    .pr-form-page .pr-field-row.pr-row--name input {
         grid-column: 2;
+        padding: 0.35rem 0.45rem;
+        font-size: var(--pr-input-size);
+        min-height: var(--pr-input-min-h);
+        box-sizing: border-box;
     }
 
     .pr-form-page .pr-pinfo-field {

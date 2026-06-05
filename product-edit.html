@@ -35,7 +35,10 @@
         @media (min-width: 641px) and (max-width: 720px) {
             .pr-field-row.pr-row--4 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
         }
-        .pr-field-row .pr-field-half { flex: 1 1 10rem; min-width: 0; margin-bottom: 0; }
+        @media (min-width: 641px) {
+            .pr-field-row .pr-field-half { flex: 1 1 10rem; min-width: 0; margin-bottom: 0; }
+        }
+        .pr-field-row .pr-field-half { min-width: 0; margin-bottom: 0; }
         .pr-price-group { margin-bottom: 1rem; }
         .pr-price-group > .pr-price-caption { display: block; font-size: 0.8rem; font-weight: 600; color: #3d5166; margin-bottom: 0.4rem; }
         .pr-price-list { display: flex; flex-wrap: wrap; gap: 0.35rem 0.5rem; font-size: 0.88rem; color: var(--dz-blue); font-weight: 600; }
