@@ -4,7 +4,7 @@
     var panelsRoot = document.getElementById("hmhPanels");
     var headerNav = document.getElementById("hmhHeaderNav");
 
-    var SECTIONS = ["home", "product"];
+    var SECTIONS = ["home"];
 
     function setStatus(msg, kind) {
         if (!statusEl) return;
@@ -20,6 +20,10 @@
             .toLowerCase();
         if (hash === "vendor") {
             window.location.replace("vendor-manage.html");
+            return "home";
+        }
+        if (hash === "product") {
+            window.location.replace("product-manage.html");
             return "home";
         }
         if (hash === "support") return "home";
@@ -77,17 +81,8 @@
         document.querySelectorAll(".hmh-card[href]").forEach(function (card) {
             card.addEventListener("click", function () {
                 if (!Auth) return;
-                var key = card.getAttribute("data-hmh-card") || "";
-                if (
-                    key === "product-register" ||
-                    key === "product-list"
-                ) {
-                    if (Auth.setStaffNavMode) Auth.setStaffNavMode("product");
-                    if (Auth.refreshProductHeader) Auth.refreshProductHeader();
-                } else {
-                    if (Auth.setStaffNavMode) Auth.setStaffNavMode("manage-home");
-                    if (Auth.refreshManageHomeHeader) Auth.refreshManageHomeHeader();
-                }
+                if (Auth.setStaffNavMode) Auth.setStaffNavMode("manage-home");
+                if (Auth.refreshManageHomeHeader) Auth.refreshManageHomeHeader();
             });
         });
     }

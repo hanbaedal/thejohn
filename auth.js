@@ -861,6 +861,8 @@
     var ORDER_SUBNAV_STORAGE_KEY = "thejhon_order_subnav";
     var PRODUCT_MANAGE_HUB_PAGE = "product-manage.html";
     var PRODUCT_SUBNAV_STORAGE_KEY = "thejhon_product_subnav";
+    var VENDOR_MANAGE_HUB_PAGE = "vendor-manage.html";
+    var VENDOR_SUBNAV_STORAGE_KEY = "thejhon_vendor_subnav";
     var STAFF_NAV_PUBLIC_PAGES = {
         "index.html": true,
         "company.html": true,
@@ -895,6 +897,7 @@
         "transaction-manual-list.html": true
     };
     var STAFF_NAV_PRODUCT_PAGES = {};
+    var STAFF_NAV_VENDOR_PAGES = {};
     var STAFF_NAV_WORK_PAGES = {
         "staff-manage-hub.html": true,
         "staff-manage.html": true,
@@ -919,8 +922,9 @@
         STAFF_NAV_PRODUCT_PAGES[f] = true;
     });
     VENDOR_ADMIN_PAGES.forEach(function (f) {
-        STAFF_NAV_MANAGE_HOME_PAGES[f] = true;
+        STAFF_NAV_VENDOR_PAGES[f] = true;
     });
+    STAFF_NAV_VENDOR_PAGES["order-list-admin.html"] = true;
 
     function staffNavGet() {
         try {
@@ -945,6 +949,7 @@
         if (!file) return "";
         if (file === WORK_HUB_PAGE) return "hub";
         if (STAFF_NAV_PRODUCT_PAGES[file]) return "product";
+        if (STAFF_NAV_VENDOR_PAGES[file]) return "vendor-manage";
         if (STAFF_NAV_MANAGE_HOME_PAGES[file]) return "manage-home";
         if (STAFF_NAV_ORDER_PAGES[file]) return "order";
         if (STAFF_NAV_WORK_PAGES[file]) return "work";
@@ -970,6 +975,7 @@
             stored === "public" ||
             stored === "manage-home" ||
             stored === "product" ||
+            stored === "vendor-manage" ||
             stored === "order" ||
             stored === "work"
         ) {
@@ -1017,8 +1023,8 @@
         var file = staffNavHrefFile(el.getAttribute("href"));
         var drop = el.getAttribute("data-nav-dropdown") || "";
         if (drop === "support") return "public";
-        if (drop === "product-manage") return "manage-home";
-        if (drop === "vendor-manage") return "manage-home";
+        if (drop === "product-manage") return "product";
+        if (drop === "vendor-manage") return "vendor-manage";
         if (file === "homepage-manage-hub.html") return "manage-home";
         if (file.indexOf("company") === 0 || file === "company.html") return "public";
         if (file === "products.html" || file === "product-detail.html" || file === "index.html") {
@@ -1029,6 +1035,7 @@
         }
         if (STAFF_NAV_ORDER_PAGES[file]) return "order";
         if (STAFF_NAV_PRODUCT_PAGES[file]) return "product";
+        if (STAFF_NAV_VENDOR_PAGES[file]) return "vendor-manage";
         if (STAFF_NAV_WORK_PAGES[file]) return "work";
         if (STAFF_NAV_MANAGE_HOME_PAGES[file]) return "manage-home";
         if (STAFF_NAV_PUBLIC_PAGES[file]) return "public";
@@ -1046,6 +1053,9 @@
         if (mode === "public") return zone === "public";
         if (mode === "product") {
             return zone === "product" && canManageRegisters();
+        }
+        if (mode === "vendor-manage") {
+            return zone === "vendor-manage" && canManageRegisters();
         }
         if (mode === "order") {
             if (zone !== "order") return false;
@@ -1440,6 +1450,153 @@
         applyStaffNavProductTabs(nav);
     }
 
+    function saveVendorSubnav(items) {
+        try {
+            sessionStorage.setItem(VENDOR_SUBNAV_STORAGE_KEY, JSON.stringify(items || []));
+        } catch (e) {}
+    }
+
+    function loadVendorSubnav() {
+        try {
+            var data = JSON.parse(sessionStorage.getItem(VENDOR_SUBNAV_STORAGE_KEY) || "[]");
+            if (Array.isArray(data) && data.length) return data;
+        } catch (e2) {}
+        return getDefaultVendorSubnavItems();
+    }
+
+    function vendorSubnavItemAllowed(href) {
+        var file = staffNavHrefFile(href);
+        if (file === "order-list-admin.html") return canShowOrderManageMenu();
+        if (file === "vendor-prospect-finder.html") return getRole() === "admin";
+        return true;
+    }
+
+    function getDefaultVendorSubnavItems() {
+        if (!canManageRegisters()) return [];
+        return [
+            { href: VENDOR_MANAGE_HUB_PAGE, label: "업체관리" },
+            { href: "vendor-register.html", label: "업체 등록" },
+            { href: "vendor-list-admin.html", label: "업체 리스트" },
+            { href: "vendor-email-broadcast.html", label: "이메일 보내기" },
+            { href: "vendor-new-register.html", label: "신규업체 등록" },
+            { href: "vendor-new-list.html", label: "신규업체 리스트" },
+            { href: "vendor-prospect-list.html", label: "예비업체 리스트" }
+        ];
+    }
+
+    function collectVendorSubnavFromBody() {
+        var file = currentPageFile();
+        if (file === VENDOR_MANAGE_HUB_PAGE) {
+            var fromBody = collectBodyNavCards(document);
+            var items = [{ href: VENDOR_MANAGE_HUB_PAGE, label: "업체관리" }];
+            var seen = {};
+            seen[VENDOR_MANAGE_HUB_PAGE] = true;
+            for (var i = 0; i < fromBody.length; i++) {
+                var f = staffNavHrefFile(fromBody[i].href);
+                if (!f || seen[f] || !vendorSubnavItemAllowed(fromBody[i].href)) continue;
+                seen[f] = true;
+                items.push(fromBody[i]);
+            }
+            saveVendorSubnav(items);
+            return items;
+        }
+        var bodyItems = collectBodyNavCards(document);
+        if (bodyItems.length) {
+            var merged = [{ href: VENDOR_MANAGE_HUB_PAGE, label: "업체관리" }];
+            var seen2 = {};
+            seen2[VENDOR_MANAGE_HUB_PAGE] = true;
+            for (var j = 0; j < bodyItems.length; j++) {
+                var f2 = staffNavHrefFile(bodyItems[j].href);
+                if (!f2 || seen2[f2] || !vendorSubnavItemAllowed(bodyItems[j].href)) continue;
+                seen2[f2] = true;
+                merged.push(bodyItems[j]);
+            }
+            saveVendorSubnav(merged);
+            return merged;
+        }
+        var cached = loadVendorSubnav();
+        saveVendorSubnav(cached);
+        return cached;
+    }
+
+    function clearVendorSubnavLinks(nav) {
+        if (!nav) return;
+        var links = nav.querySelectorAll(
+            "a[data-vendor-subnav], a.is-vendor-subnav[data-staff-nav-injected='vendor-manage']"
+        );
+        for (var i = 0; i < links.length; i++) links[i].remove();
+    }
+
+    function syncVendorSubnavCurrent(nav, items) {
+        if (!nav || !items || !items.length) return;
+        var cur = currentPageFile();
+        var links = nav.querySelectorAll("a[data-vendor-subnav]");
+        for (var i = 0; i < links.length; i++) {
+            var link = links[i];
+            var on = staffNavHrefFile(link.getAttribute("href")) === cur;
+            link.classList.toggle("is-current", on);
+            if (on) link.setAttribute("aria-current", "page");
+            else link.removeAttribute("aria-current");
+        }
+    }
+
+    function syncStaffNavVendorSubnav(nav) {
+        if (!nav) return;
+        var items = collectVendorSubnavFromBody();
+        if (!items.length) items = getDefaultVendorSubnavItems();
+        clearVendorSubnavLinks(nav);
+        if (!items.length) return;
+
+        var cur = currentPageFile();
+        for (var i = 0; i < items.length; i++) {
+            var it = items[i];
+            if (!vendorSubnavItemAllowed(it.href)) continue;
+            var file = staffNavHrefFile(it.href);
+            if (!file) continue;
+            if (nav.querySelector('a[data-vendor-subnav][href*="' + file + '"]')) continue;
+
+            var a = document.createElement("a");
+            a.href = it.href;
+            a.className = "header-nav-link is-vendor-subnav";
+            a.textContent = it.label;
+            a.setAttribute("data-staff-nav-injected", "vendor-manage");
+            a.setAttribute("data-vendor-subnav", "1");
+            if (file === cur) {
+                a.classList.add("is-current");
+                a.setAttribute("aria-current", "page");
+            }
+            a.addEventListener("click", function () {
+                staffNavSet("vendor-manage");
+            });
+            nav.appendChild(a);
+        }
+        syncVendorSubnavCurrent(nav, items);
+    }
+
+    function applyStaffNavVendorTabs(nav) {
+        if (!nav || !canManageRegisters()) return;
+        document.body.classList.toggle("nav-admin-menus", false);
+
+        var plain = nav.querySelectorAll(
+            ':scope > a.header-nav-link:not([data-staff-nav-injected]), :scope > .nav-dropdown'
+        );
+        for (var h = 0; h < plain.length; h++) {
+            plain[h].remove();
+        }
+
+        nav.classList.remove("site-header-nav--hmh", "site-header-nav--product", "site-header-nav--order");
+        nav.classList.add("site-header-nav--vendor");
+        syncStaffNavVendorSubnav(nav);
+    }
+
+    function refreshVendorHeader() {
+        if (!isStaffRole(getRole())) return;
+        var nav = document.querySelector(".site-header-nav");
+        if (!nav) return;
+        if (resolveStaffNavMode() !== "vendor-manage") return;
+        applyStaffNavVendorTabs(nav);
+    }
+
     function cardNavVisible(el) {
         if (!el) return false;
         if (el.hidden) return false;
@@ -1538,9 +1695,10 @@
                     .toLowerCase();
                 if (hash === "support") return "home";
                 if (hash === "vendor") return "home";
-                if (hash === "home" || hash === "product") {
+                if (hash === "home") {
                     return hash;
                 }
+                if (hash === "product") return "home";
             } catch (e) {}
             return "home";
         }
@@ -1642,9 +1800,7 @@
         if (
             key === "support-news" ||
             key === "support-qna-admin" ||
-            key === "support-inquiry" ||
-            key === "product-register" ||
-            key === "product-list"
+            key === "support-inquiry"
         ) {
             return true;
         }
@@ -1689,6 +1845,7 @@
                 "staff-nav-manage-home",
                 "staff-nav-order",
                 "staff-nav-product",
+                "staff-nav-vendor-manage",
                 "staff-nav-work"
             );
             return;
@@ -1698,6 +1855,7 @@
             forceMode === "public" ||
             forceMode === "manage-home" ||
             forceMode === "product" ||
+            forceMode === "vendor-manage" ||
             forceMode === "order" ||
             forceMode === "work"
                 ? forceMode
@@ -1708,6 +1866,7 @@
             "staff-nav-manage-home",
             "staff-nav-order",
             "staff-nav-product",
+            "staff-nav-vendor-manage",
             "staff-nav-work"
         );
         document.body.classList.add("staff-nav-" + mode);
@@ -1735,6 +1894,8 @@
             applyStaffNavManageHomeTabs(nav);
         } else if (mode === "product") {
             applyStaffNavProductTabs(nav);
+        } else if (mode === "vendor-manage") {
+            applyStaffNavVendorTabs(nav);
         } else if (mode === "order") {
             applyStaffNavOrderTabs(nav);
         } else if (mode === "work" && isSupervisorStaff()) {
@@ -2632,6 +2793,7 @@
         if (file === WORK_HUB_PAGE || file === HOMEPAGE_MANAGE_HUB_PAGE) return true;
         if (STAFF_NAV_ORDER_PAGES[file]) return true;
         if (STAFF_NAV_PRODUCT_PAGES[file]) return true;
+        if (STAFF_NAV_VENDOR_PAGES[file]) return true;
         if (STAFF_NAV_WORK_PAGES[file]) return true;
         if (!STAFF_NAV_MANAGE_HOME_PAGES[file]) return false;
         if (file === "support-inquiry.html") {
@@ -2815,6 +2977,7 @@
         refreshManageHomeHeader: refreshManageHomeHeader,
         refreshOrderHeader: refreshOrderHeader,
         refreshProductHeader: refreshProductHeader,
+        refreshVendorHeader: refreshVendorHeader,
         saveManageHomeSubnav: saveManageHomeSubnav,
         syncHmhManageHomeTabCurrent: syncHmhManageHomeTabCurrent,
         staffNavClearInjected: staffNavClearInjected,

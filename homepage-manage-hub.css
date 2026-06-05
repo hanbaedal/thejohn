@@ -1,5 +1,26 @@
+.hmh-page > .shub-subnav,
+.hmh-page > h1,
+.hmh-page > .shub-status {
+    width: 100%;
+    max-width: 36rem;
+    margin-left: auto;
+    margin-right: auto;
+    padding-left: max(0.75rem, env(safe-area-inset-left, 0));
+    padding-right: max(0.75rem, env(safe-area-inset-right, 0));
+    box-sizing: border-box;
+    text-align: center;
+}
 .hmh-page .hmh-panels {
     margin-top: 0.5rem;
+    width: 100%;
+    max-width: 36rem;
+    margin-left: auto;
+    margin-right: auto;
+    padding: 0 max(0.75rem, env(safe-area-inset-left, 0)) 0.4rem max(0.75rem, env(safe-area-inset-right, 0));
+    box-sizing: border-box;
+}
+.hmh-panel {
+    text-align: center;
 }
 .hmh-panel-title {
     margin: 0 0 0.35rem;
@@ -12,27 +33,34 @@
     color: #3d556d;
 }
 .hmh-cards {
-    display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 0.95rem;
+    display: flex;
+    flex-direction: column;
+    gap: clamp(0.42rem, 1.5vh, 0.62rem);
+    width: 100%;
+    margin: 0 auto;
+    align-items: stretch;
 }
 .hmh-card[hidden] {
     display: none !important;
 }
+.hmh-page .hmh-card.company-division-card {
+    width: 100%;
+    max-width: 100%;
+    text-align: left;
+    padding: clamp(0.45rem, 1.8vh, 0.58rem) 0.95rem;
+    margin-bottom: 0;
+    box-sizing: border-box;
+}
 .hmh-card h3 {
-    margin: 0 0 0.35rem;
-    font-size: 1.05rem;
+    margin: 0 0 0.22rem;
+    font-size: 0.98rem;
+    line-height: 1.28;
 }
 .hmh-card p {
     margin: 0;
-    font-size: 0.85rem;
+    font-size: 0.82rem;
     color: #3d5166;
-    line-height: 1.45;
-}
-@media (max-width: 900px) {
-    .hmh-cards {
-        grid-template-columns: 1fr;
-    }
+    line-height: 1.52;
 }
 /* 홈페이지 관리 — 헤더 본문 메뉴 한 줄·가로 스크롤 */
 body.staff-nav-manage-home .site-header-menu-scroll {

@@ -73,3 +73,64 @@ body.staff-nav-order .ol-picker-panel,
         grid-template-columns: 1fr;
     }
 }
+
+/* 주문서 관리 허브 — 홈페이지 관리와 동일: 한 줄·가운데 정렬 */
+.page-main.omh-hub-page > .shub-subnav,
+.page-main.omh-hub-page > h1,
+.page-main.omh-hub-page > .shub-status,
+body.staff-nav-order .omh-hub-page > .shub-subnav,
+body.staff-nav-order .omh-hub-page > h1,
+body.staff-nav-order .omh-hub-page > .shub-status {
+    width: 100%;
+    max-width: 36rem;
+    margin-left: auto;
+    margin-right: auto;
+    padding-left: max(0.75rem, env(safe-area-inset-left, 0));
+    padding-right: max(0.75rem, env(safe-area-inset-right, 0));
+    box-sizing: border-box;
+    text-align: center;
+}
+.page-main.omh-hub-page .omh-hub-rows,
+body.staff-nav-order .omh-hub-page .omh-hub-rows {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    width: 100%;
+    max-width: 36rem;
+    margin-left: auto;
+    margin-right: auto;
+    padding: 0 max(0.75rem, env(safe-area-inset-left, 0)) 0.4rem max(0.75rem, env(safe-area-inset-right, 0));
+    box-sizing: border-box;
+}
+.page-main.omh-hub-page .omh-group,
+body.staff-nav-order .omh-hub-page .omh-group {
+    display: flex;
+    flex-direction: column;
+    gap: clamp(0.42rem, 1.5vh, 0.62rem);
+    width: 100%;
+}
+.page-main.omh-hub-page .omh-group + .omh-group,
+body.staff-nav-order .omh-hub-page .omh-group + .omh-group {
+    margin-top: 1.35rem;
+}
+.page-main.omh-hub-page .omh-group .company-division-card,
+body.staff-nav-order .omh-hub-page .omh-group .company-division-card {
+    width: 100%;
+    max-width: 100%;
+    text-align: left;
+    padding: clamp(0.45rem, 1.8vh, 0.58rem) 0.95rem;
+    margin-bottom: 0;
+    box-sizing: border-box;
+}
+.page-main.omh-hub-page .omh-group .company-division-card h2,
+body.staff-nav-order .omh-hub-page .omh-group .company-division-card h2 {
+    margin: 0 0 0.22rem;
+    font-size: 0.98rem;
+    line-height: 1.28;
+}
+.page-main.omh-hub-page .omh-group .company-division-card p,
+body.staff-nav-order .omh-hub-page .omh-group .company-division-card p {
+    margin: 0;
+    font-size: 0.82rem;
+    line-height: 1.52;
+}
