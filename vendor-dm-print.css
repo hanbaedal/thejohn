@@ -271,26 +271,26 @@
 .vdm-label-cell--large {
     width: 100mm;
     height: 40mm;
-    /* 40mm 칸 — 제목+주소+기관+성명+우편번호(4줄) 기준 */
     --vdm-h: 40mm;
-    --vdm-font-kind: 2.8mm;
-    --vdm-font-road: 2.65mm;
-    --vdm-font-body: 2.75mm;
-    --vdm-font-emph: 3mm;
-    --vdm-font-zip: 3mm;
-    --vdm-lh: 1.22;
+    --vdm-font-kind: 3mm;
+    --vdm-font-road: 2.85mm;
+    --vdm-font-body: 2.85mm;
+    --vdm-font-emph: 3.15mm;
+    --vdm-font-zip: 3.15mm;
+    --vdm-lh: 1.2;
+    --vdm-blank-line: 3mm;
 }
 .vdm-label-cell--small {
     width: 100mm;
     height: 30mm;
-    /* 30mm 칸 — 대봉투 대비 75% (30÷40) */
     --vdm-h: 30mm;
-    --vdm-font-kind: 2.1mm;
-    --vdm-font-road: 2mm;
-    --vdm-font-body: 2.05mm;
-    --vdm-font-emph: 2.25mm;
-    --vdm-font-zip: 2.25mm;
+    --vdm-font-kind: 2.25mm;
+    --vdm-font-road: 2.15mm;
+    --vdm-font-body: 2.15mm;
+    --vdm-font-emph: 2.4mm;
+    --vdm-font-zip: 2.4mm;
     --vdm-lh: 1.18;
+    --vdm-blank-line: 2.25mm;
 }
 .vdm-label-cell--empty {
     border-style: dashed;
@@ -313,7 +313,7 @@
     padding: 1mm 1.5mm;
 }
 .vdm-label__kind {
-    margin: 0 0 0.4mm;
+    margin: 0 0 var(--vdm-blank-line);
     font-weight: 700;
     color: #333;
     line-height: 1.2;
@@ -341,6 +341,7 @@
 .vdm-label__line--addr {
     font-size: var(--vdm-font-road);
     line-height: 1.18;
+    margin-bottom: var(--vdm-blank-line);
     display: -webkit-box;
     -webkit-box-orient: vertical;
     -webkit-line-clamp: 2;

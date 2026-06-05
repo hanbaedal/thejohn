@@ -357,6 +357,13 @@
         return pages;
     }
 
+    function formatNameWithNim(name) {
+        var n = String(name || "").trim();
+        if (!n) return "";
+        if (n.slice(-1) === "님") return n;
+        return n + "님";
+    }
+
     function buildPrintJobs() {
         var jobs = [];
         appliedSelections.forEach(function (row) {
@@ -377,7 +384,7 @@
                     addrDetail: row.addrDetail,
                     org: row.name,
                     dept: "",
-                    nameTitle: row.mgrName + " 담당자님"
+                    nameTitle: formatNameWithNim(row.mgrName)
                 });
             }
         });
