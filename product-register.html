@@ -13,6 +13,8 @@
     <link rel="stylesheet" href="common.css">
     <link rel="stylesheet" href="admin-manage.css">
     <link rel="stylesheet" href="product-photo-gallery.css">
+    <link rel="stylesheet" href="vendor-form-page.css">
+    <link rel="stylesheet" href="product-form-page.css">
     <style>
         .pr-form { max-width: 36rem; margin: 0 auto 2rem; padding: 1.25rem 1.1rem; background: #fff; border: 1px solid #e0e6ed; border-radius: 10px; box-shadow: 0 2px 12px rgba(10, 77, 156, 0.06); }
         .pr-field { margin-bottom: 1rem; }
@@ -102,86 +104,125 @@
         <h1>상품 내용 등록</h1>
         <p id="pr-registrar-hint" class="pr-hint" hidden></p>
         <p id="pr-status" class="pr-status" role="status" aria-live="polite"></p>
-        <form id="pr-form" class="pr-form" novalidate>
-            <div class="am-dept-picker">
-                <span class="am-dept-caption" id="pr-dept-label">사업부문</span>
-                <input type="hidden" id="pr-pd-dept" name="pd_dept" value="">
-                <div id="pr-dept-picker" class="am-dept-picker-btns" role="group" aria-labelledby="pr-dept-label"></div>
-            </div>
-            <div class="pr-field-row pr-row--name">
-                <div class="pr-field-code">
-                    <label for="pr-pd-code">상품 코드</label>
-                    <input type="text" id="pr-pd-code" name="pd_code" maxlength="16" autocomplete="off" placeholder="16자 이내" inputmode="text" aria-describedby="pr-code-dup-hint">
-                    <p id="pr-code-dup-hint" class="pr-name-dup-hint pr-name-dup-hint--idle" hidden></p>
-                </div>
-                <div class="pr-field-name-wrap">
-                    <label for="pr-pd-name">상품 명칭</label>
-                    <input type="text" id="pr-pd-name" name="pd_name" required maxlength="200" autocomplete="off" placeholder="상품 명칭" aria-describedby="pr-name-dup-hint">
-                    <p id="pr-name-dup-hint" class="pr-name-dup-hint pr-name-dup-hint--idle" hidden></p>
+        <form id="pr-form" class="pr-form pr-form-page" novalidate>
+            <div class="pr-section-block pr-section-block--first">
+                <div class="vr-dept-row pr-dept-row">
+                    <div class="vr-dept-line">
+                        <span class="vr-dept-caption" id="pr-dept-label">사업부문</span>
+                        <p class="vr-dept-summary vr-dept-summary--empty" id="pr-dept-summary" aria-live="polite"></p>
+                        <button type="button" class="btn btn-secondary vr-dept-open-btn" id="pr-dept-open" aria-labelledby="pr-dept-label">선택</button>
+                    </div>
+                    <input type="hidden" id="pr-pd-dept" name="pd_dept" value="">
                 </div>
             </div>
-            <div class="pr-price-group">
-                <span class="pr-price-caption">상품가격 (원)</span>
-                <div class="pr-field-row pr-row--4">
-                    <div class="pr-field-half">
-                        <label for="pr-pd-price1">가격 1</label>
-                        <input type="number" id="pr-pd-price1" name="pd_price1" min="0" step="1" inputmode="numeric" placeholder="0">
+            <div class="pr-divider" role="separator" aria-hidden="true"></div>
+
+            <div class="pr-section-block">
+                <p class="pr-section-title">상품필수정보</p>
+                <div class="pr-field-row pr-row--name">
+                    <div class="pr-field-code">
+                        <label for="pr-pd-code">상품 코드</label>
+                        <input type="text" id="pr-pd-code" name="pd_code" maxlength="16" autocomplete="off" placeholder="16자 이내" inputmode="text" aria-describedby="pr-code-dup-hint">
+                        <p id="pr-code-dup-hint" class="pr-name-dup-hint pr-name-dup-hint--idle" hidden></p>
                     </div>
-                    <div class="pr-field-half">
-                        <label for="pr-pd-price2">가격 2</label>
-                        <input type="number" id="pr-pd-price2" name="pd_price2" min="0" step="1" inputmode="numeric" placeholder="0">
+                    <div class="pr-field-name-wrap">
+                        <label for="pr-pd-name">상품 명칭</label>
+                        <input type="text" id="pr-pd-name" name="pd_name" required maxlength="200" autocomplete="off" placeholder="상품 명칭" aria-describedby="pr-name-dup-hint">
+                        <p id="pr-name-dup-hint" class="pr-name-dup-hint pr-name-dup-hint--idle" hidden></p>
                     </div>
-                    <div class="pr-field-half">
-                        <label for="pr-pd-price3">가격 3</label>
-                        <input type="number" id="pr-pd-price3" name="pd_price3" min="0" step="1" inputmode="numeric" placeholder="0">
+                </div>
+                <div class="pr-price-group">
+                    <span class="pr-price-caption">상품가격 (원)</span>
+                    <div class="pr-field-row pr-row--4">
+                        <div class="pr-field-half">
+                            <label for="pr-pd-price1">가격 1</label>
+                            <input type="number" id="pr-pd-price1" name="pd_price1" min="0" step="1" inputmode="numeric" placeholder="0">
+                        </div>
+                        <div class="pr-field-half">
+                            <label for="pr-pd-price2">가격 2</label>
+                            <input type="number" id="pr-pd-price2" name="pd_price2" min="0" step="1" inputmode="numeric" placeholder="0">
+                        </div>
+                        <div class="pr-field-half">
+                            <label for="pr-pd-price3">가격 3</label>
+                            <input type="number" id="pr-pd-price3" name="pd_price3" min="0" step="1" inputmode="numeric" placeholder="0">
+                        </div>
+                        <div class="pr-field-half">
+                            <label for="pr-pd-price4">구매가</label>
+                            <input type="number" id="pr-pd-price4" name="pd_price4" min="0" step="1" inputmode="numeric" placeholder="0">
+                        </div>
                     </div>
-                    <div class="pr-field-half">
-                        <label for="pr-pd-price4">구매가</label>
-                        <input type="number" id="pr-pd-price4" name="pd_price4" min="0" step="1" inputmode="numeric" placeholder="0">
+                </div>
+                <div class="pr-field pr-size-row">
+                    <div class="pr-field-size-wrap">
+                        <label for="pr-pd-size">상품 규격</label>
+                        <input type="text" id="pr-pd-size" name="pd_size" maxlength="120" autocomplete="off" placeholder="예: 500g, 1박스 20입">
                     </div>
+                    <button type="button" class="btn btn-secondary pr-btn-pinfo" id="pr-btn-product-info">상품 필수 정보</button>
                 </div>
             </div>
-            <div class="pr-field pr-size-row">
-                <div class="pr-field-size-wrap">
-                    <label for="pr-pd-size">상품 규격</label>
-                    <input type="text" id="pr-pd-size" name="pd_size" maxlength="120" autocomplete="off" placeholder="예: 500g, 1박스 20입">
+            <div class="pr-divider" role="separator" aria-hidden="true"></div>
+
+            <div class="pr-section-block pr-photo-field">
+                <div class="pr-photo-toolbar">
+                    <span class="pr-photo-label" id="pr-photo-label">상품 사진</span>
+                    <input type="file" id="pr-pd-image-gallery" class="pr-photo-file-input" name="pd_image_gallery" accept="image/*,.heic,.heif">
+                    <input type="file" id="pr-pd-image-camera" class="pr-photo-file-input" name="pd_image_camera" accept="image/*" capture="environment">
+                    <div class="pr-photo-icon-actions" role="group" aria-labelledby="pr-photo-label">
+                        <button type="button" class="pr-photo-icon-btn" id="pr-photo-gallery-btn" aria-label="앨범·파일에서 선택" title="앨범·파일에서 선택">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/></svg>
+                        </button>
+                        <button type="button" class="pr-photo-icon-btn pr-photo-icon-btn--camera" id="pr-photo-camera-btn" aria-label="카메라로 촬영" title="카메라로 촬영">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+                        </button>
+                    </div>
+                    <p id="pr-photo-count" class="pr-photo-count pr-photo-count--inline" aria-live="polite">0 / 5장</p>
                 </div>
-                <button type="button" class="btn btn-secondary pr-btn-pinfo" id="pr-btn-product-info">상품 필수 정보</button>
-            </div>
-            <div class="pr-field pr-photo-field">
-                <span class="pr-photo-label" id="pr-photo-label">상품 사진</span>
-                <input type="file" id="pr-pd-image-gallery" class="pr-photo-file-input" name="pd_image_gallery" accept="image/*,.heic,.heif">
-                <input type="file" id="pr-pd-image-camera" class="pr-photo-file-input" name="pd_image_camera" accept="image/*" capture="environment">
-                <div class="pr-photo-actions" role="group" aria-labelledby="pr-photo-label">
-                    <button type="button" class="pr-photo-btn" id="pr-photo-gallery-btn">앨범·파일에서 선택</button>
-                    <button type="button" class="pr-photo-btn pr-photo-btn--camera" id="pr-photo-camera-btn">카메라로 촬영</button>
-                </div>
-                <p id="pr-photo-count" class="pr-photo-count" aria-live="polite">0 / 5장</p>
                 <div id="pr-photo-gallery" class="pr-photo-gallery" aria-label="등록한 상품 사진"></div>
-                <p id="pr-photo-hint" class="pr-hint">앨범·카메라로 추가하면 1:1 정사각형·1MB 이하로 자동 맞춥니다. (최대 5장)</p>
+                <p id="pr-photo-hint" class="pr-hint" hidden>앨범·카메라로 추가하면 1:1 정사각형·1MB 이하로 자동 맞춥니다. (최대 5장)</p>
             </div>
-            <div class="pr-field">
+            <div class="pr-divider" role="separator" aria-hidden="true"></div>
+
+            <div class="pr-section-block pr-explain-field">
                 <label for="pr-pd-explain">상품 설명</label>
-                <textarea id="pr-pd-explain" name="pd_explain" rows="5" required maxlength="8000" placeholder="상품 설명"></textarea>
-            </div>
-            <div class="pr-field">
-                <label for="pr-per-name">담당자 이름</label>
-                <input type="text" id="pr-per-name" name="per_name" maxlength="80" autocomplete="name" placeholder="담당자 이름">
-            </div>
-            <div class="pr-field pr-field-row">
-                <div class="pr-field-half">
-                    <label for="pr-per-number">담당자 전화</label>
-                    <input type="tel" id="pr-per-number" name="per-number" maxlength="40" autocomplete="tel" placeholder="010-0000-0000">
-                </div>
-                <div class="pr-field-half">
-                    <label for="pr-per-email">담당자 이메일</label>
-                    <input type="email" id="pr-per-email" name="per-email" maxlength="120" autocomplete="email" placeholder="email@example.com">
+                <div class="pr-explain-box">
+                    <textarea id="pr-pd-explain" name="pd_explain" rows="4" required maxlength="256" placeholder="한글 기준 256자 이내"></textarea>
                 </div>
             </div>
+            <div class="pr-divider" role="separator" aria-hidden="true"></div>
+
+            <div class="pr-section-block pr-section-block--last">
+                <div class="pr-row pr-row--contact">
+                    <div class="pr-contact-slot">
+                        <label for="pr-per-name">담당자 이름</label>
+                        <input type="text" id="pr-per-name" name="per_name" maxlength="80" autocomplete="name" placeholder="담당자 이름">
+                    </div>
+                    <div class="pr-contact-slot">
+                        <label for="pr-per-number">담당자 전화</label>
+                        <input type="tel" id="pr-per-number" name="per-number" maxlength="40" autocomplete="tel" placeholder="010-0000-0000">
+                    </div>
+                    <div class="pr-contact-slot">
+                        <label for="pr-per-email">담당자 이메일</label>
+                        <input type="email" id="pr-per-email" name="per-email" maxlength="120" autocomplete="email" placeholder="email@example.com">
+                    </div>
+                </div>
+            </div>
+
             <div class="pr-actions">
                 <button type="submit" class="btn btn-primary" id="pr-submit">저장</button>
             </div>
         </form>
+
+        <div id="pr-dept-modal" class="vr-dept-modal" hidden role="dialog" aria-modal="true" aria-labelledby="pr-dept-modal-title">
+            <div class="vr-dept-modal__panel">
+                <h2 id="pr-dept-modal-title" class="vr-dept-modal__title">사업부문 선택</h2>
+                <p class="vr-dept-modal__hint">6개 부문 중 한 개 이상 선택할 수 있습니다.</p>
+                <div id="pr-dept-modal-options" class="vr-dept-modal__options"></div>
+                <div class="vr-dept-modal__actions">
+                    <button type="button" class="btn btn-primary" id="pr-dept-modal-ok">적용</button>
+                    <button type="button" class="vr-dept-modal__close" id="pr-dept-modal-close">취소</button>
+                </div>
+            </div>
+        </div>
     </main>
         <footer class="site-footer">
         <div class="site-footer-inner">

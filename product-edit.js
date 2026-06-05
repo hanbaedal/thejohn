@@ -22,7 +22,6 @@
     var form = document.getElementById("pe-form");
     var editIdInput = document.getElementById("pe-edit-id");
     var deptHidden = document.getElementById("pe-pd-dept");
-    var deptPickerRoot = document.getElementById("pe-dept-picker");
     var codeInput = document.getElementById("pe-pd-code");
     var nameInput = document.getElementById("pe-pd-name");
     var photoGallery = null;
@@ -118,10 +117,15 @@
         });
     }
 
-    if (PF && deptPickerRoot && deptHidden) {
-        deptPicker = PF.initDeptPicker({
+    if (PF && PF.initProductDeptModalPicker && deptHidden) {
+        deptPicker = PF.initProductDeptModalPicker({
             catalog: catalog,
-            root: deptPickerRoot,
+            openBtn: document.getElementById("pe-dept-open"),
+            summaryEl: document.getElementById("pe-dept-summary"),
+            modal: document.getElementById("pe-dept-modal"),
+            optionsRoot: document.getElementById("pe-dept-modal-options"),
+            okBtn: document.getElementById("pe-dept-modal-ok"),
+            closeBtn: document.getElementById("pe-dept-modal-close"),
             hiddenInput: deptHidden,
             onSelect: function () {
                 if (nameDupCheck) nameDupCheck.checkNow();

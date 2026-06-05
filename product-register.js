@@ -7,7 +7,6 @@
     var form = document.getElementById("pr-form");
     var statusEl = document.getElementById("pr-status");
     var deptHidden = document.getElementById("pr-pd-dept");
-    var deptPickerRoot = document.getElementById("pr-dept-picker");
     var codeInput = document.getElementById("pr-pd-code");
     var nameInput = document.getElementById("pr-pd-name");
     var photoGallery = null;
@@ -36,10 +35,15 @@
         return photoGallery ? photoGallery.getImages() : [];
     }
 
-    if (PF && deptPickerRoot && deptHidden) {
-        deptPicker = PF.initDeptPicker({
+    if (PF && PF.initProductDeptModalPicker && deptHidden) {
+        deptPicker = PF.initProductDeptModalPicker({
             catalog: catalog,
-            root: deptPickerRoot,
+            openBtn: document.getElementById("pr-dept-open"),
+            summaryEl: document.getElementById("pr-dept-summary"),
+            modal: document.getElementById("pr-dept-modal"),
+            optionsRoot: document.getElementById("pr-dept-modal-options"),
+            okBtn: document.getElementById("pr-dept-modal-ok"),
+            closeBtn: document.getElementById("pr-dept-modal-close"),
             hiddenInput: deptHidden,
             onSelect: function () {
                 if (nameDupCheck) nameDupCheck.checkNow();

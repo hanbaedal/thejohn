@@ -563,6 +563,156 @@
         };
     }
 
+    /** 사업부문 모달 복수 선택 (업체등록 방식). 상품은 저장 시 첫 번째 부문을 pd_dept 로 사용 */
+    function initProductDeptModalPicker(options) {
+        var catalog = options.catalog || global.THEJHON_PRODUCT_CATALOG;
+        var openBtn = options.openBtn;
+        var summaryEl = options.summaryEl;
+        var modal = options.modal;
+        var optionsRoot = options.optionsRoot;
+        var okBtn = options.okBtn;
+        var closeBtn = options.closeBtn;
+        var hiddenInput = options.hiddenInput;
+        var onSelect = options.onSelect;
+
+        if (!openBtn || !summaryEl || !modal || !optionsRoot || !catalog) return null;
+
+        var selected = {};
+        var pending = {};
+
+        function deptDisplayLabel(deptId) {
+            var d = catalog.getDept ? catalog.getDept(deptId) : null;
+            return d ? (d.icon ? d.icon + " " : "") + d.label : deptId;
+        }
+
+        function getValues() {
+            return Object.keys(selected).filter(function (k) {
+                return selected[k];
+            });
+        }
+
+        function primaryDept() {
+            var ids = getValues();
+            if (!ids.length) return "";
+            var i;
+            if (catalog.DEPARTMENTS) {
+                for (i = 0; i < catalog.DEPARTMENTS.length; i++) {
+                    var id = catalog.DEPARTMENTS[i].id;
+                    if (ids.indexOf(id) >= 0) return catalog.normalizeDept(id);
+                }
+            }
+            return catalog.normalizeDept(ids[0]);
+        }
+
+        function syncHidden() {
+            if (hiddenInput) hiddenInput.value = primaryDept();
+            if (typeof onSelect === "function") onSelect(primaryDept());
+        }
+
+        function renderSummary() {
+            var ids = getValues();
+            if (!ids.length) {
+                summaryEl.textContent = "";
+                summaryEl.classList.add("vr-dept-summary--empty");
+                if (hiddenInput) hiddenInput.value = "";
+                return;
+            }
+            summaryEl.classList.remove("vr-dept-summary--empty");
+            summaryEl.textContent = ids.map(deptDisplayLabel).join(", ");
+            syncHidden();
+        }
+
+        function renderModalOptions(fromMap) {
+            optionsRoot.innerHTML = "";
+            (catalog.DEPARTMENTS || []).forEach(function (d) {
+                var btn = document.createElement("button");
+                btn.type = "button";
+                btn.className = "vr-dept-modal-opt";
+                btn.setAttribute("data-dept", d.id);
+                btn.setAttribute("aria-pressed", fromMap[d.id] ? "true" : "false");
+                btn.textContent = (d.icon ? d.icon + " " : "") + d.label;
+                if (fromMap[d.id]) btn.classList.add("is-selected");
+                btn.addEventListener("click", function () {
+                    if (fromMap[d.id]) delete fromMap[d.id];
+                    else fromMap[d.id] = true;
+                    var on = !!fromMap[d.id];
+                    btn.classList.toggle("is-selected", on);
+                    btn.setAttribute("aria-pressed", on ? "true" : "false");
+                });
+                optionsRoot.appendChild(btn);
+            });
+        }
+
+        function openModal() {
+            pending = {};
+            Object.keys(selected).forEach(function (k) {
+                if (selected[k]) pending[k] = true;
+            });
+            renderModalOptions(pending);
+            modal.hidden = false;
+            openBtn.setAttribute("aria-expanded", "true");
+        }
+
+        function closeModal() {
+            modal.hidden = true;
+            openBtn.setAttribute("aria-expanded", "false");
+        }
+
+        function applyModal() {
+            if (!Object.keys(pending).some(function (k) {
+                return pending[k];
+            })) {
+                return;
+            }
+            selected = {};
+            Object.keys(pending).forEach(function (k) {
+                if (pending[k]) selected[k] = true;
+            });
+            closeModal();
+            renderSummary();
+        }
+
+        openBtn.setAttribute("aria-haspopup", "dialog");
+        openBtn.setAttribute("aria-expanded", "false");
+        openBtn.addEventListener("click", openModal);
+        summaryEl.setAttribute("role", "button");
+        summaryEl.setAttribute("tabindex", "0");
+        summaryEl.addEventListener("click", openModal);
+        summaryEl.addEventListener("keydown", function (e) {
+            if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                openModal();
+            }
+        });
+        if (okBtn) okBtn.addEventListener("click", applyModal);
+        if (closeBtn) closeBtn.addEventListener("click", closeModal);
+        modal.addEventListener("click", function (e) {
+            if (e.target === modal) closeModal();
+        });
+        document.addEventListener("keydown", function (e) {
+            if (e.key === "Escape" && modal && !modal.hidden) closeModal();
+        });
+
+        renderSummary();
+
+        return {
+            getValues: getValues,
+            getValue: primaryDept,
+            setValue: function (deptId) {
+                selected = {};
+                var norm = catalog.normalizeDept(deptId);
+                if (norm) selected[norm] = true;
+                renderSummary();
+            },
+            clear: function () {
+                selected = {};
+                renderSummary();
+            },
+            open: openModal,
+            close: closeModal
+        };
+    }
+
     function validateProductFields(data, options) {
         options = options || {};
         if (data.pd_code && String(data.pd_code).trim().length > 16) {
@@ -570,6 +720,9 @@
         }
         if (!data.pd_name) return "상품 명칭을 입력해 주세요.";
         if (!data.pd_explain) return "상품 설명을 입력해 주세요.";
+        if (String(data.pd_explain).length > 256) {
+            return "상품 설명은 한글 기준 256자 이내로 입력해 주세요.";
+        }
         if (!data.pd_dept) return "사업부문을 선택해 주세요.";
         if (options.requireImage && !hasProductImages(data)) {
             return "신규 등록 시 상품 사진을 1장 이상 선택해 주세요.";
@@ -903,6 +1056,7 @@
         hasProductImages: hasProductImages,
         deptLabel: deptLabel,
         initDeptPicker: initDeptPicker,
+        initProductDeptModalPicker: initProductDeptModalPicker,
         initProductNameDuplicateCheck: initProductNameDuplicateCheck,
         initProductCodeDuplicateCheck: initProductCodeDuplicateCheck,
         beforeProductSaveDuplicateCheck: beforeProductSaveDuplicateCheck,
