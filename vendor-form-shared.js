@@ -445,7 +445,7 @@
         function renderSummary() {
             var ids = getValues();
             if (!ids.length) {
-                summaryEl.textContent = "선택 없음";
+                summaryEl.textContent = "";
                 summaryEl.classList.add("vr-dept-summary--empty");
                 return;
             }
