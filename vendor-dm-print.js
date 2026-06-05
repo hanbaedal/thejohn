@@ -6,28 +6,28 @@
 
     var LABEL_SPECS = {
         large: {
-            w: 119.3,
-            h: 42.8,
+            w: 100,
+            h: 40,
             cols: 2,
-            rows: 3,
-            perPage: 6,
+            rows: 6,
+            perPage: 12,
             pageClass: "vdm-label-page--large",
             gridClass: "vdm-label-grid--large",
             pairClass: "vdm-label-pair--large",
-            pageOrient: "landscape",
-            name: "대봉투 라벨 (119.3×42.8mm · A4 가로 2열×3행 6칸)"
+            pageOrient: "portrait",
+            name: "대봉투 라벨 (100×40mm · A4 세로 2열×6행 12칸)"
         },
         small: {
-            w: 99.1,
-            h: 33.9,
+            w: 100,
+            h: 30,
             cols: 2,
-            rows: 8,
-            perPage: 16,
+            rows: 9,
+            perPage: 18,
             pageClass: "vdm-label-page--small",
             gridClass: "vdm-label-grid--small",
             pairClass: "vdm-label-pair--small",
             pageOrient: "portrait",
-            name: "소봉투 라벨 (99.1×33.9mm · A4 16칸)"
+            name: "소봉투 라벨 (100×30mm · A4 세로 2열×9행 18칸)"
         }
     };
 

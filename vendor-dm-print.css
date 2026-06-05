@@ -218,7 +218,7 @@
 }
 
 /*
- * A4 라벨 — 대봉투 119.3×42.8 (가로 2×3) / 소봉투 99.1×33.9 (세로 2×8)
+ * A4 세로 — 대봉투 100×40 (2×6=12칸) / 소봉투 100×30 (2×9=18칸)
  * 칸 1개 = 왼쪽 발신 · 오른쪽 수신 (글자 축소 없음, pt 고정)
  */
 .vdm-label-page {
@@ -236,25 +236,25 @@
     page-break-after: auto;
 }
 .vdm-label-page--large {
-    width: 297mm;
-    height: 210mm;
-    padding: 40.8mm 29.2mm;
+    width: 210mm;
+    height: 297mm;
+    padding: 28.5mm 5mm;
 }
 .vdm-label-grid--large {
     display: grid;
-    grid-template-columns: 119.3mm 119.3mm;
-    grid-template-rows: repeat(3, 42.8mm);
+    grid-template-columns: 100mm 100mm;
+    grid-template-rows: repeat(6, 40mm);
     gap: 0;
 }
 .vdm-label-page--small {
     width: 210mm;
     height: 297mm;
-    padding: 12.9mm 5.9mm;
+    padding: 13.5mm 5mm;
 }
 .vdm-label-grid--small {
     display: grid;
-    grid-template-columns: 99.1mm 99.1mm;
-    grid-template-rows: repeat(8, 33.9mm);
+    grid-template-columns: 100mm 100mm;
+    grid-template-rows: repeat(9, 30mm);
     gap: 0;
 }
 .vdm-label-pair {
@@ -268,12 +268,12 @@
     background: #fff;
 }
 .vdm-label-pair--large {
-    width: 119.3mm;
-    height: 42.8mm;
+    width: 100mm;
+    height: 40mm;
 }
 .vdm-label-pair--small {
-    width: 99.1mm;
-    height: 33.9mm;
+    width: 100mm;
+    height: 30mm;
 }
 .vdm-label-pair--empty {
     border-style: dashed;
