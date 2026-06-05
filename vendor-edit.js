@@ -35,7 +35,7 @@
     var loginIdInput = document.getElementById("vr-login-id");
     var passwordInput = document.getElementById("vr-login-pw");
     var password2Input = document.getElementById("vr-login-pw2");
-    var deptCheckboxesRoot = document.getElementById("vr-dept-checkboxes");
+    var deptPicker = null;
     var companyInput = document.getElementById("vr-company");
     var ceoInput = document.getElementById("vr-ceo");
     var ceoTelInput = document.getElementById("vr-ceo-tel");
@@ -93,15 +93,13 @@
     }
 
     function syncNewVendorDeptCheckbox(depts) {
-        if (!deptCheckboxesRoot) return;
-        var el = deptCheckboxesRoot.querySelector("[data-vr-dept-new-only]");
-        if (!el) return;
+        if (!deptPicker) return;
         var show =
             isFromNewVendorFlow() ||
             (depts || []).some(function (id) {
                 return String(id || "").trim().toLowerCase() === "uncontracted";
             });
-        el.hidden = !show;
+        deptPicker.setExtraDepts(show ? [{ id: "uncontracted", label: "미계약" }] : []);
     }
 
     var pendingLogoData = "";
@@ -237,17 +235,27 @@
     }
 
     function getSelectedDepts() {
-        return VF && VF.readDeptCheckboxValues
-            ? VF.readDeptCheckboxValues(deptCheckboxesRoot)
-            : [];
+        return deptPicker ? deptPicker.getValues() : [];
     }
 
     function setSelectedDepts(ids) {
-        if (VF && VF.writeDeptCheckboxValues) VF.writeDeptCheckboxValues(deptCheckboxesRoot, ids);
+        if (deptPicker) deptPicker.setValues(ids);
     }
 
     function clearSelectedDepts() {
-        if (VF && VF.clearDeptCheckboxValues) VF.clearDeptCheckboxValues(deptCheckboxesRoot);
+        if (deptPicker) deptPicker.clear();
+    }
+
+    if (VF && VF.initVendorDeptModalPicker) {
+        deptPicker = VF.initVendorDeptModalPicker({
+            catalog: window.THEJHON_PRODUCT_CATALOG,
+            openBtn: document.getElementById("vr-dept-open"),
+            summaryEl: document.getElementById("vr-dept-summary"),
+            modal: document.getElementById("vr-dept-modal"),
+            optionsRoot: document.getElementById("vr-dept-modal-options"),
+            okBtn: document.getElementById("vr-dept-modal-ok"),
+            closeBtn: document.getElementById("vr-dept-modal-close")
+        });
     }
 
     if (VF) {
@@ -416,7 +424,7 @@
             }
 
             if (VF && VF.uncheckUncontractedDept) {
-                VF.uncheckUncontractedDept(deptCheckboxesRoot);
+                VF.uncheckUncontractedDept(deptPicker);
             }
             var partnerDepts = VF ? VF.filterPartnerDepts(getSelectedDepts()) : getSelectedDepts();
             var deptErr = VF ? VF.validatePartnerDeptsSelection(partnerDepts) : "";

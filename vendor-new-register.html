@@ -101,16 +101,11 @@
             </div>
             <div class="vr-field vr-dept-row vr-dept-wrap vr-section-gap-after">
                 <span class="vr-dept-caption" id="vr-dept-label">사업부문</span>
-                <div id="vr-dept-checkboxes" class="vr-dept-checkboxes" role="group" aria-labelledby="vr-dept-label">
-                    <label class="vr-dept-check"><input type="checkbox" data-dept="jeongyuk" value="jeongyuk"> 정육</label>
-                    <label class="vr-dept-check"><input type="checkbox" data-dept="driedfish" value="driedfish"> 건어물</label>
-                    <label class="vr-dept-check"><input type="checkbox" data-dept="frozen" value="frozen"> 냉동식품</label>
-                    <label class="vr-dept-check"><input type="checkbox" data-dept="seafood" value="seafood"> 냉동수산물</label>
-                    <label class="vr-dept-check"><input type="checkbox" data-dept="grocery" value="grocery"> 공산품</label>
-                    <label class="vr-dept-check"><input type="checkbox" data-dept="drink" value="drink"> 음료수</label>
-                    <label class="vr-dept-check"><input type="checkbox" data-dept="uncontracted" value="uncontracted" checked> 미계약</label>
+                <div class="vr-dept-picker" id="vr-dept-picker">
+                    <button type="button" class="btn btn-secondary vr-dept-open-btn" id="vr-dept-open" aria-labelledby="vr-dept-label">사업부문 선택</button>
+                    <p class="vr-dept-summary vr-dept-summary--empty" id="vr-dept-summary" aria-live="polite">선택 없음</p>
+                    <p class="vr-hint">한 개 이상 선택해 주세요.</p>
                 </div>
-                <p class="vr-hint">한 개 이상 선택해 주세요.</p>
             </div>
             <div class="vr-row vr-row--3">
                 <div class="vr-slot">
@@ -233,6 +228,17 @@
                 <p id="vp-status" class="vp-status" role="status"></p>
                 <div class="vp-list-wrap">
                     <ul id="vp-list" class="vp-list"></ul>
+                </div>
+            </div>
+        </div>
+        <div id="vr-dept-modal" class="vr-dept-modal" hidden role="dialog" aria-modal="true" aria-labelledby="vr-dept-modal-title">
+            <div class="vr-dept-modal__panel">
+                <h2 id="vr-dept-modal-title" class="vr-dept-modal__title">사업부문 선택</h2>
+                <p class="vr-dept-modal__hint">한 개 이상 선택할 수 있습니다.</p>
+                <div id="vr-dept-modal-options" class="vr-dept-modal__options"></div>
+                <div class="vr-dept-modal__actions">
+                    <button type="button" class="btn btn-primary" id="vr-dept-modal-ok">적용</button>
+                    <button type="button" class="vr-dept-modal__close" id="vr-dept-modal-close">취소</button>
                 </div>
             </div>
         </div>

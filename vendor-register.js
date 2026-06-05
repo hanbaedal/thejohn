@@ -11,7 +11,7 @@
     var loginIdInput = document.getElementById("vr-login-id");
     var passwordInput = document.getElementById("vr-login-pw");
     var password2Input = document.getElementById("vr-login-pw2");
-    var deptCheckboxesRoot = document.getElementById("vr-dept-checkboxes");
+    var deptPicker = null;
     var companyInput = document.getElementById("vr-company");
     var ceoInput = document.getElementById("vr-ceo");
     var ceoTelInput = document.getElementById("vr-ceo-tel");
@@ -53,13 +53,11 @@
     }
 
     function getSelectedDepts() {
-        return VF && VF.readDeptCheckboxValues
-            ? VF.readDeptCheckboxValues(deptCheckboxesRoot)
-            : [];
+        return deptPicker ? deptPicker.getValues() : [];
     }
 
     function clearSelectedDepts() {
-        if (VF && VF.clearDeptCheckboxValues) VF.clearDeptCheckboxValues(deptCheckboxesRoot);
+        if (deptPicker) deptPicker.clear();
     }
 
     function updateLogoPreview(src) {
@@ -75,6 +73,18 @@
             logoPreview.removeAttribute("src");
             logoPreview.setAttribute("hidden", "");
         }
+    }
+
+    if (VF && VF.initVendorDeptModalPicker) {
+        deptPicker = VF.initVendorDeptModalPicker({
+            catalog: window.THEJHON_PRODUCT_CATALOG,
+            openBtn: document.getElementById("vr-dept-open"),
+            summaryEl: document.getElementById("vr-dept-summary"),
+            modal: document.getElementById("vr-dept-modal"),
+            optionsRoot: document.getElementById("vr-dept-modal-options"),
+            okBtn: document.getElementById("vr-dept-modal-ok"),
+            closeBtn: document.getElementById("vr-dept-modal-close")
+        });
     }
 
     if (VF) {

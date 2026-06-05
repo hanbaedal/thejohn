@@ -42,9 +42,33 @@
         return "";
     }
 
-    function uncheckUncontractedDept(root) {
-        if (!root) return;
-        var box = root.querySelector('input[type="checkbox"][data-dept="uncontracted"]');
+    var DEPT_LABEL_FALLBACK = {
+        jeongyuk: "정육",
+        driedfish: "건어물",
+        frozen: "냉동식품",
+        seafood: "냉동수산물",
+        grocery: "공산품",
+        drink: "음료수",
+        uncontracted: "미계약"
+    };
+
+    function deptDisplayLabel(catalog, deptId) {
+        var id = String(deptId || "").trim().toLowerCase();
+        if (id === "uncontracted") return DEPT_LABEL_FALLBACK.uncontracted;
+        if (catalog && catalog.getDept) {
+            var d = catalog.getDept(id);
+            if (d) return (d.icon ? d.icon + " " : "") + d.label;
+        }
+        return DEPT_LABEL_FALLBACK[id] || id;
+    }
+
+    function uncheckUncontractedDept(rootOrPicker) {
+        if (!rootOrPicker) return;
+        if (typeof rootOrPicker.uncheckDept === "function") {
+            rootOrPicker.uncheckDept("uncontracted");
+            return;
+        }
+        var box = rootOrPicker.querySelector('input[type="checkbox"][data-dept="uncontracted"]');
         if (box) box.checked = false;
     }
 
@@ -370,6 +394,162 @@
         for (var i = 0; i < boxes.length; i++) boxes[i].checked = false;
     }
 
+    function initVendorDeptModalPicker(options) {
+        var catalog = options.catalog || global.THEJHON_PRODUCT_CATALOG;
+        var openBtn = options.openBtn;
+        var summaryEl = options.summaryEl;
+        var modal = options.modal;
+        var optionsRoot = options.optionsRoot;
+        var okBtn = options.okBtn;
+        var closeBtn = options.closeBtn;
+        var extraDepts = options.extraDepts || [];
+
+        if (!openBtn || !summaryEl || !modal || !optionsRoot) return null;
+
+        var selected = {};
+        var pending = {};
+
+        function buildDeptList() {
+            var list = [];
+            var seen = {};
+            if (catalog && catalog.DEPARTMENTS) {
+                catalog.DEPARTMENTS.forEach(function (d) {
+                    list.push({ id: d.id, label: deptDisplayLabel(catalog, d.id) });
+                    seen[d.id] = true;
+                });
+            } else {
+                for (var i = 0; i < PARTNER_DEPT_IDS.length; i++) {
+                    var pid = PARTNER_DEPT_IDS[i];
+                    list.push({ id: pid, label: deptDisplayLabel(null, pid) });
+                    seen[pid] = true;
+                }
+            }
+            for (var j = 0; j < extraDepts.length; j++) {
+                var ex = extraDepts[j];
+                if (!ex || !ex.id || seen[ex.id]) continue;
+                list.push({
+                    id: ex.id,
+                    label: ex.label || deptDisplayLabel(null, ex.id)
+                });
+                seen[ex.id] = true;
+            }
+            return list;
+        }
+
+        function getValues() {
+            return Object.keys(selected).filter(function (k) {
+                return selected[k];
+            });
+        }
+
+        function renderSummary() {
+            var ids = getValues();
+            if (!ids.length) {
+                summaryEl.textContent = "선택 없음";
+                summaryEl.classList.add("vr-dept-summary--empty");
+                return;
+            }
+            summaryEl.classList.remove("vr-dept-summary--empty");
+            summaryEl.textContent = ids
+                .map(function (id) {
+                    return deptDisplayLabel(catalog, id);
+                })
+                .join(", ");
+        }
+
+        function renderModalOptions(fromMap) {
+            optionsRoot.innerHTML = "";
+            buildDeptList().forEach(function (d) {
+                var btn = document.createElement("button");
+                btn.type = "button";
+                btn.className = "vr-dept-modal-opt";
+                btn.setAttribute("data-dept", d.id);
+                btn.setAttribute("aria-pressed", fromMap[d.id] ? "true" : "false");
+                btn.textContent = d.label;
+                if (fromMap[d.id]) btn.classList.add("is-selected");
+                btn.addEventListener("click", function () {
+                    if (fromMap[d.id]) delete fromMap[d.id];
+                    else fromMap[d.id] = true;
+                    var on = !!fromMap[d.id];
+                    btn.classList.toggle("is-selected", on);
+                    btn.setAttribute("aria-pressed", on ? "true" : "false");
+                });
+                optionsRoot.appendChild(btn);
+            });
+        }
+
+        function openModal() {
+            pending = {};
+            Object.keys(selected).forEach(function (k) {
+                if (selected[k]) pending[k] = true;
+            });
+            renderModalOptions(pending);
+            modal.hidden = false;
+            openBtn.setAttribute("aria-expanded", "true");
+        }
+
+        function closeModal() {
+            modal.hidden = true;
+            openBtn.setAttribute("aria-expanded", "false");
+        }
+
+        function applyModal() {
+            selected = {};
+            Object.keys(pending).forEach(function (k) {
+                if (pending[k]) selected[k] = true;
+            });
+            closeModal();
+            renderSummary();
+        }
+
+        openBtn.setAttribute("aria-haspopup", "dialog");
+        openBtn.setAttribute("aria-expanded", "false");
+        openBtn.addEventListener("click", openModal);
+        if (okBtn) okBtn.addEventListener("click", applyModal);
+        if (closeBtn) closeBtn.addEventListener("click", closeModal);
+        modal.addEventListener("click", function (e) {
+            if (e.target === modal) closeModal();
+        });
+        document.addEventListener("keydown", function (e) {
+            if (e.key === "Escape" && modal && !modal.hidden) closeModal();
+        });
+
+        renderSummary();
+
+        return {
+            getValues: getValues,
+            setValues: function (ids) {
+                selected = {};
+                (ids || []).forEach(function (id) {
+                    var raw = String(id || "").trim().toLowerCase();
+                    if (raw === "uncontracted") {
+                        selected.uncontracted = true;
+                        return;
+                    }
+                    var norm =
+                        catalog && catalog.normalizeDept
+                            ? catalog.normalizeDept(id)
+                            : normalizePartnerDeptId(id);
+                    if (norm && PARTNER_DEPT_IDS.indexOf(norm) >= 0) selected[norm] = true;
+                });
+                renderSummary();
+            },
+            clear: function () {
+                selected = {};
+                renderSummary();
+            },
+            uncheckDept: function (deptId) {
+                delete selected[String(deptId || "").trim().toLowerCase()];
+                renderSummary();
+            },
+            setExtraDepts: function (extras) {
+                extraDepts = extras || [];
+            },
+            open: openModal,
+            close: closeModal
+        };
+    }
+
     function initVendorDeptMultiPicker(options) {
         var catalog = options.catalog || global.THEJHON_PRODUCT_CATALOG;
         var root = options.root;
@@ -465,6 +645,7 @@
         syncPasswordToggle: syncPasswordToggle,
         initPasswordConfirm: initPasswordConfirm,
         initLoginIdDuplicateCheck: initLoginIdDuplicateCheck,
+        initVendorDeptModalPicker: initVendorDeptModalPicker,
         initVendorDeptMultiPicker: initVendorDeptMultiPicker,
         readMultiSelectValues: readMultiSelectValues,
         writeMultiSelectValues: writeMultiSelectValues,
