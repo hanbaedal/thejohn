@@ -54,7 +54,6 @@
                         <input type="text" id="sm-self-password" name="password" autocomplete="new-password" placeholder="비워 두면 유지" spellcheck="false">
                     </div>
                 </div>
-                <p class="sm-field-hint sm-hint-indent" id="sm-self-loginId-hint">변경 시 6~12자(영문·숫자·_·-). 등록 업체·상품·주문 등 담당 정보가 함께 갱신되며, 새 아이디로 다시 로그인해야 합니다.</p>
 
                 <div class="sm-divider" role="separator" aria-hidden="true"></div>
                 <div class="sm-gap-2lines" aria-hidden="true"></div>
@@ -100,7 +99,6 @@
                 <div class="sm-divider" role="separator" aria-hidden="true"></div>
                 <div class="sm-gap-2lines" aria-hidden="true"></div>
 
-                <p class="sm-section-label">사업장 소재지</p>
                 <div class="sm-field sm-field--full" id="sm-self-address-mount"></div>
 
                 <div class="sm-divider" role="separator" aria-hidden="true"></div>
@@ -129,9 +127,8 @@
                 </div>
                 <div class="sm-row sm-row--1">
                     <div class="sm-slot sm-slot--full">
-                        <label for="sm-self-st_kakao">카카오톡 채널 (채팅 URL)</label>
+                        <label for="sm-self-st_kakao">카카오톡 채널</label>
                         <input type="text" id="sm-self-st_kakao" name="st_kakao" placeholder="https://pf.kakao.com/_채널ID/chat 또는 _채널ID" autocomplete="off">
-                        <p class="sm-field-hint">채널 관리자센터에서 1:1 채팅 사용 후 채팅 URL을 입력하세요.</p>
                     </div>
                 </div>
 
@@ -139,31 +136,49 @@
                 <div class="sm-gap-2lines" aria-hidden="true"></div>
 
                 <div class="sm-brand-media-field">
-                    <div class="sm-brand-media">
-                        <div class="sm-brand-media-col pr-photo-field">
+                    <div class="sm-row sm-row--2 sm-brand-media-row">
+                        <div class="sm-slot sm-brand-slot pr-photo-field">
                             <span class="pr-photo-label" id="sm-self-logo-label">회사 로고</span>
-                            <input type="file" id="sm-self-logo-gallery" class="pr-photo-file-input" accept="image/*,.heic,.heif">
-                            <input type="file" id="sm-self-logo-camera" class="pr-photo-file-input" accept="image/*" capture="environment">
-                            <div class="pr-photo-actions" role="group" aria-labelledby="sm-self-logo-label">
-                                <button type="button" class="pr-photo-btn" id="sm-self-logo-gallery-btn">앨범·파일에서 선택</button>
-                                <button type="button" class="pr-photo-btn pr-photo-btn--camera" id="sm-self-logo-camera-btn">카메라로 촬영</button>
-                                <button type="button" class="btn btn-secondary sm-logo-clear-btn" id="sm-self-logo-clear" hidden>로고 제거</button>
+                            <div class="sm-brand-controls">
+                                <input type="file" id="sm-self-logo-gallery" class="pr-photo-file-input" accept="image/*,.heic,.heif">
+                                <input type="file" id="sm-self-logo-camera" class="pr-photo-file-input" accept="image/*" capture="environment">
+                                <div class="pr-photo-actions sm-brand-icon-actions" role="group" aria-labelledby="sm-self-logo-label">
+                                    <button type="button" class="pr-photo-icon-btn" id="sm-self-logo-gallery-btn" aria-label="앨범·파일에서 선택" title="앨범·파일에서 선택">
+                                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/></svg>
+                                    </button>
+                                    <button type="button" class="pr-photo-icon-btn pr-photo-icon-btn--camera" id="sm-self-logo-camera-btn" aria-label="카메라로 촬영" title="카메라로 촬영">
+                                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+                                    </button>
+                                    <button type="button" class="pr-photo-icon-btn pr-photo-icon-btn--clear sm-logo-clear-btn" id="sm-self-logo-clear" hidden aria-label="로고 제거" title="로고 제거">
+                                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
+                                    </button>
+                                </div>
+                                <img id="sm-self-logo-preview" class="sm-brand-preview sm-brand-preview--logo pr-photo-preview tj-image-preview" alt="로고 미리보기" width="96" height="96" hidden>
                             </div>
-                            <p class="sm-field-hint">로그인 시 사이트 헤더·앱 아이콘으로 표시됩니다. 512×512px로 자동 맞춤 저장됩니다.</p>
-                            <img id="sm-self-logo-preview" class="sm-brand-preview sm-brand-preview--logo pr-photo-preview tj-image-preview" alt="로고 미리보기" width="96" height="96" hidden>
                         </div>
-                        <div class="sm-brand-media-col pr-photo-field">
+                        <div class="sm-slot sm-brand-slot pr-photo-field">
                             <span class="pr-photo-label" id="sm-self-seal-label">회사 도장</span>
-                            <input type="file" id="sm-self-seal-gallery" class="pr-photo-file-input" accept="image/*,.heic,.heif">
-                            <input type="file" id="sm-self-seal-camera" class="pr-photo-file-input" accept="image/*" capture="environment">
-                            <div class="pr-photo-actions" role="group" aria-labelledby="sm-self-seal-label">
-                                <button type="button" class="pr-photo-btn" id="sm-self-seal-gallery-btn">앨범·파일에서 선택</button>
-                                <button type="button" class="pr-photo-btn pr-photo-btn--camera" id="sm-self-seal-camera-btn">카메라로 촬영</button>
-                                <button type="button" class="btn btn-secondary sm-logo-clear-btn" id="sm-self-seal-clear" hidden>도장 제거</button>
+                            <div class="sm-brand-controls">
+                                <input type="file" id="sm-self-seal-gallery" class="pr-photo-file-input" accept="image/*,.heic,.heif">
+                                <input type="file" id="sm-self-seal-camera" class="pr-photo-file-input" accept="image/*" capture="environment">
+                                <div class="pr-photo-actions sm-brand-icon-actions" role="group" aria-labelledby="sm-self-seal-label">
+                                    <button type="button" class="pr-photo-icon-btn" id="sm-self-seal-gallery-btn" aria-label="앨범·파일에서 선택" title="앨범·파일에서 선택">
+                                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/></svg>
+                                    </button>
+                                    <button type="button" class="pr-photo-icon-btn pr-photo-icon-btn--camera" id="sm-self-seal-camera-btn" aria-label="카메라로 촬영" title="카메라로 촬영">
+                                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+                                    </button>
+                                    <button type="button" class="pr-photo-icon-btn pr-photo-icon-btn--clear sm-logo-clear-btn" id="sm-self-seal-clear" hidden aria-label="도장 제거" title="도장 제거">
+                                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
+                                    </button>
+                                </div>
+                                <img id="sm-self-seal-preview" class="sm-brand-preview sm-brand-preview--seal pr-photo-preview tj-image-preview" alt="도장 미리보기" width="96" height="96" hidden>
                             </div>
-                            <p class="sm-field-hint">거래명세서 PDF 인감용·투명 PNG 권장.</p>
-                            <img id="sm-self-seal-preview" class="sm-brand-preview sm-brand-preview--seal pr-photo-preview tj-image-preview" alt="도장 미리보기" width="96" height="96" hidden>
                         </div>
+                    </div>
+                    <div class="sm-row sm-row--2 sm-brand-hints-row">
+                        <p class="sm-field-hint sm-brand-hint">로그인 시 사이트 헤더·앱 아이콘으로 표시됩니다. 512×512px로 자동 맞춤 저장됩니다.</p>
+                        <p class="sm-field-hint sm-brand-hint">거래명세서 PDF 인감용·투명 PNG 권장.</p>
                     </div>
                 </div>
 

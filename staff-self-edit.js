@@ -23,7 +23,7 @@
         AF && AF.mount
             ? AF.mount(document.getElementById("sm-self-address-mount"), {
                   idPrefix: "sm-self-",
-                  label: "사업장소재지"
+                  label: "사업장 소재지"
               })
             : null;
 
