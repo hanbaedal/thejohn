@@ -39,6 +39,7 @@ function normalizeRecordType(v) {
 }
 
 const PRICE_KEYS = ["pd_price1", "pd_price2", "pd_price3", "pd_price4"];
+const MAX_PRODUCT_EXPLAIN_LEN = 256;
 
 function str(v) {
     return jsonSafeStr(v).trim();
@@ -272,7 +273,10 @@ function buildFromBody(body, existing) {
     const pd_code = normalizeProductCode(
         body.pd_code != null ? body.pd_code : prev[F.code] != null ? prev[F.code] : ""
     );
-    const pd_explain = str(body.pd_explain != null ? body.pd_explain : body.content);
+    const pd_explain = str(body.pd_explain != null ? body.pd_explain : body.content).slice(
+        0,
+        MAX_PRODUCT_EXPLAIN_LEN
+    );
     const pd_size = str(body.pd_size != null ? body.pd_size : body.spec);
     const pd_images = normalizeImagesFromBody(body, existing);
     const pd_image = pd_images[0] || "";
@@ -384,6 +388,9 @@ function validateBuilt(built, requireImage) {
     }
     if (!built.pd_name) return "상품 명칭을 입력해 주세요.";
     if (!built.pd_explain) return "상품 설명을 입력해 주세요.";
+    if (built.pd_explain.length > MAX_PRODUCT_EXPLAIN_LEN) {
+        return "상품 설명은 한글 기준 256자 이내로 입력해 주세요.";
+    }
     const prices = [built.pd_price1, built.pd_price2, built.pd_price3, built.pd_price4];
     if (prices.some((p) => !isFinite(p))) return "가격 1~4를 올바르게 입력해 주세요.";
     if (!built.pd_dept) return "사업부문을 선택해 주세요.";

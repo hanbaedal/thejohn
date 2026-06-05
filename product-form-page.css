@@ -1,4 +1,9 @@
 /* 상품 등록·수정 폼 공통 */
+.pr-form-page-wrap .pr-form.pr-form-page {
+    max-width: min(100%, 56rem);
+    margin-left: auto;
+    margin-right: auto;
+}
 .pr-form-page {
     --pr-panel-inset-x: 1.1rem;
     --pr-section-gap: 2.5rem;
@@ -8,6 +13,58 @@
     display: flex;
     flex-direction: column;
     gap: 0;
+}
+@media (min-width: 768px) {
+    .pr-form-page-wrap {
+        max-width: min(100%, 72rem);
+        margin-left: auto;
+        margin-right: auto;
+        padding-left: 1.25rem;
+        padding-right: 1.25rem;
+        box-sizing: border-box;
+    }
+    .pr-form-page-wrap .pr-form.pr-form-page {
+        max-width: 100%;
+    }
+    .pr-form-page .pr-section-block--core {
+        display: flex;
+        flex-direction: column;
+        gap: 0.85rem;
+    }
+    .pr-form-page .pr-section-block--core .pr-field-row,
+    .pr-form-page .pr-section-block--core .pr-field,
+    .pr-form-page .pr-section-block--core .vr-dept-row {
+        margin-bottom: 0;
+    }
+    .pr-form-page .pr-section-block--core .pr-field-row.pr-row--name {
+        display: grid;
+        grid-template-columns: minmax(9.5rem, 11.5rem) minmax(0, 1fr);
+        gap: 0.5rem 0.75rem;
+        align-items: start;
+        margin-bottom: 0;
+    }
+    .pr-form-page .pr-section-block--core .pr-row--price-size {
+        display: grid;
+        grid-template-columns: repeat(5, minmax(0, 1fr));
+        gap: 0.5rem 0.65rem;
+        align-items: start;
+        margin-bottom: 0;
+    }
+    .pr-form-page .pr-section-block--core .pr-pinfo-field {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 0.45rem 0.75rem;
+        margin-bottom: 0;
+    }
+    .pr-form-page .pr-section-block--core .pr-pinfo-caption {
+        margin: 0;
+    }
+}
+@media (min-width: 641px) and (max-width: 900px) {
+    .pr-form-page .pr-section-block--core .pr-row--price-size {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
 }
 .pr-form-page .pr-divider {
     width: calc(100% + 2 * var(--pr-panel-inset-x));
@@ -26,11 +83,34 @@
 .pr-form-page .pr-section-block--last {
     padding-bottom: 0;
 }
+.pr-form-page .pr-section-block--core .pr-field-row,
+.pr-form-page .pr-section-block--core .pr-field,
+.pr-form-page .pr-section-block--core .vr-dept-row {
+    margin-bottom: 0;
+}
+.pr-form-page .pr-section-block--core {
+    display: flex;
+    flex-direction: column;
+    gap: 0.85rem;
+}
 .pr-form-page .pr-section-title {
     margin: 0 0 0.75rem;
     font-size: 0.85rem;
     font-weight: 700;
     color: #052a4d;
+}
+.pr-form-page .pr-pinfo-field {
+    margin-bottom: 0;
+}
+.pr-form-page .pr-pinfo-caption {
+    display: block;
+    margin: 0 0 0.35rem;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: #3d5166;
+}
+.pr-form-page .pr-btn-pinfo {
+    white-space: nowrap;
 }
 .pr-form-page .pr-dept-row {
     margin-bottom: 0;
@@ -177,4 +257,250 @@
 }
 .pr-form-page .pr-actions {
     margin-top: var(--pr-section-gap);
+}
+
+/* 저장 완료 모달 */
+.pr-save-modal {
+    position: fixed;
+    inset: 0;
+    z-index: 10000;
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    background: rgba(5, 42, 77, 0.45);
+}
+.pr-save-modal[hidden] {
+    display: none !important;
+}
+.pr-save-modal__panel {
+    width: 100%;
+    max-height: min(92vh, 28rem);
+    overflow: auto;
+    background: #fff;
+    border-radius: 14px 14px 0 0;
+    padding: 1.25rem 1.1rem 1.35rem;
+    box-shadow: 0 -8px 32px rgba(10, 77, 156, 0.22);
+    text-align: center;
+}
+@media (min-width: 721px) {
+    .pr-save-modal {
+        align-items: center;
+        padding: 1rem;
+    }
+    .pr-save-modal__panel {
+        width: min(100%, 22rem);
+        border-radius: 14px;
+    }
+}
+.pr-save-modal__title {
+    margin: 0 0 0.75rem;
+    font-size: 1.15rem;
+    color: #052a4d;
+}
+.pr-save-modal__lead {
+    margin: 0 0 0.65rem;
+    font-size: 1rem;
+    font-weight: 600;
+    color: #2a4560;
+}
+.pr-save-modal__hint {
+    margin: 0 0 1.1rem;
+    font-size: 0.92rem;
+    color: #5a6d7e;
+}
+.pr-save-modal__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    justify-content: center;
+}
+
+/* 스마트폰: 항목명 | 입력 — 업체등록과 동일 */
+@media (max-width: 640px) {
+    .pr-form-page {
+        --pr-label-w: 6.75rem;
+        --pr-desc-size: 0.72rem;
+        --pr-input-size: 0.8125rem;
+        --pr-input-min-h: 2rem;
+    }
+
+    .pr-form-page .pr-field {
+        display: grid;
+        grid-template-columns: var(--pr-label-w) minmax(0, 1fr);
+        gap: 0.3rem 0.45rem;
+        align-items: center;
+    }
+    .pr-form-page .pr-field > label,
+    .pr-form-page .pr-pinfo-caption,
+    .pr-form-page .pr-explain-field > label,
+    .pr-form-page .pr-field-half > label,
+    .pr-form-page .pr-field-code > label,
+    .pr-form-page .pr-field-name-wrap > label,
+    .pr-form-page .pr-contact-slot > label {
+        margin: 0;
+        font-size: var(--pr-desc-size);
+        font-weight: 700;
+        color: #2a4560;
+        white-space: nowrap;
+    }
+    .pr-form-page .pr-field > input,
+    .pr-form-page .pr-field-half > input,
+    .pr-form-page .pr-field-code > input,
+    .pr-form-page .pr-field-name-wrap > input,
+    .pr-form-page .pr-contact-slot > input {
+        width: 100%;
+        min-width: 0;
+        min-height: var(--pr-input-min-h);
+        padding: 0.35rem 0.45rem;
+        font-size: var(--pr-input-size);
+        border-radius: 4px;
+        box-sizing: border-box;
+    }
+
+    .pr-form-page .vr-dept-line {
+        display: grid;
+        grid-template-columns: var(--pr-label-w) minmax(0, 1fr) auto;
+        gap: 0.3rem 0.45rem;
+        align-items: center;
+        width: 100%;
+    }
+    .pr-form-page .vr-dept-caption {
+        flex: unset;
+        margin: 0;
+        font-size: var(--pr-desc-size);
+        font-weight: 700;
+        color: #2a4560;
+        white-space: nowrap;
+    }
+    .pr-form-page .vr-dept-summary {
+        min-width: 0;
+        font-size: var(--pr-input-size);
+        margin: 0;
+    }
+    .pr-form-page .vr-dept-open-btn {
+        margin-left: 0;
+        min-height: var(--pr-input-min-h);
+        padding: 0.35rem 0.55rem;
+        font-size: var(--pr-desc-size);
+        font-weight: 700;
+        border-radius: 4px;
+    }
+
+    .pr-form-page .pr-row--name {
+        display: flex;
+        flex-direction: column;
+        gap: 0.55rem;
+        margin-bottom: 0.85rem;
+    }
+    .pr-form-page .pr-field-code,
+    .pr-form-page .pr-field-name-wrap {
+        display: grid;
+        grid-template-columns: var(--pr-label-w) minmax(0, 1fr);
+        gap: 0.3rem 0.45rem;
+        align-items: center;
+        margin-bottom: 0;
+    }
+    .pr-form-page .pr-field-code > label,
+    .pr-form-page .pr-field-name-wrap > label {
+        grid-column: 1;
+        grid-row: 1;
+    }
+    .pr-form-page .pr-field-code > input,
+    .pr-form-page .pr-field-name-wrap > input {
+        grid-column: 2;
+        grid-row: 1;
+    }
+    .pr-form-page .pr-field-code > .pr-name-dup-hint,
+    .pr-form-page .pr-field-name-wrap > .pr-name-dup-hint {
+        grid-column: 2;
+        grid-row: 2;
+        margin: 0;
+        font-size: 0.6rem;
+    }
+
+    .pr-form-page .pr-row--price-size {
+        display: flex;
+        flex-direction: column;
+        gap: 0.55rem;
+        margin-bottom: 0;
+    }
+    .pr-form-page .pr-field-half {
+        display: grid;
+        grid-template-columns: var(--pr-label-w) minmax(0, 1fr);
+        gap: 0.3rem 0.45rem;
+        align-items: center;
+        margin-bottom: 0;
+    }
+    .pr-form-page .pr-field-half > label {
+        grid-column: 1;
+    }
+    .pr-form-page .pr-field-half > input {
+        grid-column: 2;
+    }
+
+    .pr-form-page .pr-pinfo-field {
+        display: grid;
+        grid-template-columns: var(--pr-label-w) minmax(0, 1fr);
+        gap: 0.3rem 0.45rem;
+        align-items: center;
+    }
+    .pr-form-page .pr-pinfo-caption {
+        grid-column: 1;
+    }
+    .pr-form-page .pr-btn-pinfo {
+        grid-column: 2;
+        justify-self: start;
+        min-height: var(--pr-input-min-h);
+        padding: 0.35rem 0.65rem;
+        font-size: var(--pr-desc-size);
+        font-weight: 700;
+        border-radius: 4px;
+    }
+
+    .pr-form-page .pr-photo-toolbar > .pr-photo-label {
+        font-size: var(--pr-desc-size);
+        font-weight: 700;
+        color: #2a4560;
+    }
+
+    .pr-form-page .pr-explain-field {
+        display: grid;
+        grid-template-columns: var(--pr-label-w) minmax(0, 1fr);
+        gap: 0.3rem 0.45rem;
+        align-items: start;
+    }
+    .pr-form-page .pr-explain-field > label {
+        grid-column: 1;
+        padding-top: 0.35rem;
+    }
+    .pr-form-page .pr-explain-box {
+        grid-column: 2;
+        min-width: 0;
+    }
+    .pr-form-page .pr-explain-box textarea {
+        font-size: var(--pr-input-size);
+        min-height: 4.5rem;
+    }
+
+    .pr-form-page .pr-row--contact {
+        display: flex;
+        flex-direction: column;
+        gap: 0.55rem;
+    }
+    .pr-form-page .pr-contact-slot {
+        display: grid;
+        grid-template-columns: var(--pr-label-w) minmax(0, 1fr);
+        gap: 0.3rem 0.45rem;
+        align-items: center;
+    }
+    .pr-form-page .pr-contact-slot > label {
+        grid-column: 1;
+    }
+    .pr-form-page .pr-contact-slot > input {
+        grid-column: 2;
+    }
+
+    .pr-form-page .pr-section-title {
+        font-size: var(--pr-desc-size);
+    }
 }

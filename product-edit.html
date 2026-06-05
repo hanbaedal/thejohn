@@ -14,9 +14,8 @@
     <link rel="stylesheet" href="admin-manage.css">
     <link rel="stylesheet" href="product-photo-gallery.css">
     <link rel="stylesheet" href="vendor-form-page.css">
-    <link rel="stylesheet" href="product-form-page.css">
     <style>
-        .pr-form { max-width: 36rem; margin: 0 auto 2rem; padding: 1.25rem 1.1rem; background: #fff; border: 1px solid #e0e6ed; border-radius: 10px; box-shadow: 0 2px 12px rgba(10, 77, 156, 0.06); }
+        .pr-form { margin: 0 auto 2rem; padding: 1.25rem 1.1rem; background: #fff; border: 1px solid #e0e6ed; border-radius: 10px; box-shadow: 0 2px 12px rgba(10, 77, 156, 0.06); }
         .pr-field { margin-bottom: 1rem; }
         .pr-field label { display: block; font-size: 0.8rem; font-weight: 600; color: #3d5166; margin-bottom: 0.35rem; }
         .pr-field input[type="text"],
@@ -26,24 +25,15 @@
         .pr-field select:disabled { background: #f4f6f9; color: #8a9bab; }
         .pr-field-row { display: flex; flex-wrap: wrap; gap: 0.75rem 1rem; align-items: flex-end; margin-bottom: 1rem; }
         .pr-field-row.pr-row--2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.5rem 0.75rem; }
-        @media (max-width: 520px) {
-            .pr-field-row.pr-row--2 { grid-template-columns: 1fr; }
-        }
         .pr-field-row.pr-row--name { display: grid; grid-template-columns: minmax(9.5rem, 11.5rem) minmax(0, 1fr); gap: 0.5rem 0.75rem; align-items: start; margin-bottom: 1rem; }
-        @media (max-width: 520px) {
-            .pr-field-row.pr-row--name { grid-template-columns: 1fr; }
-        }
         .pr-field-row.pr-row--name .pr-field-code,
         .pr-field-row.pr-row--name .pr-field-name-wrap { min-width: 0; margin-bottom: 0; }
         .pr-field-row.pr-row--name label { display: block; font-size: 0.8rem; font-weight: 600; color: #3d5166; margin-bottom: 0.35rem; }
         .pr-field-row.pr-row--name input { width: 100%; padding: 0.6rem 0.7rem; font-size: 1rem; font-family: inherit; border: 1px solid #c5d0dc; border-radius: 6px; box-sizing: border-box; }
         .pr-field-row.pr-row--name input:focus { outline: none; border-color: var(--dz-blue); box-shadow: 0 0 0 2px rgba(10, 77, 156, 0.2); }
         .pr-field-row.pr-row--4 { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 0.5rem 0.65rem; }
-        @media (max-width: 720px) {
+        @media (min-width: 641px) and (max-width: 720px) {
             .pr-field-row.pr-row--4 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-        }
-        @media (max-width: 420px) {
-            .pr-field-row.pr-row--4 { grid-template-columns: 1fr; }
         }
         .pr-field-row .pr-field-half { flex: 1 1 10rem; min-width: 0; margin-bottom: 0; }
         .pr-price-group { margin-bottom: 1rem; }
@@ -77,6 +67,7 @@
         .pr-card-actions button { font-size: 0.8125rem; padding: 0.35rem 0.65rem; border-radius: 6px; cursor: pointer; font-family: inherit; font-weight: 600; border: 1px solid #c5d0dc; background: #fff; color: #3d5166; }
         .pr-card-actions button.pr-btn-del { border-color: #e8a4a4; color: #a12c2c; background: #fff8f8; }
     </style>
+    <link rel="stylesheet" href="product-form-page.css">
     <link rel="stylesheet" href="product-info-modal.css">
     <script src="api-config.js"></script>
     <script src="thejhon-api.js"></script>
@@ -100,14 +91,14 @@
             <button type="button" class="btn btn-auth-icon btn-logout" id="btnLogout" hidden aria-label="로그아웃" title="로그아웃"></button>
         </nav>
     </header>
-    <main class="page-main page-main--hide-scrollbar">
+    <main class="page-main page-main--hide-scrollbar pr-form-page-wrap">
         <p class="am-subnav"><a href="product-list-admin.html" id="pe-back-list">← 상품 리스트</a></p>
         <h1>상품 수정</h1>
         <p id="pe-status" class="pr-status" role="status" aria-live="polite"></p>
         <section id="pe-form-wrap" class="pr-form pr-form-page">
         <form id="pe-form" novalidate>
             <input type="hidden" id="pe-edit-id" value="">
-            <div class="pr-section-block pr-section-block--first">
+            <div class="pr-section-block pr-section-block--first pr-section-block--core">
                 <div class="vr-dept-row pr-dept-row">
                     <div class="vr-dept-line">
                         <span class="vr-dept-caption" id="pe-dept-label">사업부문</span>
@@ -116,11 +107,6 @@
                     </div>
                     <input type="hidden" id="pe-pd-dept" name="pd_dept" value="">
                 </div>
-            </div>
-            <div class="pr-divider" role="separator" aria-hidden="true"></div>
-
-            <div class="pr-section-block">
-                <p class="pr-section-title">상품필수정보</p>
                 <div class="pr-field-row pr-row--name">
                     <div class="pr-field-code">
                         <label for="pe-pd-code">상품 코드</label>
@@ -133,33 +119,31 @@
                         <p id="pe-name-dup-hint" class="pr-name-dup-hint pr-name-dup-hint--idle" hidden></p>
                     </div>
                 </div>
-                <div class="pr-price-group">
-                    <span class="pr-price-caption">상품가격 (원)</span>
-                    <div class="pr-field-row pr-row--4">
-                        <div class="pr-field-half">
-                            <label for="pe-pd-price1">가격 1</label>
-                            <input type="number" id="pe-pd-price1" name="pd_price1" min="0" step="1" inputmode="numeric" placeholder="0">
-                        </div>
-                        <div class="pr-field-half">
-                            <label for="pe-pd-price2">가격 2</label>
-                            <input type="number" id="pe-pd-price2" name="pd_price2" min="0" step="1" inputmode="numeric" placeholder="0">
-                        </div>
-                        <div class="pr-field-half">
-                            <label for="pe-pd-price3">가격 3</label>
-                            <input type="number" id="pe-pd-price3" name="pd_price3" min="0" step="1" inputmode="numeric" placeholder="0">
-                        </div>
-                        <div class="pr-field-half">
-                            <label for="pe-pd-price4">구매가</label>
-                            <input type="number" id="pe-pd-price4" name="pd_price4" min="0" step="1" inputmode="numeric" placeholder="0">
-                        </div>
+                <div class="pr-field-row pr-row--price-size">
+                    <div class="pr-field-half">
+                        <label for="pe-pd-price1">가격 1</label>
+                        <input type="number" id="pe-pd-price1" name="pd_price1" min="0" step="1" inputmode="numeric" placeholder="0">
                     </div>
-                </div>
-                <div class="pr-field pr-size-row">
-                    <div class="pr-field-size-wrap">
+                    <div class="pr-field-half">
+                        <label for="pe-pd-price2">가격 2</label>
+                        <input type="number" id="pe-pd-price2" name="pd_price2" min="0" step="1" inputmode="numeric" placeholder="0">
+                    </div>
+                    <div class="pr-field-half">
+                        <label for="pe-pd-price3">가격 3</label>
+                        <input type="number" id="pe-pd-price3" name="pd_price3" min="0" step="1" inputmode="numeric" placeholder="0">
+                    </div>
+                    <div class="pr-field-half">
+                        <label for="pe-pd-price4">구매가</label>
+                        <input type="number" id="pe-pd-price4" name="pd_price4" min="0" step="1" inputmode="numeric" placeholder="0">
+                    </div>
+                    <div class="pr-field-half pr-field-size">
                         <label for="pe-pd-size">상품 규격</label>
                         <input type="text" id="pe-pd-size" name="pd_size" maxlength="120" autocomplete="off" placeholder="예: 500g, 1박스 20입">
                     </div>
-                    <button type="button" class="btn btn-secondary pr-btn-pinfo" id="pe-btn-product-info">상품 필수 정보</button>
+                </div>
+                <div class="pr-field pr-pinfo-field">
+                    <span class="pr-pinfo-caption" id="pe-pinfo-label">상품 필수 정보</span>
+                    <button type="button" class="btn btn-secondary pr-btn-pinfo" id="pe-btn-product-info" aria-labelledby="pe-pinfo-label">입력</button>
                 </div>
             </div>
             <div class="pr-divider" role="separator" aria-hidden="true"></div>

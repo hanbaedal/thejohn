@@ -86,6 +86,9 @@
         if (!data.vn_depts || !data.vn_depts.length) {
             return "사업부문을 하나 이상 선택해 주세요.";
         }
+        if (data.vn_note && String(data.vn_note).length > 256) {
+            return "회사 상황은 한글 기준 256자 이내로 입력해 주세요.";
+        }
         return "";
     }
 

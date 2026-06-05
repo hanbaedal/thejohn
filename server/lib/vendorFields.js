@@ -13,6 +13,7 @@ const { hydrateAddressFields, pickAddressFromBody } = require("./addressFormat")
 const PARTNER_DEPT_IDS = ["jeongyuk", "driedfish", "frozen", "seafood", "grocery", "drink"];
 
 const VALID_DEPT_IDS = PARTNER_DEPT_IDS.concat(["uncontracted"]);
+const MAX_VENDOR_NOTE_LEN = 256;
 
 const VENDOR_DEPT_LABEL_TO_ID = {
     미계약: "uncontracted",
@@ -279,7 +280,7 @@ function buildFromBody(body, existing, loginId, password) {
                 : body.logo !== undefined && body.logo !== null
                   ? String(body.logo)
                   : String(prev[F.logo] || ""),
-        vn_note: str(body.vn_note != null ? body.vn_note : body.note),
+        vn_note: str(body.vn_note != null ? body.vn_note : body.note).slice(0, MAX_VENDOR_NOTE_LEN),
         vn_record_type:
             body.vn_record_type != null
                 ? normalizeRecordType(body.vn_record_type)
@@ -361,6 +362,9 @@ function validateBuilt(built, requirePassword) {
     if (!built.vn_company) return "업체이름을 입력해 주세요.";
     if (!built.vn_depts || !built.vn_depts.length) return "사업부문을 하나 이상 선택해 주세요.";
     if (!built.vn_grade) return "업체등급(Silver/Gold/Diamond)을 선택해 주세요.";
+    if (built.vn_note && built.vn_note.length > MAX_VENDOR_NOTE_LEN) {
+        return "회사 상황은 한글 기준 256자 이내로 입력해 주세요.";
+    }
     return "";
 }
 

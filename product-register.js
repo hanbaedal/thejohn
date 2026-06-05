@@ -24,6 +24,9 @@
     var deptPicker = null;
     var nameDupCheck = null;
     var codeDupCheck = null;
+    var saveModal = document.getElementById("pr-save-modal");
+    var saveContinueBtn = document.getElementById("pr-save-continue");
+    var saveExitBtn = document.getElementById("pr-save-exit");
 
     function setStatus(msg, isError) {
         if (!statusEl) return;
@@ -33,6 +36,37 @@
 
     function getPendingImages() {
         return photoGallery ? photoGallery.getImages() : [];
+    }
+
+    function resetFormAfterSave() {
+        if (PInfo) {
+            PInfo.setProductId("");
+            PInfo.setValues(PInfo.emptyValues());
+        }
+        form.reset();
+        if (photoGallery) photoGallery.clear();
+        if (nameDupCheck) nameDupCheck.reset();
+        if (codeDupCheck) codeDupCheck.reset();
+        if (deptPicker) deptPicker.clear();
+        setStatus("");
+    }
+
+    function showSaveModal() {
+        if (!saveModal) return;
+        saveModal.hidden = false;
+        if (PF && PF.speakKorean) PF.speakKorean("저장이 완료되었습니다");
+    }
+
+    if (saveContinueBtn) {
+        saveContinueBtn.addEventListener("click", function () {
+            resetFormAfterSave();
+            if (saveModal) saveModal.hidden = true;
+        });
+    }
+    if (saveExitBtn) {
+        saveExitBtn.addEventListener("click", function () {
+            location.href = "product-manage.html";
+        });
     }
 
     if (PF && PF.initProductDeptModalPicker && deptHidden) {
@@ -145,16 +179,8 @@
                             PInfo.saveToServer(api, item.id)
                         :   Promise.resolve();
                     return infoP.then(function () {
-                        if (PInfo) {
-                            PInfo.setProductId("");
-                            PInfo.setValues(PInfo.emptyValues());
-                        }
-                        form.reset();
-                        if (photoGallery) photoGallery.clear();
-                        if (nameDupCheck) nameDupCheck.reset();
-                        if (codeDupCheck) codeDupCheck.reset();
-                        if (deptPicker) deptPicker.clear();
-                        setStatus("저장했습니다. 계속 등록하거나 상품 리스트에서 확인하세요.");
+                        setStatus("");
+                        showSaveModal();
                     });
                 })
                 .catch(function (err2) {
