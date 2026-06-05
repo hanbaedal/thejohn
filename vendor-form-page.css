@@ -429,9 +429,37 @@
     }
 }
 
+/* 업체 수정: 2열=대표자 이름, 3열=회사 전화 위치에 세로 정렬 */
+@media (min-width: 521px) {
+    .vr-form-page--edit {
+        /* 1열 유지, 2열=대표자 이름·3열=회사 전화 기준 위치 */
+        --vr-e-col1: 14.5rem;
+        --vr-e-col2: 15.5rem;
+        --vr-e-col3: 12.5rem;
+    }
+
+    .vr-form-page--edit .vr-form .vr-row--3 {
+        display: grid;
+        grid-template-columns: var(--vr-e-col1) var(--vr-e-col2) var(--vr-e-col3);
+        column-gap: var(--vr-col-gap, 5em);
+        row-gap: 0.35rem;
+        align-items: center;
+        flex-wrap: unset;
+    }
+
+    .vr-form-page--edit .vr-form .vr-row--3 > .vr-slot {
+        flex: unset;
+        width: auto;
+        min-width: 0;
+    }
+}
+
 @media (min-width: 768px) {
     .vr-form-page .vr-form .vr-row--3 {
         flex-wrap: nowrap;
+    }
+    .vr-form-page--edit .vr-form .vr-row--3 {
+        flex-wrap: unset;
     }
     .vr-form-page {
         max-width: min(100%, 72rem);
