@@ -130,7 +130,7 @@
 /* 스마트폰: 항목명 | 입력·내용 한 줄 (등록·수정·조회 공통) */
 @media (max-width: 640px) {
     .pinfo-modal {
-        --pinfo-label-w: 6.75rem;
+        --pinfo-label-w: calc(6.75rem * 0.7);
         --pinfo-desc-size: 0.72rem;
         --pinfo-input-size: 0.8125rem;
         --pinfo-input-min-h: 2rem;
@@ -148,17 +148,19 @@
         font-size: var(--pinfo-desc-size);
         font-weight: 700;
         line-height: 1.3;
-        padding: 0.35rem 0.3rem;
+        padding: 0.35rem 0.22rem;
         word-break: keep-all;
-        text-align: left;
+        text-align: center;
         align-items: center;
-        justify-content: flex-start;
+        justify-content: center;
         white-space: nowrap;
     }
     .pinfo-modal .pinfo-row:has(textarea) .pinfo-row__label {
         padding-top: 0.45rem;
         white-space: normal;
-        align-items: flex-start;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
     }
     .pinfo-modal .pinfo-row__input {
         padding: 0.35rem 0.4rem;
