@@ -67,10 +67,6 @@
             </div>
             <div class="vm-group">
                 <div class="vm-row">
-                    <a href="order-list-admin.html" class="company-division-card" id="vm-order-manage" hidden>
-                        <h2>주문서관리</h2>
-                        <p>업체 주문 접수 내역·PDF 다운로드</p>
-                    </a>
                     <a href="vendor-email-broadcast.html" class="company-division-card">
                         <h2>이메일 보내기</h2>
                         <p>등록·신규 업체별로 수신자를 선택해 메일을 발송합니다.</p>
@@ -139,27 +135,15 @@
             syncAuthUi();
             function syncSupportHubAdminCards() {
                 var hubNews = document.getElementById("support-hub-news-admin");
-                var orderCard = document.getElementById("vm-order-manage");
                 var migrateCard = document.getElementById("vm-data-migrate");
                 var finderCard = document.getElementById("vm-prospect-finder");
                 var admin =
                     window.THEJHON_AUTH &&
                     THEJHON_AUTH.canManageRegisters &&
                     THEJHON_AUTH.canManageRegisters();
-                var orderAdmin =
-                    window.THEJHON_AUTH &&
-                    THEJHON_AUTH.canShowOrderManageMenu &&
-                    THEJHON_AUTH.canShowOrderManageMenu();
                 if (hubNews) {
                     hubNews.hidden = !admin;
                     hubNews.setAttribute("aria-hidden", admin ? "false" : "true");
-                }
-                var manageHome =
-                    Auth && Auth.getStaffNavMode && Auth.getStaffNavMode() === "manage-home";
-                if (orderCard) {
-                    var showOrder = orderAdmin && !manageHome;
-                    orderCard.hidden = !showOrder;
-                    orderCard.setAttribute("aria-hidden", showOrder ? "false" : "true");
                 }
                 if (migrateCard) {
                     migrateCard.hidden = !admin;
