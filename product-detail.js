@@ -214,12 +214,40 @@
         });
     }
 
-    function scrollHeroBySlide(scrollEl, direction) {
-        if (!scrollEl) return;
+    function getHeroMetrics(scrollEl) {
         var slide = scrollEl.querySelector(".pd-hero-slide");
-        if (!slide) return;
-        var step = slide.offsetWidth || scrollEl.clientWidth;
-        scrollEl.scrollBy({ left: direction * step, behavior: "smooth" });
+        var step = slide ? slide.offsetWidth || scrollEl.clientWidth : scrollEl.clientWidth;
+        var count = scrollEl.querySelectorAll(".pd-hero-slide").length;
+        return { step: step || 0, count: count };
+    }
+
+    function getHeroSlideIndex(scrollEl, metrics) {
+        var m = metrics || getHeroMetrics(scrollEl);
+        if (!m.step || !m.count) return 0;
+        var idx = Math.round(scrollEl.scrollLeft / m.step);
+        if (idx < 0) idx = 0;
+        if (idx >= m.count) idx = m.count - 1;
+        return idx;
+    }
+
+    function scrollHeroToIndex(scrollEl, index, behavior) {
+        var m = getHeroMetrics(scrollEl);
+        if (!m.count || !m.step) return;
+        var i = ((index % m.count) + m.count) % m.count;
+        scrollEl.scrollTo({ left: i * m.step, behavior: behavior || "smooth" });
+    }
+
+    /** 좌·우 클릭 시 끝에서도 처음·끝으로 순환 */
+    function scrollHeroBySlide(scrollEl, direction) {
+        if (!scrollEl || !direction) return;
+        var m = getHeroMetrics(scrollEl);
+        if (!m.count || !m.step) return;
+        var current = getHeroSlideIndex(scrollEl, m);
+        var next = current + direction;
+        var wraps = next < 0 || next >= m.count;
+        if (next < 0) next = m.count - 1;
+        if (next >= m.count) next = 0;
+        scrollHeroToIndex(scrollEl, next, wraps ? "auto" : "smooth");
     }
 
     function attachHeroClickZones(wrap, scrollEl, count) {
