@@ -5,8 +5,30 @@
     var VENDOR_MANAGE_PAGE = "vendor-manage.html";
 
     var LABEL_SPECS = {
-        large: { w: 160, h: 60, name: "대봉투 라벨 (160×60mm)" },
-        regular: { w: 99.1, h: 38.1, name: "일반봉투 라벨 (99.1×38.1mm)" }
+        large: {
+            w: 119.3,
+            h: 42.8,
+            cols: 2,
+            rows: 3,
+            perPage: 6,
+            pageClass: "vdm-label-page--large",
+            gridClass: "vdm-label-grid--large",
+            pairClass: "vdm-label-pair--large",
+            pageOrient: "landscape",
+            name: "대봉투 라벨 (119.3×42.8mm · A4 6칸)"
+        },
+        small: {
+            w: 99.1,
+            h: 33.9,
+            cols: 2,
+            rows: 8,
+            perPage: 16,
+            pageClass: "vdm-label-page--small",
+            gridClass: "vdm-label-grid--small",
+            pairClass: "vdm-label-pair--small",
+            pageOrient: "portrait",
+            name: "소봉투 라벨 (99.1×33.9mm · A4 16칸)"
+        }
     };
 
     var SENDER = {
@@ -26,7 +48,7 @@
     var pickerTitle = document.getElementById("vdm-picker-title");
     var printArea = document.getElementById("vdm-print-area");
     var envLargeEl = document.getElementById("vdm-env-large");
-    var envRegularEl = document.getElementById("vdm-env-regular");
+    var envSmallEl = document.getElementById("vdm-env-small");
 
     var pickerRows = [];
     var appliedSelections = [];
@@ -310,8 +332,16 @@
     }
 
     function getEnvelopeType() {
-        if (envRegularEl && envRegularEl.checked) return "regular";
+        if (envSmallEl && envSmallEl.checked) return "small";
         return "large";
+    }
+
+    function chunkJobs(jobs, size) {
+        var pages = [];
+        for (var i = 0; i < jobs.length; i += size) {
+            pages.push(jobs.slice(i, i + size));
+        }
+        return pages;
     }
 
     function buildPrintJobs() {
@@ -373,40 +403,49 @@
     }
 
     function senderContent(envelopeType) {
-        if (envelopeType === "large") {
+        if (envelopeType === "small") {
             return {
                 zip: SENDER.zip,
-                lines: [
-                    "(주)더존 · 대표 이상범",
-                    "경기도 부천시 원미구 부천로 130번길 5, 삼도빌딩 1층",
-                    "032-666-5255"
-                ]
+                lines: ["(주)더존", "부천 삼도빌딩 1층", "032-666-5255"]
             };
         }
-        return SENDER;
+        return {
+            zip: SENDER.zip,
+            lines: ["(주)더존 · 이상범", "부천로 130번길 5", "032-666-5255"]
+        };
     }
 
     function renderLabelPairHtml(job, envelopeType) {
-        var pairCls =
-            envelopeType === "regular" ? "vdm-label-pair vdm-label-pair--regular" : "vdm-label-pair vdm-label-pair--large";
+        var spec = getLabelSpec(envelopeType);
         var sender = senderContent(envelopeType);
         var recipientNames = [job.recipient];
         if (job.sub) recipientNames.push(job.sub);
         return (
-            '<article class="' + pairCls + '">' +
-            renderLabelHalf("발송인", sender.zip, sender.lines, []) +
-            renderLabelHalf("수신인", job.zip, recipientAddressLines(job), recipientNames) +
+            '<article class="vdm-label-pair ' + spec.pairClass + '">' +
+            renderLabelHalf("발신", sender.zip, sender.lines, []) +
+            renderLabelHalf("수신", job.zip, recipientAddressLines(job), recipientNames) +
             "</article>"
         );
     }
 
     function renderAllLabelsHtml(jobs, envelopeType) {
-        var inner = jobs
-            .map(function (job) {
-                return renderLabelPairHtml(job, envelopeType);
+        var spec = getLabelSpec(envelopeType);
+        var pages = chunkJobs(jobs, spec.perPage);
+        return pages
+            .map(function (pageJobs) {
+                var labels = pageJobs
+                    .map(function (job) {
+                        return renderLabelPairHtml(job, envelopeType);
+                    })
+                    .join("");
+                return (
+                    '<section class="vdm-label-page ' + spec.pageClass + '">' +
+                    '<div class="vdm-label-grid ' + spec.gridClass + '">' +
+                    labels +
+                    "</div></section>"
+                );
             })
             .join("");
-        return '<div class="vdm-label-grid">' + inner + "</div>";
     }
 
     function getLabelSpec(envelopeType) {
@@ -424,13 +463,15 @@
         return true;
     }
 
-    function injectPrintPageSize() {
+    function injectPrintPageSize(envelopeType) {
         var id = "vdm-print-page-size";
         var old = document.getElementById(id);
         if (old) old.remove();
+        var spec = getLabelSpec(envelopeType);
+        var orient = spec.pageOrient === "landscape" ? "A4 landscape" : "A4 portrait";
         var style = document.createElement("style");
         style.id = id;
-        style.textContent = "@media print { @page { size: A4 portrait; margin: 5mm; } }";
+        style.textContent = "@media print { @page { size: " + orient + "; margin: 0; } }";
         document.head.appendChild(style);
     }
 
@@ -458,7 +499,7 @@
         if (!printArea) return;
         printArea.innerHTML = renderAllLabelsHtml(jobs, envelopeType);
 
-        injectPrintPageSize();
+        injectPrintPageSize(envelopeType);
 
         document.body.classList.remove("vdm-printing");
         document.body.classList.add("vdm-printing");
@@ -471,8 +512,14 @@
         window.addEventListener("afterprint", cleanup);
 
         var spec = getLabelSpec(envelopeType);
+        var pageCount = Math.ceil(jobs.length / spec.perPage);
         setStatus(
-            spec.name + " · 선택 업체 " + jobs.length + "건을 한 장(A4)에 배열해 인쇄합니다.",
+            spec.name +
+                " · " +
+                jobs.length +
+                "건 · A4 " +
+                pageCount +
+                "장 (칸당 발신·수신) 인쇄합니다.",
             false
         );
         window.print();
