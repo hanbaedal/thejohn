@@ -22,17 +22,7 @@
 
     document.querySelectorAll(".company-division-card[href]").forEach(function (card) {
         card.addEventListener("click", function () {
-            if (!THEJHON_AUTH.setStaffNavMode) return;
-            var href = String(card.getAttribute("href") || "").toLowerCase();
-            if (
-                href.indexOf("order-manage-hub") >= 0 ||
-                href.indexOf("supervisor-order") >= 0 ||
-                href.indexOf("supervisor-transaction") >= 0
-            ) {
-                THEJHON_AUTH.setStaffNavMode("order");
-            } else {
-                THEJHON_AUTH.setStaffNavMode("work");
-            }
+            if (THEJHON_AUTH.setStaffNavMode) THEJHON_AUTH.setStaffNavMode("work");
         });
     });
 })();

@@ -134,3 +134,28 @@ body.staff-nav-order .omh-hub-page .omh-group .company-division-card p {
     font-size: 0.82rem;
     line-height: 1.52;
 }
+
+/* 스마트폰: 허브 카드·PDF 모달 — 항목 숨김 방지·스크롤 여유 */
+@media (max-width: 720px) {
+    .page-main.omh-hub-page,
+    body.staff-nav-order .omh-hub-page {
+        padding-bottom: max(2.5rem, env(safe-area-inset-bottom, 0));
+        overflow-x: hidden;
+        overflow-y: visible;
+    }
+    .page-main.omh-hub-page .omh-hub-rows,
+    body.staff-nav-order .omh-hub-page .omh-hub-rows {
+        max-width: none;
+        width: 100%;
+        padding-bottom: 1rem;
+    }
+    .page-main.omh-hub-page .omh-group .company-division-card,
+    body.staff-nav-order .omh-hub-page .omh-group .company-division-card {
+        display: block;
+        min-height: 2.75rem;
+    }
+    .page-main.omh-hub-page .omh-group .company-division-card[hidden],
+    body.staff-nav-order .omh-hub-page .omh-group .company-division-card[hidden] {
+        display: none !important;
+    }
+}

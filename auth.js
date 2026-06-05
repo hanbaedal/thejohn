@@ -1200,6 +1200,9 @@
         if (links.transactionPdf) {
             items.push({ href: links.transactionPdf, label: "거래명세서 PDF" });
         }
+        if (links.transactionList) {
+            items.push({ href: links.transactionList, label: "거래명세서" });
+        }
         if (links.transactionManual) {
             items.push({ href: links.transactionManual, label: "거래명세서 수기" });
         }
@@ -2406,6 +2409,7 @@
                 list: "supervisor-order-list.html",
                 orderPdf: "supervisor-order-pdf.html",
                 transactionPdf: "supervisor-transaction-pdf.html",
+                transactionList: "supervisor-transaction-list.html",
                 transactionManual: "transaction-manual-register.html",
                 transactionManualList: "transaction-manual-list.html"
             };
@@ -2415,6 +2419,7 @@
                 list: "order-list-admin.html",
                 orderPdf: "supervisor-order-pdf.html",
                 transactionPdf: "supervisor-transaction-pdf.html",
+                transactionList: "supervisor-transaction-list.html",
                 transactionManual: "transaction-manual-register.html",
                 transactionManualList: "transaction-manual-list.html"
             };

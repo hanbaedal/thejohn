@@ -172,26 +172,61 @@
         return new Blob([blob], { type: "application/pdf" });
     }
 
+    function prefersPdfInlineViewUnsupported() {
+        if (typeof window.matchMedia === "function") {
+            if (window.matchMedia("(max-width: 720px)").matches) return true;
+            if (window.matchMedia("(pointer: coarse)").matches) return true;
+        }
+        var ua = navigator.userAgent || "";
+        return /iPhone|iPad|iPod|Android|Mobile/i.test(ua);
+    }
+
     var pdfModalUi = {
         el: null,
         frame: null,
+        objectEl: null,
         titleEl: null,
+        mobileActionsEl: null,
         url: null,
+        currentBlob: null,
+        currentFilename: "document.pdf",
         escBound: false
     };
 
     function closePdfBlobModal() {
         if (!pdfModalUi.el || pdfModalUi.el.hidden) return;
         pdfModalUi.el.hidden = true;
+        pdfModalUi.el.classList.remove("pdf-view-modal--mobile-inline");
         if (pdfModalUi.frame) pdfModalUi.frame.removeAttribute("src");
+        if (pdfModalUi.objectEl) pdfModalUi.objectEl.removeAttribute("data");
         if (pdfModalUi.url) {
             URL.revokeObjectURL(pdfModalUi.url);
             pdfModalUi.url = null;
         }
+        pdfModalUi.currentBlob = null;
+        document.body.classList.remove("pdf-view-modal-open");
         document.body.style.overflow = "";
     }
 
+    function openPdfBlobFromModalUi() {
+        if (!pdfModalUi.url) return;
+        var a = document.createElement("a");
+        a.href = pdfModalUi.url;
+        a.target = "_blank";
+        a.rel = "noopener";
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+    }
+
     function ensurePdfBlobModal() {
+        if (pdfModalUi.el && !document.getElementById("thejhonPdfViewModalMobileActions")) {
+            pdfModalUi.el.remove();
+            pdfModalUi.el = null;
+            pdfModalUi.frame = null;
+            pdfModalUi.objectEl = null;
+            pdfModalUi.mobileActionsEl = null;
+        }
         if (pdfModalUi.el) return pdfModalUi.el;
         var modal = document.createElement("div");
         modal.id = "thejhonPdfViewModal";
@@ -206,15 +241,30 @@
             '<h2 class="pdf-view-modal__title" id="thejhonPdfViewModalTitle">PDF 보기</h2>' +
             '<button type="button" class="pdf-view-modal__close" id="thejhonPdfViewModalClose" aria-label="닫기">&times;</button>' +
             "</div>" +
+            '<div class="pdf-view-modal__mobile-actions" id="thejhonPdfViewModalMobileActions" hidden>' +
+            '<p class="pdf-view-modal__mobile-hint">스마트폰에서는 아래 <strong>PDF 열기</strong>를 눌러 주세요. (브라우저 PDF 뷰어로 열립니다)</p>' +
+            '<div class="pdf-view-modal__mobile-btns">' +
+            '<button type="button" class="btn btn-primary" id="thejhonPdfViewModalOpenBtn">PDF 열기</button>' +
+            '<button type="button" class="btn" id="thejhonPdfViewModalSaveBtn">파일 저장</button>' +
+            "</div></div>" +
             '<div class="pdf-view-modal__body">' +
+            '<object class="pdf-view-modal__object" id="thejhonPdfViewModalObject" type="application/pdf" aria-label="PDF 미리보기"></object>' +
             '<iframe class="pdf-view-modal__frame" id="thejhonPdfViewModalFrame" title="PDF 미리보기"></iframe>' +
             "</div>" +
             "</div>";
         document.body.appendChild(modal);
         pdfModalUi.el = modal;
         pdfModalUi.frame = document.getElementById("thejhonPdfViewModalFrame");
+        pdfModalUi.objectEl = document.getElementById("thejhonPdfViewModalObject");
         pdfModalUi.titleEl = document.getElementById("thejhonPdfViewModalTitle");
+        pdfModalUi.mobileActionsEl = document.getElementById("thejhonPdfViewModalMobileActions");
         document.getElementById("thejhonPdfViewModalClose").addEventListener("click", closePdfBlobModal);
+        document.getElementById("thejhonPdfViewModalOpenBtn").addEventListener("click", openPdfBlobFromModalUi);
+        document.getElementById("thejhonPdfViewModalSaveBtn").addEventListener("click", function () {
+            if (pdfModalUi.currentBlob) {
+                triggerPdfDownload(pdfModalUi.currentBlob, pdfModalUi.currentFilename);
+            }
+        });
         modal.addEventListener("click", function (e) {
             if (e.target === modal) closePdfBlobModal();
         });
@@ -231,12 +281,25 @@
         blob = ensurePdfBlob(blob);
         closePdfBlobModal();
         ensurePdfBlobModal();
-        var title = String(fallbackName || "PDF 보기").replace(/\.pdf$/i, "").replace(/</g, "");
+        var filename = String(fallbackName || "document.pdf");
+        if (!/\.pdf$/i.test(filename)) filename += ".pdf";
+        var title = filename.replace(/\.pdf$/i, "").replace(/</g, "");
         var url = URL.createObjectURL(blob);
+        var mobileInline = prefersPdfInlineViewUnsupported();
+
         pdfModalUi.url = url;
+        pdfModalUi.currentBlob = blob;
+        pdfModalUi.currentFilename = filename;
         if (pdfModalUi.titleEl) pdfModalUi.titleEl.textContent = title;
-        if (pdfModalUi.frame) pdfModalUi.frame.src = url;
+        if (pdfModalUi.frame) pdfModalUi.frame.src = mobileInline ? "" : url;
+        if (pdfModalUi.objectEl) {
+            if (mobileInline) pdfModalUi.objectEl.setAttribute("data", url);
+            else pdfModalUi.objectEl.removeAttribute("data");
+        }
+        if (pdfModalUi.mobileActionsEl) pdfModalUi.mobileActionsEl.hidden = !mobileInline;
+        pdfModalUi.el.classList.toggle("pdf-view-modal--mobile-inline", mobileInline);
         pdfModalUi.el.hidden = false;
+        document.body.classList.add("pdf-view-modal-open");
         document.body.style.overflow = "hidden";
         return Promise.resolve();
     }
