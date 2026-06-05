@@ -389,6 +389,22 @@
 .sm-self-form-page .sm-brand-media-field { margin-top: 0.35rem; }
 .sm-self-form-page .sm-brand-preview-row { display: none; }
 .sm-self-form-page .sm-brand-media-col .sm-brand-preview { margin-top: 0.65rem; }
+
+@media (min-width: 768px) {
+    .sm-self-form-page {
+        max-width: min(100%, 72rem);
+        margin-left: auto;
+        margin-right: auto;
+        padding-left: 1.25rem;
+        padding-right: 1.25rem;
+        box-sizing: border-box;
+    }
+    .sm-self-form-page .sm-panel,
+    .sm-self-form-page .sm-self-form {
+        max-width: 100%;
+    }
+}
+
 .sm-brand-media {
     display: grid;
     grid-template-columns: 1fr 1fr;
