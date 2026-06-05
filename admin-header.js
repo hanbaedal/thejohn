@@ -66,6 +66,7 @@
             "vendor-new-register.html": true,
             "vendor-new-list.html": true,
             "vendor-email-broadcast.html": true,
+            "vendor-email-history.html": true,
             "vendor-prospect-list.html": true,
             "vendor-prospect-finder.html": true,
             "vendor-excel-import.html": true,

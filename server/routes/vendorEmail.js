@@ -93,25 +93,13 @@ function normalizeEmailSource(v) {
     return String(v || "").trim() === "vendor_new" ? "vendor_new" : "vendors";
 }
 
-async function collectRecipientsFromSelections(db, source, selections, senderId) {
-    const collection = normalizeEmailSource(source) === "vendor_new" ? "vendor_new" : "vendors";
-    const registerFilter = senderId ? { vn_registered_by: registeredByInFilter(senderId) } : {};
-    const selMap = {};
-    const ids = [];
-    const src = Array.isArray(selections) ? selections : [];
-    for (let i = 0; i < src.length; i++) {
-        const row = src[i] || {};
-        const id = trim(row.id);
-        if (!id) continue;
-        if (!row.sendCompany && !row.sendManager) continue;
-        ids.push(id);
-        selMap[id] = {
-            sendCompany: !!row.sendCompany,
-            sendManager: !!row.sendManager
-        };
-    }
+async function collectRecipientsForCollection(db, collection, selMap, ids, registerFilter) {
+    const set = new Set();
+    const toList = [];
+    let companyCount = 0;
+    let managerCount = 0;
     if (!ids.length) {
-        return { recipients: [], counts: { company: 0, manager: 0, total: 0, vendors: 0 } };
+        return { recipients: toList, companyCount: 0, managerCount: 0, vendorCount: 0, emailSet: set };
     }
     const docs = await db
         .collection(collection)
@@ -120,10 +108,6 @@ async function collectRecipientsFromSelections(db, source, selections, senderId)
         })
         .limit(5000)
         .toArray();
-    const set = new Set();
-    const toList = [];
-    let companyCount = 0;
-    let managerCount = 0;
     for (let j = 0; j < docs.length; j++) {
         const doc = docs[j] || {};
         const sel = selMap[doc.id];
@@ -147,11 +131,68 @@ async function collectRecipientsFromSelections(db, source, selections, senderId)
     }
     return {
         recipients: toList,
+        companyCount: companyCount,
+        managerCount: managerCount,
+        vendorCount: docs.length,
+        emailSet: set
+    };
+}
+
+async function collectRecipientsFromSelections(db, selections, senderId) {
+    const registerFilter = senderId ? { vn_registered_by: registeredByInFilter(senderId) } : {};
+    const src = Array.isArray(selections) ? selections : [];
+    const maps = { vendors: {}, vendor_new: {} };
+    const idsByCol = { vendors: [], vendor_new: [] };
+    for (let i = 0; i < src.length; i++) {
+        const row = src[i] || {};
+        const id = trim(row.id);
+        if (!id) continue;
+        if (!row.sendCompany && !row.sendManager) continue;
+        const col = normalizeEmailSource(row.source);
+        if (!maps[col][id]) {
+            maps[col][id] = {
+                sendCompany: !!row.sendCompany,
+                sendManager: !!row.sendManager
+            };
+            idsByCol[col].push(id);
+        } else {
+            maps[col][id].sendCompany = maps[col][id].sendCompany || !!row.sendCompany;
+            maps[col][id].sendManager = maps[col][id].sendManager || !!row.sendManager;
+        }
+    }
+    const globalSet = new Set();
+    const toList = [];
+    let companyCount = 0;
+    let managerCount = 0;
+    let vendorCount = 0;
+    const cols = ["vendors", "vendor_new"];
+    for (let c = 0; c < cols.length; c++) {
+        const col = cols[c];
+        const part = await collectRecipientsForCollection(
+            db,
+            col,
+            maps[col],
+            idsByCol[col],
+            registerFilter
+        );
+        vendorCount += part.vendorCount;
+        for (let r = 0; r < part.recipients.length; r++) {
+            const email = part.recipients[r];
+            if (!globalSet.has(email)) {
+                globalSet.add(email);
+                toList.push(email);
+            }
+        }
+        companyCount += part.companyCount;
+        managerCount += part.managerCount;
+    }
+    return {
+        recipients: toList,
         counts: {
             company: companyCount,
             manager: managerCount,
             total: toList.length,
-            vendors: docs.length
+            vendors: vendorCount
         }
     };
 }
@@ -261,22 +302,24 @@ router.post("/broadcast", requireRole("admin"), async function (req, res) {
         const body = req.body || {};
         const subject = trim(body.subject);
         const greeting = trim(body.greeting);
-        const source = normalizeEmailSource(body.source);
         const selections = Array.isArray(body.selections) ? body.selections : [];
-        const onlyMine = body.onlyMine !== false;
         if (!subject) return res.status(400).json({ ok: false, error: "메일 제목을 입력해 주세요." });
         if (!greeting) return res.status(400).json({ ok: false, error: "인사말(본문)을 입력해 주세요." });
         if (!selections.length) {
             return res.status(400).json({ ok: false, error: "수신자를 선택해 주세요." });
         }
-        const senderId = onlyMine && req.auth && req.auth.userId ? String(req.auth.userId) : "";
+        const senderId = req.auth && req.auth.userId ? String(req.auth.userId) : "";
         const db = getDb();
-        const { recipients, counts } = await collectRecipientsFromSelections(
-            db,
-            source,
-            selections,
-            senderId
-        );
+        const { recipients, counts } = await collectRecipientsFromSelections(db, selections, senderId);
+        const sources = [];
+        const sourceSeen = {};
+        for (let si = 0; si < selections.length; si++) {
+            const srcKey = normalizeEmailSource(selections[si].source);
+            if (!sourceSeen[srcKey]) {
+                sourceSeen[srcKey] = true;
+                sources.push(srcKey);
+            }
+        }
         if (!recipients.length) {
             return res.status(400).json({
                 ok: false,
@@ -294,8 +337,9 @@ router.post("/broadcast", requireRole("admin"), async function (req, res) {
             senderRole: req.auth && req.auth.role ? String(req.auth.role) : "",
             subject: subject,
             greeting: greeting,
-            source: source,
-            onlyMine: onlyMine,
+            sources: sources,
+            source: sources.length === 1 ? sources[0] : "mixed",
+            onlyMine: true,
             selectionCount: selections.length,
             requestedCount: recipients.length,
             recipientCounts: counts,
@@ -327,6 +371,11 @@ router.get("/history", requireRole("admin"), async function (req, res) {
         const dateFrom = trim(req.query.dateFrom);
         const dateTo = trim(req.query.dateTo);
         const filter = {};
+        const role = req.auth && req.auth.role ? String(req.auth.role) : "";
+        const userId = req.auth && req.auth.userId ? String(req.auth.userId) : "";
+        if (role !== "supervisor" && userId) {
+            filter.senderId = userId;
+        }
         if (dateFrom || dateTo) {
             let fromMs = 0;
             let toMs = 0;

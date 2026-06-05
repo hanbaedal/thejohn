@@ -1,30 +1,34 @@
 (function () {
     var api = window.THEJHON_API;
     var Auth = window.THEJHON_AUTH;
+    var PF = window.THEJHON_PRODUCT_FORM;
+    var VENDOR_MANAGE_PAGE = "vendor-manage.html";
+    var MAX_ATTACH = 5;
+    var ALLOWED_EXTS = [".pdf", ".hwp", ".hwpx", ".doc", ".docx", ".xls", ".xlsx", ".jpg", ".jpeg", ".png"];
+
     var statusEl = document.getElementById("veb-status");
-    var onlyMineEl = document.getElementById("veb-only-mine");
+    var srcVendorsEl = document.getElementById("veb-src-vendors");
+    var srcVendorNewEl = document.getElementById("veb-src-vendor-new");
     var subjectEl = document.getElementById("veb-subject");
     var greetingEl = document.getElementById("veb-greeting");
     var filesEl = document.getElementById("veb-files");
-    var testEmailEl = document.getElementById("veb-test-email");
-    var testBtn = document.getElementById("veb-test-btn");
+    var filePickBtn = document.getElementById("veb-file-pick-btn");
+    var attachListEl = document.getElementById("veb-attach-list");
     var sendBtn = document.getElementById("veb-send-btn");
     var pickBtn = document.getElementById("veb-pick-btn");
     var summaryEl = document.getElementById("veb-selected-summary");
-    var historyFromEl = document.getElementById("veb-history-date-from");
-    var historyToEl = document.getElementById("veb-history-date-to");
-    var historyListEl = document.getElementById("veb-history-list");
     var failedWrap = document.getElementById("veb-failed-wrap");
     var failedListEl = document.getElementById("veb-failed-list");
     var pickerModal = document.getElementById("veb-picker-modal");
     var pickerBody = document.getElementById("veb-picker-body");
     var pickerEmpty = document.getElementById("veb-picker-empty");
     var pickerTitle = document.getElementById("veb-picker-title");
-    var ALLOWED_EXTS = [".pdf", ".hwp", ".hwpx", ".doc", ".docx", ".xls", ".xlsx", ".jpg", ".jpeg", ".png"];
+    var successModal = document.getElementById("veb-success-modal");
 
     var pickerRows = [];
     var appliedSelections = [];
-    var appliedSource = "";
+    var appliedSourcesKey = "";
+    var attachmentFiles = [];
 
     function setStatus(msg, isError) {
         if (!statusEl) return;
@@ -40,17 +44,31 @@
             .replace(/"/g, "&quot;");
     }
 
-    function getSource() {
-        var el = document.querySelector('input[name="veb-source"]:checked');
-        return el && el.value === "vendor_new" ? "vendor_new" : "vendors";
+    function speak(text) {
+        if (PF && PF.speakKorean) PF.speakKorean(text);
     }
 
-    function sourceLabel(source) {
-        return source === "vendor_new" ? "신규업체" : "등록업체";
+    function getSelectedSources() {
+        var out = [];
+        if (srcVendorsEl && srcVendorsEl.checked) out.push("vendors");
+        if (srcVendorNewEl && srcVendorNewEl.checked) out.push("vendor_new");
+        return out;
     }
 
-    function onlyMine() {
-        return !!(onlyMineEl && onlyMineEl.checked);
+    function sourcesKey(sources) {
+        return (sources || []).slice().sort().join(",");
+    }
+
+    function sourcesLabel(sources) {
+        var parts = [];
+        if (!sources || !sources.length) return "";
+        if (sources.indexOf("vendors") >= 0) parts.push("등록업체");
+        if (sources.indexOf("vendor_new") >= 0) parts.push("신규업체");
+        return parts.join(" · ");
+    }
+
+    function sourceTypeLabel(source) {
+        return source === "vendor_new" ? "신규" : "등록";
     }
 
     function myUserId() {
@@ -58,7 +76,6 @@
     }
 
     function filterOnlyMine(items) {
-        if (!onlyMine()) return items || [];
         var me = myUserId();
         if (!me) return [];
         return (items || []).filter(function (it) {
@@ -78,9 +95,15 @@
         );
     }
 
-    function normalizeRow(it) {
+    function hasValidEmail(v) {
+        var e = String(v || "").trim();
+        return e.indexOf("@") > 0 && e.indexOf(".") > 2;
+    }
+
+    function normalizeRow(it, source) {
         return {
             id: String((it && it.id) || "").trim(),
+            source: source,
             name: String((it && it.vn_company) || "").trim() || "(이름 없음)",
             companyEmail: String((it && it.vn_email) || "").trim(),
             managerEmail: String((it && it.vn_mgr_email) || "").trim(),
@@ -89,9 +112,8 @@
         };
     }
 
-    function hasValidEmail(v) {
-        var e = String(v || "").trim();
-        return e.indexOf("@") > 0 && e.indexOf(".") > 2;
+    function rowKey(row) {
+        return String(row.source || "") + "\t" + String(row.id || "");
     }
 
     function countSelections(rows) {
@@ -119,17 +141,18 @@
 
     function renderSummary() {
         if (!summaryEl) return;
-        if (!appliedSelections.length || appliedSource !== getSource()) {
+        var key = sourcesKey(getSelectedSources());
+        if (!appliedSelections.length || appliedSourcesKey !== key) {
             summaryEl.textContent = "수신자를 선택해 주세요.";
             return;
         }
         var c = countSelections(appliedSelections);
         if (!c.total) {
-            summaryEl.textContent = sourceLabel(appliedSource) + " — 선택된 수신 이메일이 없습니다.";
+            summaryEl.textContent = sourcesLabel(getSelectedSources()) + " — 선택된 수신 이메일이 없습니다.";
             return;
         }
         summaryEl.textContent =
-            sourceLabel(appliedSource) +
+            sourcesLabel(getSelectedSources()) +
             " · 회사 " +
             c.company +
             "건 · 담당자 " +
@@ -152,42 +175,19 @@
                 var companyOk = hasValidEmail(row.companyEmail);
                 var managerOk = hasValidEmail(row.managerEmail);
                 return (
-                    "<tr data-veb-idx=\"" +
-                    idx +
-                    "\">" +
-                    "<td class=\"veb-col-name\">" +
-                    escapeHtml(row.name) +
-                    "</td>" +
-                    "<td class=\"veb-col-check\">" +
-                    "<label>" +
-                    "<input type=\"checkbox\" class=\"veb-picker-check veb-check-company\" data-veb-idx=\"" +
-                    idx +
-                    "\"" +
-                    (row.sendCompany ? " checked" : "") +
-                    (companyOk ? "" : " disabled") +
-                    ">" +
-                    "</label>" +
-                    "<span class=\"veb-picker-email" +
-                    (companyOk ? "" : " veb-picker-email--empty") +
-                    "\">" +
-                    escapeHtml(companyOk ? row.companyEmail : "(없음)") +
-                    "</span>" +
-                    "</td>" +
-                    "<td class=\"veb-col-check\">" +
-                    "<label>" +
-                    "<input type=\"checkbox\" class=\"veb-picker-check veb-check-manager\" data-veb-idx=\"" +
-                    idx +
-                    "\"" +
-                    (row.sendManager ? " checked" : "") +
-                    (managerOk ? "" : " disabled") +
-                    ">" +
-                    "</label>" +
-                    "<span class=\"veb-picker-email" +
-                    (managerOk ? "" : " veb-picker-email--empty") +
-                    "\">" +
-                    escapeHtml(managerOk ? row.managerEmail : "(없음)") +
-                    "</span>" +
-                    "</td>" +
+                    "<tr data-veb-idx=\"" + idx + "\">" +
+                    "<td class=\"veb-col-type\">" + escapeHtml(sourceTypeLabel(row.source)) + "</td>" +
+                    "<td class=\"veb-col-name\">" + escapeHtml(row.name) + "</td>" +
+                    "<td class=\"veb-col-check\"><label>" +
+                    "<input type=\"checkbox\" class=\"veb-picker-check veb-check-company\" data-veb-idx=\"" + idx + "\"" +
+                    (row.sendCompany ? " checked" : "") + (companyOk ? "" : " disabled") + "></label>" +
+                    "<span class=\"veb-picker-email" + (companyOk ? "" : " veb-picker-email--empty") + "\">" +
+                    escapeHtml(companyOk ? row.companyEmail : "(없음)") + "</span></td>" +
+                    "<td class=\"veb-col-check\"><label>" +
+                    "<input type=\"checkbox\" class=\"veb-picker-check veb-check-manager\" data-veb-idx=\"" + idx + "\"" +
+                    (row.sendManager ? " checked" : "") + (managerOk ? "" : " disabled") + "></label>" +
+                    "<span class=\"veb-picker-email" + (managerOk ? "" : " veb-picker-email--empty") + "\">" +
+                    escapeHtml(managerOk ? row.managerEmail : "(없음)") + "</span></td>" +
                     "</tr>"
                 );
             })
@@ -197,21 +197,15 @@
             cb.addEventListener("change", function () {
                 var i = parseInt(cb.getAttribute("data-veb-idx"), 10);
                 if (!pickerRows[i]) return;
-                if (cb.classList.contains("veb-check-company")) {
-                    pickerRows[i].sendCompany = cb.checked;
-                } else {
-                    pickerRows[i].sendManager = cb.checked;
-                }
+                if (cb.classList.contains("veb-check-company")) pickerRows[i].sendCompany = cb.checked;
+                else pickerRows[i].sendManager = cb.checked;
             });
         });
     }
 
     function openPickerModal() {
         if (!pickerModal) return;
-        var source = getSource();
-        if (pickerTitle) {
-            pickerTitle.textContent = "수신자 선택 — " + sourceLabel(source);
-        }
+        if (pickerTitle) pickerTitle.textContent = "수신자 선택 — " + sourcesLabel(getSelectedSources());
         pickerModal.hidden = false;
         document.body.style.overflow = "hidden";
     }
@@ -248,45 +242,59 @@
     }
 
     async function loadPickerRows() {
-        var source = getSource();
-        setStatus(sourceLabel(source) + " 목록 불러오는 중…");
-        var items = [];
+        var sources = getSelectedSources();
+        if (!sources.length) {
+            return setStatus("발송 대상 업체 분류를 하나 이상 선택해 주세요.", true);
+        }
+        setStatus(sourcesLabel(sources) + " 목록 불러오는 중…");
         try {
-            if (source === "vendor_new") {
-                items = await api.listVendorNew();
-            } else {
-                items = await api.listVendors();
-                items = (items || []).filter(isPartnerVendor);
+            var rows = [];
+            if (sources.indexOf("vendors") >= 0) {
+                var vendors = await api.listVendors();
+                vendors = filterOnlyMine((vendors || []).filter(isPartnerVendor));
+                vendors.forEach(function (it) {
+                    rows.push(normalizeRow(it, "vendors"));
+                });
             }
-            items = filterOnlyMine(items);
-            items.sort(function (a, b) {
-                return String(a.vn_company || "").localeCompare(String(b.vn_company || ""), "ko");
+            if (sources.indexOf("vendor_new") >= 0) {
+                var news = filterOnlyMine(await api.listVendorNew());
+                (news || []).forEach(function (it) {
+                    rows.push(normalizeRow(it, "vendor_new"));
+                });
+            }
+            rows.sort(function (a, b) {
+                var c = String(a.name).localeCompare(String(b.name), "ko");
+                if (c !== 0) return c;
+                return String(a.source).localeCompare(String(b.source));
             });
-            pickerRows = items.map(normalizeRow);
             var prevMap = {};
-            appliedSelections.forEach(function (row) {
-                if (row && row.id) prevMap[row.id] = row;
-            });
-            pickerRows.forEach(function (row) {
-                var prev = prevMap[row.id];
-                if (prev && appliedSource === source) {
+            if (appliedSourcesKey === sourcesKey(sources)) {
+                appliedSelections.forEach(function (row) {
+                    prevMap[rowKey(row)] = row;
+                });
+            }
+            rows.forEach(function (row) {
+                var prev = prevMap[rowKey(row)];
+                if (prev) {
                     row.sendCompany = !!prev.sendCompany && hasValidEmail(row.companyEmail);
                     row.sendManager = !!prev.sendManager && hasValidEmail(row.managerEmail);
                 }
             });
+            pickerRows = rows;
             renderPickerRows();
             setStatus(pickerRows.length ? "" : "표시할 업체가 없습니다.", !pickerRows.length);
-            openPickerModal();
+            if (pickerRows.length) openPickerModal();
         } catch (e) {
             setStatus((e && e.message) || "업체 목록을 불러오지 못했습니다.", true);
         }
     }
 
     function applyPickerSelection() {
-        appliedSource = getSource();
+        appliedSourcesKey = sourcesKey(getSelectedSources());
         appliedSelections = pickerRows.map(function (row) {
             return {
                 id: row.id,
+                source: row.source,
                 name: row.name,
                 companyEmail: row.companyEmail,
                 managerEmail: row.managerEmail,
@@ -297,11 +305,8 @@
         closePickerModal();
         renderSummary();
         var c = countSelections(appliedSelections);
-        if (!c.total) {
-            setStatus("선택된 수신 이메일이 없습니다. 체크한 항목이 없으면 메일이 발송되지 않습니다.", true);
-        } else {
-            setStatus("수신자 " + c.total + "통 선택됨", false);
-        }
+        if (!c.total) setStatus("선택된 수신 이메일이 없습니다. 체크하지 않으면 발송되지 않습니다.", true);
+        else setStatus("수신자 " + c.total + "통 선택됨", false);
     }
 
     function getSelectionsPayload() {
@@ -312,10 +317,94 @@
             .map(function (row) {
                 return {
                     id: row.id,
+                    source: row.source,
                     sendCompany: !!row.sendCompany,
                     sendManager: !!row.sendManager
                 };
             });
+    }
+
+    function getExt(name) {
+        var s = String(name || "").toLowerCase();
+        var idx = s.lastIndexOf(".");
+        return idx >= 0 ? s.slice(idx) : "";
+    }
+
+    function validateFile(file) {
+        var ext = getExt(file.name);
+        if (ALLOWED_EXTS.indexOf(ext) < 0) throw new Error("허용되지 않는 첨부 형식입니다: " + file.name);
+        if (file.size > 4 * 1024 * 1024) throw new Error("파일당 4MB 이하만 첨부해 주세요.");
+    }
+
+    function renderAttachmentList() {
+        if (!attachListEl) return;
+        if (!attachmentFiles.length) {
+            attachListEl.innerHTML = "";
+            return;
+        }
+        attachListEl.innerHTML = attachmentFiles
+            .map(function (file, idx) {
+                return (
+                    "<li class=\"veb-attach-item\">" +
+                    "<span class=\"veb-attach-num\">" + (idx + 1) + ".</span>" +
+                    "<span class=\"veb-attach-name\">" + escapeHtml(file.name) + "</span>" +
+                    "<span class=\"veb-attach-actions\">" +
+                    "<button type=\"button\" class=\"btn\" data-veb-view=\"" + idx + "\">보기</button>" +
+                    "<button type=\"button\" class=\"btn\" data-veb-del=\"" + idx + "\">삭제</button>" +
+                    "</span></li>"
+                );
+            })
+            .join("");
+        attachListEl.querySelectorAll("[data-veb-del]").forEach(function (btn) {
+            btn.addEventListener("click", function () {
+                var i = parseInt(btn.getAttribute("data-veb-del"), 10);
+                attachmentFiles.splice(i, 1);
+                renderAttachmentList();
+            });
+        });
+        attachListEl.querySelectorAll("[data-veb-view]").forEach(function (btn) {
+            btn.addEventListener("click", function () {
+                var i = parseInt(btn.getAttribute("data-veb-view"), 10);
+                viewAttachment(i);
+            });
+        });
+    }
+
+    function viewAttachment(idx) {
+        var file = attachmentFiles[idx];
+        if (!file) return;
+        var url = URL.createObjectURL(file);
+        var type = String(file.type || "").toLowerCase();
+        if (type.indexOf("image/") === 0 || type === "application/pdf") {
+            window.open(url, "_blank", "noopener");
+        } else {
+            var a = document.createElement("a");
+            a.href = url;
+            a.download = file.name;
+            a.click();
+        }
+        setTimeout(function () {
+            URL.revokeObjectURL(url);
+        }, 60000);
+    }
+
+    function addAttachmentFiles(fileList) {
+        var incoming = Array.from(fileList || []);
+        if (!incoming.length) return;
+        try {
+            for (var i = 0; i < incoming.length; i++) {
+                if (attachmentFiles.length >= MAX_ATTACH) {
+                    throw new Error("첨부는 최대 " + MAX_ATTACH + "개까지 가능합니다.");
+                }
+                validateFile(incoming[i]);
+                var total = attachmentFiles.reduce(function (s, f) { return s + f.size; }, 0) + incoming[i].size;
+                if (total > 12 * 1024 * 1024) throw new Error("첨부 총 용량은 12MB 이하로 제한됩니다.");
+                attachmentFiles.push(incoming[i]);
+            }
+            renderAttachmentList();
+        } catch (e) {
+            setStatus((e && e.message) || "첨부 파일 오류", true);
+        }
     }
 
     function fileToBase64(file) {
@@ -331,40 +420,19 @@
         });
     }
 
-    function getExt(name) {
-        var s = String(name || "").toLowerCase();
-        var idx = s.lastIndexOf(".");
-        return idx >= 0 ? s.slice(idx) : "";
-    }
-
     async function buildAttachments() {
-        var files = filesEl && filesEl.files ? Array.from(filesEl.files) : [];
-        if (!files.length) return [];
-        if (files.length > 5) throw new Error("첨부는 최대 5개까지 가능합니다.");
         var out = [];
-        var total = 0;
-        for (var i = 0; i < files.length; i++) {
-            var f = files[i];
-            var ext = getExt(f.name);
-            if (ALLOWED_EXTS.indexOf(ext) < 0) {
-                throw new Error("허용되지 않는 첨부 형식입니다: " + f.name);
-            }
-            if (f.size > 4 * 1024 * 1024) throw new Error("파일당 4MB 이하만 첨부해 주세요.");
-            total += f.size;
-            if (total > 12 * 1024 * 1024) throw new Error("첨부 총 용량은 12MB 이하로 제한됩니다.");
+        for (var i = 0; i < attachmentFiles.length; i++) {
             out.push({
-                filename: f.name,
-                contentBase64: await fileToBase64(f)
+                filename: attachmentFiles[i].name,
+                contentBase64: await fileToBase64(attachmentFiles[i])
             });
         }
         return out;
     }
 
     function validateAccess() {
-        var access =
-            Auth && Auth.getRegisterAccess
-                ? Auth.getRegisterAccess()
-                : { allowed: false, reason: "관리자 로그인이 필요합니다." };
+        var access = Auth && Auth.getRegisterAccess ? Auth.getRegisterAccess() : { allowed: false, reason: "관리자 로그인이 필요합니다." };
         if (!access.allowed) {
             setStatus(access.reason, true);
             if (sendBtn) sendBtn.disabled = true;
@@ -392,127 +460,74 @@
         failedWrap.hidden = false;
         failedListEl.innerHTML = list
             .map(function (it) {
-                var email = String((it && it.email) || "");
-                var reason = String((it && it.reason) || "실패");
-                return "<li>" + escapeHtml(email) + " · " + escapeHtml(reason) + "</li>";
+                return "<li>" + escapeHtml(it.email || "") + " · " + escapeHtml(it.reason || "실패") + "</li>";
             })
             .join("");
     }
 
-    function ts(v) {
-        var n = Number(v || 0);
-        if (!n) return "-";
-        return new Date(n).toLocaleString("ko-KR");
+    function openSuccessModal() {
+        if (!successModal) return;
+        successModal.hidden = false;
+        document.body.style.overflow = "hidden";
+        speak("메일이 정상적으로 발송이 완료 되었습니다");
+        var yesBtn = document.getElementById("veb-success-yes");
+        if (yesBtn) yesBtn.focus();
     }
 
-    function renderHistory(items) {
-        if (!historyListEl) return;
-        var list = Array.isArray(items) ? items : [];
-        if (!list.length) {
-            historyListEl.innerHTML = "<li>발송 이력이 없습니다.</li>";
-            return;
-        }
-        historyListEl.innerHTML = list
-            .map(function (it) {
-                var src =
-                    it.source === "vendor_new"
-                        ? "신규업체"
-                        : it.includeVendorNew
-                          ? "신규업체"
-                          : it.includeVendors
-                            ? "등록업체"
-                            : it.source === "vendors"
-                              ? "등록업체"
-                              : "";
-                return (
-                    "<li>" +
-                    "<strong>" +
-                    escapeHtml(it.subject || "(제목 없음)") +
-                    "</strong><br>" +
-                    (src ? "대상: " + escapeHtml(src) + " · " : "") +
-                    "발송시각: " +
-                    ts(it.createdAt) +
-                    " · 성공 " +
-                    String(it.sentCount || 0) +
-                    "건 · 실패 " +
-                    String(it.failedCount || 0) +
-                    "건" +
-                    "</li>"
-                );
-            })
-            .join("");
+    function closeSuccessModal() {
+        if (!successModal) return;
+        successModal.hidden = true;
+        document.body.style.overflow = "";
     }
 
-    function loadHistory(fromText, toText) {
-        if (!api || !api.listVendorEmailHistory) return;
-        api.listVendorEmailHistory(20, fromText || "", toText || "")
-            .then(renderHistory)
-            .catch(function () {
-                if (historyListEl) historyListEl.innerHTML = "<li>이력을 불러오지 못했습니다.</li>";
-            });
-    }
-
-    function applyHistoryRange() {
-        var fromText = String((historyFromEl && historyFromEl.value) || "").trim();
-        var toText = String((historyToEl && historyToEl.value) || "").trim();
-        if (fromText && toText && fromText > toText) {
-            setStatus("기간 선택이 올바르지 않습니다. (시작일 <= 종료일)", true);
-            return;
-        }
-        loadHistory(fromText, toText);
-    }
-
-    function invalidateSelectionOnSourceChange() {
+    function invalidateSelection() {
         appliedSelections = [];
-        appliedSource = "";
+        appliedSourcesKey = "";
         renderSummary();
     }
 
     if (!validateAccess()) return;
-    loadHistory();
     renderSummary();
 
-    document.querySelectorAll('input[name="veb-source"]').forEach(function (el) {
-        el.addEventListener("change", invalidateSelectionOnSourceChange);
+    [srcVendorsEl, srcVendorNewEl].forEach(function (el) {
+        if (el) el.addEventListener("change", invalidateSelection);
     });
-    if (onlyMineEl) {
-        onlyMineEl.addEventListener("change", invalidateSelectionOnSourceChange);
-    }
 
-    if (pickBtn) {
-        pickBtn.addEventListener("click", function () {
-            loadPickerRows();
-        });
-    }
-
+    if (pickBtn) pickBtn.addEventListener("click", loadPickerRows);
     ["veb-picker-close", "veb-picker-cancel"].forEach(function (id) {
         var btn = document.getElementById(id);
         if (btn) btn.addEventListener("click", closePickerModal);
     });
-
     var applyBtn = document.getElementById("veb-picker-apply");
     if (applyBtn) applyBtn.addEventListener("click", applyPickerSelection);
 
-    var bulkCompany = document.getElementById("veb-bulk-company");
-    var bulkManager = document.getElementById("veb-bulk-manager");
-    var bulkBoth = document.getElementById("veb-bulk-both");
-    var bulkClear = document.getElementById("veb-bulk-clear");
-    if (bulkCompany) bulkCompany.addEventListener("click", function () { applyBulk("company"); });
-    if (bulkManager) bulkManager.addEventListener("click", function () { applyBulk("manager"); });
-    if (bulkBoth) bulkBoth.addEventListener("click", function () { applyBulk("both"); });
-    if (bulkClear) bulkClear.addEventListener("click", function () { applyBulk("clear"); });
+    var bulkMap = [
+        ["veb-bulk-company", "company"],
+        ["veb-bulk-manager", "manager"],
+        ["veb-bulk-both", "both"],
+        ["veb-bulk-clear", "clear"]
+    ];
+    bulkMap.forEach(function (pair) {
+        var btn = document.getElementById(pair[0]);
+        if (btn) btn.addEventListener("click", function () { applyBulk(pair[1]); });
+    });
+
+    if (filePickBtn && filesEl) {
+        filePickBtn.addEventListener("click", function () { filesEl.click(); });
+        filesEl.addEventListener("change", function () {
+            addAttachmentFiles(filesEl.files);
+            filesEl.value = "";
+        });
+    }
 
     if (sendBtn) {
         sendBtn.addEventListener("click", async function () {
             try {
-                var source = getSource();
-                if (appliedSource !== source || !appliedSelections.length) {
-                    return setStatus("먼저 수신자 선택을 완료해 주세요.", true);
-                }
+                var key = sourcesKey(getSelectedSources());
+                if (!getSelectedSources().length) return setStatus("발송 대상 업체 분류를 하나 이상 선택해 주세요.", true);
+                if (appliedSourcesKey !== key || !appliedSelections.length) return setStatus("먼저 수신자 선택을 완료해 주세요.", true);
                 var selections = getSelectionsPayload();
-                if (!selections.length) {
-                    return setStatus("발송할 이메일을 하나 이상 선택해 주세요.", true);
-                }
+                if (!selections.length) return setStatus("발송할 이메일을 하나 이상 선택해 주세요.", true);
                 var subject = String((subjectEl && subjectEl.value) || "").trim();
                 var greeting = String((greetingEl && greetingEl.value) || "").trim();
                 if (!subject) return setStatus("제목을 입력해 주세요.", true);
@@ -520,31 +535,21 @@
 
                 sendBtn.disabled = true;
                 setStatus("메일 발송 중…");
-                var attachments = await buildAttachments();
                 var result = await api.sendVendorBroadcastEmail({
                     subject: subject,
                     greeting: greeting,
-                    source: source,
-                    onlyMine: onlyMine(),
+                    onlyMine: true,
                     selections: selections,
                     senderName: senderName(),
-                    attachments: attachments
+                    attachments: await buildAttachments()
                 });
                 renderFailed(result.failedItems || []);
-                applyHistoryRange();
-                setStatus(
-                    "발송 완료: " +
-                        (result.sent || 0) +
-                        "통" +
-                        (result.failed ? " / 실패 " + result.failed + "건" : ""),
-                    false
-                );
-                window.alert(
-                    "메일 발송이 완료되었습니다. 성공 " +
-                        (result.sent || 0) +
-                        "통" +
-                        (result.failed ? ", 실패 " + result.failed + "건" : "")
-                );
+                if (result.failed && !result.sent) {
+                    setStatus("발송에 실패했습니다. 실패 주소를 확인해 주세요.", true);
+                    return;
+                }
+                setStatus("발송 완료: " + (result.sent || 0) + "통", false);
+                openSuccessModal();
             } catch (e) {
                 setStatus((e && e.message) || "메일 발송에 실패했습니다.", true);
             } finally {
@@ -553,35 +558,18 @@
         });
     }
 
-    if (testBtn) {
-        testBtn.addEventListener("click", async function () {
-            try {
-                var subject = String((subjectEl && subjectEl.value) || "").trim();
-                var greeting = String((greetingEl && greetingEl.value) || "").trim();
-                if (!subject) return setStatus("제목을 입력해 주세요.", true);
-                if (!greeting) return setStatus("인사말/본문을 입력해 주세요.", true);
-                var testEmail = String((testEmailEl && testEmailEl.value) || "").trim();
-                if (!testEmail) return setStatus("테스트 수신 이메일을 입력해 주세요.", true);
-                var attachments = await buildAttachments();
-                testBtn.disabled = true;
-                setStatus("테스트 메일 발송 중…");
-                await api.sendVendorBroadcastTestEmail({
-                    subject: subject,
-                    greeting: greeting,
-                    testEmail: testEmail,
-                    recipientMode: "company",
-                    senderName: senderName(),
-                    attachments: attachments
-                });
-                setStatus("테스트 메일 발송 완료", false);
-            } catch (e) {
-                setStatus((e && e.message) || "테스트 메일 발송에 실패했습니다.", true);
-            } finally {
-                testBtn.disabled = false;
-            }
+    var successYes = document.getElementById("veb-success-yes");
+    var successNo = document.getElementById("veb-success-no");
+    if (successYes) {
+        successYes.addEventListener("click", function () {
+            closeSuccessModal();
+            setStatus("계속해서 메일을 보낼 수 있습니다.", false);
         });
     }
-
-    if (historyFromEl) historyFromEl.addEventListener("change", applyHistoryRange);
-    if (historyToEl) historyToEl.addEventListener("change", applyHistoryRange);
+    if (successNo) {
+        successNo.addEventListener("click", function () {
+            closeSuccessModal();
+            window.location.href = VENDOR_MANAGE_PAGE;
+        });
+    }
 })();
