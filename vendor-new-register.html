@@ -81,7 +81,7 @@
             <button type="button" class="btn btn-auth-icon btn-logout" id="btnLogout" hidden aria-label="로그아웃" title="로그아웃"></button>
         </nav>
     </header>
-    <main class="page-main page-main--hide-scrollbar vr-form-page">
+    <main class="page-main page-main--hide-scrollbar vr-form-page vr-form-page--cols3">
         <p class="am-subnav"><a href="vendor-manage.html">← 업체관리</a></p>
         <h1>신규업체 등록</h1>
         <p id="vr-registrar-hint" class="vr-hint vr-hint--registrar" hidden></p>
@@ -144,6 +144,7 @@
                 </div>
             </div>
             <div class="vr-row vr-row--3">
+                <div class="vr-slot vr-slot--spacer" aria-hidden="true"></div>
                 <div class="vr-slot">
                     <label for="vr-ceo">대표자 이름</label>
                     <input type="text" id="vr-ceo" name="vn_ceo" maxlength="80" autocomplete="name" placeholder="대표자 이름">
