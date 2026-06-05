@@ -151,6 +151,12 @@
                 else if (Auth.applyStaffNavMode) Auth.applyStaffNavMode("product");
                 return;
             }
+            if (Auth.getStaffNavMode && Auth.getStaffNavMode() === "vendor-manage") {
+                removeAdminNavFromNav(nav);
+                if (Auth.refreshVendorHeader) Auth.refreshVendorHeader();
+                else if (Auth.applyStaffNavMode) Auth.applyStaffNavMode("vendor-manage");
+                return;
+            }
             if (Auth.getStaffNavMode && Auth.getStaffNavMode() !== "manage-home") {
                 removeAdminNavFromNav(nav);
                 if (Auth.applyStaffNavMode) Auth.applyStaffNavMode();

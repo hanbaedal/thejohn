@@ -863,7 +863,12 @@
     var PRODUCT_MANAGE_HUB_PAGE = "product-manage.html";
     var PRODUCT_SUBNAV_STORAGE_KEY = "thejhon_product_subnav";
     var VENDOR_MANAGE_HUB_PAGE = "vendor-manage.html";
-    var VENDOR_SUBNAV_STORAGE_KEY = "thejhon_vendor_subnav";
+    var VENDOR_SUBNAV_STORAGE_KEY = "thejhon_vendor_subnav_v2";
+    var VENDOR_SUBNAV_CORE = [
+        { href: VENDOR_MANAGE_HUB_PAGE, label: "업체관리" },
+        { href: "vendor-register.html", label: "업체등록" },
+        { href: "vendor-list-admin.html", label: "업체 리스트" }
+    ];
     var STAFF_NAV_PUBLIC_PAGES = {
         "index.html": true,
         "company.html": true,
@@ -1458,11 +1463,14 @@
     }
 
     function loadVendorSubnav() {
+        var cached = [];
         try {
-            var data = JSON.parse(sessionStorage.getItem(VENDOR_SUBNAV_STORAGE_KEY) || "[]");
-            if (Array.isArray(data) && data.length) return data;
-        } catch (e2) {}
-        return getDefaultVendorSubnavItems();
+            cached = JSON.parse(sessionStorage.getItem(VENDOR_SUBNAV_STORAGE_KEY) || "[]");
+        } catch (e2) {
+            cached = [];
+        }
+        if (!Array.isArray(cached)) cached = [];
+        return normalizeVendorSubnavItems(cached);
     }
 
     function vendorSubnavItemAllowed(href) {
@@ -1499,10 +1507,49 @@
                 var file = staffNavHrefFile(it.href);
                 if (!file || seen[file] || !vendorSubnavItemAllowed(it.href)) continue;
                 seen[file] = true;
-                merged.push({ href: it.href, label: String(it.label || "").trim() || file });
+                var label = String(it.label || "").trim() || file;
+                if (file === "vendor-register.html") label = "업체등록";
+                merged.push({ href: it.href, label: label });
             }
         }
         return merged;
+    }
+
+    /** 업체관리 · 업체등록 · 업체 리스트는 항상 헤더 앞쪽에 포함 */
+    function normalizeVendorSubnavItems(items) {
+        var merged = mergeVendorSubnavWithDefaults(items);
+        if (!merged.length) return merged;
+        var core = [];
+        var rest = [];
+        var coreSeen = {};
+        for (var c = 0; c < VENDOR_SUBNAV_CORE.length; c++) {
+            var coreIt = VENDOR_SUBNAV_CORE[c];
+            var coreFile = staffNavHrefFile(coreIt.href);
+            if (!coreFile || !vendorSubnavItemAllowed(coreIt.href)) continue;
+            coreSeen[coreFile] = true;
+            var picked = null;
+            for (var i = 0; i < merged.length; i++) {
+                if (staffNavHrefFile(merged[i].href) === coreFile) {
+                    picked = merged[i];
+                    break;
+                }
+            }
+            core.push({
+                href: coreIt.href,
+                label:
+                    coreFile === "vendor-register.html"
+                        ? "업체등록"
+                        : picked && picked.label
+                          ? picked.label
+                          : coreIt.label
+            });
+        }
+        for (var j = 0; j < merged.length; j++) {
+            var file = staffNavHrefFile(merged[j].href);
+            if (!file || coreSeen[file]) continue;
+            rest.push(merged[j]);
+        }
+        return core.concat(rest);
     }
 
     function collectVendorSubnavFromBody() {
@@ -1520,7 +1567,7 @@
                 if (f === "vendor-register.html") label = "업체등록";
                 items.push({ href: fromBody[i].href, label: label });
             }
-            items = mergeVendorSubnavWithDefaults(items);
+            items = normalizeVendorSubnavItems(items);
             saveVendorSubnav(items);
             return items;
         }
@@ -1537,11 +1584,11 @@
                 if (f2 === "vendor-register.html") label2 = "업체등록";
                 mergedBody.push({ href: bodyItems[j].href, label: label2 });
             }
-            mergedBody = mergeVendorSubnavWithDefaults(mergedBody);
+            mergedBody = normalizeVendorSubnavItems(mergedBody);
             saveVendorSubnav(mergedBody);
             return mergedBody;
         }
-        var cached = mergeVendorSubnavWithDefaults(loadVendorSubnav());
+        var cached = loadVendorSubnav();
         saveVendorSubnav(cached);
         return cached;
     }
@@ -1569,8 +1616,8 @@
 
     function syncStaffNavVendorSubnav(nav) {
         if (!nav) return;
-        var items = mergeVendorSubnavWithDefaults(collectVendorSubnavFromBody());
-        if (!items.length) items = getDefaultVendorSubnavItems();
+        var items = normalizeVendorSubnavItems(collectVendorSubnavFromBody());
+        if (!items.length) items = normalizeVendorSubnavItems(getDefaultVendorSubnavItems());
         clearVendorSubnavLinks(nav);
         if (!items.length) return;
 
