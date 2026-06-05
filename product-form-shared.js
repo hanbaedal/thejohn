@@ -16,6 +16,17 @@
             .replace(/"/g, "&quot;");
     }
 
+    function speakKorean(text) {
+        if (!text || !global.speechSynthesis) return;
+        try {
+            global.speechSynthesis.cancel();
+            var utter = new SpeechSynthesisUtterance(text);
+            utter.lang = "ko-KR";
+            utter.rate = 0.95;
+            global.speechSynthesis.speak(utter);
+        } catch (e) {}
+    }
+
     function formatWon(n) {
         var num = Number(n);
         if (!isFinite(num)) return "0";
@@ -877,6 +888,7 @@
         STAFF_LOGO_PROCESS_OPTIONS: STAFF_LOGO_PROCESS_OPTIONS,
         STAFF_SEAL_PROCESS_OPTIONS: STAFF_SEAL_PROCESS_OPTIONS,
         escapeHtml: escapeHtml,
+        speakKorean: speakKorean,
         formatWon: formatWon,
         parsePriceInput: parsePriceInput,
         isImageFile: isImageFile,

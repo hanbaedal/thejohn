@@ -542,6 +542,7 @@
             saveApi
                 .then(function () {
                     setStatus("수정했습니다. 리스트로 이동합니다…");
+                    if (PF && PF.speakKorean) PF.speakKorean("저장되었습니다");
                     setTimeout(function () {
                         location.href = listReturnUrl();
                     }, 350);

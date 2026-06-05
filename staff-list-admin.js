@@ -634,6 +634,7 @@
                             }
                         }
                         setEditMsg(msg, "ok");
+                        if (PF && PF.speakKorean) PF.speakKorean("저장되었습니다");
                         loadList();
                         setTimeout(closeEdit, 900);
                     })

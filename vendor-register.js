@@ -184,6 +184,7 @@
                     if (addrPicker && addrPicker.clear) addrPicker.clear();
                     if (gradeSelect) gradeSelect.value = "1";
                     setStatus("저장했습니다. 계속 등록하거나 업체 수정·협력업체 목록에서 확인하세요.");
+                    if (PF && PF.speakKorean) PF.speakKorean("저장되었습니다");
                 })
                 .catch(function (err2) {
                     setStatus(err2.message || "저장에 실패했습니다.", true);

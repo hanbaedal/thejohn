@@ -222,6 +222,7 @@
                     resetBrandMedia();
                     if (regAddrPicker && regAddrPicker.clear) regAddrPicker.clear();
                     setStatus("관리자를 등록했습니다. 목록에서 확인·수정할 수 있습니다.", "ok");
+                    if (PF && PF.speakKorean) PF.speakKorean("저장되었습니다");
                 })
                 .catch(function (err) {
                     setStatus((err && err.message) || "등록에 실패했습니다.", "err");

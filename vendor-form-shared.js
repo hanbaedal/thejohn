@@ -90,11 +90,15 @@
 
     function initPasswordToggle(input, btn) {
         if (!input || !btn) return;
+        function syncBtn() {
+            var hidden = input.type === "password";
+            btn.setAttribute("aria-label", hidden ? "비밀번호 보기" : "비밀번호 숨기기");
+            btn.textContent = hidden ? "보기" : "숨기기";
+        }
+        syncBtn();
         btn.addEventListener("click", function () {
-            var show = input.type === "password";
-            input.type = show ? "text" : "password";
-            btn.setAttribute("aria-label", show ? "비밀번호 숨기기" : "비밀번호 보기");
-            btn.textContent = show ? "숨기기" : "보기";
+            input.type = input.type === "password" ? "text" : "password";
+            syncBtn();
         });
     }
 

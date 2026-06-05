@@ -325,6 +325,7 @@
                     if (gradeSelect) gradeSelect.value = "1";
                     if (prospectPicker) prospectPicker.clear();
                     setStatus("신규업체를 저장했습니다. 신규업체 리스트에서 확인·수정할 수 있습니다.");
+                    if (PF && PF.speakKorean) PF.speakKorean("저장되었습니다");
                 })
                 .catch(function (err2) {
                     setStatus(err2.message || "저장에 실패했습니다.", true);
