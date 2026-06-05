@@ -152,10 +152,6 @@
 
     function syncPromoteButton() {
         if (!promoteBtn) return;
-        if (!isFromNewVendorFlow()) {
-            promoteBtn.hidden = true;
-            return;
-        }
         promoteBtn.hidden = false;
         var promotedId =
             loadedItem && loadedItem.vn_promoted_vendor_id
@@ -167,6 +163,17 @@
         } else {
             promoteBtn.removeAttribute("title");
         }
+    }
+
+    /** 업체등록(승격) — 신규업체 리스트에서만 표시. 거래처(업체 리스트) 수정에는 불필요 */
+    function initPromoteButton() {
+        if (!promoteBtn) return;
+        if (!isFromNewVendorFlow()) {
+            promoteBtn.parentNode && promoteBtn.parentNode.removeChild(promoteBtn);
+            promoteBtn = null;
+            return;
+        }
+        syncPromoteButton();
     }
 
     function collectFormBody() {
@@ -592,7 +599,7 @@
 
     if (backListLink) backListLink.href = listReturnUrl();
     syncNewVendorDeptCheckbox();
-    syncPromoteButton();
+    initPromoteButton();
 
     var editId = queryParam("id").trim();
     if (!editId) {
