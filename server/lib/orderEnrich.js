@@ -1,5 +1,10 @@
 const { formatFullAddress } = require("./addressFormat");
-const { F: VF, fromLegacyDoc: vendorFromLegacy, parseGrade } = require("./vendorFields");
+const {
+    F: VF,
+    fromLegacyDoc: vendorFromLegacy,
+    parseGrade,
+    gradeDisplayLabel
+} = require("./vendorFields");
 const { F: PF, fromLegacyDoc: productFromLegacy } = require("./productFields");
 const { deptLabel } = require("./orderDeptLabels");
 const { findVendorByLoginId } = require("./loginResolve");
@@ -18,8 +23,7 @@ function str(v) {
 }
 
 function gradeLabel(grade) {
-    const g = parseGrade(grade) || "1";
-    return g + "등급";
+    return gradeDisplayLabel(grade);
 }
 
 /**

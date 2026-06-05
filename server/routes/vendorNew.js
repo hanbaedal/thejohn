@@ -297,7 +297,7 @@ router.post("/:id/promote-to-vendor", requireRole("supervisor", "admin"), async 
             return res.status(400).json({ ok: false, error: "업체이름을 입력해 주세요." });
         }
         if (!built.vn_grade) {
-            return res.status(400).json({ ok: false, error: "업체등급(1~3등급)을 선택해 주세요." });
+            return res.status(400).json({ ok: false, error: "업체등급(Silver/Gold/Diamond)을 선택해 주세요." });
         }
 
         const db = getDb();

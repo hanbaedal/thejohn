@@ -1789,9 +1789,11 @@
         return "pd_price1";
     }
 
+    var VENDOR_GRADE_NAMES = { 1: "Silver", 2: "Gold", 3: "Diamond" };
+
     function vendorGradeLabel(grade) {
         var g = parseVendorGrade(grade);
-        return g + "등급";
+        return VENDOR_GRADE_NAMES[g] || VENDOR_GRADE_NAMES[1];
     }
 
     function syncVendorGradeFromSessionApi(sess) {

@@ -319,9 +319,9 @@
                 <div class="vr-slot">
                     <label for="vr-grade">업체등급</label>
                     <select id="vr-grade" name="vn_grade" class="vr-select" required>
-                        <option value="1" selected>1등급</option>
-                        <option value="2">2등급</option>
-                        <option value="3">3등급</option>
+                        <option value="1" selected>Silver</option>
+                        <option value="2">Gold</option>
+                        <option value="3">Diamond</option>
                     </select>
                 </div>
                 <div class="vr-slot">
@@ -355,6 +355,20 @@
                 <div class="vr-slot">
                     <label for="vr-phone">회사 전화</label>
                     <input type="tel" id="vr-phone" name="vn_phone" maxlength="30" inputmode="tel" placeholder="회사 전화">
+                </div>
+            </div>
+            <div class="vr-row vr-row--3">
+                <div class="vr-slot">
+                    <label for="vr-biz-no">사업자등록번호</label>
+                    <input type="text" id="vr-biz-no" name="vn_biz_no" maxlength="20" inputmode="numeric" autocomplete="off" placeholder="000-00-00000">
+                </div>
+                <div class="vr-slot">
+                    <label for="vr-biz-item">업종</label>
+                    <input type="text" id="vr-biz-item" name="vn_biz_item" maxlength="120" placeholder="업종">
+                </div>
+                <div class="vr-slot">
+                    <label for="vr-biz-type">업태</label>
+                    <input type="text" id="vr-biz-type" name="vn_biz_type" maxlength="120" placeholder="업태">
                 </div>
             </div>
             <div class="vr-field vr-field--address" id="vr-address-mount"></div>

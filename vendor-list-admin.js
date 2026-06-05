@@ -136,7 +136,7 @@
                     var gradeTxt =
                         VA && VA.vendorGradeLabel
                             ? VA.vendorGradeLabel(it.vn_grade)
-                            : String(it.vn_grade || "1") + "등급";
+                            : ({ 1: "Silver", 2: "Gold", 3: "Diamond" }[parseInt(it.vn_grade, 10)] || "Silver");
                     var roomTxt = it.vn_room_count ? String(it.vn_room_count) + "빈소" : "빈소 미입력";
                     var namePlain = String(it.vn_company || "(이름 없음)");
                     return (

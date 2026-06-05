@@ -20,6 +20,9 @@
     var webInput = document.getElementById("vr-web");
     var emailInput = document.getElementById("vr-email");
     var phoneInput = document.getElementById("vr-phone");
+    var bizNoInput = document.getElementById("vr-biz-no");
+    var bizItemInput = document.getElementById("vr-biz-item");
+    var bizTypeInput = document.getElementById("vr-biz-type");
     var AF = window.THEJHON_ADDRESS_FIELDS;
     var addrPicker =
         AF && AF.mount
@@ -140,7 +143,9 @@
         webInput.value = it.vn_web || "";
         emailInput.value = it.vn_email || "";
         phoneInput.value = it.vn_phone || "";
-        phoneInput.value = it.vn_phone || "";
+        if (bizNoInput) bizNoInput.value = it.vn_biz_no || "";
+        if (bizItemInput) bizItemInput.value = it.vn_biz_item || "";
+        if (bizTypeInput) bizTypeInput.value = it.vn_biz_type || "";
         if (addrPicker) {
             addrPicker.setValues({
                 zip: it.vn_zip,
@@ -286,6 +291,9 @@
             vn_web: webInput.value.trim(),
             vn_email: emailInput.value.trim(),
             vn_phone: phoneInput.value.trim(),
+            vn_biz_no: bizNoInput ? bizNoInput.value.trim() : "",
+            vn_biz_item: bizItemInput ? bizItemInput.value.trim() : "",
+            vn_biz_type: bizTypeInput ? bizTypeInput.value.trim() : "",
             vn_mgr_name: mgrNameInput.value.trim(),
             vn_mgr_tel: mgrTelInput.value.trim(),
             vn_mgr_email: mgrEmailInput.value.trim(),

@@ -40,9 +40,45 @@
         return labels.length ? labels.join(", ") : "미지정";
     }
 
+    var GRADE_NAMES = { 1: "Silver", 2: "Gold", 3: "Diamond" };
+
+    function gradeLabel(grade) {
+        if (window.THEJHON_AUTH && THEJHON_AUTH.vendorGradeLabel) {
+            return THEJHON_AUTH.vendorGradeLabel(grade);
+        }
+        var n = parseInt(grade, 10);
+        if (n === 4) n = 3;
+        return GRADE_NAMES[n] || GRADE_NAMES[1];
+    }
+
     function contactRow(label, html) {
         if (!html) return "";
         return "<dt>" + escapeHtml(label) + "</dt><dd>" + html + "</dd>";
+    }
+
+    function bizInfoBlock(it) {
+        var bizNo = String(it.vn_biz_no || "").trim();
+        var bizItem = String(it.vn_biz_item || "").trim();
+        var bizType = String(it.vn_biz_type || "").trim();
+        if (!bizNo && !bizItem && !bizType) return "";
+        function cell(label, value) {
+            return (
+                '<div class="vd-biz-cell">' +
+                '<span class="vd-biz-label">' +
+                escapeHtml(label) +
+                "</span>" +
+                '<span class="vd-biz-value">' +
+                escapeHtml(value || "—") +
+                "</span></div>"
+            );
+        }
+        return (
+            '<div class="vd-biz-row">' +
+            cell("사업자등록번호", bizNo) +
+            cell("업종", bizItem) +
+            cell("업태", bizType) +
+            "</div>"
+        );
     }
 
     function telLink(v) {
@@ -108,16 +144,14 @@
         var rows = [];
         rows.push(contactRow("로그인 아이디", escapeHtml(it.loginId || "—")));
         rows.push(contactRow("사업부문", escapeHtml(deptLabels(it))));
-        var gradeLbl =
-            window.THEJHON_AUTH && THEJHON_AUTH.vendorGradeLabel
-                ? THEJHON_AUTH.vendorGradeLabel(it.vn_grade)
-                : String(it.vn_grade || "1") + "등급";
-        rows.push(contactRow("업체등급", escapeHtml(gradeLbl)));
+        rows.push(contactRow("업체등급", escapeHtml(gradeLabel(it.vn_grade))));
         rows.push(contactRow("대표자", escapeHtml(it.vn_ceo || "—")));
         rows.push(contactRow("대표 연락처", telLink(it.vn_ceo_tel) || "—"));
         rows.push(contactRow("회사 전화", telLink(it.vn_phone) || "—"));
         rows.push(contactRow("회사 이메일", mailLink(it.vn_email) || "—"));
         rows.push(contactRow("홈페이지", webLink(it.vn_web) || "—"));
+        var bizBlock = bizInfoBlock(it);
+        if (bizBlock) rows.push('<dt class="vd-biz-dt">사업자 정보</dt><dd class="vd-biz-dd">' + bizBlock + "</dd>");
         if (it.vn_zip || it.vn_addr || it.vn_addr_detail) {
             var AF = window.THEJHON_ADDRESS_FIELDS;
             var fullAddr =
@@ -158,11 +192,7 @@
             '<div class="vd-text"><h1 class="vd-title">' +
             escapeHtml(it.vn_company || "") +
             '</h1><p class="vd-badge">' +
-            escapeHtml(
-                window.THEJHON_AUTH && THEJHON_AUTH.vendorGradeLabel
-                    ? THEJHON_AUTH.vendorGradeLabel(it.vn_grade)
-                    : String(it.vn_grade || "1") + "등급"
-            ) +
+            escapeHtml(gradeLabel(it.vn_grade)) +
             "</p>" +
             '<p class="vd-spec">사업부문: <strong>' +
             escapeHtml(deptLabels(it)) +

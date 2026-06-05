@@ -92,6 +92,25 @@
         .vd-contact dd { margin: 0; color: #3d5166; word-break: break-word; }
         .vd-contact a { color: var(--dz-blue); text-decoration: none; }
         .vd-contact a:hover { text-decoration: underline; }
+        .vd-biz-row {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 0.5rem 1rem;
+        }
+        .vd-biz-cell { min-width: 0; }
+        .vd-biz-label {
+            display: block;
+            font-weight: 700;
+            color: #2a4a5e;
+            font-size: 0.82rem;
+            margin-bottom: 0.15rem;
+        }
+        .vd-biz-value { color: #3d5166; word-break: break-word; }
+        .vd-biz-dt { align-self: start; }
+        .vd-biz-dd { grid-column: 2; }
+        @media (max-width: 640px) {
+            .vd-biz-row { grid-template-columns: 1fr; }
+        }
         .vd-actions {
             margin-top: 1.25rem;
             display: flex;

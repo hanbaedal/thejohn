@@ -1,4 +1,4 @@
-const { F: VF, parseGrade } = require("./vendorFields");
+const { F: VF, parseGrade, gradeDisplayLabel } = require("./vendorFields");
 const { F: PF, readPricesFromDoc } = require("./productFields");
 const {
     trimStaffLoginId,
@@ -27,8 +27,7 @@ function priceKeyForGrade(grade) {
 }
 
 function priceLabelForGrade(grade) {
-    const g = parseGrade(grade) || "1";
-    return g + "등급";
+    return gradeDisplayLabel(grade);
 }
 
 function resolveVendorUnitPrice(productDoc, vendorDoc) {

@@ -23,11 +23,13 @@
         return "담당: " + id;
     }
 
+    var VENDOR_GRADE_NAMES = { 1: "Silver", 2: "Gold", 3: "Diamond" };
+
     function vendorGradeLabel(grade) {
         var n = parseInt(grade, 10);
         if (n === 4) n = 3;
-        if (n >= 1 && n <= 3) return n + "등급";
-        return "1등급";
+        if (n >= 1 && n <= 3) return VENDOR_GRADE_NAMES[n];
+        return VENDOR_GRADE_NAMES[1];
     }
 
     function isSupervisorView() {

@@ -35,6 +35,9 @@ const F = {
     web: "vn_web",
     email: "vn_email",
     phone: "vn_phone",
+    bizNo: "vn_biz_no",
+    bizItem: "vn_biz_item",
+    bizType: "vn_biz_type",
     zip: "vn_zip",
     addr: "vn_addr",
     addrDetail: "vn_addr_detail",
@@ -81,9 +84,11 @@ function parseGrade(v) {
     return "";
 }
 
+const GRADE_DISPLAY = { "1": "Silver", "2": "Gold", "3": "Diamond" };
+
 function gradeDisplayLabel(v) {
     const g = parseGrade(v) || "1";
-    return g + "등급";
+    return GRADE_DISPLAY[g] || GRADE_DISPLAY["1"];
 }
 
 function normalizeDeptId(v) {
@@ -199,6 +204,9 @@ function toPublic(doc) {
         vn_web: str(d[F.web]),
         vn_email: str(d[F.email]),
         vn_phone: str(d[F.phone]),
+        vn_biz_no: str(d[F.bizNo] || d.vn_biz_no),
+        vn_biz_item: str(d[F.bizItem] || d.vn_biz_item),
+        vn_biz_type: str(d[F.bizType] || d.vn_biz_type),
         vn_zip: str(d[F.zip]),
         vn_addr: str(d[F.addr]),
         vn_addr_detail: str(d[F.addrDetail]),
@@ -251,6 +259,9 @@ function buildFromBody(body, existing, loginId, password) {
         vn_web: str(body.vn_web != null ? body.vn_web : body.website),
         vn_email: str(body.vn_email != null ? body.vn_email : body.email),
         vn_phone: str(body.vn_phone != null ? body.vn_phone : body.phone),
+        vn_biz_no: str(body.vn_biz_no != null ? body.vn_biz_no : prev[F.bizNo]),
+        vn_biz_item: str(body.vn_biz_item != null ? body.vn_biz_item : prev[F.bizItem]),
+        vn_biz_type: str(body.vn_biz_type != null ? body.vn_biz_type : prev[F.bizType]),
         vn_zip: addrParts.vn_zip,
         vn_addr: addrParts.vn_addr,
         vn_addr_detail: addrParts.vn_addr_detail,
@@ -289,6 +300,9 @@ function toDbDoc(id, built, existing) {
         [F.web]: built.vn_web,
         [F.email]: built.vn_email,
         [F.phone]: built.vn_phone,
+        [F.bizNo]: built.vn_biz_no,
+        [F.bizItem]: built.vn_biz_item,
+        [F.bizType]: built.vn_biz_type,
         [F.zip]: built.vn_zip,
         [F.addr]: built.vn_addr,
         [F.addrDetail]: built.vn_addr_detail,
@@ -341,7 +355,7 @@ function validateBuilt(built, requirePassword) {
     if (pwErr) return pwErr;
     if (!built.vn_company) return "업체이름을 입력해 주세요.";
     if (!built.vn_depts || !built.vn_depts.length) return "사업부문을 하나 이상 선택해 주세요.";
-    if (!built.vn_grade) return "업체등급(1~3등급)을 선택해 주세요.";
+    if (!built.vn_grade) return "업체등급(Silver/Gold/Diamond)을 선택해 주세요.";
     return "";
 }
 
