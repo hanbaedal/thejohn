@@ -37,6 +37,7 @@
             '<div id="vendorManageSubmenu" class="nav-dropdown-panel" role="menu" aria-label="업체관리 하위 메뉴">' +
             '<a href="vendor-register.html" class="nav-dropdown-item" role="menuitem">업체등록</a>' +
             '<a href="vendor-list-admin.html" class="nav-dropdown-item" role="menuitem">업체 리스트</a>' +
+            '<a href="vendor-dm-print.html" class="nav-dropdown-item" role="menuitem">업체별 DM 출력</a>' +
             orderItem +
             '<a href="vendor-email-broadcast.html" class="nav-dropdown-item" role="menuitem">이메일 보내기</a>' +
             '<a href="vendor-new-register.html" class="nav-dropdown-item" role="menuitem">신규업체 등록</a>' +
@@ -67,6 +68,7 @@
             "vendor-new-list.html": true,
             "vendor-email-broadcast.html": true,
             "vendor-email-history.html": true,
+            "vendor-dm-print.html": true,
             "vendor-prospect-list.html": true,
             "vendor-prospect-finder.html": true,
             "vendor-excel-import.html": true,

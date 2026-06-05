@@ -1,0 +1,302 @@
+.vdm-compose {
+    max-width: 58rem;
+    width: 100%;
+}
+.vdm-page-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    margin-bottom: 0.35rem;
+}
+.vdm-page-head h1 {
+    margin: 0;
+    flex: 1 1 auto;
+    min-width: 0;
+}
+.vdm-source {
+    margin-bottom: 1rem;
+    padding: 0.85rem 1rem;
+    background: #fff;
+    border: 1px solid #e0e6ed;
+    border-radius: 10px;
+}
+.vdm-source-title {
+    margin: 0 0 0.65rem;
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: #052a4d;
+}
+.vdm-source-options {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem 1.5rem;
+    margin-bottom: 0.75rem;
+}
+.vdm-source-options label {
+    display: inline-flex;
+    align-items: flex-start;
+    gap: 0.4rem;
+    font-size: 0.9rem;
+    color: #2a4560;
+    cursor: pointer;
+}
+.vdm-source-options small {
+    display: block;
+    margin-top: 0.12rem;
+    font-size: 0.78rem;
+    color: #5a6d7e;
+    font-weight: 400;
+}
+.vdm-selected-summary {
+    margin: 0.55rem 0 0;
+    font-size: 0.86rem;
+    color: #3d5166;
+}
+.vdm-output {
+    margin-top: 1rem;
+    padding: 0.85rem 1rem;
+    background: #fff;
+    border: 1px solid #e0e6ed;
+    border-radius: 10px;
+}
+.vdm-output-title {
+    margin: 0 0 0.65rem;
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: #052a4d;
+}
+.vdm-output-options {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem 1.75rem;
+}
+.vdm-output-options label {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    font-size: 0.92rem;
+    font-weight: 600;
+    color: #2a4560;
+    cursor: pointer;
+}
+
+.vdm-modal {
+    position: fixed;
+    inset: 0;
+    z-index: 10000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+    background: rgba(5, 42, 77, 0.45);
+}
+.vdm-modal[hidden] {
+    display: none !important;
+}
+.vdm-modal__panel {
+    width: min(100%, 52rem);
+    max-height: min(92vh, 40rem);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    background: #fff;
+    border-radius: 14px;
+    box-shadow: 0 8px 32px rgba(10, 77, 156, 0.22);
+}
+.vdm-picker-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    padding: 0.85rem 1rem;
+    border-bottom: 1px solid #e7edf4;
+}
+.vdm-picker-head h2 {
+    margin: 0;
+    font-size: 1.05rem;
+    color: #052a4d;
+}
+.vdm-picker-bulk {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem;
+    padding: 0.65rem 1rem;
+    border-bottom: 1px solid #eef2f7;
+    background: #f8fbff;
+}
+.vdm-picker-bulk .btn {
+    font-size: 0.8rem;
+    padding: 0.35rem 0.65rem;
+}
+.vdm-picker-scroll {
+    flex: 1 1 auto;
+    overflow-y: auto;
+    padding: 0.5rem 0.75rem 0.75rem;
+}
+.vdm-picker-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.84rem;
+}
+.vdm-picker-table th,
+.vdm-picker-table td {
+    padding: 0.45rem 0.35rem;
+    border-bottom: 1px solid #eef2f7;
+    text-align: left;
+    vertical-align: middle;
+}
+.vdm-picker-table th {
+    font-size: 0.78rem;
+    color: #5a6d7e;
+    font-weight: 600;
+    position: sticky;
+    top: 0;
+    background: #fff;
+    z-index: 1;
+}
+.vdm-picker-table .vdm-col-check {
+    width: 3.5rem;
+    text-align: center;
+}
+.vdm-picker-table .vdm-col-name {
+    min-width: 7rem;
+    font-weight: 600;
+    color: #052a4d;
+}
+.vdm-picker-table .vdm-col-type {
+    width: 4.5rem;
+    font-size: 0.75rem;
+    color: #5a6d7e;
+}
+.vdm-picker-addr {
+    display: block;
+    font-size: 0.75rem;
+    color: #6a7d90;
+    margin-top: 0.1rem;
+    word-break: break-all;
+    line-height: 1.45;
+}
+.vdm-picker-addr--empty {
+    color: #a8b5c4;
+    font-style: italic;
+}
+.vdm-picker-foot {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    justify-content: flex-end;
+    padding: 0.75rem 1rem 1rem;
+    border-top: 1px solid #e7edf4;
+}
+.vdm-picker-empty {
+    margin: 1rem 0;
+    text-align: center;
+    color: #5a6d7e;
+    font-size: 0.9rem;
+}
+
+.vdm-print-area {
+    position: fixed;
+    left: -9999px;
+    top: 0;
+    width: 0;
+    height: 0;
+    overflow: hidden;
+    pointer-events: none;
+}
+.vdm-envelope {
+    position: relative;
+    box-sizing: border-box;
+    page-break-after: always;
+    background: #fff;
+    color: #111;
+    font-family: "Malgun Gothic", "Apple SD Gothic Neo", sans-serif;
+}
+.vdm-envelope:last-child {
+    page-break-after: auto;
+}
+.vdm-envelope__from {
+    position: absolute;
+    top: 12mm;
+    left: 12mm;
+    font-size: 9pt;
+    line-height: 1.55;
+    color: #333;
+}
+.vdm-envelope__to {
+    position: absolute;
+    text-align: left;
+    line-height: 1.65;
+}
+.vdm-envelope__zip {
+    font-size: 16pt;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    margin-bottom: 0.35rem;
+}
+.vdm-envelope__addr {
+    font-size: 12pt;
+    word-break: keep-all;
+}
+.vdm-envelope__recipient {
+    margin-top: 0.55rem;
+    font-size: 14pt;
+    font-weight: 700;
+}
+.vdm-envelope__sub {
+    margin-top: 0.2rem;
+    font-size: 11pt;
+    font-weight: 500;
+    color: #333;
+}
+.vdm-envelope--large {
+    width: 330mm;
+    height: 245mm;
+    padding: 0;
+}
+.vdm-envelope--large .vdm-envelope__to {
+    right: 18mm;
+    bottom: 38mm;
+    left: 48mm;
+}
+.vdm-envelope--regular {
+    width: 220mm;
+    height: 110mm;
+    padding: 0;
+}
+.vdm-envelope--regular .vdm-envelope__from {
+    top: 8mm;
+    left: 8mm;
+    font-size: 7pt;
+}
+.vdm-envelope--regular .vdm-envelope__to {
+    left: 52mm;
+    top: 50%;
+    transform: translateY(-50%);
+    right: 10mm;
+}
+.vdm-envelope--regular .vdm-envelope__zip {
+    font-size: 12pt;
+}
+.vdm-envelope--regular .vdm-envelope__addr {
+    font-size: 10pt;
+}
+.vdm-envelope--regular .vdm-envelope__recipient {
+    font-size: 11pt;
+}
+
+@media print {
+    body.vdm-printing > :not(.vdm-print-area) {
+        display: none !important;
+    }
+    body.vdm-printing .vdm-print-area {
+        position: static;
+        left: auto;
+        top: auto;
+        width: auto;
+        height: auto;
+        overflow: visible;
+        pointer-events: auto;
+    }
+}

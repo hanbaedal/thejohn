@@ -840,6 +840,7 @@
         "vendor-new-list.html",
         "vendor-email-broadcast.html",
         "vendor-email-history.html",
+        "vendor-dm-print.html",
         "vendor-prospect-list.html",
         "vendor-excel-import.html",
         "vendor-prospect-finder.html"
@@ -1489,6 +1490,7 @@
             { href: VENDOR_MANAGE_HUB_PAGE, label: "업체관리" },
             { href: "vendor-register.html", label: "업체등록" },
             { href: "vendor-list-admin.html", label: "업체 리스트" },
+            { href: "vendor-dm-print.html", label: "업체별 DM 출력" },
             { href: "vendor-email-broadcast.html", label: "이메일 보내기" },
             { href: "vendor-email-history.html", label: "이메일 발송 내역" },
             { href: "vendor-new-register.html", label: "신규업체 등록" },
