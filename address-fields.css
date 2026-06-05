@@ -76,4 +76,22 @@
         font-size: 0.78rem;
         white-space: nowrap;
     }
+    .tj-addr-row:not(.tj-addr-row--zip) {
+        display: grid;
+        grid-template-columns: 5.5rem minmax(0, 1fr);
+        align-items: center;
+        gap: 0.3rem 0.45rem;
+        flex-wrap: nowrap;
+    }
+    .tj-addr-row:not(.tj-addr-row--zip) > label {
+        flex: unset;
+        min-width: 0;
+        white-space: nowrap;
+    }
+    .tj-addr-row .tj-addr-road,
+    .tj-addr-row .tj-addr-detail {
+        flex: unset;
+        width: 100%;
+        min-width: 0;
+    }
 }

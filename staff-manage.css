@@ -322,7 +322,15 @@
 }
 
 /* 관리자 정보 수정(본인) — 업체등록 스타일에 맞춘 레이아웃 */
-.sm-self-form-page .sm-panel { padding: 1rem 1.1rem 1.25rem; }
+.sm-self-form-page {
+    --sm-panel-inset-x: 1.1rem;
+    --sm-section-gap: 2.5rem;
+    --sm-desc-size: 0.72rem;
+    --sm-input-size: 0.8125rem;
+    --sm-input-min-h: 2rem;
+    --sm-label-w: 7.25rem;
+}
+.sm-self-form-page .sm-panel { padding: 1rem var(--sm-panel-inset-x) 1.25rem; }
 .sm-self-form-page .sm-self-form {
     display: flex;
     flex-direction: column;
@@ -344,9 +352,6 @@
     .sm-self-form-page .sm-row--2 { grid-template-columns: 1fr; }
 }
 
-.sm-self-form-page {
-    --sm-label-w: 7.25rem;
-}
 @media (max-width: 640px) {
     .sm-self-form-page { --sm-label-w: 6.75rem; }
 }
@@ -402,41 +407,81 @@
 }
 
 .sm-self-form-page .sm-divider {
-    width: 100%;
+    width: calc(100% + 2 * var(--sm-panel-inset-x));
+    margin-left: calc(-1 * var(--sm-panel-inset-x));
     height: 1px;
     background: #e0e6ed;
     flex-shrink: 0;
+    border: 0;
 }
 .sm-self-form-page .sm-self-section {
     display: flex;
     flex-direction: column;
-}
-.sm-self-form-page .sm-self-form > .sm-self-section:first-of-type > .sm-divider:first-child {
-    margin-top: 1.25rem;
-}
-.sm-self-form-page .sm-self-section + .sm-self-section > .sm-divider:first-child {
-    display: none;
 }
 .sm-self-form-page .sm-self-section__body {
     display: flex;
     flex-direction: column;
     justify-content: center;
     gap: 0.85rem;
-    padding: 1.25rem 0;
+    padding: var(--sm-section-gap) 0;
+}
+.sm-self-form-page .sm-self-section--lead .sm-self-section__body {
+    padding-top: 0;
+}
+.sm-self-form-page .sm-self-section--lead .sm-divider {
+    margin-top: 0;
 }
 .sm-self-form-page .sm-actions {
-    margin-top: 1.25rem;
+    margin-top: var(--sm-section-gap);
 }
 .sm-self-form-page .sm-section-label { margin: 0; }
 .sm-self-form-page .tj-addr-hint { display: none; }
+/* 스마트폰: 업체등록과 동일 폰트·주소 한 줄·구분선 2줄(2.5rem) 여백 */
 @media (max-width: 640px) {
+    .sm-self-form-page .sm-slot > label,
+    .sm-self-form-page .sm-brand-slot > .pr-photo-label,
+    .sm-self-form-page .sm-section-label,
+    .sm-self-form-page .tj-addr-section-label,
+    .sm-self-form-page .tj-addr-row > label {
+        font-size: var(--sm-desc-size);
+        font-weight: 700;
+        color: #2a4560;
+    }
+    .sm-self-form-page .sm-slot > input,
+    .sm-self-form-page .sm-slot > textarea,
+    .sm-self-form-page .tj-addr-fields input[type="text"] {
+        font-size: var(--sm-input-size);
+        min-height: var(--sm-input-min-h);
+        border-radius: 4px;
+        padding: 0.35rem 0.45rem;
+    }
+    .sm-self-form-page .tj-addr-search {
+        min-height: var(--sm-input-min-h);
+        padding: 0.35rem 0.45rem;
+        font-size: var(--sm-desc-size);
+        font-weight: 700;
+        border-radius: 4px;
+    }
     .sm-self-form-page .tj-addr-row--zip {
         grid-template-columns: var(--sm-label-w) minmax(4.25rem, 5rem) minmax(0, 1fr);
     }
-    .sm-self-form-page .tj-addr-row--zip > label {
-        font-size: 0.85rem;
-        font-weight: 600;
-        color: #2a4a5e;
+    .sm-self-form-page .tj-addr-row:not(.tj-addr-row--zip) {
+        display: grid;
+        grid-template-columns: var(--sm-label-w) minmax(0, 1fr);
+        align-items: center;
+        gap: 0.3rem 0.45rem;
+        flex-wrap: nowrap;
+    }
+    .sm-self-form-page .tj-addr-row:not(.tj-addr-row--zip) > label {
+        flex: unset;
+        min-width: 0;
+        white-space: nowrap;
+    }
+    .sm-self-form-page .tj-addr-row .tj-addr-road,
+    .sm-self-form-page .tj-addr-row .tj-addr-detail {
+        flex: unset;
+        width: 100%;
+        min-width: 0;
     }
 }
 .sm-self-form-page .sm-brand-media-field { margin-top: 0; }
@@ -513,6 +558,30 @@
 .sm-self-form-page .sm-brand-slot .sm-brand-preview--seal {
     width: 5.5rem;
     height: 5.5rem;
+}
+
+/* PC: 미리보기를 항목명 옆(2열 왼쪽), 아이콘은 항목명 아래 */
+@media (min-width: 641px) {
+    .sm-self-form-page .sm-brand-slot {
+        grid-template-columns: auto auto;
+        grid-template-rows: auto auto;
+        gap: 0.35rem 0.65rem;
+        justify-content: start;
+    }
+    .sm-self-form-page .sm-brand-slot > .pr-photo-label {
+        grid-column: 1;
+        grid-row: 1;
+    }
+    .sm-self-form-page .sm-brand-slot .sm-brand-icon-actions {
+        grid-column: 1;
+        grid-row: 2;
+    }
+    .sm-self-form-page .sm-brand-slot .sm-brand-preview {
+        grid-column: 2;
+        grid-row: 1;
+        align-self: center;
+        justify-self: start;
+    }
 }
 
 /* 스마트폰: 로고·도장 사이 구분선 */
