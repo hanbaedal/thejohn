@@ -382,6 +382,7 @@
         if (old) old.remove();
     }
 
+    function invalidateSelection() {
         appliedSelections = [];
         appliedSourcesKey = "";
         renderSummary();
