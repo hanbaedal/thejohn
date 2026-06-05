@@ -222,15 +222,20 @@ async function createStaffAccount(body, creatorRole) {
     return toPublic(doc);
 }
 
-async function updateStaffAccount(id, body, creatorRole) {
-    if (creatorRole !== "supervisor") {
-        throw new Error("슈퍼바이저만 관리자 정보를 수정할 수 있습니다.");
-    }
-    const staffKey = String(id || "").trim();
-    if (!staffKey) throw new Error("계정 ID가 없습니다.");
+async function findStaffByAuthUser(authUserId) {
+    const key = String(authUserId || "").trim();
+    if (!key) return null;
+    let doc = await findStaffById(key);
+    if (!doc) doc = await findStaffByLogin(key);
+    return doc;
+}
+
+async function applyStaffAccountUpdate(staffKey, body) {
+    const key = String(staffKey || "").trim();
+    if (!key) throw new Error("계정 ID가 없습니다.");
 
     const staffCol = getDb().collection("staff");
-    const existing = await findStaffById(staffKey);
+    const existing = await findStaffById(key);
     if (!existing) throw new Error("계정을 찾을 수 없습니다.");
     const staffId = existing.id;
 
@@ -324,6 +329,23 @@ async function updateStaffAccount(id, body, creatorRole) {
     return pub;
 }
 
+async function updateStaffAccount(id, body, creatorRole) {
+    if (creatorRole !== "supervisor") {
+        throw new Error("슈퍼바이저만 관리자 정보를 수정할 수 있습니다.");
+    }
+    return applyStaffAccountUpdate(id, body);
+}
+
+async function updateStaffSelfAccount(authUserId, body) {
+    const existing = await findStaffByAuthUser(authUserId);
+    if (!existing) throw new Error("계정을 찾을 수 없습니다.");
+    const safeBody = Object.assign({}, body || {});
+    delete safeBody.loginEnabled;
+    delete safeBody.orderEnabled;
+    delete safeBody.role;
+    return applyStaffAccountUpdate(existing.id, safeBody);
+}
+
 async function deleteStaffAccount(id, creatorRole) {
     if (creatorRole !== "supervisor") {
         throw new Error("슈퍼바이저만 관리자를 삭제할 수 있습니다.");
@@ -361,6 +383,8 @@ module.exports = {
     checkStaffLoginId,
     createStaffAccount,
     updateStaffAccount,
+    updateStaffSelfAccount,
+    findStaffByAuthUser,
     deleteStaffAccount,
     getCompanyName,
     getCeoName,

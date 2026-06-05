@@ -2552,6 +2552,12 @@
             }
             return;
         }
+        if (page === "staff-self-edit.html") {
+            if (!isLoggedIn() || (!isAdminStaff() && !isSupervisorStaff())) {
+                redirectFromProtectedPage(isLoggedIn());
+            }
+            return;
+        }
         if (STAFF_MANAGE_PAGES.indexOf(page) >= 0) {
             if (!canManageStaffAccounts()) {
                 redirectFromProtectedPage(isLoggedIn());

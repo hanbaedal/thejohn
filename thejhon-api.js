@@ -364,6 +364,16 @@
                 return d.item;
             });
         },
+        updateStaffProfile: function (body) {
+            return request("PUT", "/api/auth/staff-profile", body).then(function (d) {
+                return d;
+            });
+        },
+        checkStaffLoginIdSelf: function (loginId, excludeId) {
+            var q = "?loginId=" + encodeURIComponent(String(loginId || ""));
+            if (excludeId) q += "&excludeId=" + encodeURIComponent(String(excludeId));
+            return request("GET", "/api/auth/check-staff-login-id" + q);
+        },
         getPublicFooterStaff: function () {
             return request("GET", "/api/auth/public-footer-staff").then(function (d) {
                 return d.item;

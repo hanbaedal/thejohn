@@ -70,6 +70,19 @@
         });
     }
 
+    function appendSelfEditLink() {
+        if (!menuEl) return;
+        var spacer = document.createElement("div");
+        spacer.className = "wh-menu-spacer";
+        spacer.setAttribute("aria-hidden", "true");
+        menuEl.appendChild(spacer);
+        var a = document.createElement("a");
+        a.className = "wh-link wh-link--self";
+        a.href = "staff-self-edit.html";
+        a.textContent = "관리자 정보 수정";
+        menuEl.appendChild(a);
+    }
+
     function roleLabel(role) {
         if (normRole(role) === "supervisor") return "슈퍼바이저";
         if (normRole(role) === "admin") return "관리자";
@@ -95,6 +108,7 @@
         var orderOn = !!sess.staffOrderEnabled;
         var items = menusFor(role, orderOn);
         renderMenu(items);
+        appendSelfEditLink();
 
         var hint = roleLabel(role) + " · 메뉴 " + items.length + "개";
         if (role === "admin") {

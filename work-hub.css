@@ -92,6 +92,19 @@ body.page-work-hub .header-session-company--mobile {
     outline: none;
 }
 
+.wh-menu-spacer {
+    height: 0;
+    margin-top: 2.6rem;
+}
+
+.wh-link--self {
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: #3d5166;
+    border-color: #d8e3ef;
+    background: #f8fafc;
+}
+
 @media (max-width: 480px) {
     .wh-title {
         font-size: 1.25rem;

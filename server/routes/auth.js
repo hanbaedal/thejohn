@@ -2,7 +2,12 @@ const express = require("express");
 const { signToken, extractBearer, verifyToken, requireRole } = require("../middleware/auth");
 const { getDb, isDbReady } = require("../db");
 const { resolveFormLogin, findVendorByLoginId, findStaffByLoginId } = require("../lib/loginResolve");
-const { findStaffById } = require("../lib/staff");
+const {
+    findStaffById,
+    findStaffByAuthUser,
+    updateStaffSelfAccount,
+    checkStaffLoginId
+} = require("../lib/staff");
 const { toPublic, F: VF, getCompanyName: getVendorCompanyName } = require("../lib/vendorFields");
 const {
     toPublic: toPublicStaff,
@@ -196,6 +201,44 @@ router.get("/staff-profile", requireRole("admin", "supervisor", "vendor"), async
     } catch (e) {
         console.error("GET /api/auth/staff-profile", e);
         return res.status(500).json({ ok: false, error: "관리자 정보를 불러오지 못했습니다." });
+    }
+});
+
+/** 로그인 관리자·슈퍼바이저 — 본인 프로필 수정 */
+router.put("/staff-profile", requireRole("admin", "supervisor"), async function (req, res) {
+    try {
+        if (req.auth.role !== "admin" && req.auth.role !== "supervisor") {
+            return res.status(403).json({ ok: false, error: "관리자만 수정할 수 있습니다." });
+        }
+        const result = await updateStaffSelfAccount(req.auth.userId || "", req.body || {});
+        return res.json({
+            ok: true,
+            staff: result,
+            loginIdChanged: !!result.loginIdChanged,
+            loginIdMigration: result.loginIdMigration || null
+        });
+    } catch (e) {
+        const msg = e.message || "수정에 실패했습니다.";
+        const code = msg.includes("찾을") ? 404 : msg.includes("이미") ? 409 : 400;
+        console.error("PUT /api/auth/staff-profile", e);
+        return res.status(code).json({ ok: false, error: msg });
+    }
+});
+
+/** 본인 아이디 변경 시 중복 검사 (관리자·슈퍼바이저) */
+router.get("/check-staff-login-id", requireRole("admin", "supervisor"), async function (req, res) {
+    try {
+        const loginId = String(req.query.loginId || "").trim();
+        let excludeId = req.query.excludeId ? String(req.query.excludeId) : "";
+        if (!excludeId) {
+            const self = await findStaffByAuthUser(req.auth.userId || "");
+            if (self) excludeId = self.id;
+        }
+        const result = await checkStaffLoginId(loginId, excludeId);
+        return res.json({ ok: true, ...result });
+    } catch (e) {
+        console.error("GET /api/auth/check-staff-login-id", e);
+        return res.status(500).json({ ok: false, error: "아이디 확인에 실패했습니다." });
     }
 });
 
