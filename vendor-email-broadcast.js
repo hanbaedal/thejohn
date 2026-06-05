@@ -4,6 +4,7 @@
     var PF = window.THEJHON_PRODUCT_FORM;
     var VENDOR_MANAGE_PAGE = "vendor-manage.html";
     var MAX_ATTACH = 5;
+    var GREETING_MAX = 400;
     var ALLOWED_EXTS = [".pdf", ".hwp", ".hwpx", ".doc", ".docx", ".xls", ".xlsx", ".jpg", ".jpeg", ".png"];
 
     var statusEl = document.getElementById("veb-status");
@@ -11,6 +12,7 @@
     var srcVendorNewEl = document.getElementById("veb-src-vendor-new");
     var subjectEl = document.getElementById("veb-subject");
     var greetingEl = document.getElementById("veb-greeting");
+    var greetingCountEl = document.getElementById("veb-greeting-count");
     var filesEl = document.getElementById("veb-files");
     var filePickBtn = document.getElementById("veb-file-pick-btn");
     var attachListEl = document.getElementById("veb-attach-list");
@@ -24,11 +26,35 @@
     var pickerEmpty = document.getElementById("veb-picker-empty");
     var pickerTitle = document.getElementById("veb-picker-title");
     var successModal = document.getElementById("veb-success-modal");
+    var previewModal = document.getElementById("veb-preview-modal");
+    var previewTitle = document.getElementById("veb-preview-title");
+    var previewBody = document.getElementById("veb-preview-body");
+    var previewCloseBtn = document.getElementById("veb-preview-close");
 
     var pickerRows = [];
+    var previewObjectUrl = "";
     var appliedSelections = [];
     var appliedSourcesKey = "";
     var attachmentFiles = [];
+
+    function greetingLength(text) {
+        return Array.from(String(text || "")).length;
+    }
+
+    function trimGreetingToMax() {
+        if (!greetingEl) return;
+        var chars = Array.from(greetingEl.value);
+        if (chars.length > GREETING_MAX) {
+            greetingEl.value = chars.slice(0, GREETING_MAX).join("");
+        }
+    }
+
+    function updateGreetingCount() {
+        if (!greetingCountEl) return;
+        trimGreetingToMax();
+        var len = greetingEl ? greetingLength(greetingEl.value) : 0;
+        greetingCountEl.textContent = len + " / " + GREETING_MAX + "자";
+    }
 
     function setStatus(msg, isError) {
         if (!statusEl) return;
@@ -370,22 +396,45 @@
         });
     }
 
+    function closePreviewModal() {
+        if (previewModal) previewModal.hidden = true;
+        if (previewBody) previewBody.innerHTML = "";
+        if (previewObjectUrl) {
+            URL.revokeObjectURL(previewObjectUrl);
+            previewObjectUrl = "";
+        }
+        if (!pickerModal || pickerModal.hidden) {
+            if (!successModal || successModal.hidden) {
+                document.body.style.overflow = "";
+            }
+        }
+    }
+
     function viewAttachment(idx) {
         var file = attachmentFiles[idx];
-        if (!file) return;
+        if (!file || !previewModal || !previewBody) return;
+        closePreviewModal();
         var url = URL.createObjectURL(file);
+        previewObjectUrl = url;
         var type = String(file.type || "").toLowerCase();
-        if (type.indexOf("image/") === 0 || type === "application/pdf") {
-            window.open(url, "_blank", "noopener");
+        var ext = getExt(file.name);
+        if (previewTitle) previewTitle.textContent = file.name || "첨부 미리보기";
+
+        if (type.indexOf("image/") === 0) {
+            previewBody.innerHTML =
+                '<img src="' + url + '" alt="" class="veb-preview-img">';
+        } else if (type === "application/pdf" || ext === ".pdf") {
+            previewBody.innerHTML =
+                '<iframe src="' + url + '" class="veb-preview-iframe" title="PDF 미리보기"></iframe>';
         } else {
-            var a = document.createElement("a");
-            a.href = url;
-            a.download = file.name;
-            a.click();
+            previewBody.innerHTML =
+                '<p class="veb-preview-msg">이 형식은 화면 미리보기를 지원하지 않습니다. 아래에서 파일을 받을 수 있습니다.</p>' +
+                '<p class="veb-preview-meta">' + escapeHtml(file.name) + "</p>" +
+                '<a class="btn" href="' + url + '" download="' + escapeHtml(file.name) + '">파일 받기</a>';
         }
-        setTimeout(function () {
-            URL.revokeObjectURL(url);
-        }, 60000);
+
+        previewModal.hidden = false;
+        document.body.style.overflow = "hidden";
     }
 
     function addAttachmentFiles(fileList) {
@@ -488,10 +537,22 @@
 
     if (!validateAccess()) return;
     renderSummary();
+    updateGreetingCount();
+
+    if (greetingEl) {
+        greetingEl.addEventListener("input", updateGreetingCount);
+    }
 
     [srcVendorsEl, srcVendorNewEl].forEach(function (el) {
         if (el) el.addEventListener("change", invalidateSelection);
     });
+
+    if (previewCloseBtn) previewCloseBtn.addEventListener("click", closePreviewModal);
+    if (previewModal) {
+        previewModal.addEventListener("click", function (e) {
+            if (e.target === previewModal) closePreviewModal();
+        });
+    }
 
     if (pickBtn) pickBtn.addEventListener("click", loadPickerRows);
     ["veb-picker-close", "veb-picker-cancel"].forEach(function (id) {
@@ -531,7 +592,10 @@
                 var subject = String((subjectEl && subjectEl.value) || "").trim();
                 var greeting = String((greetingEl && greetingEl.value) || "").trim();
                 if (!subject) return setStatus("제목을 입력해 주세요.", true);
-                if (!greeting) return setStatus("인사말/본문을 입력해 주세요.", true);
+                if (!greeting) return setStatus("내용을 입력해 주세요.", true);
+                if (greetingLength(greeting) > GREETING_MAX) {
+                    return setStatus("내용은 " + GREETING_MAX + "자 이하로 입력해 주세요.", true);
+                }
 
                 sendBtn.disabled = true;
                 setStatus("메일 발송 중…");

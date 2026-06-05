@@ -7,12 +7,25 @@ const { registeredByInFilter } = require("../lib/staffLoginId");
 const router = express.Router();
 const HISTORY_COLLECTION = "vendor_email_history";
 const MAX_ATTACHMENTS = 5;
+const GREETING_MAX = 400;
 const MAX_FILE_SIZE = 4 * 1024 * 1024;
 const MAX_TOTAL_SIZE = 12 * 1024 * 1024;
 const ALLOWED_EXTS = [".pdf", ".hwp", ".hwpx", ".doc", ".docx", ".xls", ".xlsx", ".jpg", ".jpeg", ".png"];
 
 function trim(v) {
     return String(v || "").trim();
+}
+
+function greetingLength(text) {
+    return Array.from(String(text || "")).length;
+}
+
+function validateGreeting(greeting) {
+    if (!greeting) return "내용을 입력해 주세요.";
+    if (greetingLength(greeting) > GREETING_MAX) {
+        return "내용은 " + GREETING_MAX + "자 이하로 입력해 주세요.";
+    }
+    return "";
 }
 
 function hasSmtpConfig() {
@@ -267,7 +280,8 @@ router.post("/broadcast-test", requireRole("admin"), async function (req, res) {
         const greeting = trim(body.greeting);
         const testEmail = cleanEmail(body.testEmail);
         if (!subject) return res.status(400).json({ ok: false, error: "메일 제목을 입력해 주세요." });
-        if (!greeting) return res.status(400).json({ ok: false, error: "인사말(본문)을 입력해 주세요." });
+        const greetingErr = validateGreeting(greeting);
+        if (greetingErr) return res.status(400).json({ ok: false, error: greetingErr });
         if (!testEmail) return res.status(400).json({ ok: false, error: "테스트 수신 이메일을 입력해 주세요." });
         const files = validateAndBuildAttachments(body.attachments);
         const senderName = await resolveSenderName(getDb(), req.auth, body.senderName);
@@ -304,7 +318,8 @@ router.post("/broadcast", requireRole("admin"), async function (req, res) {
         const greeting = trim(body.greeting);
         const selections = Array.isArray(body.selections) ? body.selections : [];
         if (!subject) return res.status(400).json({ ok: false, error: "메일 제목을 입력해 주세요." });
-        if (!greeting) return res.status(400).json({ ok: false, error: "인사말(본문)을 입력해 주세요." });
+        const greetingErr = validateGreeting(greeting);
+        if (greetingErr) return res.status(400).json({ ok: false, error: greetingErr });
         if (!selections.length) {
             return res.status(400).json({ ok: false, error: "수신자를 선택해 주세요." });
         }
