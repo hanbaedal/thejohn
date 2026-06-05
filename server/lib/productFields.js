@@ -465,16 +465,37 @@ async function findProductsForList(db, query) {
         .toArray();
 }
 
+/** 레거시 필드명(title/content 등)이 남아 있을 때만 전체 문서 재구성 — 정상 데이터는 건드리지 않음 */
+function productNeedsFieldMigration(doc) {
+    if (!doc) return false;
+    if (!doc.id) return true;
+    if (doc.title && !str(doc[F.name])) return true;
+    if (doc.content && !str(doc[F.explain])) return true;
+    if (doc.spec && !str(doc[F.size])) return true;
+    if (doc.image && !readImagesFromDoc(doc).length) return true;
+    if (doc.pd_dept && !str(doc[F.dept])) return true;
+    if (doc.dept && !str(doc[F.dept]) && !str(doc.pd_dept)) return true;
+    return false;
+}
+
 async function migrateProductsCollection(db) {
     const col = db.collection("products");
     const docs = await col.find({}).toArray();
     let n = 0;
+    let skipped = 0;
     let idFixed = 0;
     let deptFixed = 0;
     let emptyDept = 0;
     for (const doc of docs) {
         const id = ensureProductId(doc);
-        if (!doc.id) idFixed++;
+        if (!doc.id) {
+            await col.updateOne({ _id: doc._id }, { $set: { id: id } });
+            idFixed++;
+        }
+        if (!productNeedsFieldMigration(doc)) {
+            skipped++;
+            continue;
+        }
         const rawDept = doc[F.dept] || doc.pd_dept || "";
         const built = buildFromBody(
             {
@@ -487,7 +508,6 @@ async function migrateProductsCollection(db) {
                 pd_price2: doc[F.price2],
                 pd_price3: doc[F.price3],
                 pd_price4: doc[F.price4],
-                pd_image: doc[F.image] || doc.image,
                 per_name: doc[F.personName] || doc.per_name,
                 "per-number": doc[F.personPhone] || doc["per-number"],
                 "per-email": doc[F.personEmail] || doc["per-email"],
@@ -499,11 +519,8 @@ async function migrateProductsCollection(db) {
             deptFixed++;
         }
         if (!built.pd_dept) emptyDept++;
-        if (!doc.id) {
-            await col.updateOne({ _id: doc._id }, { $set: { id: id } });
-        }
         const next = toDbDoc(id, built, doc);
-        const imgs = readImagesFromDoc(next);
+        const imgs = readImagesFromDoc(doc);
         next[F.images] = imgs;
         next[F.image] = imgs[0] || "";
         next.pd_has_image = imgs.length > 0;
@@ -528,6 +545,7 @@ async function migrateProductsCollection(db) {
     const report = {
         collection: "products",
         processed: n,
+        skipped: skipped,
         idFixed: idFixed,
         deptNormalized: deptFixed,
         emptyDeptAfter: emptyDept,
