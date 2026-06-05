@@ -127,32 +127,56 @@
 .pinfo-row:last-child {
     border-bottom: none;
 }
-@media (max-width: 520px) {
-    .pinfo-modal:not(.pinfo-modal--readonly) .pinfo-row {
-        grid-template-columns: 1fr;
+/* 스마트폰: 항목명 | 입력·내용 한 줄 (등록·수정·조회 공통) */
+@media (max-width: 640px) {
+    .pinfo-modal {
+        --pinfo-label-w: 6.75rem;
+        --pinfo-desc-size: 0.72rem;
+        --pinfo-input-size: 0.8125rem;
+        --pinfo-input-min-h: 2rem;
     }
-    .pinfo-modal--readonly .pinfo-row {
-        grid-template-columns: minmax(3.65rem, 22%) minmax(0, 1fr);
-        align-items: stretch;
+    .pinfo-modal .pinfo-row {
+        grid-template-columns: var(--pinfo-label-w) minmax(0, 1fr);
+        align-items: center;
     }
-    .pinfo-modal--readonly .pinfo-row__label {
+    .pinfo-modal .pinfo-row:has(textarea) {
+        align-items: start;
+    }
+    .pinfo-modal .pinfo-row__label {
         border-right: 1px solid #d4e0eb;
         border-bottom: none;
-        font-size: 0.72rem;
+        font-size: var(--pinfo-desc-size);
         font-weight: 700;
         line-height: 1.3;
-        padding: 0.45rem 0.28rem;
+        padding: 0.35rem 0.3rem;
         word-break: keep-all;
-        text-align: center;
+        text-align: left;
         align-items: center;
-        justify-content: center;
+        justify-content: flex-start;
+        white-space: nowrap;
     }
-    .pinfo-modal--readonly .pinfo-row__input {
-        padding: 0.4rem 0.45rem;
+    .pinfo-modal .pinfo-row:has(textarea) .pinfo-row__label {
+        padding-top: 0.45rem;
+        white-space: normal;
+        align-items: flex-start;
+    }
+    .pinfo-modal .pinfo-row__input {
+        padding: 0.35rem 0.4rem;
+        min-width: 0;
+    }
+    .pinfo-modal:not(.pinfo-modal--readonly) .pinfo-row__input input,
+    .pinfo-modal:not(.pinfo-modal--readonly) .pinfo-row__input textarea {
+        font-size: var(--pinfo-input-size);
+        min-height: var(--pinfo-input-min-h);
+        padding: 0.35rem 0.45rem;
+        border-radius: 4px;
+    }
+    .pinfo-modal:not(.pinfo-modal--readonly) .pinfo-row__input textarea {
+        min-height: 3.25rem;
     }
     .pinfo-modal--readonly .pinfo-row__input input,
     .pinfo-modal--readonly .pinfo-row__input textarea {
-        font-size: 0.8rem;
+        font-size: var(--pinfo-input-size);
         line-height: 1.48;
         padding: 0;
         background: transparent;
@@ -161,13 +185,13 @@
     .pinfo-modal--readonly .pinfo-row__input textarea {
         min-height: 2.5rem;
     }
-    .pinfo-modal--readonly .pinfo-modal__panel {
-        width: min(94vw, 40rem);
+    .pinfo-modal__panel {
+        width: min(96vw, 40rem);
     }
-    .pinfo-modal--readonly .pinfo-modal__body {
+    .pinfo-modal__body {
         padding: 0.65rem 0.5rem;
     }
-    .pinfo-modal--readonly .pinfo-modal__title {
+    .pinfo-modal__title {
         font-size: 0.98rem;
     }
 }
@@ -189,12 +213,6 @@
 .pinfo-row__label--lines {
     line-height: 1.3;
     gap: 0.05rem;
-}
-@media (max-width: 520px) {
-    .pinfo-modal:not(.pinfo-modal--readonly) .pinfo-row__label {
-        border-right: none;
-        border-bottom: 1px solid #e8eef4;
-    }
 }
 .pinfo-row__input {
     padding: 0.4rem 0.5rem;
