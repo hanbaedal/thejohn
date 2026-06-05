@@ -68,7 +68,15 @@ body.page-work-hub .header-session-company--mobile {
 .wh-menu {
     display: flex;
     flex-direction: column;
+    gap: 0;
+}
+.wh-group {
+    display: flex;
+    flex-direction: column;
     gap: 0.65rem;
+}
+.wh-group + .wh-group {
+    margin-top: 1.35rem;
 }
 
 .wh-link {
@@ -94,7 +102,7 @@ body.page-work-hub .header-session-company--mobile {
 
 .wh-menu-spacer {
     height: 0;
-    margin-top: 2.6rem;
+    margin-top: 1.35rem;
 }
 
 .wh-link--self {

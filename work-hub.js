@@ -58,15 +58,47 @@
         if (Auth.syncStaffOrderEnabledFromSession) Auth.syncStaffOrderEnabledFromSession(sess);
     }
 
-    function renderMenu(items) {
+    function itemMap() {
+        var map = {};
+        BASE.forEach(function (it) {
+            map[it.id] = it;
+        });
+        map[EXTRA.order.id] = EXTRA.order;
+        map[EXTRA.work.id] = EXTRA.work;
+        return map;
+    }
+
+    function menuGroupsFor(role, orderEnabled) {
+        var groups = [
+            { ids: ["view-home", "manage-home"] },
+            { ids: ["product-manage", "vendor-manage"] }
+        ];
+        var r = normRole(role);
+        if (r === "supervisor") {
+            groups.push({ ids: ["order-manage", "work-manage"] });
+        } else if (r === "admin" && orderEnabled) {
+            groups.push({ ids: ["order-manage"] });
+        }
+        return groups;
+    }
+
+    function renderMenu(role, orderEnabled) {
         if (!menuEl) return;
         menuEl.innerHTML = "";
-        items.forEach(function (item) {
-            var a = document.createElement("a");
-            a.className = "wh-link";
-            a.href = item.href;
-            a.textContent = item.label;
-            menuEl.appendChild(a);
+        var map = itemMap();
+        menuGroupsFor(role, orderEnabled).forEach(function (group) {
+            var wrap = document.createElement("div");
+            wrap.className = "wh-group";
+            group.ids.forEach(function (id) {
+                var item = map[id];
+                if (!item) return;
+                var a = document.createElement("a");
+                a.className = "wh-link";
+                a.href = item.href;
+                a.textContent = item.label;
+                wrap.appendChild(a);
+            });
+            if (wrap.childElementCount) menuEl.appendChild(wrap);
         });
     }
 
@@ -107,7 +139,7 @@
 
         var orderOn = !!sess.staffOrderEnabled;
         var items = menusFor(role, orderOn);
-        renderMenu(items);
+        renderMenu(role, orderOn);
         appendSelfEditLink();
 
         var hint = roleLabel(role) + " · 메뉴 " + items.length + "개";
