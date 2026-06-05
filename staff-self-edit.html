@@ -28,27 +28,117 @@
             <button type="button" class="btn btn-auth-icon btn-logout" id="btnLogout" hidden aria-label="로그아웃" title="로그아웃"></button>
         </nav>
     </header>
-    <main class="page-main page-main--hide-scrollbar sm-page">
+    <main class="page-main page-main--hide-scrollbar sm-page sm-self-form-page">
         <p class="am-subnav"><a href="work-hub.html">← 그룹 마케팅 관리</a></p>
         <h1>관리자 정보 수정</h1>
         <p id="sm-status" class="sm-status" role="status" aria-live="polite"></p>
         <section class="sm-panel">
-            <form id="sm-self-form" class="sm-grid" novalidate>
+            <form id="sm-self-form" class="sm-self-form" novalidate>
                 <input type="hidden" id="sm-self-id" name="id">
-                <div class="sm-field sm-field--full">
-                    <label for="sm-self-loginId">아이디</label>
-                    <input type="text" id="sm-self-loginId" name="loginId" autocomplete="username" required minlength="6" maxlength="12" pattern="[a-zA-Z0-9_-]+">
-                    <p class="sm-field-hint">변경 시 6~12자(영문·숫자·_·-). 등록 업체·상품·주문 등 담당 정보가 함께 갱신되며, 새 아이디로 다시 로그인해야 합니다.</p>
+
+                <div class="sm-row sm-row--4">
+                    <div class="sm-slot">
+                        <label for="sm-self-st_company">회사명</label>
+                        <input type="text" id="sm-self-st_company" name="st_company" required>
+                    </div>
+                    <div class="sm-slot">
+                        <label for="sm-self-st_ceo">대표자명</label>
+                        <input type="text" id="sm-self-st_ceo" name="st_ceo">
+                    </div>
+                    <div class="sm-slot">
+                        <label for="sm-self-loginId">아이디</label>
+                        <input type="text" id="sm-self-loginId" name="loginId" autocomplete="username" required minlength="6" maxlength="12" pattern="[a-zA-Z0-9_-]+">
+                    </div>
+                    <div class="sm-slot">
+                        <label for="sm-self-password">비밀번호</label>
+                        <input type="text" id="sm-self-password" name="password" autocomplete="new-password" placeholder="비워 두면 유지" spellcheck="false">
+                    </div>
                 </div>
-                <div class="sm-field sm-field--full">
-                    <label for="sm-self-password">비밀번호 <small>(변경 시에만 입력)</small></label>
-                    <input type="text" id="sm-self-password" name="password" autocomplete="new-password" placeholder="비워 두면 유지" spellcheck="false">
+                <p class="sm-field-hint sm-hint-indent" id="sm-self-loginId-hint">변경 시 6~12자(영문·숫자·_·-). 등록 업체·상품·주문 등 담당 정보가 함께 갱신되며, 새 아이디로 다시 로그인해야 합니다.</p>
+
+                <div class="sm-divider" role="separator" aria-hidden="true"></div>
+                <div class="sm-gap-2lines" aria-hidden="true"></div>
+
+                <div class="sm-row sm-row--4">
+                    <div class="sm-slot">
+                        <label for="sm-self-st_phone">회사전화</label>
+                        <input type="tel" id="sm-self-st_phone" name="st_phone" autocomplete="tel">
+                    </div>
+                    <div class="sm-slot">
+                        <label for="sm-self-st_fax">회사팩스</label>
+                        <input type="tel" id="sm-self-st_fax" name="st_fax" inputmode="tel">
+                    </div>
+                    <div class="sm-slot">
+                        <label for="sm-self-st_email">회사 이메일</label>
+                        <input type="email" id="sm-self-st_email" name="st_email" autocomplete="email">
+                    </div>
+                    <div class="sm-slot">
+                        <label for="sm-self-st_ceo_tel">대표연락처</label>
+                        <input type="tel" id="sm-self-st_ceo_tel" name="st_ceo_tel">
+                    </div>
                 </div>
-                <div class="sm-field">
-                    <label for="sm-self-st_company">회사명</label>
-                    <input type="text" id="sm-self-st_company" name="st_company" required>
+
+                <div class="sm-row sm-row--4">
+                    <div class="sm-slot">
+                        <label for="sm-self-st_web">홈페이지</label>
+                        <input type="url" id="sm-self-st_web" name="st_web" placeholder="https://">
+                    </div>
+                    <div class="sm-slot">
+                        <label for="sm-self-st_biz_no">사업자등록번호</label>
+                        <input type="text" id="sm-self-st_biz_no" name="st_biz_no" inputmode="numeric">
+                    </div>
+                    <div class="sm-slot">
+                        <label for="sm-self-st_biz_item">업종</label>
+                        <input type="text" id="sm-self-st_biz_item" name="st_biz_item">
+                    </div>
+                    <div class="sm-slot">
+                        <label for="sm-self-st_biz_type">업태</label>
+                        <input type="text" id="sm-self-st_biz_type" name="st_biz_type">
+                    </div>
                 </div>
-                <div class="sm-field sm-field--full sm-brand-media-field">
+
+                <div class="sm-divider" role="separator" aria-hidden="true"></div>
+                <div class="sm-gap-2lines" aria-hidden="true"></div>
+
+                <p class="sm-section-label">사업장 소재지</p>
+                <div class="sm-field sm-field--full" id="sm-self-address-mount"></div>
+
+                <div class="sm-divider" role="separator" aria-hidden="true"></div>
+                <div class="sm-gap-2lines" aria-hidden="true"></div>
+
+                <p class="sm-section-label">푸터 SNS (페이스북·인스타·네이버카페·유튜브·카카오)</p>
+                <div class="sm-row sm-row--2">
+                    <div class="sm-slot">
+                        <label for="sm-self-st_facebook">페이스북</label>
+                        <input type="url" id="sm-self-st_facebook" name="st_facebook" placeholder="https://">
+                    </div>
+                    <div class="sm-slot">
+                        <label for="sm-self-st_instagram">인스타그램</label>
+                        <input type="url" id="sm-self-st_instagram" name="st_instagram" placeholder="https://">
+                    </div>
+                </div>
+                <div class="sm-row sm-row--2">
+                    <div class="sm-slot">
+                        <label for="sm-self-st_naver_cafe">네이버 카페</label>
+                        <input type="url" id="sm-self-st_naver_cafe" name="st_naver_cafe" placeholder="https://">
+                    </div>
+                    <div class="sm-slot">
+                        <label for="sm-self-st_youtube">유튜브</label>
+                        <input type="url" id="sm-self-st_youtube" name="st_youtube" placeholder="https://">
+                    </div>
+                </div>
+                <div class="sm-row sm-row--1">
+                    <div class="sm-slot sm-slot--full">
+                        <label for="sm-self-st_kakao">카카오톡 채널 (채팅 URL)</label>
+                        <input type="text" id="sm-self-st_kakao" name="st_kakao" placeholder="https://pf.kakao.com/_채널ID/chat 또는 _채널ID" autocomplete="off">
+                        <p class="sm-field-hint">채널 관리자센터에서 1:1 채팅 사용 후 채팅 URL을 입력하세요.</p>
+                    </div>
+                </div>
+
+                <div class="sm-divider" role="separator" aria-hidden="true"></div>
+                <div class="sm-gap-2lines" aria-hidden="true"></div>
+
+                <div class="sm-brand-media-field">
                     <div class="sm-brand-media">
                         <div class="sm-brand-media-col pr-photo-field">
                             <span class="pr-photo-label" id="sm-self-logo-label">회사 로고</span>
@@ -60,6 +150,7 @@
                                 <button type="button" class="btn btn-secondary sm-logo-clear-btn" id="sm-self-logo-clear" hidden>로고 제거</button>
                             </div>
                             <p class="sm-field-hint">로그인 시 사이트 헤더·앱 아이콘으로 표시됩니다. 512×512px로 자동 맞춤 저장됩니다.</p>
+                            <img id="sm-self-logo-preview" class="sm-brand-preview sm-brand-preview--logo pr-photo-preview tj-image-preview" alt="로고 미리보기" width="96" height="96" hidden>
                         </div>
                         <div class="sm-brand-media-col pr-photo-field">
                             <span class="pr-photo-label" id="sm-self-seal-label">회사 도장</span>
@@ -71,74 +162,11 @@
                                 <button type="button" class="btn btn-secondary sm-logo-clear-btn" id="sm-self-seal-clear" hidden>도장 제거</button>
                             </div>
                             <p class="sm-field-hint">거래명세서 PDF 인감용·투명 PNG 권장.</p>
+                            <img id="sm-self-seal-preview" class="sm-brand-preview sm-brand-preview--seal pr-photo-preview tj-image-preview" alt="도장 미리보기" width="96" height="96" hidden>
                         </div>
                     </div>
-                    <div class="sm-brand-preview-row" aria-label="로고·도장 미리보기">
-                        <img id="sm-self-logo-preview" class="sm-brand-preview sm-brand-preview--logo pr-photo-preview tj-image-preview" alt="로고 미리보기" width="96" height="96" hidden>
-                        <img id="sm-self-seal-preview" class="sm-brand-preview sm-brand-preview--seal pr-photo-preview tj-image-preview" alt="도장 미리보기" width="96" height="96" hidden>
-                    </div>
                 </div>
-                <div class="sm-field">
-                    <label for="sm-self-st_biz_no">사업자등록번호</label>
-                    <input type="text" id="sm-self-st_biz_no" name="st_biz_no" inputmode="numeric">
-                </div>
-                <div class="sm-field">
-                    <label for="sm-self-st_ceo">대표자명</label>
-                    <input type="text" id="sm-self-st_ceo" name="st_ceo">
-                </div>
-                <div class="sm-field">
-                    <label for="sm-self-st_ceo_tel">대표 연락처</label>
-                    <input type="tel" id="sm-self-st_ceo_tel" name="st_ceo_tel">
-                </div>
-                <div class="sm-field">
-                    <label for="sm-self-st_phone">회사전화</label>
-                    <input type="tel" id="sm-self-st_phone" name="st_phone" autocomplete="tel">
-                </div>
-                <div class="sm-field">
-                    <label for="sm-self-st_fax">회사팩스</label>
-                    <input type="tel" id="sm-self-st_fax" name="st_fax" inputmode="tel">
-                </div>
-                <div class="sm-field">
-                    <label for="sm-self-st_web">홈페이지</label>
-                    <input type="url" id="sm-self-st_web" name="st_web" placeholder="https://">
-                </div>
-                <div class="sm-field">
-                    <label for="sm-self-st_email">이메일</label>
-                    <input type="email" id="sm-self-st_email" name="st_email" autocomplete="email">
-                </div>
-                <div class="sm-field">
-                    <label for="sm-self-st_biz_type">업태</label>
-                    <input type="text" id="sm-self-st_biz_type" name="st_biz_type">
-                </div>
-                <div class="sm-field">
-                    <label for="sm-self-st_biz_item">업종</label>
-                    <input type="text" id="sm-self-st_biz_item" name="st_biz_item">
-                </div>
-                <div class="sm-field sm-field--full" id="sm-self-address-mount"></div>
-                <div class="sm-field sm-field--full">
-                    <p class="sm-section-label">푸터 SNS (페이스북·인스타·네이버카페·유튜브·카카오)</p>
-                </div>
-                <div class="sm-field">
-                    <label for="sm-self-st_facebook">페이스북</label>
-                    <input type="url" id="sm-self-st_facebook" name="st_facebook" placeholder="https://">
-                </div>
-                <div class="sm-field">
-                    <label for="sm-self-st_instagram">인스타그램</label>
-                    <input type="url" id="sm-self-st_instagram" name="st_instagram" placeholder="https://">
-                </div>
-                <div class="sm-field">
-                    <label for="sm-self-st_naver_cafe">네이버 카페</label>
-                    <input type="url" id="sm-self-st_naver_cafe" name="st_naver_cafe" placeholder="https://">
-                </div>
-                <div class="sm-field">
-                    <label for="sm-self-st_youtube">유튜브</label>
-                    <input type="url" id="sm-self-st_youtube" name="st_youtube" placeholder="https://">
-                </div>
-                <div class="sm-field sm-field--full">
-                    <label for="sm-self-st_kakao">카카오톡 채널 (채팅 URL)</label>
-                    <input type="text" id="sm-self-st_kakao" name="st_kakao" placeholder="https://pf.kakao.com/_채널ID/chat 또는 _채널ID" autocomplete="off">
-                    <p class="sm-field-hint">채널 관리자센터에서 1:1 채팅 사용 후 채팅 URL을 입력하세요.</p>
-                </div>
+
                 <div class="sm-field sm-field--full sm-actions">
                     <button type="submit" class="btn btn-primary">저장</button>
                     <a href="work-hub.html" class="btn">취소</a>

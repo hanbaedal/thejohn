@@ -318,6 +318,77 @@
     font-size: 0.8rem;
     color: #5a6d7e;
 }
+
+/* 관리자 정보 수정(본인) — 업체등록 스타일에 맞춘 레이아웃 */
+.sm-self-form-page .sm-panel { padding: 1rem 1.1rem 1.25rem; }
+.sm-self-form-page .sm-self-form {
+    display: flex;
+    flex-direction: column;
+    gap: 0.85rem;
+}
+.sm-self-form-page .sm-row {
+    display: grid;
+    gap: 0.55rem 0.85rem;
+    align-items: center;
+}
+.sm-self-form-page .sm-row--4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.sm-self-form-page .sm-row--2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.sm-self-form-page .sm-row--1 { grid-template-columns: 1fr; }
+@media (max-width: 980px) {
+    .sm-self-form-page .sm-row--4 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 640px) {
+    .sm-self-form-page .sm-row--4,
+    .sm-self-form-page .sm-row--2 { grid-template-columns: 1fr; }
+}
+
+.sm-self-form-page {
+    --sm-label-w: 7.25rem;
+}
+@media (max-width: 640px) {
+    .sm-self-form-page { --sm-label-w: 6.75rem; }
+}
+.sm-self-form-page .sm-slot {
+    display: grid;
+    grid-template-columns: var(--sm-label-w) minmax(0, 1fr);
+    gap: 0.3rem 0.45rem;
+    align-items: center;
+}
+.sm-self-form-page .sm-slot > label {
+    margin: 0;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #2a4a5e;
+    white-space: nowrap;
+}
+.sm-self-form-page .sm-slot > input,
+.sm-self-form-page .sm-slot > textarea {
+    width: 100%;
+    min-width: 0;
+    padding: 0.35rem 0.45rem;
+    border: 1px solid #c5d0dc;
+    border-radius: 8px;
+    font-size: 16px;
+    font-family: inherit;
+    box-sizing: border-box;
+}
+.sm-self-form-page .sm-slot--full { grid-template-columns: var(--sm-label-w) minmax(0, 1fr); }
+.sm-self-form-page .sm-slot--spacer { visibility: hidden; pointer-events: none; min-height: 2.2rem; }
+
+.sm-self-form-page .sm-divider {
+    width: 100%;
+    height: 1px;
+    background: #e0e6ed;
+}
+.sm-self-form-page .sm-gap-2lines { height: 2.5rem; }
+.sm-self-form-page .sm-section-label { margin: 0; }
+.sm-self-form-page .sm-hint-indent {
+    margin: -0.35rem 0 0;
+    padding-left: calc(var(--sm-label-w) + 0.45rem);
+}
+.sm-self-form-page .sm-brand-media-field { margin-top: 0.35rem; }
+.sm-self-form-page .sm-brand-preview-row { display: none; }
+.sm-self-form-page .sm-brand-media-col .sm-brand-preview { margin-top: 0.65rem; }
 .sm-brand-media {
     display: grid;
     grid-template-columns: 1fr 1fr;
