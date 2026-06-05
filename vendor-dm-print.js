@@ -137,7 +137,7 @@
         if (!summaryEl) return;
         var key = sourcesKey(getSelectedSources());
         if (!appliedSelections.length || appliedSourcesKey !== key) {
-            summaryEl.textContent = "수신자를 선택해 주세요.";
+            summaryEl.textContent = "발송업체를 선택해 주세요.";
             return;
         }
         var c = countSelections(appliedSelections);
@@ -200,7 +200,7 @@
 
     function openPickerModal() {
         if (!pickerModal) return;
-        if (pickerTitle) pickerTitle.textContent = "수신자 선택 — " + sourcesLabel(getSelectedSources());
+        if (pickerTitle) pickerTitle.textContent = "발송 업체 선택 — " + sourcesLabel(getSelectedSources());
         pickerModal.hidden = false;
         document.body.style.overflow = "hidden";
     }
@@ -391,7 +391,7 @@
         var key = sourcesKey(getSelectedSources());
         if (!getSelectedSources().length) return setStatus("출력 대상 업체 분류를 하나 이상 선택해 주세요.", true);
         if (appliedSourcesKey !== key || !appliedSelections.length) {
-            return setStatus("먼저 수신자 선택을 완료해 주세요.", true);
+            return setStatus("먼저 발송 업체 선택을 완료해 주세요.", true);
         }
         var jobs = buildPrintJobs();
         if (!jobs.length) return setStatus("출력할 봉투가 없습니다. 주소가 있는 항목을 선택해 주세요.", true);
