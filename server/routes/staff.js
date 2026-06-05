@@ -58,7 +58,7 @@ router.get("/:id", requireRole("supervisor"), async (req, res) => {
         if (!doc || doc.active === false) {
             return res.status(404).json({ ok: false, error: "계정을 찾을 수 없습니다." });
         }
-        res.json({ ok: true, staff: toPublic(doc) });
+        res.json({ ok: true, staff: toPublic(doc, { includePassword: true }) });
     } catch (e) {
         console.error("GET /api/staff/:id", e);
         res.status(500).json({ ok: false, error: "조회에 실패했습니다." });

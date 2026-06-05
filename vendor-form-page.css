@@ -199,6 +199,18 @@
     box-sizing: border-box;
     font-size: 0.8125rem;
 }
+.vr-form-page .vr-form .vr-field.vr-company-row {
+    display: block;
+}
+.vr-form-page .vr-form .vr-prospect-btn,
+.vr-form-page .vr-form .vr-prospect-clear-btn {
+    min-height: var(--vr-input-min-h);
+    padding: 0.35rem 0.65rem;
+    font-size: var(--vr-desc-size);
+    font-weight: 700;
+    border-radius: 4px;
+    box-sizing: border-box;
+}
 
 @media (max-width: 639px) {
     .vr-form-page { --vr-mobile-label-w: 6.75rem; }
@@ -244,7 +256,7 @@
         grid-column: 2;
         margin-top: 0;
     }
-    .vr-form-page .vr-form .vr-field:not(.vr-dept-wrap):not(.vr-field--address) {
+    .vr-form-page .vr-form .vr-field:not(.vr-dept-wrap):not(.vr-field--address):not(.vr-company-row) {
         display: grid;
         grid-template-columns: var(--vr-mobile-label-w) minmax(0, 1fr);
         gap: 0.3rem 0.45rem;

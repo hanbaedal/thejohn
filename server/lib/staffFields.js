@@ -172,10 +172,11 @@ function fromLegacyDoc(doc) {
     return d;
 }
 
-function toPublic(doc) {
+function toPublic(doc, options) {
+    const opts = options || {};
     const d = fromLegacyDoc(doc);
     if (!d) return null;
-    return {
+    const pub = {
         id: str(d.id) || str(d.loginId) || "",
         loginId: d.loginId || "",
         st_company: str(d[F.company]),
@@ -205,6 +206,10 @@ function toPublic(doc) {
         orderEnabled: staffOrderEnabledFromDoc(d),
         updatedAt: d.updatedAt || 0
     };
+    if (opts.includePassword) {
+        pub.password = getStoredPassword(doc);
+    }
+    return pub;
 }
 
 function getCompanyName(doc) {

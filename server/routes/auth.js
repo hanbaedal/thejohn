@@ -197,7 +197,8 @@ router.get("/staff-profile", requireRole("admin", "supervisor", "vendor"), async
         if (!staff) {
             return res.status(404).json({ ok: false, error: "관리자 정보를 찾을 수 없습니다." });
         }
-        return res.json({ ok: true, item: toPublicStaff(staff) });
+        const includePassword = req.auth.role === "admin" || req.auth.role === "supervisor";
+        return res.json({ ok: true, item: toPublicStaff(staff, { includePassword }) });
     } catch (e) {
         console.error("GET /api/auth/staff-profile", e);
         return res.status(500).json({ ok: false, error: "관리자 정보를 불러오지 못했습니다." });

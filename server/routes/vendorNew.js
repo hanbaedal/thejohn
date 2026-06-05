@@ -132,7 +132,7 @@ router.get("/:id", requireRole("supervisor", "admin"), async function (req, res)
         if (!canReadVendor(req.auth, doc)) {
             return res.status(403).json({ ok: false, error: "이 신규업체를 조회할 권한이 없습니다." });
         }
-        res.json({ ok: true, item: toPublic(doc) });
+        res.json({ ok: true, item: toPublic(doc, { includePassword: true }) });
     } catch (e) {
         console.error("GET /api/vendor-new/:id", e);
         res.status(500).json({ ok: false, error: "신규업체를 불러오지 못했습니다." });
@@ -186,7 +186,7 @@ router.post("/", requireRole("supervisor", "admin"), async function (req, res) {
             "by",
             doc[F.registeredBy]
         );
-        res.status(201).json({ ok: true, item: toPublic(doc) });
+        res.status(201).json({ ok: true, item: toPublic(doc, { includePassword: true }) });
     } catch (e) {
         console.error("POST /api/vendor-new", e);
         const dup = writeErrorMessage(e);
@@ -243,7 +243,7 @@ router.put("/:id", requireRole("supervisor", "admin"), async function (req, res)
         doc = await applyRegistrationOnUpdate(doc, existing, req.auth, req.body);
         await col.replaceOne({ id }, doc);
         console.log("[vendor_new] updated:", doc.id, doc.loginId);
-        res.json({ ok: true, item: toPublic(doc) });
+        res.json({ ok: true, item: toPublic(doc, { includePassword: true }) });
     } catch (e) {
         console.error("PUT /api/vendor-new/:id", e);
         const dup = writeErrorMessage(e);

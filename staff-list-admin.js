@@ -255,7 +255,8 @@
         var loginInput = document.getElementById("sm-edit-loginId");
         loginInput.value = st.loginId || "";
         loginInput.dataset.originalLoginId = st.loginId || "";
-        document.getElementById("sm-edit-password").value = "";
+        document.getElementById("sm-edit-password").value =
+            st.password != null ? String(st.password) : "";
         document.getElementById("sm-edit-st_company").value = st.st_company || "";
         document.getElementById("sm-edit-st_phone").value = st.st_phone || "";
         document.getElementById("sm-edit-st_fax").value = st.st_fax || "";

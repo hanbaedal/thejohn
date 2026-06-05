@@ -149,7 +149,8 @@ router.get("/:id", async (req, res) => {
         if (auth && isStaffAuth(auth) && !canReadVendor(auth, doc)) {
             return res.status(403).json({ ok: false, error: "이 업체를 조회할 권한이 없습니다." });
         }
-        res.json({ ok: true, item: toPublic(doc) });
+        const includePassword = !!(auth && isStaffAuth(auth) && canReadVendor(auth, doc));
+        res.json({ ok: true, item: toPublic(doc, { includePassword }) });
     } catch (e) {
         console.error("GET /api/vendors/:id", e);
         res.status(500).json({ ok: false, error: "업체를 불러오지 못했습니다." });

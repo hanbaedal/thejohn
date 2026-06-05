@@ -325,7 +325,13 @@
         if (!it) return;
         editIdInput.value = it.id;
         loginIdInput.value = it.loginId || "";
-        passwordInput.value = "";
+        if (passwordInput) {
+            passwordInput.value = it.password != null ? String(it.password) : "";
+            passwordInput.type = "text";
+            if (VF && VF.syncPasswordToggle) {
+                VF.syncPasswordToggle(passwordInput, document.getElementById("vr-pw-toggle"));
+            }
+        }
         if (password2Input) password2Input.value = "";
         if (idDupCheck) idDupCheck.reset();
         companyInput.value = it.vn_company || "";

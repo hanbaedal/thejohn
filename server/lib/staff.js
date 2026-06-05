@@ -321,7 +321,7 @@ async function applyStaffAccountUpdate(staffKey, body) {
             { $unset: { activeSessionIds: "", activeSessionId: "", sessionUpdatedAt: "" } }
         );
     }
-    const pub = toPublic(doc);
+    const pub = toPublic(doc, { includePassword: true });
     if (loginChanged) {
         pub.loginIdChanged = true;
         pub.loginIdMigration = migration && migration.updated ? migration.updated : {};

@@ -117,6 +117,19 @@
         btn.addEventListener("click", function () {
             setVisible(input.type === "password");
         });
+        return { sync: function () { setVisible(input.type !== "password"); } };
+    }
+
+    function syncPasswordToggle(input, btn) {
+        if (!input || !btn) return;
+        var visible = input.type !== "password";
+        btn.setAttribute("aria-pressed", visible ? "true" : "false");
+        btn.setAttribute("aria-label", visible ? "비밀번호 숨기기" : "비밀번호 보기");
+        btn.title = visible ? "비밀번호 숨기기" : "비밀번호 보기";
+        var iconClosed = btn.querySelector(".vr-pw-icon--closed");
+        var iconOpen = btn.querySelector(".vr-pw-icon--open");
+        if (iconClosed) iconClosed.hidden = visible;
+        if (iconOpen) iconOpen.hidden = !visible;
     }
 
     function initPasswordConfirm(options) {
@@ -449,6 +462,7 @@
         validateLoginIdFormat: validateLoginIdFormat,
         validatePasswordFormat: validatePasswordFormat,
         initPasswordToggle: initPasswordToggle,
+        syncPasswordToggle: syncPasswordToggle,
         initPasswordConfirm: initPasswordConfirm,
         initLoginIdDuplicateCheck: initLoginIdDuplicateCheck,
         initVendorDeptMultiPicker: initVendorDeptMultiPicker,

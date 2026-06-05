@@ -189,10 +189,11 @@ function getCompanyName(doc) {
     return str(doc[F.company]) || str(doc.vn_company) || str(doc.companyName) || "";
 }
 
-function toPublic(doc) {
+function toPublic(doc, options) {
+    const opts = options || {};
     const d = fromLegacyDoc(doc);
     if (!d) return null;
-    return {
+    const pub = {
         id: d.id,
         loginId: d.loginId || "",
         vn_company: str(d[F.company]),
@@ -223,6 +224,10 @@ function toPublic(doc) {
         vn_promoted_vendor_id: str(doc.vn_promoted_vendor_id || ""),
         vn_promoted_at: doc.vn_promoted_at || 0
     };
+    if (opts.includePassword) {
+        pub.password = getVendorStoredPassword(doc);
+    }
+    return pub;
 }
 
 function resolvePasswordPlain(existing, loginId, password) {

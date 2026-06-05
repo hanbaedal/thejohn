@@ -15,183 +15,8 @@
     <link rel="stylesheet" href="admin-manage.css">
     <link rel="stylesheet" href="address-fields.css">
     <link rel="stylesheet" href="vendor-prospect-picker.css">
+    <link rel="stylesheet" href="vendor-form-page.css">
     <style>
-        .vr-form { max-width: min(100%, 56rem); margin: 0 auto 1.5rem; padding: 0.85rem 0.75rem; background: #fff; border: 1px solid #e0e6ed; border-radius: 8px; box-shadow: 0 1px 8px rgba(10, 77, 156, 0.05); }
-        .vr-slot > label,
-        .vr-field > label { display: block; font-size: 0.7rem; font-weight: 600; color: #5a6b7d; margin-bottom: 0.2rem; line-height: 1.2; }
-        .vr-slot input[type="text"],
-        .vr-slot input[type="email"],
-        .vr-slot input[type="tel"],
-        .vr-slot input[type="password"],
-        .vr-field input[type="text"],
-        .vr-field input[type="email"],
-        .vr-field input[type="tel"],
-        .vr-field input[type="password"],
-        .vr-field textarea { width: 100%; padding: 0.35rem 0.45rem; font-size: 0.8125rem; font-family: inherit; border: 1px solid #c5d0dc; border-radius: 4px; min-height: 2rem; box-sizing: border-box; }
-        .vr-field textarea { min-height: 4.5rem; resize: vertical; }
-        .vr-slot input:focus,
-        .vr-field input:focus,
-        .vr-field textarea:focus { outline: none; border-color: var(--dz-blue); box-shadow: 0 0 0 1px rgba(10, 77, 156, 0.2); }
-        .vr-slot input[type="file"],
-        .vr-field input[type="file"] { font-size: 0.68rem; max-width: 100%; padding: 0.15rem 0; }
-        .vr-hint { margin: 0.25rem 0 0; font-size: 0.68rem; color: #7a8a9c; line-height: 1.35; }
-        .vr-hint--after-login { margin-top: 0.05rem; margin-bottom: 0.55rem; }
-        .vr-hint--logo { margin: 0.35rem 0 0.55rem; }
-        .vr-preview-sm.pr-photo-preview { width: 6rem; height: 6rem; object-fit: cover; margin-top: 0.45rem; border: 1px solid #e0e6ed; border-radius: 6px; background: #f8fafc; }
-        .vr-row { display: grid; gap: 0.35rem 0.45rem; margin-bottom: 0.55rem; align-items: end; }
-        .vr-row--4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
-        .vr-row--3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-        @media (max-width: 900px) {
-            .vr-row--4 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-        }
-        @media (max-width: 520px) {
-            .vr-row--3 { grid-template-columns: 1fr; }
-            .vr-row--4 { grid-template-columns: 1fr; }
-        }
-        .vr-field { margin-bottom: 0.55rem; }
-        .vr-preview-sm { display: block; max-width: 100%; max-height: 3.25rem; margin-top: 0.2rem; border-radius: 4px; border: 1px solid #e8edf2; object-fit: contain; background: #f8fafc; }
-        .vr-actions { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-top: 0.65rem; }
-        .vr-actions .btn { border: 2px solid var(--dz-blue); background: #fff; color: var(--dz-blue); padding: 0.38rem 0.85rem; font-size: 0.8125rem; font-weight: 600; border-radius: 5px; cursor: pointer; font-family: inherit; display: inline-flex; align-items: center; justify-content: center; }
-        .vr-actions .btn-primary { background: var(--dz-blue); color: #fff; }
-        .vr-actions .btn-secondary { border-color: #c5d0dc; color: #3d5166; background: #f4f6f9; }
-        .vr-status { margin: 0 0 0.65rem; font-size: 0.8rem; color: #3d5166; min-height: 1.15rem; }
-        .vr-list { max-width: min(100%, 56rem); margin: 0 auto; }
-        .vr-list h2 { font-size: 1.05rem; margin: 0 0 0.6rem; color: #1a2b3c; }
-        .vr-card { background: #fff; border: 1px solid #e0e6ed; border-radius: 8px; padding: 0.75rem 0.85rem; margin-bottom: 0.65rem; box-shadow: 0 1px 4px rgba(10, 77, 156, 0.04); }
-        .vr-card-head { display: flex; gap: 0.45rem; flex-wrap: wrap; align-items: flex-start; }
-        .vr-thumb { width: 4rem; height: 4rem; object-fit: contain; border-radius: 4px; border: 1px solid #e0e6ed; background: #f4f6f9; flex-shrink: 0; }
-        .vr-thumb--empty { display: flex; align-items: center; justify-content: center; font-size: 0.58rem; color: #8a9bab; text-align: center; padding: 0.2rem; line-height: 1.15; }
-        .vr-card-main { flex: 1; min-width: 10rem; }
-        .vr-card-title { margin: 0 0 0.3rem; font-size: 1rem; font-weight: 700; color: #052a4d; }
-        .vr-card-meta { margin: 0; font-size: 0.78rem; line-height: 1.45; color: #3d556d; }
-        .vr-card-addr { font-weight: 500; color: #3d5166; }
-        .vr-card-meta a { color: var(--dz-blue); word-break: break-all; }
-        .vr-card-note { margin: 0.45rem 0 0; font-size: 0.82rem; line-height: 1.5; color: #3d5166; white-space: pre-wrap; word-break: break-word; }
-        .vr-card-actions { margin-top: 0.55rem; display: flex; gap: 0.35rem; flex-wrap: wrap; }
-        .vr-card-actions button { font-size: 0.75rem; padding: 0.28rem 0.55rem; border-radius: 4px; cursor: pointer; font-family: inherit; font-weight: 600; border: 1px solid #c5d0dc; background: #fff; color: #3d5166; }
-        .vr-card-actions button.vr-btn-del { border-color: #e8a4a4; color: #a12c2c; background: #fff8f8; }
-        .vr-grade-wrap { margin-bottom: 0.55rem; }
-        .vr-grade-wrap > .vr-grade-caption { display: block; font-size: 0.7rem; font-weight: 600; color: #5a6b7d; margin-bottom: 0.35rem; }
-        .vr-grade-btns { display: flex; flex-wrap: wrap; gap: 0.35rem; }
-        .vr-grade-btn {
-            min-width: 2.5rem;
-            padding: 0.4rem 0.75rem;
-            font-size: 0.8125rem;
-            font-weight: 700;
-            font-family: inherit;
-            border: 2px solid #c5d0dc;
-            border-radius: 6px;
-            background: #fff;
-            color: #3d5166;
-            cursor: pointer;
-        }
-        .vr-grade-btn.is-selected {
-            border-color: var(--dz-blue);
-            background: var(--dz-blue);
-            color: #fff;
-        }
-        .vr-grade-badge {
-            display: inline-block;
-            margin-left: 0.35rem;
-            padding: 0.1rem 0.45rem;
-            font-size: 0.72rem;
-            font-weight: 700;
-            border-radius: 4px;
-            background: #e8f4fc;
-            color: var(--dz-blue);
-        }
-        .vr-pw-wrap { display: flex; gap: 0.25rem; align-items: stretch; }
-        .vr-pw-wrap input { flex: 1; min-width: 0; }
-        .vr-pw-toggle {
-            flex-shrink: 0;
-            padding: 0 0.45rem;
-            font-size: 0.68rem;
-            font-weight: 600;
-            font-family: inherit;
-            border: 1px solid #c5d0dc;
-            border-radius: 4px;
-            background: #f4f6f9;
-            color: #3d5166;
-            cursor: pointer;
-        }
-        .vr-id-dup-hint, .vr-pw-match-hint {
-            margin: 0.2rem 0 0;
-            font-size: 0.68rem;
-            line-height: 1.35;
-        }
-        .vr-id-dup-hint[hidden], .vr-pw-match-hint[hidden] { display: none !important; }
-        .vr-id-dup-hint--ok, .vr-pw-match-hint--ok { color: #2d6a4f; font-weight: 600; }
-        .vr-id-dup-hint--dup, .vr-id-dup-hint--bad, .vr-pw-match-hint--bad { color: #a12c2c; font-weight: 600; }
-        .vr-id-dup-hint--checking, .vr-id-dup-hint--err, .vr-pw-match-hint--idle { color: #7a8a9c; }
-        .vr-slot input.vr-input--bad, .vr-field input.vr-input--bad { border-color: #c44; }
-        .vr-select {
-            width: 100%;
-            padding: 0.35rem 0.45rem;
-            font-size: 0.8125rem;
-            font-family: inherit;
-            border: 1px solid #c5d0dc;
-            border-radius: 4px;
-            min-height: 2rem;
-            box-sizing: border-box;
-            background: #fff;
-            color: #1a2b3c;
-        }
-        .vr-select:focus { outline: none; border-color: var(--dz-blue); box-shadow: 0 0 0 1px rgba(10, 77, 156, 0.2); }
-        .vr-dept-row { margin-bottom: 0.65rem; }
-        .vr-dept-wrap > .vr-dept-caption {
-            display: block;
-            font-size: 0.7rem;
-            font-weight: 600;
-            color: #5a6b7d;
-            margin-bottom: 0.3rem;
-        }
-        .vr-dept-checkboxes {
-            display: flex;
-            flex-wrap: nowrap;
-            align-items: center;
-            justify-content: space-between;
-            gap: 0.25rem 0.35rem;
-            margin-top: 0.1rem;
-            width: 100%;
-            overflow-x: auto;
-            -webkit-overflow-scrolling: touch;
-            scrollbar-width: thin;
-        }
-        .vr-dept-checkboxes::-webkit-scrollbar {
-            height: 4px;
-        }
-        .vr-dept-check {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            gap: 0.22rem;
-            flex: 1 1 0;
-            min-width: 0;
-            font-size: 0.72rem;
-            font-weight: 600;
-            color: #3d5166;
-            cursor: pointer;
-            user-select: none;
-            white-space: nowrap;
-        }
-        .vr-dept-check input {
-            width: 0.9rem;
-            height: 0.9rem;
-            margin: 0;
-            flex-shrink: 0;
-            accent-color: var(--dz-blue);
-            cursor: pointer;
-        }
-        @media (min-width: 640px) {
-            .vr-dept-check {
-                font-size: 0.8125rem;
-                gap: 0.28rem;
-            }
-            .vr-dept-check input {
-                width: 1rem;
-                height: 1rem;
-            }
-        }
         .vr-alert-modal {
             position: fixed;
             inset: 0;
@@ -256,7 +81,7 @@
             <button type="button" class="btn btn-auth-icon btn-logout" id="btnLogout" hidden aria-label="로그아웃" title="로그아웃"></button>
         </nav>
     </header>
-    <main class="page-main page-main--hide-scrollbar">
+    <main class="page-main page-main--hide-scrollbar vr-form-page">
         <p class="am-subnav"><a href="vendor-manage.html">← 업체관리</a></p>
         <h1>신규업체 등록</h1>
         <p id="vr-registrar-hint" class="vr-hint vr-hint--registrar" hidden></p>
@@ -264,7 +89,7 @@
         <form id="vr-form" class="vr-form" novalidate>
             <input type="hidden" id="vr-edit-id" value="">
             <input type="hidden" id="vr-prospect-id" name="prospectId" value="">
-            <div class="vr-field vr-company-row">
+            <div class="vr-field vr-company-row vr-section-gap-after">
                 <label for="vr-company">업체이름</label>
                 <div class="vr-company-input-row">
                     <input type="text" id="vr-company" name="vn_company" required maxlength="200" autocomplete="organization" placeholder="업체이름 직접 입력">
@@ -274,7 +99,7 @@
                 <p class="vr-hint">직접 입력하거나 예비거래처 목록에서 선택할 수 있습니다.</p>
                 <span id="vr-prospect-badge" class="vr-prospect-badge" hidden>예비거래처에서 불러옴</span>
             </div>
-            <div class="vr-field vr-dept-row vr-dept-wrap">
+            <div class="vr-field vr-dept-row vr-dept-wrap vr-section-gap-after">
                 <span class="vr-dept-caption" id="vr-dept-label">사업부문</span>
                 <div id="vr-dept-checkboxes" class="vr-dept-checkboxes" role="group" aria-labelledby="vr-dept-label">
                     <label class="vr-dept-check"><input type="checkbox" data-dept="jeongyuk" value="jeongyuk"> 정육</label>
@@ -297,19 +122,19 @@
                     <label for="vr-login-pw">비밀번호</label>
                     <div class="vr-pw-wrap">
                         <input type="text" id="vr-login-pw" name="password" maxlength="16" autocomplete="new-password" placeholder="8~16자" spellcheck="false">
-                        <button type="button" class="vr-pw-toggle" id="vr-pw-toggle" aria-label="비밀번호 숨기기">숨기기</button>
+                        <button type="button" class="vr-pw-toggle" id="vr-pw-toggle" aria-label="비밀번호 숨기기" aria-pressed="true" title="비밀번호 숨기기"></button>
                     </div>
                 </div>
                 <div class="vr-slot">
                     <label for="vr-login-pw2">비밀번호 확인</label>
                     <div class="vr-pw-wrap">
                         <input type="text" id="vr-login-pw2" name="password_confirm" maxlength="16" autocomplete="new-password" placeholder="비밀번호 다시 입력" aria-describedby="vr-pw-match-hint" spellcheck="false">
-                        <button type="button" class="vr-pw-toggle" id="vr-pw2-toggle" aria-label="비밀번호 확인 숨기기">숨기기</button>
+                        <button type="button" class="vr-pw-toggle" id="vr-pw2-toggle" aria-label="비밀번호 확인 숨기기" aria-pressed="true" title="비밀번호 숨기기"></button>
                     </div>
                     <p id="vr-pw-match-hint" class="vr-pw-match-hint vr-pw-match-hint--idle" hidden></p>
                 </div>
             </div>
-            <div class="vr-row vr-row--3">
+            <div class="vr-row vr-row--3 vr-section-gap-after">
                 <div class="vr-slot">
                     <label for="vr-grade">업체등급</label>
                     <select id="vr-grade" name="vn_grade" class="vr-select" required>
@@ -361,8 +186,8 @@
                     <input type="text" id="vr-biz-type" name="vn_biz_type" maxlength="120" placeholder="업태">
                 </div>
             </div>
-            <div class="vr-field vr-field--address" id="vr-address-mount"></div>
-            <div class="vr-row vr-row--3">
+            <div class="vr-field vr-field--address vr-section-gap-before" id="vr-address-mount"></div>
+            <div class="vr-row vr-row--3 vr-section-gap-before">
                 <div class="vr-slot">
                     <label for="vr-mgr-name">담당자 이름</label>
                     <input type="text" id="vr-mgr-name" name="vn_mgr_name" maxlength="80" placeholder="담당자 이름">
