@@ -1537,7 +1537,8 @@
                     .replace(/^#/, "")
                     .toLowerCase();
                 if (hash === "support") return "home";
-                if (hash === "home" || hash === "product" || hash === "vendor") {
+                if (hash === "vendor") return "home";
+                if (hash === "home" || hash === "product") {
                     return hash;
                 }
             } catch (e) {}
@@ -1643,10 +1644,7 @@
             key === "support-qna-admin" ||
             key === "support-inquiry" ||
             key === "product-register" ||
-            key === "product-list" ||
-            key === "vendor-register" ||
-            key === "vendor-list" ||
-            key === "vendor-hub"
+            key === "product-list"
         ) {
             return true;
         }
