@@ -347,12 +347,12 @@ a.dz-logo--compact:focus-visible {
     display: none !important;
 }
 /* JS 적용 전 깜빡임 방지: 기본은 등록 링크 숨김, 스태프만 body.nav-admin-menus 에서 표시 */
-body:not(.nav-admin-menus) .site-header-nav a.header-nav-link[href="product-register.html"],
-body:not(.nav-admin-menus) .site-header-nav a.header-nav-link[href="vendor-register.html"] {
+body:not(.nav-admin-menus) .site-header-nav a.header-nav-link[href="product-register.html"]:not(.is-product-subnav):not(.is-vendor-subnav),
+body:not(.nav-admin-menus) .site-header-nav a.header-nav-link[href="vendor-register.html"]:not(.is-product-subnav):not(.is-vendor-subnav) {
     display: none !important;
 }
-body.nav-admin-menus .site-header-nav a.header-nav-link[href="product-register.html"],
-body.nav-admin-menus .site-header-nav a.header-nav-link[href="vendor-register.html"] {
+body.nav-admin-menus .site-header-nav a.header-nav-link[href="product-register.html"]:not(.is-product-subnav):not(.is-vendor-subnav),
+body.nav-admin-menus .site-header-nav a.header-nav-link[href="vendor-register.html"]:not(.is-product-subnav):not(.is-vendor-subnav) {
     display: inline-flex;
 }
 /* 회사소개 — 호버 서브메뉴 (세로 목록) */
