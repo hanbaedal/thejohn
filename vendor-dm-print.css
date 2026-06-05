@@ -218,8 +218,8 @@
 }
 
 /*
- * A4 세로 — 대봉투 100×40 (2×6=12칸) / 소봉투 100×30 (2×9=18칸)
- * 칸 1개 = 왼쪽 발신 · 오른쪽 수신 (글자 축소 없음, pt 고정)
+ * A4 세로 — 행마다 1열(100mm) 발신 · 2열(100mm) 수신
+ * 대봉투 6행=6통 / 소봉투 9행=9통 (글자 pt 고정)
  */
 .vdm-label-page {
     box-sizing: border-box;
@@ -257,25 +257,26 @@
     grid-template-rows: repeat(9, 30mm);
     gap: 0;
 }
-.vdm-label-pair {
+.vdm-label-cell {
     box-sizing: border-box;
     display: flex;
-    flex-direction: row;
+    flex-direction: column;
     align-items: stretch;
     page-break-inside: avoid;
     break-inside: avoid;
     border: 0.2mm solid #999;
     background: #fff;
+    overflow: hidden;
 }
-.vdm-label-pair--large {
+.vdm-label-cell--large {
     width: 100mm;
     height: 40mm;
 }
-.vdm-label-pair--small {
+.vdm-label-cell--small {
     width: 100mm;
     height: 30mm;
 }
-.vdm-label-pair--empty {
+.vdm-label-cell--empty {
     border-style: dashed;
     border-color: #ccc;
     background: #fafafa;
@@ -286,17 +287,14 @@
     font-size: 8pt;
     color: #aaa;
 }
-.vdm-label-half {
-    flex: 1 1 50%;
-    min-width: 0;
+.vdm-label-cell__body {
     box-sizing: border-box;
+    flex: 1 1 auto;
+    min-height: 0;
     display: flex;
     flex-direction: column;
     justify-content: flex-start;
     padding: 1mm 1.5mm;
-}
-.vdm-label-half + .vdm-label-half {
-    border-left: 0.15mm solid #666;
 }
 .vdm-label__kind {
     margin: 0 0 0.5mm;
@@ -304,10 +302,10 @@
     color: #333;
     line-height: 1.2;
 }
-.vdm-label-pair--large .vdm-label__kind {
+.vdm-label-cell--large .vdm-label__kind {
     font-size: 7pt;
 }
-.vdm-label-pair--small .vdm-label__kind {
+.vdm-label-cell--small .vdm-label__kind {
     font-size: 6.5pt;
 }
 .vdm-label__zip {
@@ -316,10 +314,10 @@
     letter-spacing: 0.05em;
     line-height: 1.2;
 }
-.vdm-label-pair--large .vdm-label__zip {
+.vdm-label-cell--large .vdm-label__zip {
     font-size: 9pt;
 }
-.vdm-label-pair--small .vdm-label__zip {
+.vdm-label-cell--small .vdm-label__zip {
     font-size: 8pt;
 }
 .vdm-label__line {
@@ -327,20 +325,20 @@
     word-break: keep-all;
     line-height: 1.35;
 }
-.vdm-label-pair--large .vdm-label__line {
+.vdm-label-cell--large .vdm-label__line {
     font-size: 8.5pt;
 }
-.vdm-label-pair--small .vdm-label__line {
+.vdm-label-cell--small .vdm-label__line {
     font-size: 7.5pt;
 }
 .vdm-label__line--name {
     margin-top: 0.5mm;
     font-weight: 700;
 }
-.vdm-label-pair--large .vdm-label__line--name {
+.vdm-label-cell--large .vdm-label__line--name {
     font-size: 9pt;
 }
-.vdm-label-pair--small .vdm-label__line--name {
+.vdm-label-cell--small .vdm-label__line--name {
     font-size: 8pt;
 }
 
@@ -410,10 +408,10 @@
         box-shadow: none;
         margin: 0;
     }
-    .vdm-label-pair {
+    .vdm-label-cell {
         border-color: transparent;
     }
-    .vdm-label-pair--empty {
+    .vdm-label-cell--empty {
         display: none !important;
     }
 }

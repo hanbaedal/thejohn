@@ -10,24 +10,24 @@
             h: 40,
             cols: 2,
             rows: 6,
-            perPage: 12,
+            perPage: 6,
             pageClass: "vdm-label-page--large",
             gridClass: "vdm-label-grid--large",
-            pairClass: "vdm-label-pair--large",
+            cellClass: "vdm-label-cell--large",
             pageOrient: "portrait",
-            name: "대봉투 라벨 (100×40mm · A4 세로 2열×6행 12칸)"
+            name: "대봉투 라벨 (100×40mm · A4 세로 2열×6행 · 1장 6통)"
         },
         small: {
             w: 100,
             h: 30,
             cols: 2,
             rows: 9,
-            perPage: 18,
+            perPage: 9,
             pageClass: "vdm-label-page--small",
             gridClass: "vdm-label-grid--small",
-            pairClass: "vdm-label-pair--small",
+            cellClass: "vdm-label-cell--small",
             pageOrient: "portrait",
-            name: "소봉투 라벨 (100×30mm · A4 세로 2열×9행 18칸)"
+            name: "소봉투 라벨 (100×30mm · A4 세로 2열×9행 · 1장 9통)"
         }
     };
 
@@ -380,7 +380,16 @@
         return jobs;
     }
 
-    function renderLabelHalf(kind, zip, lines, names) {
+    function recipientAddressLines(job) {
+        var addrText = String(job.address || "").trim();
+        var zip = String(job.zip || "").trim();
+        if (zip && addrText.indexOf(zip) === 0) {
+            addrText = addrText.slice(zip.length).trim();
+        }
+        return addrText ? [addrText] : [];
+    }
+
+    function renderLabelCellContent(kind, zip, lines, names) {
         var zipHtml = zip
             ? '<p class="vdm-label__zip">' + escapeHtml(zip) + "</p>"
             : "";
@@ -396,7 +405,7 @@
             })
             .join("");
         return (
-            '<div class="vdm-label-half">' +
+            '<div class="vdm-label-cell__body">' +
             '<p class="vdm-label__kind">' + escapeHtml(kind) + "</p>" +
             zipHtml +
             bodyHtml +
@@ -405,52 +414,58 @@
         );
     }
 
-    function recipientAddressLines(job) {
-        var addrText = String(job.address || "").trim();
-        var zip = String(job.zip || "").trim();
-        if (zip && addrText.indexOf(zip) === 0) {
-            addrText = addrText.slice(zip.length).trim();
-        }
-        return addrText ? [addrText] : [];
+    function renderLabelCell(envelopeType, kind, zip, lines, names, isEmpty) {
+        var spec = getLabelSpec(envelopeType);
+        var cls = "vdm-label-cell " + spec.cellClass;
+        if (isEmpty) cls += " vdm-label-cell--empty";
+        var inner = isEmpty
+            ? '<span class="vdm-label-empty-mark">빈 칸</span>'
+            : renderLabelCellContent(kind, zip, lines, names);
+        return '<article class="' + cls + '">' + inner + "</article>";
     }
 
-    function renderLabelPairHtml(job, envelopeType) {
-        var spec = getLabelSpec(envelopeType);
+    function renderSenderCell(envelopeType) {
         var sender = senderContent();
+        return renderLabelCell(envelopeType, "발신", sender.zip, sender.lines, [], false);
+    }
+
+    function renderRecipientCell(job, envelopeType) {
         var recipientNames = [job.recipient];
         if (job.sub) recipientNames.push(job.sub);
-        return (
-            '<article class="vdm-label-pair ' + spec.pairClass + '">' +
-            renderLabelHalf("발신", sender.zip, sender.lines, []) +
-            renderLabelHalf("수신", job.zip, recipientAddressLines(job), recipientNames) +
-            "</article>"
+        return renderLabelCell(
+            envelopeType,
+            "수신",
+            job.zip,
+            recipientAddressLines(job),
+            recipientNames,
+            false
         );
+    }
+
+    function renderJobRowHtml(job, envelopeType) {
+        return renderSenderCell(envelopeType) + renderRecipientCell(job, envelopeType);
+    }
+
+    function renderEmptyRowHtml(envelopeType) {
+        return renderLabelCell(envelopeType, "발신", "", [], [], true) +
+            renderLabelCell(envelopeType, "수신", "", [], [], true);
     }
 
     function senderContent() {
         return SENDER;
     }
 
-    function renderEmptyLabelPair(envelopeType) {
-        var spec = getLabelSpec(envelopeType);
-        return (
-            '<article class="vdm-label-pair vdm-label-pair--empty ' +
-            spec.pairClass +
-            '" aria-hidden="true"><span class="vdm-label-empty-mark">빈 칸</span></article>'
-        );
-    }
-
     function renderPageHtml(pageJobs, envelopeType, showEmptySlots) {
         var spec = getLabelSpec(envelopeType);
         var html = pageJobs
             .map(function (job) {
-                return renderLabelPairHtml(job, envelopeType);
+                return renderJobRowHtml(job, envelopeType);
             })
             .join("");
         if (showEmptySlots) {
-            var emptyCount = spec.perPage - pageJobs.length;
-            for (var i = 0; i < emptyCount; i++) {
-                html += renderEmptyLabelPair(envelopeType);
+            var emptyRows = spec.perPage - pageJobs.length;
+            for (var i = 0; i < emptyRows; i++) {
+                html += renderEmptyRowHtml(envelopeType);
             }
         }
         return (
@@ -505,9 +520,9 @@
                 spec.name +
                 " · " +
                 jobCount +
-                "건 · A4 " +
+                "통 · A4 " +
                 pageCount +
-                "장 · 2열 배치 · 칸당 발신(왼쪽)·수신(오른쪽)";
+                "장 · 행마다 1열 발신 · 2열 수신";
         }
         previewModal.hidden = false;
         document.body.style.overflow = "hidden";

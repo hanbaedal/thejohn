@@ -59,11 +59,11 @@
             <div class="vdm-output-options" role="radiogroup" aria-label="라벨 종류">
                 <label>
                     <input type="radio" name="vdm-envelope" id="vdm-env-large" value="large" checked>
-                    <span>대봉투 라벨 <small>(100×40mm · A4 세로 2열×6행 12칸)</small></span>
+                    <span>대봉투 라벨 <small>(100×40mm · A4 세로 2열×6행 · 1장 6통)</small></span>
                 </label>
                 <label>
                     <input type="radio" name="vdm-envelope" id="vdm-env-small" value="small">
-                    <span>소봉투 라벨 <small>(100×30mm · A4 세로 2열×9행 18칸)</small></span>
+                    <span>소봉투 라벨 <small>(100×30mm · A4 세로 2열×9행 · 1장 9통)</small></span>
                 </label>
             </div>
         </section>
@@ -111,7 +111,7 @@
                 </div>
                 <button type="button" class="btn" id="vdm-preview-close">닫기</button>
             </div>
-            <p class="vdm-preview-note">A4 격자·라벨 치수(mm)와 동일한 비율입니다. 화면이 좁으면 미리보기만 축소되어 보일 수 있으며, 「인쇄」 시에는 아래 pt 크기 그대로 출력됩니다. 칸마다 왼쪽 발신 · 오른쪽 수신 · 빈 칸은 점선으로 표시됩니다.</p>
+            <p class="vdm-preview-note">각 행 = 1열(100mm) 발신 · 2열(100mm) 수신입니다. 대봉투 A4 1장 6행(6통), 소봉투 9행(9통). 미리보기만 화면에 맞게 축소될 수 있으며, 인쇄 시 실제 mm·pt 크기로 출력됩니다. 빈 행은 점선으로 표시됩니다.</p>
             <div class="vdm-preview-scroll" id="vdm-preview-body"></div>
             <div class="vdm-preview-foot">
                 <button type="button" class="btn" id="vdm-preview-cancel">취소</button>
