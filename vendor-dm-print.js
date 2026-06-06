@@ -665,7 +665,6 @@
     [
         ["vdm-bulk-company", "company"],
         ["vdm-bulk-manager", "manager"],
-        ["vdm-bulk-both", "both"],
         ["vdm-bulk-clear", "clear"]
     ].forEach(function (pair) {
         var btn = document.getElementById(pair[0]);
