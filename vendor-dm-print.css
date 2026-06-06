@@ -294,6 +294,14 @@
 .vdm-label-cell--small {
     width: 100mm;
     height: 30mm;
+    /* 30mm 칸 — 대봉투 대비 75% + 여백 축소 (찌그러짐 방지) */
+    --vdm-font-kind: 2.75mm;
+    --vdm-font-road: 2.6mm;
+    --vdm-font-body: 2.6mm;
+    --vdm-font-emph: 2.85mm;
+    --vdm-font-zip: 2.85mm;
+    --vdm-lh: 1.15;
+    --vdm-blank-line: 2mm;
 }
 .vdm-label-cell--empty {
     border-style: dashed;
@@ -312,8 +320,11 @@
     min-height: 0;
     display: flex;
     flex-direction: column;
-    justify-content: space-between;
+    justify-content: flex-start;
     padding: 1mm 1.5mm;
+}
+.vdm-label-cell--small .vdm-label-cell__body {
+    padding: 0.7mm 1.2mm;
 }
 .vdm-label__kind {
     margin: 0 0 var(--vdm-blank-line);
@@ -327,33 +338,44 @@
     font-size: var(--vdm-font-kind);
 }
 .vdm-label__lines {
-    flex: 1 1 auto;
+    flex: 0 1 auto;
     min-height: 0;
     display: flex;
     flex-direction: column;
     justify-content: flex-start;
-    gap: 0.15mm;
+    gap: 0;
 }
 .vdm-label__line {
     margin: 0;
     word-break: keep-all;
-    overflow: hidden;
     line-height: var(--vdm-lh, 1.25);
     font-size: var(--vdm-font-body);
+    flex-shrink: 0;
 }
 .vdm-label__line--addr {
     font-size: var(--vdm-font-road);
-    line-height: 1.18;
+    line-height: var(--vdm-lh, 1.2);
     margin-bottom: var(--vdm-blank-line);
+    word-break: break-all;
+}
+.vdm-label-cell--large .vdm-label__line--addr {
     display: -webkit-box;
     -webkit-box-orient: vertical;
     -webkit-line-clamp: 2;
-    word-break: break-all;
+    overflow: hidden;
+}
+.vdm-label-cell--small .vdm-label__line--addr {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 .vdm-label__line--org,
 .vdm-label__line--name {
     font-weight: 700;
     font-size: var(--vdm-font-emph);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 .vdm-label__line--zip {
     margin-top: var(--vdm-blank-line);
