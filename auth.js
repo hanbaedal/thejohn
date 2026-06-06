@@ -911,6 +911,7 @@
         "staff-list-admin.html": true,
         "system-structure-docs.html": true,
         "supervisor-access-stats.html": true,
+        "supervisor-usage-stats.html": true,
         "supervisor-db-stats.html": true
     };
     var SYSTEM_STRUCTURE_DOCS_PAGE = "system-structure-docs.html";
@@ -921,6 +922,7 @@
         "supervisor-order-list.html",
         "supervisor-transaction-list.html",
         "supervisor-access-stats.html",
+        "supervisor-usage-stats.html",
         "supervisor-db-stats.html"
     ];
     var ADMIN_REGISTER_PAGES = PRODUCT_ADMIN_PAGES.concat(VENDOR_ADMIN_PAGES);

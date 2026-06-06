@@ -16,7 +16,7 @@ const {
 } = require("../lib/staffFields");
 const { vendorCanPlaceOrders } = require("../lib/orderAccess");
 const { findStaffByRegisteredBy } = require("../lib/staffRegisteredBy");
-const { logStaffLogin, logVendorLogin } = require("../lib/accessLog");
+const { logStaffLogin, logVendorLogin, logSessionEnd } = require("../lib/accessLog");
 const {
     assertCanStartLogin,
     assignLoginSession,
@@ -249,6 +249,7 @@ router.post("/logout", async function (req, res) {
         if (token && isDbReady()) {
             try {
                 const payload = verifyToken(token);
+                await logSessionEnd(getDb(), payload);
                 await clearLoginSession(payload);
             } catch (e) {}
         }

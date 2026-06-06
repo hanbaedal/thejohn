@@ -1,7 +1,7 @@
 const express = require("express");
 const { getDb } = require("../db");
 const { requireRole } = require("../middleware/auth");
-const { queryAccessStats, parseYmdToMs } = require("../lib/accessLog");
+const { queryAccessStats, queryUsageStats, parseYmdToMs } = require("../lib/accessLog");
 const { F: PF } = require("../lib/productFields");
 const { F: VF } = require("../lib/vendorFields");
 const { normalizeStaffLoginId } = require("../lib/orderAccess");
@@ -37,6 +37,30 @@ async function aggregateByRegisteredBy(db, collectionName, field) {
     });
     return out;
 }
+
+router.get("/usage-stats", requireRole("supervisor"), async function (req, res) {
+    try {
+        var dateFrom = String(req.query.dateFrom || "").trim();
+        var dateTo = String(req.query.dateTo || "").trim();
+        var result = await queryUsageStats(getDb(), dateFrom, dateTo);
+        if (result.error) {
+            return res.status(400).json({ ok: false, error: result.error });
+        }
+        return res.json({
+            ok: true,
+            summary: result.summary,
+            staff: result.staff,
+            vendors: result.vendors,
+            vendorsByAdmin: result.vendorsByAdmin,
+            guests: result.guests,
+            recent: result.recent,
+            truncated: result.truncated
+        });
+    } catch (e) {
+        console.error("GET /api/supervisor/usage-stats", e);
+        return res.status(500).json({ ok: false, error: "이용 통계를 불러오지 못했습니다." });
+    }
+});
 
 router.get("/access-stats", requireRole("supervisor"), async function (req, res) {
     try {

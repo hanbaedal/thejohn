@@ -411,6 +411,14 @@
             var q = qs.length ? "?" + qs.join("&") : "";
             return request("GET", "/api/supervisor/access-stats" + q);
         },
+        getSupervisorUsageStats: function (opts) {
+            opts = opts || {};
+            var qs = [];
+            if (opts.dateFrom) qs.push("dateFrom=" + encodeURIComponent(String(opts.dateFrom)));
+            if (opts.dateTo) qs.push("dateTo=" + encodeURIComponent(String(opts.dateTo)));
+            var q = qs.length ? "?" + qs.join("&") : "";
+            return request("GET", "/api/supervisor/usage-stats" + q);
+        },
         getSupervisorDbStats: function () {
             return request("GET", "/api/supervisor/db-stats");
         },

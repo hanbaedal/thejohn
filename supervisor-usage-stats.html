@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="auth-storage.js"></script>
+    <script src="site-brand-boot.js"></script>
+    <title>접속·이용 통계 — 더존</title>
+    <link rel="stylesheet" href="common.css">
+    <link rel="stylesheet" href="admin-manage.css">
+    <link rel="stylesheet" href="staff-hub.css">
+    <link rel="stylesheet" href="order-list-filters.css">
+    <script src="api-config.js"></script>
+    <script src="thejhon-api.js"></script>
+    <script src="auth.js"></script>
+    <script src="admin-header.js"></script>
+    <script src="nav.js" defer></script>
+</head>
+<body>
+    <header class="site-header">
+        <div class="site-header-start">
+            <a href="work-hub.html" class="dz-logo dz-logo--compact" aria-label="그룹 마케팅 관리"><img src="img/logo.png" alt="" width="72" height="72" class="dz-logo-img"></a>
+            <nav class="site-header-nav" aria-label="업무관리 메뉴"></nav>
+        </div>
+        <nav class="site-header-actions" aria-label="계정">
+            <time class="header-date" id="headerToday" datetime=""></time>
+            <button type="button" class="btn btn-auth-icon btn-logout" id="btnLogout" hidden aria-label="로그아웃" title="로그아웃"></button>
+        </nav>
+    </header>
+    <main class="page-main page-main--hide-scrollbar shub-page">
+        <p class="shub-subnav"><a href="staff-manage-hub.html">← 업무관리</a></p>
+        <h1>접속·이용 통계</h1>
+        <p class="shub-lead">관리자·등록 업체·게스트의 로그인 횟수, 페이지 방문, 머무른 시간(세션)을 조회합니다. 슈퍼바이저 전용입니다.</p>
+        <p id="sus-status" class="shub-status" role="status"></p>
+        <div class="ol-query-filters" aria-label="이용 통계 조회 조건">
+            <section class="ol-query-filters__section" aria-labelledby="sus-filter-period-heading">
+                <h2 id="sus-filter-period-heading" class="ol-query-filters__heading">기간으로 조회</h2>
+                <div class="ol-query-filters__row">
+                    <label for="sus-date-from">시작일</label>
+                    <input type="date" id="sus-date-from">
+                </div>
+                <div class="ol-query-filters__row">
+                    <label for="sus-date-to">종료일</label>
+                    <input type="date" id="sus-date-to">
+                </div>
+                <div class="ol-query-filters__row ol-query-filters__row--actions">
+                    <button type="button" class="btn btn-primary" id="sus-search">조회</button>
+                </div>
+            </section>
+        </div>
+        <section class="shub-panel">
+            <div id="sus-summary" class="shub-summary" hidden></div>
+            <p id="sus-truncated" class="shub-note" hidden>기록이 많아 일부만 집계했습니다. 기간을 좁혀 조회해 주세요.</p>
+            <h2>관리자 이용</h2>
+            <div id="sus-staff" class="shub-table-wrap"></div>
+            <h2 style="margin-top:1.25rem">등록 업체 이용 (관리자별)</h2>
+            <div id="sus-vendors-by-admin" class="shub-table-wrap"></div>
+            <h2 style="margin-top:1.25rem">등록 업체 이용 (전체)</h2>
+            <div id="sus-vendors" class="shub-table-wrap shub-list-scroll"></div>
+            <h2 style="margin-top:1.25rem">게스트 이용</h2>
+            <div id="sus-guests" class="shub-table-wrap shub-list-scroll"></div>
+            <h2 style="margin-top:1.25rem">최근 활동</h2>
+            <div id="sus-recent" class="shub-table-wrap shub-list-scroll"></div>
+        </section>
+    </main>
+    <footer class="site-footer">
+        <div class="site-footer-inner">
+            <dl class="site-footer-grid" id="siteFooterCompanyGrid" aria-live="polite"></dl>
+            <p class="site-footer-company-msg" id="siteFooterCompanyMsg" hidden></p>
+        </div>
+    </footer>
+    <script src="supervisor-usage-stats.js"></script>
+</body>
+</html>
