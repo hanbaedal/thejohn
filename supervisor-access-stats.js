@@ -38,12 +38,15 @@
         statusEl.textContent = msg || "";
         statusEl.className = "shub-status" + (err ? " shub-status--err" : "");
     }
+    function kstYmd(d) {
+        return new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Seoul" }).format(d || new Date());
+    }
     function defaultDates() {
         var now = new Date();
-        var to = now.toISOString().slice(0, 10);
+        var to = kstYmd(now);
         var fromD = new Date(now);
         fromD.setDate(fromD.getDate() - 7);
-        if (dateFromEl && !dateFromEl.value) dateFromEl.value = fromD.toISOString().slice(0, 10);
+        if (dateFromEl && !dateFromEl.value) dateFromEl.value = kstYmd(fromD);
         if (dateToEl && !dateToEl.value) dateToEl.value = to;
     }
 

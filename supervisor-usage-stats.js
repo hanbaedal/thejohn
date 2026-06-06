@@ -40,13 +40,21 @@
         return h + "시간 " + rm + "분";
     }
 
+    function kstYmd(d) {
+        return new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Seoul" }).format(d || new Date());
+    }
+
     function formatDateTime(ts) {
         if (!ts) return "—";
         var d = new Date(ts);
         return (
-            d.toLocaleDateString("ko-KR") +
+            d.toLocaleDateString("ko-KR", { timeZone: "Asia/Seoul" }) +
             " " +
-            d.toLocaleTimeString("ko-KR", { hour: "2-digit", minute: "2-digit" })
+            d.toLocaleTimeString("ko-KR", {
+                hour: "2-digit",
+                minute: "2-digit",
+                timeZone: "Asia/Seoul"
+            })
         );
     }
 
@@ -64,10 +72,10 @@
 
     function defaultDates() {
         var now = new Date();
-        var to = now.toISOString().slice(0, 10);
+        var to = kstYmd(now);
         var fromD = new Date(now);
         fromD.setDate(fromD.getDate() - 30);
-        if (dateFromEl && !dateFromEl.value) dateFromEl.value = fromD.toISOString().slice(0, 10);
+        if (dateFromEl && !dateFromEl.value) dateFromEl.value = kstYmd(fromD);
         if (dateToEl && !dateToEl.value) dateToEl.value = to;
     }
 

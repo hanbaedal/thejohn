@@ -3,10 +3,8 @@ const { normalizeStaffLoginId } = require("./orderAccess");
 const COLLECTION = "access_logs";
 const IDLE_MS = 30 * 60 * 1000;
 const USAGE_QUERY_LIMIT = 20000;
-
-function newLogId() {
-    return "alog_" + Date.now().toString(36) + "_" + Math.random().toString(36).slice(2, 8);
-}
+const KST_OFFSET_MS = 9 * 60 * 60 * 1000;
+const KST_TIME_ZONE = "Asia/Seoul";
 
 function parseYmdToMs(s, endOfDay) {
     var m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(s || "").trim());
@@ -14,18 +12,31 @@ function parseYmdToMs(s, endOfDay) {
     var y = parseInt(m[1], 10);
     var mo = parseInt(m[2], 10) - 1;
     var d = parseInt(m[3], 10) + (endOfDay ? 1 : 0);
-    return new Date(y, mo, d).getTime();
+    return Date.UTC(y, mo, d, 0, 0, 0, 0) - KST_OFFSET_MS;
 }
 
 function ymdFromMs(ts) {
-    var d = new Date(ts || Date.now());
+    var kst = new Date((ts || Date.now()) + KST_OFFSET_MS);
     return (
-        String(d.getFullYear()) +
+        String(kst.getUTCFullYear()) +
         "-" +
-        String(d.getMonth() + 1).padStart(2, "0") +
+        String(kst.getUTCMonth() + 1).padStart(2, "0") +
         "-" +
-        String(d.getDate()).padStart(2, "0")
+        String(kst.getUTCDate()).padStart(2, "0")
     );
+}
+
+function timeFromMs(ts) {
+    return new Date(ts || 0).toLocaleTimeString("ko-KR", {
+        hour: "2-digit",
+        minute: "2-digit",
+        second: "2-digit",
+        timeZone: KST_TIME_ZONE
+    });
+}
+
+function newLogId() {
+    return "alog_" + Date.now().toString(36) + "_" + Math.random().toString(36).slice(2, 8);
 }
 
 async function ensureAccessLogIndexes(db) {
@@ -244,7 +255,7 @@ function formatLogPublic(doc) {
         id: doc.id,
         at: at,
         date: ymdFromMs(at),
-        time: new Date(at).toLocaleTimeString("ko-KR", { hour: "2-digit", minute: "2-digit", second: "2-digit" }),
+        time: timeFromMs(at),
         category: cat,
         kind: doc.kind,
         role: doc.role || "",

@@ -212,3 +212,62 @@ body.staff-nav-order .header-nav-link.is-order-subnav.is-current {
     padding: 0.7rem;
     color: #5a6d7e;
 }
+
+/* 접속·이용 통계 — PC·노트북 넓은 본문 */
+.page-main.sus-page {
+    max-width: min(100%, 90rem);
+    margin-left: auto;
+    margin-right: auto;
+    width: 100%;
+    padding-left: 1.5rem;
+    padding-right: 1.5rem;
+    overflow-x: visible;
+    box-sizing: border-box;
+}
+
+.page-main.sus-page .shub-panel {
+    width: 100%;
+    box-sizing: border-box;
+}
+
+@media (min-width: 721px) {
+    .page-main.sus-page .shub-list-scroll {
+        max-height: 28rem;
+    }
+
+    .page-main.sus-page #sus-staff.shub-table-wrap,
+    .page-main.sus-page #sus-vendors-by-admin.shub-table-wrap {
+        overflow-x: visible;
+    }
+
+    .page-main.sus-page .shub-table {
+        font-size: 0.88rem;
+    }
+
+    .page-main.sus-page .shub-table th,
+    .page-main.sus-page .shub-table td {
+        white-space: nowrap;
+    }
+}
+
+@media (min-width: 900px) {
+    .page-main.sus-page .ol-query-filters {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 0.85rem 1.5rem;
+        align-items: start;
+    }
+
+    .page-main.sus-page .ol-query-filters__section + .ol-query-filters__section {
+        margin-top: 0;
+        padding-top: 0;
+        border-top: none;
+    }
+}
+
+@media (max-width: 720px) {
+    .page-main.sus-page {
+        padding-left: 1.25rem;
+        padding-right: 1.25rem;
+    }
+}
