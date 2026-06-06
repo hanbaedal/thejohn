@@ -151,6 +151,7 @@
             zip: String((it && it.vn_zip) || "").trim(),
             addr: String((it && it.vn_addr) || "").trim(),
             addrDetail: String((it && it.vn_addr_detail) || "").trim(),
+            ceoName: String((it && it.vn_ceo) || "").trim(),
             mgrName: String((it && it.vn_mgr_name) || "").trim(),
             sendCompany: false,
             sendManager: false
@@ -194,6 +195,18 @@
             "통";
     }
 
+    function formatCeoWithGuiha(ceo) {
+        var c = String(ceo || "").trim();
+        return c ? c + " 귀하" : "귀하";
+    }
+
+    function formatNameWithNim(name) {
+        var n = String(name || "").trim();
+        if (!n) return "";
+        if (n.slice(-1) === "님") return n;
+        return n + "님";
+    }
+
     function renderPickerRows() {
         if (!pickerBody) return;
         if (!pickerRows.length) {
@@ -207,10 +220,24 @@
                 var companyOk = hasValidAddress(row);
                 var managerOk = hasValidManager(row);
                 var addrText = companyOk ? formatAddress(row) : "(주소 없음)";
+                var recipientHints = "";
+                if (companyOk) {
+                    recipientHints +=
+                        '<span class="vdm-picker-hint vdm-picker-hint--company">회사 → ' +
+                        escapeHtml(formatCeoWithGuiha(row.ceoName)) +
+                        "</span>";
+                }
+                if (managerOk) {
+                    recipientHints +=
+                        '<span class="vdm-picker-hint vdm-picker-hint--manager">담당 → ' +
+                        escapeHtml(formatNameWithNim(row.mgrName)) +
+                        "</span>";
+                }
                 return (
                     "<tr data-vdm-idx=\"" + idx + "\">" +
                     "<td class=\"vdm-col-type\">" + escapeHtml(sourceTypeLabel(row.source)) + "</td>" +
                     "<td class=\"vdm-col-name\">" + escapeHtml(row.name) +
+                    recipientHints +
                     "<span class=\"vdm-picker-addr" + (companyOk ? "" : " vdm-picker-addr--empty") + "\">" +
                     escapeHtml(addrText) + "</span></td>" +
                     "<td class=\"vdm-col-check\"><label>" +
@@ -333,6 +360,7 @@
                 addr: row.addr,
                 addrDetail: row.addrDetail,
                 mgrName: row.mgrName,
+                ceoName: row.ceoName,
                 sendCompany: !!row.sendCompany && hasValidAddress(row),
                 sendManager: !!row.sendManager && hasValidManager(row)
             };
@@ -357,13 +385,6 @@
         return pages;
     }
 
-    function formatNameWithNim(name) {
-        var n = String(name || "").trim();
-        if (!n) return "";
-        if (n.slice(-1) === "님") return n;
-        return n + "님";
-    }
-
     function buildPrintJobs() {
         var jobs = [];
         appliedSelections.forEach(function (row) {
@@ -374,7 +395,7 @@
                     addrDetail: row.addrDetail,
                     org: row.name,
                     dept: "",
-                    nameTitle: "귀하"
+                    nameTitle: formatCeoWithGuiha(row.ceoName)
                 });
             }
             if (row.sendManager && hasValidManager(row)) {

@@ -192,6 +192,18 @@
     color: #a8b5c4;
     font-style: italic;
 }
+.vdm-picker-hint {
+    display: block;
+    font-size: 0.78rem;
+    margin-top: 0.2rem;
+    line-height: 1.4;
+}
+.vdm-picker-hint--company {
+    color: #0a4d9c;
+}
+.vdm-picker-hint--manager {
+    color: #2a6040;
+}
 .vdm-picker-foot {
     display: flex;
     flex-wrap: wrap;
@@ -267,13 +279,13 @@
     border: 0.2mm solid #999;
     background: #fff;
     overflow: hidden;
-    --vdm-font-kind: 3mm;
-    --vdm-font-road: 2.85mm;
-    --vdm-font-body: 2.85mm;
-    --vdm-font-emph: 3.15mm;
-    --vdm-font-zip: 3.15mm;
+    --vdm-font-kind: 3.6mm;
+    --vdm-font-road: 3.42mm;
+    --vdm-font-body: 3.42mm;
+    --vdm-font-emph: 3.78mm;
+    --vdm-font-zip: 3.78mm;
     --vdm-lh: 1.2;
-    --vdm-blank-line: 3mm;
+    --vdm-blank-line: 3.6mm;
 }
 .vdm-label-cell--large {
     width: 100mm;
