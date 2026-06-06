@@ -267,11 +267,6 @@
     border: 0.2mm solid #999;
     background: #fff;
     overflow: hidden;
-}
-.vdm-label-cell--large {
-    width: 100mm;
-    height: 40mm;
-    --vdm-h: 40mm;
     --vdm-font-kind: 3mm;
     --vdm-font-road: 2.85mm;
     --vdm-font-body: 2.85mm;
@@ -280,17 +275,13 @@
     --vdm-lh: 1.2;
     --vdm-blank-line: 3mm;
 }
+.vdm-label-cell--large {
+    width: 100mm;
+    height: 40mm;
+}
 .vdm-label-cell--small {
     width: 100mm;
     height: 30mm;
-    --vdm-h: 30mm;
-    --vdm-font-kind: 2.25mm;
-    --vdm-font-road: 2.15mm;
-    --vdm-font-body: 2.15mm;
-    --vdm-font-emph: 2.4mm;
-    --vdm-font-zip: 2.4mm;
-    --vdm-lh: 1.18;
-    --vdm-blank-line: 2.25mm;
 }
 .vdm-label-cell--empty {
     border-style: dashed;
@@ -353,9 +344,11 @@
     font-size: var(--vdm-font-emph);
 }
 .vdm-label__line--zip {
-    margin-top: auto;
-    padding-top: 0.2mm;
-    text-align: right;
+    margin-top: var(--vdm-blank-line);
+    box-sizing: border-box;
+    width: 100%;
+    padding-left: 50%;
+    text-align: left;
     font-weight: 700;
     letter-spacing: 0.05em;
     flex-shrink: 0;
