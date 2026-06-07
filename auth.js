@@ -628,28 +628,28 @@
         var prevUser = authGet(USER_ID_KEY);
         var oldToken = captureApiToken();
         bumpAuthSessionEpoch();
-        return revokeApiTokenAsync(oldToken).then(function () {
-            clearAuthStorageLocal();
-            if (prevUser && prevUser !== (userId || "")) {
-                clearVendorCartIfAny();
-            }
-            applyFormSessionState(
-                userId,
-                role,
-                token,
-                companyName,
-                displayName,
-                vendorGrade,
-                vendorRegisteredBy,
-                vendorOrderEnabled,
-                vendorMgrName,
-                vendorMgrTel,
-                vendorMgrEmail,
-                staffOrderEnabled,
-                staffLogo,
-                brandCompanyName
-            );
-        });
+        clearAuthStorageLocal();
+        if (prevUser && prevUser !== (userId || "")) {
+            clearVendorCartIfAny();
+        }
+        applyFormSessionState(
+            userId,
+            role,
+            token,
+            companyName,
+            displayName,
+            vendorGrade,
+            vendorRegisteredBy,
+            vendorOrderEnabled,
+            vendorMgrName,
+            vendorMgrTel,
+            vendorMgrEmail,
+            staffOrderEnabled,
+            staffLogo,
+            brandCompanyName
+        );
+        revokeApiTokenAsync(oldToken);
+        return Promise.resolve();
     }
 
     function syncVendorCompanyFromProfile(item) {

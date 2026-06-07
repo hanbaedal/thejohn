@@ -249,8 +249,10 @@ router.post("/logout", async function (req, res) {
         if (token && isDbReady()) {
             try {
                 const payload = verifyToken(token);
-                await logSessionEnd(getDb(), payload);
                 await clearLoginSession(payload);
+                logSessionEnd(getDb(), payload).catch(function (e) {
+                    console.warn("[thejohn] logSessionEnd:", e.message);
+                });
             } catch (e) {}
         }
         return res.json({ ok: true });

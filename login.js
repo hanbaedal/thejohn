@@ -69,23 +69,10 @@
     function goAfterLogin(ok) {
         var Auth = global.THEJHON_AUTH;
         var role = ok && ok.role;
-
-        function navigate() {
-            goNext(role);
+        if (Auth && Auth.refreshBrandFromStaffProfileAsync) {
+            Auth.refreshBrandFromStaffProfileAsync();
         }
-
-        if (
-            (role === "admin" || role === "supervisor") &&
-            Auth.refreshBrandFromStaffProfileAsync
-        ) {
-            Auth.refreshBrandFromStaffProfileAsync().finally(navigate);
-            return;
-        }
-        if (role === "vendor" && Auth.refreshBrandFromStaffProfileAsync) {
-            Auth.refreshBrandFromStaffProfileAsync().finally(navigate);
-            return;
-        }
-        navigate();
+        goNext(role);
     }
 
     function applySession(ok) {
