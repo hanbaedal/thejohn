@@ -98,11 +98,28 @@ function requireDb(req, res, next) {
         });
     }
 
+    var connectTimeoutMs = 15000;
+    var timedOut = false;
+    var timer = setTimeout(function () {
+        timedOut = true;
+        return res.status(503).json({
+            ok: false,
+            code: "DB_CONNECT_TIMEOUT",
+            error: "데이터베이스 연결 시간이 초과되었습니다. 잠시 후 다시 시도해 주세요.",
+            dbError: getLastDbError(),
+            hint: dbErrorHint(getLastDbError())
+        });
+    }, connectTimeoutMs);
+
     connectDb()
         .then(function () {
+            if (timedOut) return;
+            clearTimeout(timer);
             next();
         })
         .catch(function () {
+            if (timedOut) return;
+            clearTimeout(timer);
             var errMsg = getLastDbError();
             return res.status(503).json({
                 ok: false,

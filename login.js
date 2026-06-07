@@ -76,6 +76,25 @@
     }
 
     function applySession(ok) {
+        if (THEJHON_AUTH.setFormSession) {
+            THEJHON_AUTH.setFormSession(
+                ok.userId,
+                ok.role,
+                ok.token,
+                ok.companyName,
+                ok.displayName,
+                ok.vendorGrade,
+                ok.vendorRegisteredBy,
+                ok.vendorOrderEnabled,
+                ok.vendorMgrName,
+                ok.vendorMgrTel,
+                ok.vendorMgrEmail,
+                ok.staffOrderEnabled,
+                ok.stLogo,
+                ok.brandCompanyName || ok.vendorRegisteredByName
+            );
+            return Promise.resolve();
+        }
         var args = [
             ok.userId,
             ok.role,
@@ -168,8 +187,12 @@
             }
 
             var submitBtn = form.querySelector(".login-submit");
+            var submitLabel = submitBtn ? submitBtn.textContent : "";
             loginSubmitting = true;
-            if (submitBtn) submitBtn.disabled = true;
+            if (submitBtn) {
+                submitBtn.disabled = true;
+                submitBtn.textContent = "로그인 중…";
+            }
 
             Auth.verifyFormCredentialsAsync(id, pw)
                 .then(function (ok) {
@@ -213,7 +236,10 @@
                 })
                 .finally(function () {
                     loginSubmitting = false;
-                    if (submitBtn) submitBtn.disabled = false;
+                    if (submitBtn) {
+                        submitBtn.disabled = false;
+                        submitBtn.textContent = submitLabel || "로그인";
+                    }
                 });
         });
     }

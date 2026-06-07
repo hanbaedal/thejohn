@@ -392,8 +392,18 @@
         if (!global.THEJHON_API || !THEJHON_API.login) {
             return Promise.reject(new Error("API를 불러오지 못했습니다. 페이지를 새로고침해 주세요."));
         }
-        return THEJHON_API.login(id, pw)
-            .then(mapLoginResponse)
+        var loginPromise = THEJHON_API.login(id, pw).then(mapLoginResponse);
+        var timeoutMs = 20000;
+        var timed = new Promise(function (_, reject) {
+            setTimeout(function () {
+                reject(
+                    new Error(
+                        "로그인 서버 응답이 지연되고 있습니다. 잠시 후 다시 시도해 주세요."
+                    )
+                );
+            }, timeoutMs);
+        });
+        return Promise.race([loginPromise, timed])
             .catch(function (err) {
                 if (err && err.data && err.data.code === "NOT_REGISTERED") {
                     var notReg = new Error(

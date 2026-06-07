@@ -98,26 +98,27 @@ router.post("/login", async (req, res) => {
         }
 
         const token = signToken(tokenPayload);
-        try {
-            if (!isDbReady()) throw new Error("DB not ready");
+        if (isDbReady()) {
             const db = getDb();
             if (result.role === "vendor") {
-                await logVendorLogin(
+                logVendorLogin(
                     db,
                     result.userId,
                     result.vendorRegisteredBy || "",
                     result.companyName || result.userId
-                );
+                ).catch(function (e) {
+                    console.warn("[thejohn] login access log:", e.message);
+                });
             } else if (result.role === "admin" || result.role === "supervisor") {
-                await logStaffLogin(
+                logStaffLogin(
                     db,
                     result.role,
                     result.userId,
                     result.companyName || result.displayName || result.userId
-                );
+                ).catch(function (e) {
+                    console.warn("[thejohn] login access log:", e.message);
+                });
             }
-        } catch (logErr) {
-            console.warn("[thejohn] login access log:", logErr.message);
         }
         return res.json({
             ok: true,
