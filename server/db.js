@@ -5,6 +5,8 @@ let db;
 let ready = false;
 let connecting = false;
 let lastDbError = "";
+let migrationsRunning = false;
+let migrationsDone = false;
 
 function envTrim(key) {
     return String(process.env[key] || "").trim();
@@ -127,8 +129,8 @@ function mongoClientOptions() {
             strict: false,
             deprecationErrors: false
         },
-        serverSelectionTimeoutMS: 30000,
-        connectTimeoutMS: 30000,
+        serverSelectionTimeoutMS: 12000,
+        connectTimeoutMS: 12000,
         socketTimeoutMS: 45000,
         maxPoolSize: 10,
         autoSelectFamily: false,
@@ -175,6 +177,83 @@ async function dropObsoleteVendorIndexes(database) {
     }
 }
 
+async function runStartupMigrations(database) {
+    await safeCreateIndex(database.collection("products"), { id: 1 }, { unique: true });
+    await safeCreateIndex(
+        database.collection("products"),
+        { pd_registered_by: 1, updatedAt: -1 },
+        { name: "products_registered_by_updated" }
+    );
+    const { migrateProductsCollection } = require("./lib/productFields");
+    await migrateProductsCollection(database);
+    await safeCreateIndex(database.collection("vendors"), { id: 1 }, { unique: true });
+    await dropObsoleteVendorIndexes(database);
+    await safeCreateIndex(database.collection("vendors"), { loginId: 1 }, { unique: true });
+    await safeCreateIndex(
+        database.collection("vendors"),
+        { vn_registered_by: 1, updatedAt: -1 },
+        { name: "vendors_registered_by_updated" }
+    );
+
+    const staff = require("./lib/staff");
+    const { ensureDefaultStaffSeeds, migrateStaffCollection } = require("./lib/staffFields");
+    await staff.ensureStaffIndexes(database);
+    await ensureDefaultStaffSeeds(database);
+    await migrateStaffCollection(database);
+    const {
+        reconcileStaleRegisteredByReferences,
+        reconcileRegisteredByCase
+    } = require("./lib/staffRegisteredBy");
+    await reconcileStaleRegisteredByReferences(database);
+    await reconcileRegisteredByCase(database);
+    const { migrateVendorsCollection } = require("./lib/vendorFields");
+    await migrateVendorsCollection(database);
+    const { ensureProspectIndexes } = require("./lib/vendorProspects");
+    await ensureProspectIndexes(database);
+    const { ensureVendorNewIndexes } = require("./lib/vendorNew");
+    await ensureVendorNewIndexes(database);
+    const { ensureAccessLogIndexes } = require("./lib/accessLog");
+    await ensureAccessLogIndexes(database);
+    await safeCreateIndex(database.collection("support_news"), { id: 1 }, { unique: true });
+    await safeCreateIndex(database.collection("support_news_comments"), { id: 1 }, { unique: true });
+    await safeCreateIndex(
+        database.collection("support_news_comments"),
+        { snc_news_id: 1, createdAt: 1 },
+        { name: "support_news_comments_news_created" }
+    );
+    await safeCreateIndex(database.collection("support_board"), { id: 1 }, { unique: true });
+    await safeCreateIndex(database.collection("support_board"), { createdAt: -1 }, { name: "support_board_created" });
+    await safeCreateIndex(database.collection("support_inquiry"), { id: 1 }, { unique: true });
+    await safeCreateIndex(
+        database.collection("support_inquiry"),
+        { createdAt: -1 },
+        { name: "support_inquiry_created" }
+    );
+    try {
+        const { ensureLoginFieldsMigrated } = require("./lib/loginResolve");
+        await ensureLoginFieldsMigrated(database);
+    } catch (migErr) {
+        console.error("[thejohn] login migrate warning:", migErr.message);
+    }
+}
+
+function scheduleStartupMigrations(database) {
+    if (migrationsRunning || migrationsDone) return;
+    migrationsRunning = true;
+    runStartupMigrations(database)
+        .then(function () {
+            migrationsDone = true;
+            console.log("[thejohn] MongoDB startup migrations OK");
+        })
+        .catch(function (e) {
+            migrationsDone = false;
+            console.error("[thejohn] MongoDB startup migrations failed:", e.message);
+        })
+        .finally(function () {
+            migrationsRunning = false;
+        });
+}
+
 async function connectDbOnce() {
     const candidates = getMongoUriCandidates();
     if (!candidates.length) {
@@ -196,66 +275,6 @@ async function connectDbOnce() {
             await newClient.db(dbName).command({ ping: 1 });
 
             const database = newClient.db(dbName);
-            await safeCreateIndex(database.collection("products"), { id: 1 }, { unique: true });
-            await safeCreateIndex(
-                database.collection("products"),
-                { pd_registered_by: 1, updatedAt: -1 },
-                { name: "products_registered_by_updated" }
-            );
-            const { migrateProductsCollection } = require("./lib/productFields");
-            await migrateProductsCollection(database);
-            await safeCreateIndex(database.collection("vendors"), { id: 1 }, { unique: true });
-            await dropObsoleteVendorIndexes(database);
-            await safeCreateIndex(database.collection("vendors"), { loginId: 1 }, { unique: true });
-            await safeCreateIndex(
-                database.collection("vendors"),
-                { vn_registered_by: 1, updatedAt: -1 },
-                { name: "vendors_registered_by_updated" }
-            );
-
-            const staff = require("./lib/staff");
-            const {
-                ensureDefaultStaffSeeds,
-                migrateStaffCollection
-            } = require("./lib/staffFields");
-            await staff.ensureStaffIndexes(database);
-            await ensureDefaultStaffSeeds(database);
-            await migrateStaffCollection(database);
-            const {
-                reconcileStaleRegisteredByReferences,
-                reconcileRegisteredByCase
-            } = require("./lib/staffRegisteredBy");
-            await reconcileStaleRegisteredByReferences(database);
-            await reconcileRegisteredByCase(database);
-            const { migrateVendorsCollection } = require("./lib/vendorFields");
-            await migrateVendorsCollection(database);
-            const { ensureProspectIndexes } = require("./lib/vendorProspects");
-            await ensureProspectIndexes(database);
-            const { ensureVendorNewIndexes } = require("./lib/vendorNew");
-            await ensureVendorNewIndexes(database);
-            const { ensureAccessLogIndexes } = require("./lib/accessLog");
-            await ensureAccessLogIndexes(database);
-            await safeCreateIndex(database.collection("support_news"), { id: 1 }, { unique: true });
-            await safeCreateIndex(database.collection("support_news_comments"), { id: 1 }, { unique: true });
-            await safeCreateIndex(
-                database.collection("support_news_comments"),
-                { snc_news_id: 1, createdAt: 1 },
-                { name: "support_news_comments_news_created" }
-            );
-            await safeCreateIndex(database.collection("support_board"), { id: 1 }, { unique: true });
-            await safeCreateIndex(database.collection("support_board"), { createdAt: -1 }, { name: "support_board_created" });
-            await safeCreateIndex(database.collection("support_inquiry"), { id: 1 }, { unique: true });
-            await safeCreateIndex(
-                database.collection("support_inquiry"),
-                { createdAt: -1 },
-                { name: "support_inquiry_created" }
-            );
-            try {
-                const { ensureLoginFieldsMigrated } = require("./lib/loginResolve");
-                await ensureLoginFieldsMigrated(database);
-            } catch (migErr) {
-                console.error("[thejohn] login migrate warning:", migErr.message);
-            }
 
             if (client) {
                 try {
@@ -267,6 +286,7 @@ async function connectDbOnce() {
             ready = true;
             lastDbError = "";
             console.log("[thejohn] MongoDB OK (" + c.label + ")");
+            scheduleStartupMigrations(database);
             return db;
         } catch (e) {
             lastErr = e;

@@ -803,7 +803,7 @@
                 });
         }
         if (oldToken) {
-            return revokeApiTokenAsync(oldToken).then(finish);
+            revokeApiTokenAsync(oldToken);
         }
         return finish();
     }

@@ -98,7 +98,7 @@ function requireDb(req, res, next) {
         });
     }
 
-    var connectTimeoutMs = 15000;
+    var connectTimeoutMs = 25000;
     var timedOut = false;
     var timer = setTimeout(function () {
         timedOut = true;
