@@ -9,6 +9,7 @@
     <link rel="stylesheet" href="common.css">
     <link rel="stylesheet" href="admin-manage.css">
     <link rel="stylesheet" href="staff-hub.css">
+    <link rel="stylesheet" href="order-list-filters.css">
     <script src="api-config.js"></script>
     <script src="thejhon-api.js"></script>
     <script src="auth.js"></script>
@@ -29,10 +30,27 @@
     <main class="page-main page-main--hide-scrollbar shub-page">
         <p class="shub-subnav"><a href="staff-manage-hub.html">← 업무관리</a></p>
         <h1>디비사용 통계</h1>
-        <p class="shub-lead">상품·업체·발주 등 DB 등록 건수를 담당 관리자별로 집계합니다. 슈퍼바이저 전용입니다.</p>
+        <p class="shub-lead">담당 관리자별 DB 저장 용량·이용 시간·등록 건수를 조회합니다. 이용 시간은 선택 기간의 접속 로그 기준입니다. 슈퍼바이저 전용입니다.</p>
         <p id="sds-status" class="shub-status" role="status"></p>
+        <div class="ol-query-filters" aria-label="디비사용 통계 조회 조건">
+            <section class="ol-query-filters__section" aria-labelledby="sds-filter-period-heading">
+                <h2 id="sds-filter-period-heading" class="ol-query-filters__heading">이용 시간 조회 기간</h2>
+                <div class="ol-query-filters__row">
+                    <label for="sds-date-from">시작일</label>
+                    <input type="date" id="sds-date-from">
+                </div>
+                <div class="ol-query-filters__row">
+                    <label for="sds-date-to">종료일</label>
+                    <input type="date" id="sds-date-to">
+                </div>
+                <div class="ol-query-filters__row ol-query-filters__row--actions">
+                    <button type="button" class="btn btn-primary" id="sds-search">조회</button>
+                </div>
+            </section>
+        </div>
         <section class="shub-panel">
             <div id="sds-totals" class="shub-summary" hidden></div>
+            <p id="sds-truncated" class="shub-note" hidden>접속 기록이 많아 이용 시간은 일부만 집계했습니다. 기간을 좁혀 조회해 주세요.</p>
             <h2>관리자별 집계</h2>
             <div id="sds-by-admin" class="shub-table-wrap shub-list-scroll"></div>
         </section>

@@ -62,6 +62,96 @@ async function safeCountCollection(db, collectionName) {
     }
 }
 
+/** 담당 관리자별 문서 BSON 크기 합(바이트) */
+async function aggregateBytesByRegisteredBy(db, collectionName, field) {
+    var out = {};
+    var rows = await db
+        .collection(collectionName)
+        .aggregate(
+            [{ $group: { _id: "$" + field, bytes: { $sum: { $bsonSize: "$$ROOT" } } } }],
+            { maxTimeMS: 120000 }
+        )
+        .toArray();
+    rows.forEach(function (row) {
+        var key = registeredByKey(row._id);
+        out[key] = (out[key] || 0) + (Number(row.bytes) || 0);
+    });
+    return out;
+}
+
+async function safeAggregateBytesByRegisteredBy(db, collectionName, field) {
+    try {
+        return await aggregateBytesByRegisteredBy(db, collectionName, field);
+    } catch (e) {
+        console.error("[db-stats] bytes", collectionName, field, e.message);
+        return {};
+    }
+}
+
+function mergeNumericMaps(maps) {
+    var out = {};
+    (maps || []).forEach(function (m) {
+        Object.keys(m || {}).forEach(function (k) {
+            out[k] = (out[k] || 0) + (m[k] || 0);
+        });
+    });
+    return out;
+}
+
+function sumMapValues(m) {
+    return Object.keys(m || {}).reduce(function (s, k) {
+        return s + (m[k] || 0);
+    }, 0);
+}
+
+function buildUsageByAdmin(usageResult) {
+    var out = {};
+    function ensure(key) {
+        if (!out[key]) {
+            out[key] = {
+                durationMs: 0,
+                pageViews: 0,
+                logins: 0,
+                lastActiveAt: 0
+            };
+        }
+        return out[key];
+    }
+    (usageResult.staff || []).forEach(function (s) {
+        var key = registeredByKey(s.userId);
+        var row = ensure(key);
+        row.durationMs += Number(s.totalDurationMs) || 0;
+        row.pageViews += Number(s.pageViews) || 0;
+        row.logins += Number(s.loginCount) || 0;
+        var last = Number(s.lastLoginAt) || 0;
+        if (last > row.lastActiveAt) row.lastActiveAt = last;
+    });
+    (usageResult.vendorsByAdmin || []).forEach(function (g) {
+        var key = registeredByKey(g.adminLoginId);
+        var row = ensure(key);
+        row.durationMs += Number(g.totalDurationMs) || 0;
+        row.pageViews += Number(g.pageViews) || 0;
+        row.logins += Number(g.loginCount) || 0;
+    });
+    return out;
+}
+
+function defaultUsageDateRange() {
+    var to = new Date();
+    var from = new Date(to);
+    from.setDate(from.getDate() - 30);
+    function ymd(d) {
+        return (
+            String(d.getFullYear()) +
+            "-" +
+            String(d.getMonth() + 1).padStart(2, "0") +
+            "-" +
+            String(d.getDate()).padStart(2, "0")
+        );
+    }
+    return { dateFrom: ymd(from), dateTo: ymd(to) };
+}
+
 router.get("/usage-stats", requireRole("supervisor"), async function (req, res) {
     try {
         var dateFrom = String(req.query.dateFrom || "").trim();
@@ -104,6 +194,10 @@ router.get("/access-stats", requireRole("supervisor"), async function (req, res)
 router.get("/db-stats", requireRole("supervisor"), async function (req, res) {
     try {
         var db = getDb();
+        var period = defaultUsageDateRange();
+        var dateFrom = String(req.query.dateFrom || period.dateFrom).trim();
+        var dateTo = String(req.query.dateTo || period.dateTo).trim();
+
         var staffList = await db
             .collection("staff")
             .find(
@@ -117,13 +211,25 @@ router.get("/db-stats", requireRole("supervisor"), async function (req, res) {
             safeAggregateByRegisteredBy(db, "vendors", VF.registeredBy),
             safeAggregateByRegisteredBy(db, "vendor_new", VF.registeredBy),
             safeAggregateByRegisteredBy(db, "vendor_prospects", VF.registeredBy),
-            safeAggregateByRegisteredBy(db, "orders", "vendorRegisteredBy")
+            safeAggregateByRegisteredBy(db, "orders", "vendorRegisteredBy"),
+            safeAggregateBytesByRegisteredBy(db, "products", PF.registeredBy),
+            safeAggregateBytesByRegisteredBy(db, "vendors", VF.registeredBy),
+            safeAggregateBytesByRegisteredBy(db, "vendor_new", VF.registeredBy),
+            safeAggregateBytesByRegisteredBy(db, "vendor_prospects", VF.registeredBy),
+            safeAggregateBytesByRegisteredBy(db, "orders", "vendorRegisteredBy"),
+            queryUsageStats(db, dateFrom, dateTo)
         ]);
         var productsBy = agg[0];
         var vendorsBy = agg[1];
         var vendorNewBy = agg[2];
         var prospectsBy = agg[3];
         var ordersBy = agg[4];
+        var storageBy = mergeNumericMaps([agg[5], agg[6], agg[7], agg[8], agg[9]]);
+        var usageResult = agg[10] || {};
+        if (usageResult.error) {
+            return res.status(400).json({ ok: false, error: usageResult.error });
+        }
+        var usageByAdmin = buildUsageByAdmin(usageResult);
 
         var adminKeys = {};
         staffList.forEach(function (s) {
@@ -159,9 +265,15 @@ router.get("/db-stats", requireRole("supervisor"), async function (req, res) {
         var byAdmin = Object.keys(adminKeys)
             .sort(compareAdminKeys)
             .map(function (loginId) {
+                var usage = usageByAdmin[loginId] || {};
                 return {
                     loginId: loginId,
                     name: staffNameMap[loginId] || (loginId === "legacy" ? "기존(담당 미지정)" : loginId),
+                    storageBytes: storageBy[loginId] || 0,
+                    usageDurationMs: usage.durationMs || 0,
+                    usagePageViews: usage.pageViews || 0,
+                    usageLogins: usage.logins || 0,
+                    lastActiveAt: usage.lastActiveAt || 0,
                     products: productsBy[loginId] || 0,
                     vendors: vendorsBy[loginId] || 0,
                     vendorNew: vendorNewBy[loginId] || 0,
@@ -189,10 +301,20 @@ router.get("/db-stats", requireRole("supervisor"), async function (req, res) {
             vendorNew: counts[2],
             vendorProspects: counts[3],
             orders: counts[4],
-            staff: staffList.length
+            staff: staffList.length,
+            storageBytes: sumMapValues(storageBy),
+            usageDurationMs:
+                (Number(usageResult.summary && usageResult.summary.staffDurationMs) || 0) +
+                (Number(usageResult.summary && usageResult.summary.vendorDurationMs) || 0)
         };
 
-        return res.json({ ok: true, totals: totals, byAdmin: byAdmin });
+        return res.json({
+            ok: true,
+            totals: totals,
+            byAdmin: byAdmin,
+            period: { dateFrom: dateFrom, dateTo: dateTo },
+            usageTruncated: !!usageResult.truncated
+        });
     } catch (e) {
         console.error("GET /api/supervisor/db-stats", e);
         return res.status(500).json({
