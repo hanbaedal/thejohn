@@ -83,10 +83,20 @@
     }
 
     function thumbHtml(it) {
+        var cover = String((it && it.pd_image) || "").trim();
+        if (cover) {
+            return (
+                '<div class="pl-admin-thumb">' +
+                '<img alt="" loading="lazy" decoding="async" src="' +
+                escapeHtml(cover) +
+                '">' +
+                "</div>"
+            );
+        }
         if (it.pd_has_image) {
             return (
                 '<div class="pl-admin-thumb">' +
-                '<img alt="" loading="lazy" data-pl-cover="' +
+                '<img alt="" loading="lazy" decoding="async" data-pl-cover="' +
                 escapeHtml(it.id) +
                 '">' +
                 "</div>"
@@ -98,23 +108,46 @@
     }
 
     function bindCoverImages() {
-        if (!listEl || !api || !api.get) return;
-        listEl.querySelectorAll("img[data-pl-cover]").forEach(function (img) {
+        if (!listEl || !api) return;
+        var imgs = listEl.querySelectorAll("img[data-pl-cover]");
+        if (!imgs.length) return;
+        var ids = [];
+        imgs.forEach(function (img) {
+            var id = img.getAttribute("data-pl-cover");
+            if (id) ids.push(id);
+        });
+        function applyEmpty(img) {
+            var box = img.parentElement;
+            if (box) {
+                box.className = "pl-admin-thumb pl-admin-thumb--empty";
+                box.innerHTML = "사진<br>없음";
+            }
+        }
+        function apply(covers) {
+            covers = covers || {};
+            imgs.forEach(function (img) {
+                var id = img.getAttribute("data-pl-cover");
+                var src = id && covers[id] ? String(covers[id]) : "";
+                if (src) img.src = src;
+                else applyEmpty(img);
+            });
+        }
+        if (api.getProductCovers) {
+            api.getProductCovers(ids).then(apply).catch(function () {
+                apply({});
+            });
+            return;
+        }
+        imgs.forEach(function (img) {
             var id = img.getAttribute("data-pl-cover");
             if (!id) return;
-            api
-                .get("api/products/" + encodeURIComponent(id) + "/cover")
+            api.get("api/products/" + encodeURIComponent(id) + "/cover")
                 .then(function (data) {
-                    if (data && data.pd_image) {
-                        img.src = data.pd_image;
-                    }
+                    if (data && data.pd_image) img.src = data.pd_image;
+                    else applyEmpty(img);
                 })
                 .catch(function () {
-                    var box = img.parentElement;
-                    if (box) {
-                        box.className = "pl-admin-thumb pl-admin-thumb--empty";
-                        box.innerHTML = "사진<br>없음";
-                    }
+                    applyEmpty(img);
                 });
         });
     }

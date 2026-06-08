@@ -133,8 +133,25 @@
         return !!(it.pd_has_image || (it.pd_image_count && it.pd_image_count > 0));
     }
 
-    /** 사진 1장 — /cover API */
+    function productCoverSrc(it) {
+        if (!it) return "";
+        var cache = window.THEJHON_PRODUCT_COVER;
+        if (cache && cache.getCoverSrc) {
+            return cache.getCoverSrc(it.id, it.pd_image);
+        }
+        return String((it && it.pd_image) || "").trim();
+    }
+
+    /** 사진 1장 — 목록·상세 응답의 pd_image 우선, 없으면 일괄 cover API */
     function heroHtml(it) {
+        var cover = productCoverSrc(it);
+        if (cover) {
+            return (
+                '<img class="pd-hero-img" src="' +
+                escapeHtml(cover) +
+                '" alt="상품 사진" decoding="async">'
+            );
+        }
         if (productHasPhoto(it)) {
             return (
                 '<div class="pd-hero-img pd-hero-img--empty" data-pd-gallery="' +
@@ -147,7 +164,7 @@
             return (
                 '<img class="pd-hero-img" src="' +
                 escapeHtml(legacy) +
-                '" alt="">'
+                '" alt="" decoding="async">'
             );
         }
         return (
@@ -214,8 +231,30 @@
         });
     }
 
+    function applyGalleryCover(article, el, wrap, src) {
+        if (!document.body.contains(article)) return;
+        var liveWrap = el.closest(".pd-hero-wrap");
+        if (!liveWrap || liveWrap !== wrap) return;
+        if (!src) {
+            el.textContent = "사진 없음";
+            el.classList.add("pd-hero-img--empty");
+            return;
+        }
+        var img = document.createElement("img");
+        img.className = "pd-hero-img";
+        img.alt = "상품 사진";
+        img.decoding = "async";
+        var cache = window.THEJHON_PRODUCT_COVER;
+        var id = article.getAttribute("data-product-id") || "";
+        img.src =
+            cache && cache.getCoverSrc ? cache.getCoverSrc(id, src) : src;
+        liveWrap.innerHTML = "";
+        liveWrap.appendChild(img);
+    }
+
     function loadProductGalleries(container) {
-        if (!api || !api.get || !container) return;
+        if (!api || !container) return;
+        var pending = [];
         container.querySelectorAll("article[data-product-id]").forEach(function (article) {
             var el = article.querySelector("[data-pd-gallery]");
             if (!el) return;
@@ -223,28 +262,39 @@
             if (!id) return;
             var wrap = el.closest(".pd-hero-wrap");
             if (!wrap || !wrap.contains(el)) return;
-            api.get("api/products/" + encodeURIComponent(id) + "/cover")
+            pending.push({ article: article, el: el, wrap: wrap, id: id });
+        });
+        if (!pending.length) return;
+        function applyMap(covers) {
+            covers = covers || {};
+            pending.forEach(function (row) {
+                applyGalleryCover(row.article, row.el, row.wrap, covers[row.id] ? String(covers[row.id]) : "");
+            });
+        }
+        if (api.getProductCovers) {
+            api.getProductCovers(
+                pending.map(function (row) {
+                    return row.id;
+                })
+            )
+                .then(applyMap)
+                .catch(function () {
+                    applyMap({});
+                });
+            return;
+        }
+        pending.forEach(function (row) {
+            api.get("api/products/" + encodeURIComponent(row.id) + "/cover")
                 .then(function (data) {
-                    if (!document.body.contains(article)) return;
-                    var src = data && data.pd_image ? String(data.pd_image) : "";
-                    var liveWrap = el.closest(".pd-hero-wrap");
-                    if (!liveWrap || liveWrap !== wrap) return;
-                    if (!src) {
-                        el.textContent = "사진 없음";
-                        el.classList.add("pd-hero-img--empty");
-                        return;
-                    }
-                    var img = document.createElement("img");
-                    img.className = "pd-hero-img";
-                    img.alt = "상품 사진";
-                    img.src = src;
-                    liveWrap.innerHTML = "";
-                    liveWrap.appendChild(img);
+                    applyGalleryCover(
+                        row.article,
+                        row.el,
+                        row.wrap,
+                        data && data.pd_image ? String(data.pd_image) : ""
+                    );
                 })
                 .catch(function () {
-                    if (!document.body.contains(article)) return;
-                    el.textContent = "사진 없음";
-                    el.classList.add("pd-hero-img--empty");
+                    applyGalleryCover(row.article, row.el, row.wrap, "");
                 });
         });
     }

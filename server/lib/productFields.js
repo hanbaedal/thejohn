@@ -161,6 +161,7 @@ function productHasImage(doc) {
 function toPublicListItem(doc, opts) {
     opts = opts || {};
     const fullExplain = !!opts.fullExplain;
+    const includeCover = !!opts.includeCover;
     if (!doc) return null;
     const d = fromLegacyDoc(doc) || doc;
     const id = ensureProductId(d);
@@ -171,7 +172,7 @@ function toPublicListItem(doc, opts) {
         d.pd_has_image === true ||
         (d.pd_has_image !== false && images.length > 0);
     const pd_dept = readDeptFromDoc(d) || normalizeDeptForStorage(d[F.dept] || d.pd_dept);
-    return {
+    const row = {
         id: id,
         pd_name: str(d[F.name] || d.pd_name),
         pd_code: normalizeProductCode(d[F.code] || d.pd_code),
@@ -196,6 +197,13 @@ function toPublicListItem(doc, opts) {
         createdAt: toNum(d.createdAt),
         updatedAt: toNum(d.updatedAt)
     };
+    if (includeCover && hasImage) {
+        const cover = String(images[0] || "").trim();
+        if (cover && cover.length <= 600000) {
+            row.pd_image = cover;
+        }
+    }
+    return row;
 }
 
 /** 상품 담당자 비어 있을 때 등록 관리자(staff) 연락처로 보강 */
@@ -424,59 +432,60 @@ function ensureProductId(doc) {
 }
 
 /** 목록 API — 이미지 본문 없이 pd_has_image 만 정확히 계산 */
-async function findProductsForList(db, query) {
+async function findProductsForList(db, query, opts) {
+    opts = opts || {};
     const imgKey = F.image;
-    return db
-        .collection("products")
-        .aggregate([
-            { $match: query || {} },
-            { $sort: { updatedAt: -1 } },
-            {
-                $addFields: {
-                    pd_has_image: {
-                        $cond: [
-                            { $eq: ["$pd_has_image", true] },
-                            true,
-                            {
-                                $cond: [
-                                    { $eq: ["$pd_has_image", false] },
-                                    false,
-                                    {
-                                        $or: [
-                                            {
-                                                $gt: [
-                                                    {
-                                                        $size: {
-                                                            $ifNull: ["$pd_images", []]
-                                                        }
-                                                    },
-                                                    0
-                                                ]
-                                            },
-                                            {
-                                                $gt: [
-                                                    {
-                                                        $strLenCP: {
-                                                            $ifNull: [
-                                                                "$" + imgKey,
-                                                                { $ifNull: ["$pd_image", ""] }
-                                                            ]
-                                                        }
-                                                    },
-                                                    0
-                                                ]
-                                            }
-                                        ]
-                                    }
-                                ]
-                            }
-                        ]
-                    }
+    const pipeline = [
+        { $match: query || {} },
+        { $sort: { updatedAt: -1 } },
+        {
+            $addFields: {
+                pd_has_image: {
+                    $cond: [
+                        { $eq: ["$pd_has_image", true] },
+                        true,
+                        {
+                            $cond: [
+                                { $eq: ["$pd_has_image", false] },
+                                false,
+                                {
+                                    $or: [
+                                        {
+                                            $gt: [
+                                                {
+                                                    $size: {
+                                                        $ifNull: ["$pd_images", []]
+                                                    }
+                                                },
+                                                0
+                                            ]
+                                        },
+                                        {
+                                            $gt: [
+                                                {
+                                                    $strLenCP: {
+                                                        $ifNull: [
+                                                            "$" + imgKey,
+                                                            { $ifNull: ["$pd_image", ""] }
+                                                        ]
+                                                    }
+                                                },
+                                                0
+                                            ]
+                                        }
+                                    ]
+                                }
+                            ]
+                        }
+                    ]
                 }
-            },
-            { $project: { [imgKey]: 0, pd_images: 0, pd_image: 0, image: 0 } }
-        ])
-        .toArray();
+            }
+        }
+    ];
+    if (!opts.includeCover) {
+        pipeline.push({ $project: { [imgKey]: 0, pd_images: 0, pd_image: 0, images: 0, image: 0 } });
+    }
+    return db.collection("products").aggregate(pipeline).toArray();
 }
 
 /** 레거시 필드명(title/content 등)이 남아 있을 때만 전체 문서 재구성 — 정상 데이터는 건드리지 않음 */

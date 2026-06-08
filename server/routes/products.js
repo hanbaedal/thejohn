@@ -140,11 +140,16 @@ router.get("/", async (req, res) => {
             }
         }
         const fullExplain = req.query.fullExplain === "1";
-        const items = await findProductsForList(getDb(), query);
+        const includeCover =
+            req.query.includeCover === "1" ||
+            catalogByDept ||
+            fullExplain ||
+            (auth && auth.role === "admin" && isStaffAuth(auth));
+        const items = await findProductsForList(getDb(), query, { includeCover: includeCover });
         const rows = [];
         for (const doc of items) {
             try {
-                const row = toPublicListItem(doc, { fullExplain });
+                const row = toPublicListItem(doc, { fullExplain: fullExplain, includeCover: includeCover });
                 if (row) {
                     if (writeChecker) {
                         try {
@@ -183,6 +188,59 @@ router.get("/", async (req, res) => {
     } catch (e) {
         console.error("GET /api/products", e);
         res.status(500).json({ ok: false, error: "상품 목록을 불러오지 못했습니다." });
+    }
+});
+
+/** 목록용 대표 사진 일괄 조회 — ids=pr_a,pr_b (최대 80개) */
+router.get("/covers", async function (req, res) {
+    try {
+        const auth = optionalAuth(req);
+        const vendorDoc = await resolveVendorForAuth(auth);
+        const raw = String(req.query.ids || "")
+            .split(",")
+            .map(function (s) {
+                return String(s || "").trim();
+            })
+            .filter(Boolean);
+        const ids = [];
+        const seen = Object.create(null);
+        raw.forEach(function (id) {
+            if (seen[id] || ids.length >= 80) return;
+            seen[id] = true;
+            ids.push(id);
+        });
+        if (!ids.length) {
+            return res.json({ ok: true, covers: {} });
+        }
+        const docs = await getDb()
+            .collection("products")
+            .find(
+                { id: { $in: ids } },
+                {
+                    projection: {
+                        id: 1,
+                        [F.image]: 1,
+                        [F.images]: 1,
+                        pd_image: 1,
+                        pd_images: 1,
+                        [F.registeredBy]: 1
+                    }
+                }
+            )
+            .toArray();
+        const covers = {};
+        docs.forEach(function (doc) {
+            if (auth && auth.role === "vendor" && !vendorCanAccessProduct(vendorDoc, doc, auth)) {
+                return;
+            }
+            const images = readImagesFromDoc(doc);
+            const img = images[0] || "";
+            if (img) covers[doc.id] = img;
+        });
+        res.json({ ok: true, covers: covers });
+    } catch (e) {
+        console.error("GET /api/products/covers", e);
+        res.status(500).json({ ok: false, error: "사진을 불러오지 못했습니다." });
     }
 });
 

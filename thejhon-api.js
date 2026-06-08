@@ -130,9 +130,20 @@
             if (opts.fullExplain) {
                 parts.push("fullExplain=1");
             }
+            if (opts.includeCover) {
+                parts.push("includeCover=1");
+            }
             var q = parts.length ? "?" + parts.join("&") : "";
             return request("GET", "/api/products" + q).then(function (d) {
                 return d.items || [];
+            });
+        },
+        getProductCovers: function (ids) {
+            var list = (ids || []).filter(Boolean);
+            if (!list.length) return Promise.resolve({});
+            var q = "?ids=" + encodeURIComponent(list.join(","));
+            return request("GET", "/api/products/covers" + q).then(function (d) {
+                return (d && d.covers) || {};
             });
         },
         getProduct: function (id) {

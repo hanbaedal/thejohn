@@ -8,6 +8,34 @@
     var loadToken = 0;
     var lastItems = [];
     var lastItemsById = {};
+    var lastOrderCardMode = null;
+
+    function coverCache() {
+        return window.THEJHON_PRODUCT_COVER;
+    }
+
+    function productCoverSrc(it) {
+        if (!it) return "";
+        var cache = coverCache();
+        if (cache && cache.getCoverSrc) {
+            return cache.getCoverSrc(it.id, it.pd_image);
+        }
+        return String((it && it.pd_image) || "").trim();
+    }
+
+    function useOrderCardMode() {
+        return !!(
+            window.THEJHON_CATALOG_ORDER &&
+            THEJHON_CATALOG_ORDER.canShow &&
+            THEJHON_CATALOG_ORDER.canShow()
+        );
+    }
+
+    function needsCoverFetch(items) {
+        return (items || []).some(function (it) {
+            return it && it.pd_has_image && !String(it.pd_image || "").trim();
+        });
+    }
 
     function escapeHtml(s) {
         return String(s)
@@ -64,10 +92,20 @@
     }
 
     function cardPhotoHtml(it) {
+        var cover = productCoverSrc(it);
+        if (cover) {
+            return (
+                '<div class="ps-card-photo-wrap">' +
+                '<img class="ps-card-photo" alt="" loading="lazy" decoding="async" src="' +
+                escapeHtml(cover) +
+                '">' +
+                "</div>"
+            );
+        }
         if (it.pd_has_image) {
             return (
                 '<div class="ps-card-photo-wrap">' +
-                '<img class="ps-card-photo ps-card-photo--loading" alt="" loading="lazy" data-ps-cover="' +
+                '<img class="ps-card-photo ps-card-photo--loading" alt="" loading="lazy" decoding="async" data-ps-cover="' +
                 escapeHtml(it.id) +
                 '">' +
                 "</div>"
@@ -90,10 +128,7 @@
         var photo = cardPhotoHtml(it);
         var specText = cardSpecHtml(it);
         var priceBlock = catalogPriceHtml(it);
-        var useOrderCard =
-            window.THEJHON_CATALOG_ORDER &&
-            THEJHON_CATALOG_ORDER.canShow &&
-            THEJHON_CATALOG_ORDER.canShow();
+        var useOrderCard = useOrderCardMode();
         var orderBlock = useOrderCard ? THEJHON_CATALOG_ORDER.renderSection(it) : "";
 
         if (useOrderCard) {
@@ -175,11 +210,70 @@
         try {
             indexItems(items);
             root.innerHTML = renderProductList(items || []);
+            lastOrderCardMode = useOrderCardMode();
             bindCatalogOrders();
         } catch (e) {
             root.innerHTML =
                 '<p class="ps-empty">목록을 표시하는 중 오류가 났습니다. 새로고침해 주세요.</p>';
         }
+    }
+
+    function findCardForItem(it) {
+        if (!root || !it || !it.id) return null;
+        var orderCard = root.querySelector('.ps-card[data-product-id="' + it.id + '"]');
+        if (orderCard) return { el: orderCard, mode: "order" };
+        var links = root.querySelectorAll(".ps-card-link");
+        var want = "product-detail.html?id=" + encodeURIComponent(it.id);
+        for (var i = 0; i < links.length; i++) {
+            var href = links[i].getAttribute("href") || "";
+            if (href === want || href.indexOf("id=" + encodeURIComponent(it.id)) >= 0) {
+                return { el: links[i], mode: "link" };
+            }
+        }
+        return null;
+    }
+
+    function refreshListPricesAndOrders() {
+        if (!root || !lastItems.length) return;
+        var orderMode = useOrderCardMode();
+        lastItems.forEach(function (it) {
+            var hit = findCardForItem(it);
+            if (!hit) return;
+            var priceHtml = catalogPriceHtml(it);
+            if (hit.mode === "order") {
+                var meta = hit.el.querySelector(".ps-card-body--meta");
+                if (!meta) return;
+                var orderHtml =
+                    orderMode && window.THEJHON_CATALOG_ORDER
+                        ? THEJHON_CATALOG_ORDER.renderSection(it)
+                        : "";
+                meta.innerHTML = priceHtml + orderHtml;
+                if (orderHtml && THEJHON_CATALOG_ORDER.bind) {
+                    THEJHON_CATALOG_ORDER.bind(hit.el, it);
+                }
+                return;
+            }
+            var body = hit.el.querySelector(".ps-card-body");
+            if (!body) return;
+            var title = body.querySelector(".ps-card-title");
+            var spec = body.querySelector(".ps-card-spec");
+            body.innerHTML =
+                (title ? title.outerHTML : "") +
+                (spec ? spec.outerHTML : "") +
+                priceHtml;
+        });
+        bindCatalogOrders();
+    }
+
+    function refreshAfterAuth() {
+        if (!lastItems.length) return;
+        var mode = useOrderCardMode();
+        if (lastOrderCardMode === mode) {
+            refreshListPricesAndOrders();
+            return;
+        }
+        showList(lastItems);
+        if (needsCoverFetch(lastItems)) bindCoverImages();
     }
 
     function loadErrorHtml(msg) {
@@ -200,24 +294,64 @@
         }
     }
 
+    function replaceCoverWithEmpty(img) {
+        var span = document.createElement("span");
+        span.className = "ps-card-photo ps-card-photo--empty";
+        span.setAttribute("aria-hidden", "true");
+        span.innerHTML = "사진<br>없음";
+        img.replaceWith(span);
+    }
+
     function bindCoverImages() {
         if (!root || !api) return;
-        root.querySelectorAll("img[data-ps-cover]").forEach(function (img) {
+        var imgs = root.querySelectorAll("img[data-ps-cover]");
+        if (!imgs.length) return;
+        var ids = [];
+        imgs.forEach(function (img) {
+            var id = img.getAttribute("data-ps-cover");
+            if (id) ids.push(id);
+        });
+        var apply = function (covers) {
+            covers = covers || {};
+            imgs.forEach(function (img) {
+                var id = img.getAttribute("data-ps-cover");
+                var src = id && covers[id] ? String(covers[id]) : "";
+                if (src) {
+                    var cache = coverCache();
+                    img.src =
+                        cache && cache.getCoverSrc
+                            ? cache.getCoverSrc(id, src)
+                            : src;
+                    img.classList.remove("ps-card-photo--loading");
+                } else {
+                    replaceCoverWithEmpty(img);
+                }
+            });
+        };
+        if (api.getProductCovers) {
+            api.getProductCovers(ids).then(apply).catch(function () {
+                apply({});
+            });
+            return;
+        }
+        imgs.forEach(function (img) {
             var id = img.getAttribute("data-ps-cover");
             if (!id) return;
             api.get("api/products/" + encodeURIComponent(id) + "/cover")
                 .then(function (data) {
                     if (data && data.pd_image) {
-                        img.src = data.pd_image;
+                        var cache = coverCache();
+                        img.src =
+                            cache && cache.getCoverSrc
+                                ? cache.getCoverSrc(id, data.pd_image)
+                                : data.pd_image;
                         img.classList.remove("ps-card-photo--loading");
+                    } else {
+                        replaceCoverWithEmpty(img);
                     }
                 })
                 .catch(function () {
-                    var span = document.createElement("span");
-                    span.className = "ps-card-photo ps-card-photo--empty";
-                    span.setAttribute("aria-hidden", "true");
-                    span.innerHTML = "사진<br>없음";
-                    img.replaceWith(span);
+                    replaceCoverWithEmpty(img);
                 });
         });
     }
@@ -239,7 +373,7 @@
             .then(function (items) {
                 if (token !== loadToken) return;
                 showList(items);
-                bindCoverImages();
+                if (needsCoverFetch(items)) bindCoverImages();
             })
             .catch(function (err) {
                 if (token !== loadToken) return;
@@ -277,10 +411,5 @@
     syncUrl();
     loadDeptProducts(0);
 
-    window.addEventListener("thejhon-auth-permissions-updated", function () {
-        if (lastItems.length) {
-            showList(lastItems);
-            bindCoverImages();
-        }
-    });
+    window.addEventListener("thejhon-auth-permissions-updated", refreshAfterAuth);
 })();
