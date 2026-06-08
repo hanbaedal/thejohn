@@ -102,21 +102,27 @@ function contactNeedsStaffFallback(item) {
 }
 
 async function enrichProductsContact(rows) {
+    const list = rows || [];
     const staffCache = Object.create(null);
-    const out = [];
-    for (const row of rows || []) {
-        if (!contactNeedsStaffFallback(row)) {
-            out.push(row);
-            continue;
-        }
-        const key = String(row.pd_registered_by || "").trim();
-        if (!staffCache[key]) {
+    const keys = [
+        ...new Set(
+            list
+                .filter(contactNeedsStaffFallback)
+                .map((row) => String(row.pd_registered_by || "").trim())
+                .filter(Boolean)
+        )
+    ];
+    await Promise.all(
+        keys.map(async (key) => {
             staffCache[key] =
                 (await findStaffByRegisteredBy(key)) || (await findStaffByLoginId(key));
-        }
-        out.push(applyStaffContactFallback(row, staffCache[key]));
-    }
-    return out;
+        })
+    );
+    return list.map((row) => {
+        if (!contactNeedsStaffFallback(row)) return row;
+        const key = String(row.pd_registered_by || "").trim();
+        return applyStaffContactFallback(row, staffCache[key]);
+    });
 }
 
 router.get("/", async (req, res) => {
@@ -162,7 +168,8 @@ router.get("/", async (req, res) => {
                 console.error("GET /api/products map", doc && doc.id, mapErr.message);
             }
         }
-        const enriched = await enrichProductsContact(rows);
+        /** 사업부문 카탈로그 목록 — 담당자 연락처 보강 생략(상세·주문 시 조회) */
+        const enriched = catalogByDept ? rows : await enrichProductsContact(rows);
         const payload = {
             ok: true,
             items: enriched,

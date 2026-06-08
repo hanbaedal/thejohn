@@ -10,6 +10,7 @@
     var lastItemsById = {};
     var lastOrderCardMode = null;
     var coverLoadToken = 0;
+    var metaPhaseToken = 0;
     var COVER_BATCH_SIZE = 5;
     var deptItemsCache = Object.create(null);
 
@@ -130,13 +131,12 @@
         return '<span class="ps-card-spec--none">—</span>';
     }
 
-    function renderProductCard(it) {
+    /** 1단계: 사진·이름·규격만 — 가격·주문은 scheduleListMetaPhase에서 채움 */
+    function renderProductCardPhase1(it) {
         var href = "product-detail.html?id=" + encodeURIComponent(it.id);
         var photo = cardPhotoHtml(it);
         var specText = cardSpecHtml(it);
-        var priceBlock = catalogPriceHtml(it);
         var useOrderCard = useOrderCardMode();
-        var orderBlock = useOrderCard ? THEJHON_CATALOG_ORDER.renderSection(it) : "";
 
         if (useOrderCard) {
             return (
@@ -158,10 +158,8 @@
                 specText +
                 "</p>" +
                 "</div></a>" +
-                '<div class="ps-card-body ps-card-body--meta">' +
-                priceBlock +
-                orderBlock +
-                "</div></article></li>"
+                '<div class="ps-card-body ps-card-body--meta" data-ps-meta-pending></div>' +
+                "</article></li>"
             );
         }
 
@@ -172,14 +170,13 @@
             '<div class="ps-card-visual">' +
             photo +
             "</div>" +
-            '<div class="ps-card-body">' +
+            '<div class="ps-card-body" data-ps-meta-pending>' +
             '<h2 class="ps-card-title">' +
             escapeHtml(it.pd_name || "") +
             "</h2>" +
             '<p class="ps-card-spec">' +
             specText +
             "</p>" +
-            priceBlock +
             "</div></a></li>"
         );
     }
@@ -197,22 +194,32 @@
         return '<ul class="ps-grid ps-grid--skeleton" role="list">' + cards.join("") + "</ul>";
     }
 
-    function renderProductList(items) {
+    function renderProductListPhase1(items) {
         if (!items.length) {
             return '<p class="ps-empty">이 분야에 등록된 상품이 없습니다.</p>';
         }
         return (
             '<ul class="ps-grid" role="list">' +
-            items.map(renderProductCard).join("") +
+            items.map(renderProductCardPhase1).join("") +
             "</ul>"
         );
     }
 
+    function scheduleListMetaPhase(phaseToken) {
+        function run() {
+            if (phaseToken !== metaPhaseToken) return;
+            refreshListPricesAndOrders();
+        }
+        if (typeof requestIdleCallback === "function") {
+            requestIdleCallback(run, { timeout: 150 });
+        } else {
+            setTimeout(run, 0);
+        }
+    }
+
     function showCachedDeptIfAny(deptId) {
         if (!Object.prototype.hasOwnProperty.call(deptItemsCache, deptId)) return false;
-        var cached = deptItemsCache[deptId] || [];
-        showList(cached);
-        if (cached.length && needsCoverFetch(cached)) bindCoverImages();
+        showList(deptItemsCache[deptId] || []);
         return true;
     }
 
@@ -244,9 +251,12 @@
         if (!root) return;
         try {
             indexItems(items);
-            root.innerHTML = renderProductList(items || []);
+            metaPhaseToken += 1;
+            var phaseToken = metaPhaseToken;
+            root.innerHTML = renderProductListPhase1(items || []);
             lastOrderCardMode = useOrderCardMode();
-            bindCatalogOrders();
+            if (needsCoverFetch(items)) bindCoverImages();
+            scheduleListMetaPhase(phaseToken);
         } catch (e) {
             root.innerHTML =
                 '<p class="ps-empty">목록을 표시하는 중 오류가 났습니다. 새로고침해 주세요.</p>';
@@ -282,6 +292,7 @@
                     orderMode && window.THEJHON_CATALOG_ORDER
                         ? THEJHON_CATALOG_ORDER.renderSection(it)
                         : "";
+                meta.removeAttribute("data-ps-meta-pending");
                 meta.innerHTML = priceHtml + orderHtml;
                 if (orderHtml && THEJHON_CATALOG_ORDER.bind) {
                     THEJHON_CATALOG_ORDER.bind(hit.el, it);
@@ -292,6 +303,7 @@
             if (!body) return;
             var title = body.querySelector(".ps-card-title");
             var spec = body.querySelector(".ps-card-spec");
+            body.removeAttribute("data-ps-meta-pending");
             body.innerHTML =
                 (title ? title.outerHTML : "") +
                 (spec ? spec.outerHTML : "") +
@@ -308,7 +320,6 @@
             return;
         }
         showList(lastItems);
-        if (needsCoverFetch(lastItems)) bindCoverImages();
     }
 
     function loadErrorHtml(msg) {
@@ -420,7 +431,6 @@
                 deptItemsCache[activeDept] = items;
                 root.classList.remove("ps-root--refreshing");
                 showList(items);
-                if (needsCoverFetch(items)) bindCoverImages();
             })
             .catch(function (err) {
                 if (token !== loadToken) return;
