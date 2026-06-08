@@ -5,37 +5,31 @@ const { queryAccessStats, queryUsageStats, parseYmdToMs } = require("../lib/acce
 const { F: PF } = require("../lib/productFields");
 const { F: VF } = require("../lib/vendorFields");
 const { normalizeStaffLoginId } = require("../lib/orderAccess");
-const { registeredByInFilter } = require("../lib/staffLoginId");
+const { registeredByInFilter, staffLoginIdKey, isLegacyRegisteredBy } = require("../lib/staffLoginId");
 
 const router = express.Router();
 
+/** 담당 관리자별 건수 — aggregation $trim/$not 호환 이슈 회피 */
 async function aggregateByRegisteredBy(db, collectionName, field) {
-    var pipeline = [
-        {
-            $group: {
-                _id: {
-                    $cond: [
-                        {
-                            $or: [
-                                { $eq: ["$" + field, ""] },
-                                { $eq: ["$" + field, null] },
-                                { $not: ["$" + field] }
-                            ]
-                        },
-                        "legacy",
-                        { $toLower: { $trim: { input: { $toString: "$" + field } } } }
-                    ]
-                },
-                count: { $sum: 1 }
-            }
-        }
-    ];
-    var rows = await db.collection(collectionName).aggregate(pipeline).toArray();
     var out = {};
-    rows.forEach(function (r) {
-        out[r._id || "legacy"] = r.count || 0;
+    var docs = await db
+        .collection(collectionName)
+        .find({}, { projection: { [field]: 1 } })
+        .toArray();
+    docs.forEach(function (doc) {
+        var raw = doc[field];
+        var key =
+            raw === undefined || raw === null || raw === "" || isLegacyRegisteredBy(raw)
+                ? "legacy"
+                : staffLoginIdKey(raw) || "legacy";
+        out[key] = (out[key] || 0) + 1;
     });
     return out;
+}
+
+function registeredByKey(loginId) {
+    if (!loginId || isLegacyRegisteredBy(loginId)) return "legacy";
+    return staffLoginIdKey(loginId) || "legacy";
 }
 
 router.get("/usage-stats", requireRole("supervisor"), async function (req, res) {
@@ -95,7 +89,7 @@ router.get("/db-stats", requireRole("supervisor"), async function (req, res) {
         var adminKeys = {};
         staffList.forEach(function (s) {
             if (s.role === "admin" || s.role === "supervisor") {
-                var id = normalizeStaffLoginId(s.loginId);
+                var id = registeredByKey(s.loginId);
                 if (id) adminKeys[id] = true;
             }
         });
@@ -111,8 +105,10 @@ router.get("/db-stats", requireRole("supervisor"), async function (req, res) {
 
         var staffNameMap = {};
         staffList.forEach(function (s) {
-            var id = normalizeStaffLoginId(s.loginId);
-            if (id) staffNameMap[id] = String(s.st_company || s.loginId || id);
+            var id = registeredByKey(s.loginId);
+            if (id && id !== "legacy") {
+                staffNameMap[id] = String(s.st_company || s.loginId || id);
+            }
         });
 
         var byAdmin = Object.keys(adminKeys)

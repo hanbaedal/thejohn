@@ -87,5 +87,6 @@
         return;
     }
     Auth.normalizeLegacySession();
+    if (Auth.setStaffNavMode) Auth.setStaffNavMode("work");
     load();
 })();
