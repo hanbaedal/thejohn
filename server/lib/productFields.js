@@ -203,6 +203,10 @@ function toPublicListItem(doc, opts) {
             row.pd_image = cover;
         }
     }
+    const thumb = str(d.pd_image_thumb);
+    if (thumb && thumb.length <= 32000) {
+        row.pd_thumb = thumb;
+    }
     return row;
 }
 
@@ -329,13 +333,14 @@ function buildFromBody(body, existing) {
     };
 }
 
-/** 저장 직전 — 상품 사진을 540×540 JPEG로 통일 */
+/** 저장 직전 — 상품 사진 540×540 + 목록용 썸네일 */
 async function finalizeProductBuilt(built) {
     if (!built) return built;
-    const { normalizeProductImages540 } = require("./image540");
+    const { normalizeProductImages540, makeProductThumbDataUrl } = require("./image540");
     const imgs = await normalizeProductImages540(built.pd_images);
     built.pd_images = imgs;
     built.pd_image = imgs[0] || "";
+    built.pd_image_thumb = built.pd_image ? await makeProductThumbDataUrl(built.pd_image) : "";
     return built;
 }
 
@@ -351,6 +356,7 @@ function toDbDoc(id, built, existing) {
         [F.size]: built.pd_size,
         [F.image]: built.pd_image,
         [F.images]: built.pd_images,
+        pd_image_thumb: built.pd_image_thumb || "",
         [F.explain]: built.pd_explain,
         [F.dept]: built.pd_dept,
         [F.group]: built.pd_group,

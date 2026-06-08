@@ -214,8 +214,9 @@ async function runStartupMigrations(database) {
     const { migrateVendorsCollection } = require("./lib/vendorFields");
     await migrateVendorsCollection(database);
     try {
-        const { migrateStoredImagesTo540 } = require("./lib/image540");
+        const { migrateStoredImagesTo540, migrateProductThumbs } = require("./lib/image540");
         await migrateStoredImagesTo540(database);
+        await migrateProductThumbs(database, { limit: 120 });
     } catch (img540Err) {
         console.warn("[thejohn] image540 migrate:", img540Err.message);
     }

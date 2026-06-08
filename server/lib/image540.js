@@ -1,7 +1,10 @@
 const sharp = require("sharp");
 
 const SIZE = 540;
+const THUMB_SIZE = 180;
 const JPEG_QUALITY = 85;
+const THUMB_JPEG_QUALITY = 72;
+const MAX_THUMB_DATA_URL_LEN = 32 * 1024;
 /** 이미 540 JPEG이고 이 크기 이하면 재인코딩 생략 */
 const SKIP_IF_JPEG_BYTES = 120 * 1024;
 
@@ -77,6 +80,51 @@ async function resizeSquare540Contain(dataUrl) {
     } catch (e) {
         console.warn("[image540] logo resize skip:", e.message);
         return raw;
+    }
+}
+
+/** 목록 카드용 180×180 JPEG data URL (~3–8KB) */
+async function makeProductThumbDataUrl(dataUrl) {
+    const raw = String(dataUrl || "").trim();
+    if (!raw || !/^data:image\//i.test(raw)) return "";
+    const parsed = parseDataUrl(raw);
+    if (!parsed) return "";
+    try {
+        const out = await sharp(parsed.buffer)
+            .rotate()
+            .resize(THUMB_SIZE, THUMB_SIZE, { fit: "cover", position: "centre" })
+            .jpeg({ quality: THUMB_JPEG_QUALITY, mozjpeg: true })
+            .toBuffer();
+        const url = toJpegDataUrl(out);
+        return url.length <= MAX_THUMB_DATA_URL_LEN ? url : "";
+    } catch (e) {
+        console.warn("[image540] thumb skip:", e.message);
+        return "";
+    }
+}
+
+/** 저장된 썸네일 data URL → JPEG 바이너리(재인코딩 없음) */
+function jpegBufferFromThumbDataUrl(dataUrl) {
+    const parsed = parseDataUrl(dataUrl);
+    return parsed ? parsed.buffer : null;
+}
+
+/** HTTP 썸네일 응답용 JPEG 바이너리 */
+async function thumbJpegBufferFromDataUrl(dataUrl) {
+    const raw = String(dataUrl || "").trim();
+    if (!raw) return null;
+    if (!/^data:image\//i.test(raw)) return null;
+    const parsed = parseDataUrl(raw);
+    if (!parsed) return null;
+    try {
+        return await sharp(parsed.buffer)
+            .rotate()
+            .resize(THUMB_SIZE, THUMB_SIZE, { fit: "cover", position: "centre" })
+            .jpeg({ quality: THUMB_JPEG_QUALITY, mozjpeg: true })
+            .toBuffer();
+    } catch (e) {
+        console.warn("[image540] thumb buffer skip:", e.message);
+        return null;
     }
 }
 
@@ -166,11 +214,68 @@ async function migrateStoredImagesTo540(db) {
     return report;
 }
 
+/** 기존 상품 — pd_image_thumb 없으면 생성(서버 기동 시 배치) */
+async function migrateProductThumbs(db, opts) {
+    opts = opts || {};
+    const limit = Math.max(1, Math.min(500, Number(opts.limit) || 80));
+    const report = { products: 0, skipped: 0 };
+    const products = db.collection("products");
+    const docs = await products
+        .find({
+            $or: [
+                { pd_has_image: true },
+                { "pd_images.0": { $exists: true, $ne: "" } },
+                { pd_image: { $regex: "^data:image/", $options: "i" } }
+            ],
+            $and: [
+                {
+                    $or: [
+                        { pd_image_thumb: { $exists: false } },
+                        { pd_image_thumb: "" },
+                        { pd_image_thumb: null }
+                    ]
+                }
+            ]
+        })
+        .project({ id: 1, pd_image: 1, pd_images: 1, image: 1, images: 1 })
+        .limit(limit)
+        .toArray();
+
+    const { readImagesFromDoc } = require("./productFields");
+    for (const doc of docs) {
+        const images = readImagesFromDoc(doc);
+        const main = images[0] || "";
+        if (!main) {
+            report.skipped++;
+            continue;
+        }
+        const thumb = await makeProductThumbDataUrl(main);
+        if (!thumb) {
+            report.skipped++;
+            continue;
+        }
+        await products.updateOne(
+            { id: doc.id },
+            { $set: { pd_image_thumb: thumb, updatedAt: Date.now() } }
+        );
+        report.products++;
+    }
+    if (report.products) {
+        console.log("[image540] product thumbs migrated:", report);
+    }
+    return report;
+}
+
 module.exports = {
     SIZE,
+    THUMB_SIZE,
     resizeSquare540Cover,
     resizeSquare540Contain,
+    makeProductThumbDataUrl,
+    jpegBufferFromThumbDataUrl,
+    thumbJpegBufferFromDataUrl,
     normalizeProductImages540,
     normalizeVendorLogo540,
-    migrateStoredImagesTo540
+    migrateStoredImagesTo540,
+    migrateProductThumbs
 };

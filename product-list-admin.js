@@ -83,21 +83,23 @@
     }
 
     function thumbHtml(it) {
-        var cover = String((it && it.pd_image) || "").trim();
-        if (cover) {
+        var thumb = String((it && it.pd_thumb) || "").trim();
+        if (thumb) {
+            var cache = window.THEJHON_PRODUCT_COVER;
+            var src = cache && cache.getCoverSrc ? cache.getCoverSrc(it.id, thumb) : thumb;
             return (
                 '<div class="pl-admin-thumb">' +
                 '<img alt="" loading="lazy" decoding="async" src="' +
-                escapeHtml(cover) +
+                escapeHtml(src) +
                 '">' +
                 "</div>"
             );
         }
-        if (it.pd_has_image) {
+        if (it.pd_has_image && api && api.productThumbUrl) {
             return (
                 '<div class="pl-admin-thumb">' +
-                '<img alt="" loading="lazy" decoding="async" data-pl-cover="' +
-                escapeHtml(it.id) +
+                '<img alt="" loading="lazy" decoding="async" src="' +
+                escapeHtml(api.productThumbUrl(it.id)) +
                 '">' +
                 "</div>"
             );

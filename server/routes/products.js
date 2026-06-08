@@ -49,13 +49,28 @@ function newId() {
 }
 
 function optionalAuth(req) {
-    const token = extractBearer(req);
+    const q = req.query || {};
+    const token =
+        extractBearer(req) || String(q.access || q.token || "").trim();
     if (!token) return null;
     try {
         return verifyToken(token);
     } catch (e) {
         return null;
     }
+}
+
+const thumbBufCache = new Map();
+const THUMB_BUF_CACHE_MAX = 400;
+
+function rememberThumbBuf(productId, buf) {
+    const id = String(productId || "").trim();
+    if (!id || !buf) return;
+    if (thumbBufCache.size >= THUMB_BUF_CACHE_MAX) {
+        const first = thumbBufCache.keys().next().value;
+        thumbBufCache.delete(first);
+    }
+    thumbBufCache.set(id, buf);
 }
 
 async function buildListFindQuery(auth, reqQuery, vendorDoc) {
@@ -245,6 +260,88 @@ router.get("/covers", async function (req, res) {
     } catch (e) {
         console.error("GET /api/products/covers", e);
         res.status(500).json({ ok: false, error: "사진을 불러오지 못했습니다." });
+    }
+});
+
+/**
+ * 목록 카드용 JPEG 썸네일 — 브라우저가 img src로 병렬 로드( JSON/base64 배치 대신 )
+ * 로그인 시 ?access=JWT (img 태그용, 읽기 전용)
+ */
+router.get("/:id/thumb.jpg", async function (req, res) {
+    try {
+        if (!isDbReady()) {
+            return res.status(503).end();
+        }
+        const auth = optionalAuth(req);
+        const vendorDoc = await resolveVendorForAuth(auth);
+        const pid = String(req.params.id || "").trim();
+        if (!pid) {
+            return res.status(404).end();
+        }
+
+        const cached = thumbBufCache.get(pid);
+        if (cached) {
+            res.set("Cache-Control", "public, max-age=604800, immutable");
+            return res.type("image/jpeg").send(cached);
+        }
+
+        const doc = await getDb()
+            .collection("products")
+            .findOne(
+                { id: pid },
+                {
+                    projection: {
+                        id: 1,
+                        pd_image_thumb: 1,
+                        [F.image]: 1,
+                        [F.images]: 1,
+                        pd_image: 1,
+                        pd_images: 1,
+                        [F.registeredBy]: 1
+                    }
+                }
+            );
+        if (!doc) {
+            return res.status(404).end();
+        }
+        if (auth && auth.role === "vendor" && !vendorCanAccessProduct(vendorDoc, doc, auth)) {
+            return res.status(404).end();
+        }
+
+        const {
+            jpegBufferFromThumbDataUrl,
+            thumbJpegBufferFromDataUrl,
+            makeProductThumbDataUrl
+        } = require("../lib/image540");
+        const images = readImagesFromDoc(doc);
+        const main = images[0] || "";
+        const storedThumb = String(doc.pd_image_thumb || "").trim();
+        let buf = storedThumb ? jpegBufferFromThumbDataUrl(storedThumb) : null;
+        if (!buf && main) {
+            buf = await thumbJpegBufferFromDataUrl(main);
+            if (buf && !storedThumb) {
+                makeProductThumbDataUrl(main)
+                    .then(function (thumbUrl) {
+                        if (!thumbUrl) return;
+                        return getDb()
+                            .collection("products")
+                            .updateOne(
+                                { id: doc.id },
+                                { $set: { pd_image_thumb: thumbUrl, updatedAt: Date.now() } }
+                            );
+                    })
+                    .catch(function () {});
+            }
+        }
+        if (!buf) {
+            return res.status(404).end();
+        }
+        rememberThumbBuf(pid, buf);
+        res.set("Cache-Control", "public, max-age=604800, immutable");
+        res.type("image/jpeg").send(buf);
+    } catch (e) {
+        console.error("GET /api/products/:id/thumb.jpg", e);
+        res.status(500).end();
     }
 });
 

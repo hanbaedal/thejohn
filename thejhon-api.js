@@ -146,6 +146,17 @@
                 return (d && d.covers) || {};
             });
         },
+        /** 목록 카드 — JPEG 썸네일 URL(img src 병렬 로드) */
+        productThumbUrl: function (id) {
+            var pid = String(id || "").trim();
+            if (!pid) return "";
+            var url = apiUrl("/api/products/" + encodeURIComponent(pid) + "/thumb.jpg");
+            var token = getToken();
+            if (token) {
+                url += (url.indexOf("?") >= 0 ? "&" : "?") + "access=" + encodeURIComponent(token);
+            }
+            return url;
+        },
         getProduct: function (id) {
             return request("GET", "/api/products/" + encodeURIComponent(id)).then(function (d) {
                 return d.item;
