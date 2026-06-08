@@ -16,13 +16,22 @@
         return window.THEJHON_PRODUCT_COVER;
     }
 
-    function productCoverSrc(it) {
-        if (!it) return "";
+    function productCoverSrc(productId, dataUrl) {
+        var id = "";
+        var raw = "";
+        if (productId && typeof productId === "object") {
+            id = String(productId.id || "").trim();
+            raw = String(dataUrl || productId.pd_thumb || productId.pd_image || "").trim();
+        } else {
+            id = String(productId || "").trim();
+            raw = String(dataUrl || "").trim();
+        }
+        if (!raw) return "";
         var cache = coverCache();
         if (cache && cache.getCoverSrc) {
-            return cache.getCoverSrc(it.id, it.pd_image);
+            return cache.getCoverSrc(id, raw);
         }
-        return String((it && it.pd_image) || "").trim();
+        return raw;
     }
 
     function useOrderCardMode() {
@@ -103,15 +112,20 @@
         }
         if (thumb) {
             var inlineSrc = productCoverSrc(it.id, thumb);
-            return (
-                '<div class="ps-card-photo-wrap">' +
-                '<img class="ps-card-photo" alt=""' +
-                attrs +
-                ' src="' +
-                escapeHtml(inlineSrc) +
-                '">' +
-                "</div>"
-            );
+            if (!inlineSrc && api && api.productThumbUrl) {
+                inlineSrc = api.productThumbUrl(it.id);
+            }
+            if (inlineSrc) {
+                return (
+                    '<div class="ps-card-photo-wrap">' +
+                    '<img class="ps-card-photo" alt=""' +
+                    attrs +
+                    ' src="' +
+                    escapeHtml(inlineSrc) +
+                    '">' +
+                    "</div>"
+                );
+            }
         }
         if (it.pd_has_image && api && api.productThumbUrl) {
             return (
