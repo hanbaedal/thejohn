@@ -78,7 +78,11 @@
                 setStatus(rows.length + "명 담당 집계");
             })
             .catch(function (err) {
-                setStatus((err && err.message) || "조회 실패", true);
+                var msg = (err && err.message) || "조회 실패";
+                if (err && err.data && err.data.detail) {
+                    msg += " — " + err.data.detail;
+                }
+                setStatus(msg, true);
             });
     }
 

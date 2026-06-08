@@ -9,27 +9,57 @@ const { registeredByInFilter, staffLoginIdKey, isLegacyRegisteredBy } = require(
 
 const router = express.Router();
 
-/** 담당 관리자별 건수 — aggregation $trim/$not 호환 이슈 회피 */
+function registeredByKey(loginId) {
+    if (loginId === undefined || loginId === null || loginId === "" || isLegacyRegisteredBy(loginId)) {
+        return "legacy";
+    }
+    return staffLoginIdKey(loginId) || "legacy";
+}
+
+function compareAdminKeys(a, b) {
+    if (a === "legacy") return 1;
+    if (b === "legacy") return -1;
+    try {
+        return a.localeCompare(b, "ko");
+    } catch (localeErr) {
+        return a.localeCompare(b);
+    }
+}
+
+/** 담당 관리자별 건수 — 단순 $group 후 JS 정규화 */
 async function aggregateByRegisteredBy(db, collectionName, field) {
     var out = {};
-    var docs = await db
+    var rows = await db
         .collection(collectionName)
-        .find({}, { projection: { [field]: 1 } })
+        .aggregate([{ $group: { _id: "$" + field, count: { $sum: 1 } } }], { maxTimeMS: 90000 })
         .toArray();
-    docs.forEach(function (doc) {
-        var raw = doc[field];
-        var key =
-            raw === undefined || raw === null || raw === "" || isLegacyRegisteredBy(raw)
-                ? "legacy"
-                : staffLoginIdKey(raw) || "legacy";
-        out[key] = (out[key] || 0) + 1;
+    rows.forEach(function (row) {
+        var key = registeredByKey(row._id);
+        out[key] = (out[key] || 0) + (row.count || 0);
     });
     return out;
 }
 
-function registeredByKey(loginId) {
-    if (!loginId || isLegacyRegisteredBy(loginId)) return "legacy";
-    return staffLoginIdKey(loginId) || "legacy";
+async function safeAggregateByRegisteredBy(db, collectionName, field) {
+    try {
+        return await aggregateByRegisteredBy(db, collectionName, field);
+    } catch (e) {
+        console.error("[db-stats] aggregate", collectionName, field, e.message);
+        return {};
+    }
+}
+
+async function safeCountCollection(db, collectionName) {
+    try {
+        return await db.collection(collectionName).countDocuments();
+    } catch (e) {
+        console.error("[db-stats] count", collectionName, e.message);
+        try {
+            return await db.collection(collectionName).estimatedDocumentCount();
+        } catch (e2) {
+            return 0;
+        }
+    }
 }
 
 router.get("/usage-stats", requireRole("supervisor"), async function (req, res) {
@@ -76,15 +106,24 @@ router.get("/db-stats", requireRole("supervisor"), async function (req, res) {
         var db = getDb();
         var staffList = await db
             .collection("staff")
-            .find({ active: { $ne: false } })
-            .project({ loginId: 1, st_company: 1, role: 1 })
+            .find(
+                { active: { $ne: false } },
+                { projection: { loginId: 1, st_company: 1, role: 1 } }
+            )
             .toArray();
 
-        var productsBy = await aggregateByRegisteredBy(db, "products", PF.registeredBy);
-        var vendorsBy = await aggregateByRegisteredBy(db, "vendors", VF.registeredBy);
-        var vendorNewBy = await aggregateByRegisteredBy(db, "vendor_new", VF.registeredBy);
-        var prospectsBy = await aggregateByRegisteredBy(db, "vendor_prospects", VF.registeredBy);
-        var ordersBy = await aggregateByRegisteredBy(db, "orders", "vendorRegisteredBy");
+        var agg = await Promise.all([
+            safeAggregateByRegisteredBy(db, "products", PF.registeredBy),
+            safeAggregateByRegisteredBy(db, "vendors", VF.registeredBy),
+            safeAggregateByRegisteredBy(db, "vendor_new", VF.registeredBy),
+            safeAggregateByRegisteredBy(db, "vendor_prospects", VF.registeredBy),
+            safeAggregateByRegisteredBy(db, "orders", "vendorRegisteredBy")
+        ]);
+        var productsBy = agg[0];
+        var vendorsBy = agg[1];
+        var vendorNewBy = agg[2];
+        var prospectsBy = agg[3];
+        var ordersBy = agg[4];
 
         var adminKeys = {};
         staffList.forEach(function (s) {
@@ -112,11 +151,7 @@ router.get("/db-stats", requireRole("supervisor"), async function (req, res) {
         });
 
         var byAdmin = Object.keys(adminKeys)
-            .sort(function (a, b) {
-                if (a === "legacy") return 1;
-                if (b === "legacy") return -1;
-                return a.localeCompare(b, "ko");
-            })
+            .sort(compareAdminKeys)
             .map(function (loginId) {
                 return {
                     loginId: loginId,
@@ -135,19 +170,30 @@ router.get("/db-stats", requireRole("supervisor"), async function (req, res) {
                 };
             });
 
+        var counts = await Promise.all([
+            safeCountCollection(db, "products"),
+            safeCountCollection(db, "vendors"),
+            safeCountCollection(db, "vendor_new"),
+            safeCountCollection(db, "vendor_prospects"),
+            safeCountCollection(db, "orders")
+        ]);
         var totals = {
-            products: await db.collection("products").countDocuments(),
-            vendors: await db.collection("vendors").countDocuments(),
-            vendorNew: await db.collection("vendor_new").countDocuments(),
-            vendorProspects: await db.collection("vendor_prospects").countDocuments(),
-            orders: await db.collection("orders").countDocuments(),
+            products: counts[0],
+            vendors: counts[1],
+            vendorNew: counts[2],
+            vendorProspects: counts[3],
+            orders: counts[4],
             staff: staffList.length
         };
 
         return res.json({ ok: true, totals: totals, byAdmin: byAdmin });
     } catch (e) {
         console.error("GET /api/supervisor/db-stats", e);
-        return res.status(500).json({ ok: false, error: "DB 사용 통계를 불러오지 못했습니다." });
+        return res.status(500).json({
+            ok: false,
+            error: "DB 사용 통계를 불러오지 못했습니다.",
+            detail: e && e.message ? String(e.message) : ""
+        });
     }
 });
 
