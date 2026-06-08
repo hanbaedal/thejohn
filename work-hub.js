@@ -51,11 +51,33 @@
         window.location.replace(LOGIN_PAGE + "?next=" + encodeURIComponent(next));
     }
 
+    function refreshHeaderChrome() {
+        if (typeof window.__thejhonRefreshHeaderCompany === "function") {
+            try {
+                window.__thejhonRefreshHeaderCompany();
+            } catch (e) {}
+        }
+    }
+
     function syncAuthFromSession(sess) {
         var Auth = window.THEJHON_AUTH;
         if (!Auth || !sess || !sess.loggedIn) return;
         if (Auth.syncRoleFromSession) Auth.syncRoleFromSession(sess);
         if (Auth.syncStaffOrderEnabledFromSession) Auth.syncStaffOrderEnabledFromSession(sess);
+        if (Auth.syncSessionCompanyFromApi) Auth.syncSessionCompanyFromApi(sess);
+    }
+
+    /** sessionStorage·토큰 — API 대기 없이 메뉴 표시 */
+    function buildSessionFromAuth() {
+        var Auth = window.THEJHON_AUTH;
+        if (!Auth || !Auth.getWorkHubAccess) return null;
+        var access = Auth.getWorkHubAccess();
+        if (!access || !access.allowed) return null;
+        return {
+            loggedIn: true,
+            role: Auth.getRole ? Auth.getRole() : access.role,
+            staffOrderEnabled: Auth.isStaffOrderEnabled ? Auth.isStaffOrderEnabled() : false
+        };
     }
 
     function itemMap() {
@@ -147,30 +169,58 @@
             hint += orderOn ? " (주문 권한 있음)" : " (주문 권한 없음)";
         }
         setStatus(hint, false);
+        refreshHeaderChrome();
+    }
+
+    function onRemoteSession(sess) {
+        if (sess && sess.code === "SESSION_INVALID") {
+            setStatus(sess.error || "세션이 만료되었습니다.", true);
+            goLogin();
+            return;
+        }
+        if (sess && sess.loggedIn) {
+            applySession(sess);
+        }
     }
 
     function load() {
         var Api = window.THEJHON_API;
-        if (!Api || !Api.checkSession || !Api.getToken || !Api.getToken()) {
+        var Auth = window.THEJHON_AUTH;
+
+        if (!Api || !Api.getToken || !Api.getToken()) {
             setStatus("로그인이 필요합니다.", true);
             goLogin();
             return;
         }
 
-        setStatus("메뉴 불러오는 중…", false);
+        var access = Auth && Auth.getWorkHubAccess ? Auth.getWorkHubAccess() : { allowed: false };
+        if (!access.allowed) {
+            setStatus(access.reason || "로그인이 필요합니다.", true);
+            goLogin();
+            return;
+        }
 
-        Api.checkSession()
-            .then(function (sess) {
-                if (sess && sess.code === "SESSION_INVALID") {
-                    setStatus(sess.error || "세션이 만료되었습니다.", true);
-                    goLogin();
-                    return;
-                }
-                applySession(sess);
-            })
-            .catch(function (err) {
-                setStatus((err && err.message) || "권한 확인에 실패했습니다.", true);
-            });
+        var cached = buildSessionFromAuth();
+        if (cached) {
+            applySession(cached);
+        } else {
+            setStatus("메뉴 불러오는 중…", false);
+        }
+
+        window.addEventListener("thejhon-auth-permissions-updated", function () {
+            var local = buildSessionFromAuth();
+            if (local) applySession(local);
+        });
+
+        if (Auth && Auth.refreshSessionPermissionsAsync) {
+            Auth.refreshSessionPermissionsAsync()
+                .then(onRemoteSession)
+                .catch(function (err) {
+                    if (!cached) {
+                        setStatus((err && err.message) || "권한 확인에 실패했습니다.", true);
+                    }
+                });
+        }
     }
 
     if (document.readyState === "loading") {

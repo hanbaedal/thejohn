@@ -2183,6 +2183,27 @@
         if (!isLoggedIn() || !usesStaffLogoRole()) return Promise.resolve(null);
         if (!global.THEJHON_API || !THEJHON_API.getStaffProfile) return Promise.resolve(null);
         if (!THEJHON_API.getToken || !THEJHON_API.getToken()) return Promise.resolve(null);
+
+        if (currentPageFile() === WORK_HUB_PAGE) {
+            var hubLabel =
+                String(getLoggedInCompanyDisplayName() || "").trim() ||
+                String(getBrandCompanyDisplayName() || "").trim();
+            var hubLogo = String(authGet(STAFF_LOGO_KEY) || "").trim();
+            if (hubLabel && hubLogo) {
+                if (typeof global.__thejhonApplySiteLogo === "function") {
+                    try {
+                        global.__thejhonApplySiteLogo(hubLogo, hubLabel);
+                    } catch (eHubLogo) {}
+                }
+                if (typeof global.__thejhonRefreshHeaderCompany === "function") {
+                    try {
+                        global.__thejhonRefreshHeaderCompany();
+                    } catch (eHubCo) {}
+                }
+                return Promise.resolve(null);
+            }
+        }
+
         var role = getRole();
         var chain = Promise.resolve(null);
         if (role === "vendor" && refreshVendorCompanyFromProfileAsync) {

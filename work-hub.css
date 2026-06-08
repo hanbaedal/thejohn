@@ -27,8 +27,20 @@ body.page-work-hub .site-header > .site-header-actions {
 }
 
 body.page-work-hub .site-header-brand {
+    display: flex;
+    align-items: center;
+    gap: 0.65rem;
     flex: 1 1 auto;
     min-width: 0;
+}
+
+body.page-work-hub .header-session-company--hub:not([hidden]) {
+    display: block;
+    flex: 1 1 auto;
+    min-width: 0;
+    padding: 0;
+    max-width: none;
+    font-size: clamp(0.8125rem, 2.8vw, 1rem);
 }
 
 body.page-work-hub .header-session-company--wide,
