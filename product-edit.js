@@ -24,7 +24,9 @@
     var deptHidden = document.getElementById("pe-pd-dept");
     var codeInput = document.getElementById("pe-pd-code");
     var nameInput = document.getElementById("pe-pd-name");
-    var photoGallery = null;
+    var photoPreview = document.getElementById("pe-photo-preview");
+    var photoPicker = null;
+    var pendingImageData = "";
     var explainInput = document.getElementById("pe-pd-explain");
     var price1Input = document.getElementById("pe-pd-price1");
     var price2Input = document.getElementById("pe-pd-price2");
@@ -54,8 +56,23 @@
         return catalog ? catalog.normalizeDept(it.pd_dept) : "";
     }
 
-    function getPendingImages() {
-        return photoGallery ? photoGallery.getImages() : [];
+    function updatePhotoPreview(src) {
+        if (PF && PF.showImagePreview) {
+            PF.showImagePreview(photoPreview, src);
+            return;
+        }
+        if (!photoPreview) return;
+        if (src) {
+            photoPreview.src = src;
+            photoPreview.removeAttribute("hidden");
+        } else {
+            photoPreview.removeAttribute("src");
+            photoPreview.setAttribute("hidden", "");
+        }
+    }
+
+    function getPendingImage() {
+        return pendingImageData || "";
     }
 
     function showSaveModal() {
@@ -76,32 +93,33 @@
         });
     }
 
-    function applyProductImages(imgs) {
-        if (photoGallery) photoGallery.setImages(imgs || []);
+    function applyProductImage(src) {
+        pendingImageData = src || "";
+        updatePhotoPreview(pendingImageData);
     }
 
-    function loadImagesForItem(it) {
-        var imgs = [];
+    function loadImageForItem(it) {
+        var src = "";
         if (Array.isArray(it.pd_images) && it.pd_images.length) {
-            imgs = it.pd_images.filter(Boolean);
+            src = String(it.pd_images[0] || "").trim();
         } else if (it.pd_image) {
-            imgs = [it.pd_image];
+            src = String(it.pd_image || "").trim();
         }
-        if (imgs.length) {
-            applyProductImages(imgs);
+        if (src) {
+            applyProductImage(src);
             return Promise.resolve();
         }
         if (!it.pd_has_image && !(it.pd_image_count > 0)) {
-            applyProductImages([]);
+            applyProductImage("");
             return Promise.resolve();
         }
         return api
-            .get("api/products/" + encodeURIComponent(it.id) + "/images")
+            .get("api/products/" + encodeURIComponent(it.id) + "/cover")
             .then(function (data) {
-                applyProductImages((data && data.images) || []);
+                applyProductImage((data && data.pd_image) || "");
             })
             .catch(function () {
-                applyProductImages([]);
+                applyProductImage("");
             });
     }
 
@@ -109,7 +127,9 @@
         if (!form) return;
         form.reset();
         editIdInput.value = "";
-        if (photoGallery) photoGallery.clear();
+        pendingImageData = "";
+        updatePhotoPreview("");
+        if (photoPicker) photoPicker.clear();
         if (nameDupCheck) nameDupCheck.reset();
         if (codeDupCheck) codeDupCheck.reset();
         if (deptPicker) deptPicker.clear();
@@ -129,11 +149,13 @@
         perNameInput.value = it.per_name || "";
         perNumberInput.value = it["per-number"] || "";
         perEmailInput.value = it["per-email"] || "";
-        if (photoGallery) photoGallery.clear();
+        pendingImageData = "";
+        updatePhotoPreview("");
+        if (photoPicker) photoPicker.clear();
         if (deptPicker) deptPicker.setValue(itemDept(it));
         if (nameDupCheck) nameDupCheck.reset();
         if (codeDupCheck) codeDupCheck.reset();
-        return loadImagesForItem(it).then(function () {
+        return loadImageForItem(it).then(function () {
             setStatus("수정 중: " + (it.pd_name || ""));
         });
     }
@@ -204,20 +226,22 @@
         });
     }
 
-    if (PF && PF.initProductPhotoGallery) {
-        photoGallery = PF.initProductPhotoGallery({
-            slotsRoot: document.getElementById("pe-photo-gallery"),
-            countEl: document.getElementById("pe-photo-count"),
-            hintEl: document.getElementById("pe-photo-hint"),
+    function handlePhotoFile(dataUrl) {
+        pendingImageData = dataUrl;
+        updatePhotoPreview(dataUrl);
+        setStatus("사진을 540×540·1MB 이하로 맞춰 적용했습니다.");
+    }
+
+    if (PF && PF.initProductPhotoPicker) {
+        photoPicker = PF.initProductPhotoPicker({
             galleryInput: document.getElementById("pe-pd-image-gallery"),
             cameraInput: document.getElementById("pe-pd-image-camera"),
             btnGallery: document.getElementById("pe-photo-gallery-btn"),
             btnCamera: document.getElementById("pe-photo-camera-btn"),
+            processOptions: PF.PRODUCT_IMAGE_PROCESS_OPTIONS,
+            onSelect: handlePhotoFile,
             onError: function (err) {
                 setStatus((err && err.message) || "이미지 오류", true);
-            },
-            onStatus: function (msg) {
-                setStatus(msg, false);
             }
         });
     }
@@ -229,7 +253,7 @@
             setStatus("상품을 찾을 수 없습니다. 리스트에서 다시 선택해 주세요.", true);
             return;
         }
-        var imgs = getPendingImages();
+        var img = getPendingImage();
         var body = {
             pd_code: codeInput ? codeInput.value.trim() : "",
             pd_name: nameInput.value.trim(),
@@ -241,8 +265,8 @@
             pd_price2: PF.parsePriceInput(price2Input),
             pd_price3: PF.parsePriceInput(price3Input),
             pd_price4: PF.parsePriceInput(price4Input),
-            pd_images: imgs,
-            pd_image: imgs[0] || "",
+            pd_image: img,
+            pd_images: img ? [img] : [],
             per_name: perNameInput.value.trim(),
             "per-number": perNumberInput.value.trim(),
             "per-email": perEmailInput.value.trim()

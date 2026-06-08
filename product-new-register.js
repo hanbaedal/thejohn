@@ -121,6 +121,7 @@
             pd_price3: PF.parsePriceInput(price3Input),
             pd_price4: PF.parsePriceInput(price4Input),
             pd_image: pendingImageData || "",
+            pd_images: pendingImageData ? [pendingImageData] : [],
             pd_record_type: "new",
             per_name: perNameInput ? perNameInput.value.trim() : "",
             "per-number": perNumberInput ? perNumberInput.value.trim() : "",

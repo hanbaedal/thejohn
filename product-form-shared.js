@@ -397,7 +397,7 @@
         };
     }
 
-    var MAX_PRODUCT_PHOTOS = 5;
+    var MAX_PRODUCT_PHOTOS = 1;
 
     function hasProductImages(data) {
         if (!data) return false;
@@ -410,7 +410,7 @@
     }
 
     /**
-     * 상품 사진 최대 5장 — 슬롯 미리보기·삭제, 앨범/카메라로 추가
+     * 상품 사진 1장 — 슬롯 미리보기·삭제, 앨범/카메라로 선택
      * options: { slotsRoot, countEl, hintEl, btnGallery, btnCamera, galleryInput, cameraInput,
      *   maxPhotos?, onChange(images[]), onError(err), onStatus?(msg) }
      */
@@ -426,19 +426,17 @@
 
         function notify() {
             if (countEl) {
-                countEl.textContent = images.length + " / " + maxPhotos + "장";
+                countEl.textContent = images.length ? "1장 등록됨" : "사진 없음";
             }
             if (hintEl) {
                 hintEl.textContent =
                     images.length >= maxPhotos
-                        ? "최대 " + maxPhotos + "장까지 등록할 수 있습니다. 삭제 후 다시 추가할 수 있습니다."
-                        : "앨범·카메라로 추가하면 " +
+                        ? "등록된 사진을 삭제한 뒤 다시 선택할 수 있습니다."
+                        : "앨범·카메라로 선택하면 " +
                           PRODUCT_IMAGE_PIXEL_SIZE +
                           "×" +
                           PRODUCT_IMAGE_PIXEL_SIZE +
-                          "·1MB 이하로 자동 맞춥니다. (최대 " +
-                          maxPhotos +
-                          "장)";
+                          "·1MB 이하로 자동 맞춥니다.";
             }
             if (typeof onChange === "function") onChange(images.slice());
         }
@@ -487,11 +485,10 @@
             processOptions: options.processOptions || PRODUCT_IMAGE_PROCESS_OPTIONS,
             onSelect: function (dataUrl) {
                 if (images.length >= maxPhotos) {
-                    var err = new Error("상품 사진은 최대 " + maxPhotos + "장까지 등록할 수 있습니다.");
-                    if (options.onError) options.onError(err);
-                    return;
+                    images = [dataUrl];
+                } else {
+                    images.push(dataUrl);
                 }
-                images.push(dataUrl);
                 renderSlots();
                 onStatus("사진을 추가했습니다. (" + images.length + "/" + maxPhotos + ")");
             },
@@ -751,7 +748,7 @@
             return "신규 등록 시 상품 사진을 1장 이상 선택해 주세요.";
         }
         if (Array.isArray(data.pd_images) && data.pd_images.length > MAX_PRODUCT_PHOTOS) {
-            return "상품 사진은 최대 " + MAX_PRODUCT_PHOTOS + "장까지 등록할 수 있습니다.";
+            return "상품 사진은 1장만 등록할 수 있습니다.";
         }
         return "";
     }

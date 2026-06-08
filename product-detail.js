@@ -133,7 +133,7 @@
         return !!(it.pd_has_image || (it.pd_image_count && it.pd_image_count > 0));
     }
 
-    /** 사진은 항상 /images API로 전체 로드(여러 장·pd_image 1장만 표시 방지) */
+    /** 사진 1장 — /cover API */
     function heroHtml(it) {
         if (productHasPhoto(it)) {
             return (
@@ -214,64 +214,6 @@
         });
     }
 
-    function getHeroMetrics(scrollEl) {
-        var slide = scrollEl.querySelector(".pd-hero-slide");
-        var step = slide ? slide.offsetWidth || scrollEl.clientWidth : scrollEl.clientWidth;
-        var count = scrollEl.querySelectorAll(".pd-hero-slide").length;
-        return { step: step || 0, count: count };
-    }
-
-    function getHeroSlideIndex(scrollEl, metrics) {
-        var m = metrics || getHeroMetrics(scrollEl);
-        if (!m.step || !m.count) return 0;
-        var idx = Math.round(scrollEl.scrollLeft / m.step);
-        if (idx < 0) idx = 0;
-        if (idx >= m.count) idx = m.count - 1;
-        return idx;
-    }
-
-    function scrollHeroToIndex(scrollEl, index, behavior) {
-        var m = getHeroMetrics(scrollEl);
-        if (!m.count || !m.step) return;
-        var i = ((index % m.count) + m.count) % m.count;
-        scrollEl.scrollTo({ left: i * m.step, behavior: behavior || "smooth" });
-    }
-
-    /** 좌·우 클릭 시 끝에서도 처음·끝으로 순환 */
-    function scrollHeroBySlide(scrollEl, direction) {
-        if (!scrollEl || !direction) return;
-        var m = getHeroMetrics(scrollEl);
-        if (!m.count || !m.step) return;
-        var current = getHeroSlideIndex(scrollEl, m);
-        var next = current + direction;
-        var wraps = next < 0 || next >= m.count;
-        if (next < 0) next = m.count - 1;
-        if (next >= m.count) next = 0;
-        scrollHeroToIndex(scrollEl, next, wraps ? "auto" : "smooth");
-    }
-
-    function attachHeroClickZones(wrap, scrollEl, count) {
-        if (!wrap || !scrollEl || count < 2) return;
-        var prev = document.createElement("button");
-        prev.type = "button";
-        prev.className = "pd-hero-zone pd-hero-zone--prev";
-        prev.setAttribute("aria-label", "이전 사진");
-        var next = document.createElement("button");
-        next.type = "button";
-        next.className = "pd-hero-zone pd-hero-zone--next";
-        next.setAttribute("aria-label", "다음 사진");
-        prev.addEventListener("click", function (e) {
-            e.preventDefault();
-            scrollHeroBySlide(scrollEl, -1);
-        });
-        next.addEventListener("click", function (e) {
-            e.preventDefault();
-            scrollHeroBySlide(scrollEl, 1);
-        });
-        wrap.appendChild(prev);
-        wrap.appendChild(next);
-    }
-
     function loadProductGalleries(container) {
         if (!api || !api.get || !container) return;
         container.querySelectorAll("article[data-product-id]").forEach(function (article) {
@@ -281,43 +223,28 @@
             if (!id) return;
             var wrap = el.closest(".pd-hero-wrap");
             if (!wrap || !wrap.contains(el)) return;
-            api.get("api/products/" + encodeURIComponent(id) + "/images")
+            api.get("api/products/" + encodeURIComponent(id) + "/cover")
                 .then(function (data) {
                     if (!document.body.contains(article)) return;
-                    var imgs = (data && data.images) || [];
-                    if (!imgs.length) {
-                        el.textContent = "사진 없음";
-                        return;
-                    }
+                    var src = data && data.pd_image ? String(data.pd_image) : "";
                     var liveWrap = el.closest(".pd-hero-wrap");
                     if (!liveWrap || liveWrap !== wrap) return;
-                    liveWrap.innerHTML = "";
-                    var scroll = document.createElement("div");
-                    scroll.className = "pd-hero-scroll";
-                    scroll.setAttribute("role", "region");
-                    scroll.setAttribute("aria-label", "상품 사진");
-                    imgs.forEach(function (src, i) {
-                        var slide = document.createElement("div");
-                        slide.className = "pd-hero-slide";
-                        var img = document.createElement("img");
-                        img.className = "pd-hero-img";
-                        img.alt = "상품 사진 " + (i + 1);
-                        img.src = src;
-                        slide.appendChild(img);
-                        scroll.appendChild(slide);
-                    });
-                    liveWrap.appendChild(scroll);
-                    if (imgs.length > 1) {
-                        attachHeroClickZones(liveWrap, scroll, imgs.length);
-                        var hint = document.createElement("p");
-                        hint.className = "pd-hero-scroll-hint";
-                        hint.textContent =
-                            "사진 왼쪽·오른쪽을 누르거나 좌우로 밀어 넘겨 보세요";
-                        liveWrap.appendChild(hint);
+                    if (!src) {
+                        el.textContent = "사진 없음";
+                        el.classList.add("pd-hero-img--empty");
+                        return;
                     }
+                    var img = document.createElement("img");
+                    img.className = "pd-hero-img";
+                    img.alt = "상품 사진";
+                    img.src = src;
+                    liveWrap.innerHTML = "";
+                    liveWrap.appendChild(img);
                 })
                 .catch(function () {
-                    if (document.body.contains(el)) el.textContent = "사진 없음";
+                    if (!document.body.contains(article)) return;
+                    el.textContent = "사진 없음";
+                    el.classList.add("pd-hero-img--empty");
                 });
         });
     }

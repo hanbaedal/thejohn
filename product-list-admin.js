@@ -82,16 +82,6 @@
         );
     }
 
-    function photoCountLabel(it) {
-        var n = Number(it.pd_image_count);
-        if (!it.pd_has_image || !isFinite(n) || n < 1) return "";
-        return (
-            '<span class="pl-photo-count">' +
-            (n > 1 ? n + "장" : "1장") +
-            "</span>"
-        );
-    }
-
     function thumbHtml(it) {
         if (it.pd_has_image) {
             return (
@@ -99,7 +89,6 @@
                 '<img alt="" loading="lazy" data-pl-cover="' +
                 escapeHtml(it.id) +
                 '">' +
-                photoCountLabel(it) +
                 "</div>"
             );
         }

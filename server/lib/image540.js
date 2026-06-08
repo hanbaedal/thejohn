@@ -114,10 +114,14 @@ async function migrateStoredImagesTo540(db) {
         const { readImagesFromDoc, F } = require("./productFields");
         const before = readImagesFromDoc(doc);
         if (!before.length) continue;
-        const after = await normalizeProductImages540(before);
-        const changed = after.some(function (u, i) {
-            return u !== before[i];
-        });
+        let after = await normalizeProductImages540(before);
+        after = after.slice(0, 1);
+        const beforeOne = before.slice(0, 1);
+        const changed =
+            after.length !== beforeOne.length ||
+            after.some(function (u, i) {
+                return u !== beforeOne[i];
+            });
         if (!changed) continue;
         await products.updateOne(
             { id: doc.id },

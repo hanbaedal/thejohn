@@ -185,7 +185,7 @@ router.get("/", async (req, res) => {
     }
 });
 
-/** 상품 사진 전체(최대 5장) — 상세·수정 폼용 */
+/** 상품 사진 전체(호환) — 최대 1장 */
 router.get("/:id/images", async function (req, res) {
     try {
         const auth = optionalAuth(req);
@@ -221,7 +221,7 @@ router.get("/:id/images", async function (req, res) {
     }
 });
 
-/** 목록 썸네일 — index 쿼리(0~4)로 해당 장 반환 */
+/** 목록·상세 썸네일 — 대표 사진 1장 */
 router.get("/:id/cover", async function (req, res) {
     try {
         const auth = optionalAuth(req);
