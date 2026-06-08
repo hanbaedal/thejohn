@@ -184,6 +184,11 @@ async function runStartupMigrations(database) {
         { pd_registered_by: 1, updatedAt: -1 },
         { name: "products_registered_by_updated" }
     );
+    await safeCreateIndex(
+        database.collection("products"),
+        { pd_dept: 1, updatedAt: -1 },
+        { name: "products_dept_updated" }
+    );
     const { migrateProductsCollection } = require("./lib/productFields");
     await migrateProductsCollection(database);
     await safeCreateIndex(database.collection("vendors"), { id: 1 }, { unique: true });

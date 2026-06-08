@@ -431,9 +431,10 @@ function ensureProductId(doc) {
     return "pr_" + Date.now().toString(36) + "_" + Math.random().toString(36).slice(2, 8);
 }
 
-/** 목록 API — 이미지 본문 없이 pd_has_image 만 정확히 계산 */
+/** 목록 API — 사진·설명 본문 제외(대용량 base64 $strLenCP 방지) */
 async function findProductsForList(db, query, opts) {
     opts = opts || {};
+    const fullExplain = !!opts.fullExplain;
     const imgKey = F.image;
     const pipeline = [
         { $match: query || {} },
@@ -449,31 +450,7 @@ async function findProductsForList(db, query, opts) {
                                 { $eq: ["$pd_has_image", false] },
                                 false,
                                 {
-                                    $or: [
-                                        {
-                                            $gt: [
-                                                {
-                                                    $size: {
-                                                        $ifNull: ["$pd_images", []]
-                                                    }
-                                                },
-                                                0
-                                            ]
-                                        },
-                                        {
-                                            $gt: [
-                                                {
-                                                    $strLenCP: {
-                                                        $ifNull: [
-                                                            "$" + imgKey,
-                                                            { $ifNull: ["$pd_image", ""] }
-                                                        ]
-                                                    }
-                                                },
-                                                0
-                                            ]
-                                        }
-                                    ]
+                                    $gt: [{ $size: { $ifNull: ["$pd_images", []] } }, 0]
                                 }
                             ]
                         }
@@ -482,8 +459,20 @@ async function findProductsForList(db, query, opts) {
             }
         }
     ];
+    const projectExclude = {
+        [imgKey]: 0,
+        pd_images: 0,
+        pd_image: 0,
+        images: 0,
+        image: 0
+    };
+    if (!fullExplain) {
+        projectExclude[F.explain] = 0;
+        projectExclude.pd_explain = 0;
+        projectExclude.content = 0;
+    }
     if (!opts.includeCover) {
-        pipeline.push({ $project: { [imgKey]: 0, pd_images: 0, pd_image: 0, images: 0, image: 0 } });
+        pipeline.push({ $project: projectExclude });
     }
     return db.collection("products").aggregate(pipeline).toArray();
 }

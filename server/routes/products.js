@@ -140,7 +140,7 @@ router.get("/", async (req, res) => {
             }
         }
         const fullExplain = req.query.fullExplain === "1";
-        /** 사진은 기본 제외 — 프론트에서 /covers API로 10개 단위 로드 */
+        /** 사진은 기본 제외 — 프론트에서 /covers API로 5개 단위 로드 */
         const includeCover = req.query.includeCover === "1";
         const items = await findProductsForList(getDb(), query, { includeCover: includeCover });
         const rows = [];

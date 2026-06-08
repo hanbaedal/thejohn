@@ -33,7 +33,7 @@
         return out;
     }
 
-    var DEFAULT_BATCH_SIZE = 10;
+    var DEFAULT_BATCH_SIZE = 5;
 
     /**
      * 상품 cover API를 batchSize(기본 10)개씩 순차 호출

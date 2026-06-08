@@ -10,7 +10,7 @@
     var lastItemsById = {};
     var lastOrderCardMode = null;
     var coverLoadToken = 0;
-    var COVER_BATCH_SIZE = 10;
+    var COVER_BATCH_SIZE = 5;
     var deptItemsCache = Object.create(null);
 
     function coverCache() {
