@@ -317,6 +317,16 @@ function buildFromBody(body, existing) {
     };
 }
 
+/** 저장 직전 — 상품 사진을 540×540 JPEG로 통일 */
+async function finalizeProductBuilt(built) {
+    if (!built) return built;
+    const { normalizeProductImages540 } = require("./image540");
+    const imgs = await normalizeProductImages540(built.pd_images);
+    built.pd_images = imgs;
+    built.pd_image = imgs[0] || "";
+    return built;
+}
+
 function toDbDoc(id, built, existing) {
     const doc = {
         id,
@@ -567,6 +577,7 @@ module.exports = {
     normalizeImagesFromBody,
     MAX_PRODUCT_IMAGES,
     buildFromBody,
+    finalizeProductBuilt,
     toDbDoc,
     validateBuilt,
     findDuplicateProductByName,

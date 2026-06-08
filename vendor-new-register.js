@@ -216,7 +216,7 @@
     function handleLogoFile(dataUrl) {
         pendingLogoData = dataUrl;
         updateLogoPreview(dataUrl);
-        setStatus("로고를 1:1·1MB 이하로 맞춰 적용했습니다.");
+        setStatus("로고를 540×540·1MB 이하로 맞춰 적용했습니다.");
     }
 
     if (PF && PF.initProductPhotoPicker) {
@@ -225,6 +225,7 @@
             cameraInput: document.getElementById("vr-logo-camera"),
             btnGallery: document.getElementById("vr-logo-gallery-btn"),
             btnCamera: document.getElementById("vr-logo-camera-btn"),
+            processOptions: PF.VENDOR_LOGO_PROCESS_OPTIONS,
             onSelect: handleLogoFile,
             onError: function (err) {
                 setStatus((err && err.message) || "로고 오류", true);

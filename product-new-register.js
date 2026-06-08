@@ -89,7 +89,7 @@
     function handlePhotoFile(dataUrl) {
         pendingImageData = dataUrl;
         updatePhotoPreview(dataUrl);
-        setStatus("사진을 1:1·1MB 이하로 맞춰 적용했습니다.");
+        setStatus("사진을 540×540·1MB 이하로 맞춰 적용했습니다.");
     }
 
     if (PF && PF.initProductPhotoPicker) {
@@ -98,6 +98,7 @@
             cameraInput: document.getElementById("pr-pd-image-camera"),
             btnGallery: document.getElementById("pr-photo-gallery-btn"),
             btnCamera: document.getElementById("pr-photo-camera-btn"),
+            processOptions: PF.PRODUCT_IMAGE_PROCESS_OPTIONS,
             onSelect: handlePhotoFile,
             onError: function (err) {
                 setStatus((err && err.message) || "이미지 오류", true);

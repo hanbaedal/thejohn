@@ -5,6 +5,7 @@ const { isReservedStaffLoginId } = require("../lib/staff");
 const {
     toPublic,
     buildFromBody,
+    finalizeVendorBuilt,
     toDbDoc,
     validateBuilt,
     validateLoginIdLength,
@@ -150,6 +151,7 @@ router.post("/", requireRole("supervisor", "admin"), async function (req, res) {
 
         const body = Object.assign({}, req.body, { vn_record_type: "new" });
         const built = buildFromBody(body, null, loginId, password);
+        await finalizeVendorBuilt(built);
         const err = validateBuilt(built, true);
         if (err) return res.status(400).json({ ok: false, error: err });
 
@@ -216,6 +218,7 @@ router.put("/:id", requireRole("supervisor", "admin"), async function (req, res)
 
         const body = Object.assign({}, req.body, { vn_record_type: "new" });
         const built = buildFromBody(body, existing, loginId, password);
+        await finalizeVendorBuilt(built);
         const err = validateBuilt(built, false);
         if (err) return res.status(400).json({ ok: false, error: err });
 
@@ -283,6 +286,7 @@ router.post("/:id/promote-to-vendor", requireRole("supervisor", "admin"), async 
 
         const body = Object.assign({}, req.body, { vn_record_type: "partner" });
         const built = buildFromBody(body, existing, loginId, password);
+        await finalizeVendorBuilt(built);
         built.vn_depts = filterPartnerDepts(built.vn_depts);
         const deptErr = validatePartnerDeptsForRegister(built.vn_depts);
         if (deptErr) return res.status(400).json({ ok: false, error: deptErr });

@@ -290,6 +290,14 @@ function buildFromBody(body, existing, loginId, password) {
     return built;
 }
 
+/** 저장 직전 — 업체 로고를 540×540 JPEG로 통일 */
+async function finalizeVendorBuilt(built) {
+    if (!built || !built.vn_logo) return built;
+    const { normalizeVendorLogo540 } = require("./image540");
+    built.vn_logo = await normalizeVendorLogo540(built.vn_logo);
+    return built;
+}
+
 function toDbDoc(id, built, existing) {
     const passwordPlain = built.passwordPlain || "";
     const doc = {
@@ -497,6 +505,7 @@ module.exports = {
     fromLegacyDoc,
     toPublic,
     buildFromBody,
+    finalizeVendorBuilt,
     toDbDoc,
     validateBuilt,
     validateLoginIdLength,

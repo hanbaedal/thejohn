@@ -208,6 +208,12 @@ async function runStartupMigrations(database) {
     await reconcileRegisteredByCase(database);
     const { migrateVendorsCollection } = require("./lib/vendorFields");
     await migrateVendorsCollection(database);
+    try {
+        const { migrateStoredImagesTo540 } = require("./lib/image540");
+        await migrateStoredImagesTo540(database);
+    } catch (img540Err) {
+        console.warn("[thejohn] image540 migrate:", img540Err.message);
+    }
     const { ensureProspectIndexes } = require("./lib/vendorProspects");
     await ensureProspectIndexes(database);
     const { ensureVendorNewIndexes } = require("./lib/vendorNew");

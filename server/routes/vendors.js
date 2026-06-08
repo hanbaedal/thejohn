@@ -6,6 +6,7 @@ const { isReservedStaffLoginId } = require("../lib/staff");
 const {
     toPublic,
     buildFromBody,
+    finalizeVendorBuilt,
     toDbDoc,
     validateBuilt,
     validateLoginIdLength,
@@ -174,6 +175,7 @@ router.post("/", requireRole("supervisor", "admin"), async (req, res) => {
         }
 
         const built = buildFromBody(req.body, null, loginId, password);
+        await finalizeVendorBuilt(built);
         const err = validateBuilt(built, true);
         if (err) return res.status(400).json({ ok: false, error: err });
 
@@ -239,6 +241,7 @@ router.put("/:id", requireRole("supervisor", "admin"), async (req, res) => {
         }
 
         const built = buildFromBody(req.body, existing, loginId, password);
+        await finalizeVendorBuilt(built);
         const err = validateBuilt(built, false);
         if (err) return res.status(400).json({ ok: false, error: err });
 

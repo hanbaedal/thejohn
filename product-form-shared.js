@@ -3,6 +3,10 @@
  */
 (function (global) {
     var MAX_IMAGE_BYTES = 1 * 1024 * 1024;
+    /** 상품 사진 — 등록·수정 시 540×540 JPEG로만 저장 (원본 파일은 서버에 올리지 않음) */
+    var PRODUCT_IMAGE_PIXEL_SIZE = 540;
+    /** 업체(거래처) 로고 — 등록 시 540×540으로 저장 */
+    var VENDOR_LOGO_PIXEL_SIZE = 540;
     /** 관리자 로고 — 저장 시 항상 이 크기(정사각)로 변환 */
     var STAFF_LOGO_PIXEL_SIZE = 512;
     /** 관리자 도장 — 거래명세서용 douzone-seal.png 와 동일 160×160 정사각 */
@@ -264,6 +268,20 @@
         });
     }
 
+    var PRODUCT_IMAGE_PROCESS_OPTIONS = {
+        maxDimension: PRODUCT_IMAGE_PIXEL_SIZE,
+        fixedDimension: true,
+        fit: "cover",
+        maxBytes: MAX_IMAGE_BYTES
+    };
+
+    var VENDOR_LOGO_PROCESS_OPTIONS = {
+        maxDimension: VENDOR_LOGO_PIXEL_SIZE,
+        fixedDimension: true,
+        fit: "contain",
+        maxBytes: MAX_IMAGE_BYTES
+    };
+
     var STAFF_LOGO_PROCESS_OPTIONS = {
         maxDimension: STAFF_LOGO_PIXEL_SIZE,
         fixedDimension: true,
@@ -315,12 +333,12 @@
     }
 
     function readFileAsDataURL(file) {
-        return processImageFileToSquareDataURL(file);
+        return processImageFileToSquareDataURL(file, PRODUCT_IMAGE_PROCESS_OPTIONS);
     }
 
     /**
      * 모바일: 앨범·파일 선택 / 카메라 촬영 (hidden file input 2개)
-     * 앨범·카메라 모두 동일하게 1:1·1MB 이하로 변환 후 onSelect(dataUrl, file) 호출
+     * 앨범·카메라 모두 processOptions 크기(기본 540×540)·1MB 이하로 변환 후 onSelect(dataUrl, file) 호출
      * options: { galleryInput, cameraInput, btnGallery, btnCamera, onSelect(dataUrl, file), onError(err) }
      */
     function initProductPhotoPicker(options) {
@@ -414,7 +432,11 @@
                 hintEl.textContent =
                     images.length >= maxPhotos
                         ? "최대 " + maxPhotos + "장까지 등록할 수 있습니다. 삭제 후 다시 추가할 수 있습니다."
-                        : "앨범·카메라로 추가하면 1:1 정사각형·1MB 이하로 자동 맞춥니다. (최대 " +
+                        : "앨범·카메라로 추가하면 " +
+                          PRODUCT_IMAGE_PIXEL_SIZE +
+                          "×" +
+                          PRODUCT_IMAGE_PIXEL_SIZE +
+                          "·1MB 이하로 자동 맞춥니다. (최대 " +
                           maxPhotos +
                           "장)";
             }
@@ -462,6 +484,7 @@
             cameraInput: options.cameraInput,
             btnGallery: options.btnGallery,
             btnCamera: options.btnCamera,
+            processOptions: options.processOptions || PRODUCT_IMAGE_PROCESS_OPTIONS,
             onSelect: function (dataUrl) {
                 if (images.length >= maxPhotos) {
                     var err = new Error("상품 사진은 최대 " + maxPhotos + "장까지 등록할 수 있습니다.");
@@ -1036,6 +1059,10 @@
 
     global.THEJHON_PRODUCT_FORM = {
         MAX_IMAGE_BYTES: MAX_IMAGE_BYTES,
+        PRODUCT_IMAGE_PIXEL_SIZE: PRODUCT_IMAGE_PIXEL_SIZE,
+        PRODUCT_IMAGE_PROCESS_OPTIONS: PRODUCT_IMAGE_PROCESS_OPTIONS,
+        VENDOR_LOGO_PIXEL_SIZE: VENDOR_LOGO_PIXEL_SIZE,
+        VENDOR_LOGO_PROCESS_OPTIONS: VENDOR_LOGO_PROCESS_OPTIONS,
         STAFF_LOGO_PIXEL_SIZE: STAFF_LOGO_PIXEL_SIZE,
         STAFF_SEAL_PIXEL_SIZE: STAFF_SEAL_PIXEL_SIZE,
         STAFF_LOGO_PROCESS_OPTIONS: STAFF_LOGO_PROCESS_OPTIONS,

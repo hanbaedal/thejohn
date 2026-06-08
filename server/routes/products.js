@@ -5,6 +5,7 @@ const {
     toPublic,
     toPublicListItem,
     buildFromBody,
+    finalizeProductBuilt,
     toDbDoc,
     validateBuilt,
     findDuplicateProductByName,
@@ -399,6 +400,7 @@ router.get("/:id", async (req, res) => {
 router.post("/", requireRole("supervisor", "admin"), async (req, res) => {
     try {
         const built = buildFromBody(req.body, null);
+        await finalizeProductBuilt(built);
         const err = validateBuilt(built, true);
         if (err) return res.status(400).json({ ok: false, error: err });
 
@@ -452,6 +454,7 @@ router.put("/:id", requireRole("supervisor", "admin"), async (req, res) => {
         }
 
         const built = buildFromBody(req.body, existing);
+        await finalizeProductBuilt(built);
         const err = validateBuilt(built, false);
         if (err) return res.status(400).json({ ok: false, error: err });
 
