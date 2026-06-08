@@ -158,7 +158,9 @@ function productHasImage(doc) {
 }
 
 /** 목록 API용 — products 컬렉션(pd_*, per-*, id) 그대로 매핑, 이미지 본문은 제외 */
-function toPublicListItem(doc) {
+function toPublicListItem(doc, opts) {
+    opts = opts || {};
+    const fullExplain = !!opts.fullExplain;
     if (!doc) return null;
     const d = fromLegacyDoc(doc) || doc;
     const id = ensureProductId(d);
@@ -179,7 +181,9 @@ function toPublicListItem(doc) {
         pd_price4: prices.pd_price4,
         pd_size: str(d[F.size] || d.pd_size),
         pd_dept: pd_dept,
-        pd_explain: str(d[F.explain] || d.pd_explain).slice(0, 120),
+        pd_explain: fullExplain
+            ? str(d[F.explain] || d.pd_explain)
+            : str(d[F.explain] || d.pd_explain).slice(0, 120),
         pd_has_image: hasImage,
         pd_image_count: images.length,
         pd_record_type: normalizeRecordType(d[F.recordType] || d.pd_record_type),

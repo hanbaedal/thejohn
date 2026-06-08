@@ -127,6 +127,9 @@
             if (opts.dept) {
                 parts.push("dept=" + encodeURIComponent(String(opts.dept)));
             }
+            if (opts.fullExplain) {
+                parts.push("fullExplain=1");
+            }
             var q = parts.length ? "?" + parts.join("&") : "";
             return request("GET", "/api/products" + q).then(function (d) {
                 return d.items || [];

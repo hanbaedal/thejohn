@@ -139,11 +139,12 @@ router.get("/", async (req, res) => {
                 console.error("GET /api/products writeChecker", checkerErr.message);
             }
         }
+        const fullExplain = req.query.fullExplain === "1";
         const items = await findProductsForList(getDb(), query);
         const rows = [];
         for (const doc of items) {
             try {
-                const row = toPublicListItem(doc);
+                const row = toPublicListItem(doc, { fullExplain });
                 if (row) {
                     if (writeChecker) {
                         try {

@@ -249,6 +249,47 @@
         });
     }
 
+    function normalizeItem(it) {
+        if (!it) return it;
+        if (it.pd_has_image == null && it.pd_image_count == null && it.pd_image) {
+            it.pd_has_image = true;
+            it.pd_image_count = 1;
+        }
+        return it;
+    }
+
+    function isCatalogProduct(it) {
+        return String((it && it.pd_record_type) || "catalog")
+            .trim()
+            .toLowerCase() !== "new";
+    }
+
+    function mergeFocusIntoList(items, focus) {
+        var list = (items || []).slice();
+        var idx = -1;
+        for (var i = 0; i < list.length; i++) {
+            if (list[i] && list[i].id === focus.id) {
+                idx = i;
+                break;
+            }
+        }
+        if (idx >= 0) {
+            list[idx] = Object.assign({}, list[idx], focus);
+        } else {
+            list.push(focus);
+            list.sort(function (a, b) {
+                return (Number(b.updatedAt) || 0) - (Number(a.updatedAt) || 0);
+            });
+        }
+        return list;
+    }
+
+    function feedHintHtml(count) {
+        if (!count || count < 2) return "";
+        return (
+            '<p class="pd-feed-hint">위·아래로 스크롤해 같은 분야의 다른 상품을 볼 수 있습니다.</p>'
+        );
+    }
     function scrollToProduct(id) {
         if (!id) return;
         var el = document.getElementById("pd-item-" + id);
@@ -258,6 +299,40 @@
         } catch (e) {
             el.scrollIntoView(true);
         }
+    }
+
+    function bindFeedFocusTracking(focusId) {
+        if (!root || typeof IntersectionObserver === "undefined") return;
+        var articles = root.querySelectorAll(".pd-article[data-product-id]");
+        if (articles.length < 2) return;
+        var ratios = new Map();
+        var observer = new IntersectionObserver(
+            function (entries) {
+                entries.forEach(function (entry) {
+                    ratios.set(entry.target, entry.isIntersecting ? entry.intersectionRatio : 0);
+                });
+                var bestId = focusId;
+                var bestRatio = 0;
+                articles.forEach(function (article) {
+                    var r = ratios.get(article) || 0;
+                    if (r > bestRatio) {
+                        bestRatio = r;
+                        bestId = article.getAttribute("data-product-id");
+                    }
+                });
+                if (!bestId) return;
+                articles.forEach(function (article) {
+                    article.classList.toggle(
+                        "is-current",
+                        article.getAttribute("data-product-id") === bestId
+                    );
+                });
+            },
+            { threshold: [0, 0.25, 0.5, 0.75, 1], rootMargin: "-10% 0px -10% 0px" }
+        );
+        articles.forEach(function (article) {
+            observer.observe(article);
+        });
     }
 
     function renderFeed(items, focusId, listHref) {
@@ -274,6 +349,7 @@
             '<div class="pd-feed">' +
             '<div class="pd-feed-toolbar">' +
             backLinkHtml(listHref) +
+            feedHintHtml(items.length) +
             "</div>" +
             '<div class="pd-feed-list" role="feed">' +
             items
@@ -286,10 +362,30 @@
         loadProductGalleries(root);
         bindProductInfoButtons(root);
         bindDetailOrders(items);
+        bindFeedFocusTracking(focusId);
+        requestAnimationFrame(function () {
+            scrollToProduct(focusId);
+        });
     }
 
-    function renderSingle(it) {
-        renderFeed([it], it.id, productsListHref(it));
+    function renderDeptFeed(focus) {
+        var listHref = productsListHref(focus);
+        var dept = String(focus.pd_dept || "").trim();
+        if (!dept) {
+            renderFeed([focus], focus.id, listHref);
+            return Promise.resolve();
+        }
+        return api
+            .listProducts({ dept: dept, fullExplain: true })
+            .then(function (items) {
+                items = (items || []).filter(isCatalogProduct).map(normalizeItem);
+                items = mergeFocusIntoList(items, focus);
+                if (!items.length) items = [focus];
+                renderFeed(items, focus.id, listHref);
+            })
+            .catch(function () {
+                renderFeed([focus], focus.id, listHref);
+            });
     }
 
     function render() {
@@ -311,11 +407,8 @@
                     showMissing("해당 상품이 없거나 삭제되었습니다.");
                     return;
                 }
-                if (it.pd_has_image == null && it.pd_image_count == null && it.pd_image) {
-                    it.pd_has_image = true;
-                    it.pd_image_count = 1;
-                }
-                renderSingle(it);
+                normalizeItem(it);
+                return renderDeptFeed(it);
             })
             .catch(function (err) {
                 showMissing((err && err.message) || "상품 정보를 불러오지 못했습니다.");
