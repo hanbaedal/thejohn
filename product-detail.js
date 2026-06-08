@@ -265,22 +265,47 @@
             pending.push({ article: article, el: el, wrap: wrap, id: id });
         });
         if (!pending.length) return;
-        function applyMap(covers) {
-            covers = covers || {};
-            pending.forEach(function (row) {
-                applyGalleryCover(row.article, row.el, row.wrap, covers[row.id] ? String(covers[row.id]) : "");
+        var byId = Object.create(null);
+        pending.forEach(function (row) {
+            byId[row.id] = row;
+        });
+        var ids = pending.map(function (row) {
+            return row.id;
+        });
+        var cache = window.THEJHON_PRODUCT_COVER;
+        if (cache && cache.loadCoversBatched && api.getProductCovers) {
+            cache.loadCoversBatched(api, ids, {
+                batchSize: cache.BATCH_SIZE || 10,
+                onBatch: function (covers, chunk) {
+                    chunk.forEach(function (id) {
+                        var row = byId[id];
+                        if (!row) return;
+                        applyGalleryCover(
+                            row.article,
+                            row.el,
+                            row.wrap,
+                            covers[id] ? String(covers[id]) : ""
+                        );
+                    });
+                }
             });
+            return;
         }
         if (api.getProductCovers) {
-            api.getProductCovers(
-                pending.map(function (row) {
-                    return row.id;
+            api.getProductCovers(ids)
+                .then(function (covers) {
+                    ids.forEach(function (id) {
+                        var row = byId[id];
+                        if (!row) return;
+                        applyGalleryCover(
+                            row.article,
+                            row.el,
+                            row.wrap,
+                            covers && covers[id] ? String(covers[id]) : ""
+                        );
+                    });
                 })
-            )
-                .then(applyMap)
-                .catch(function () {
-                    applyMap({});
-                });
+                .catch(function () {});
             return;
         }
         pending.forEach(function (row) {

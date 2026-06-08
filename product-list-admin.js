@@ -107,49 +107,58 @@
         );
     }
 
-    function bindCoverImages() {
-        if (!listEl || !api) return;
-        var imgs = listEl.querySelectorAll("img[data-pl-cover]");
-        if (!imgs.length) return;
-        var ids = [];
-        imgs.forEach(function (img) {
-            var id = img.getAttribute("data-pl-cover");
-            if (id) ids.push(id);
-        });
-        function applyEmpty(img) {
+    function applyCoverThumb(id, src, img) {
+        function applyEmpty() {
             var box = img.parentElement;
             if (box) {
                 box.className = "pl-admin-thumb pl-admin-thumb--empty";
                 box.innerHTML = "사진<br>없음";
             }
         }
-        function apply(covers) {
-            covers = covers || {};
-            imgs.forEach(function (img) {
-                var id = img.getAttribute("data-pl-cover");
-                var src = id && covers[id] ? String(covers[id]) : "";
-                if (src) img.src = src;
-                else applyEmpty(img);
-            });
+        if (!src) {
+            applyEmpty();
+            return;
         }
-        if (api.getProductCovers) {
-            api.getProductCovers(ids).then(apply).catch(function () {
-                apply({});
+        var cache = window.THEJHON_PRODUCT_COVER;
+        img.src = cache && cache.getCoverSrc ? cache.getCoverSrc(id, src) : src;
+        img.removeAttribute("data-pl-cover");
+    }
+
+    function bindCoverImages() {
+        if (!listEl || !api) return;
+        var ids = [];
+        listEl.querySelectorAll("img[data-pl-cover]").forEach(function (img) {
+            var id = img.getAttribute("data-pl-cover");
+            if (id) ids.push(id);
+        });
+        if (!ids.length) return;
+        var cache = window.THEJHON_PRODUCT_COVER;
+        if (cache && cache.loadCoversBatched && api.getProductCovers) {
+            cache.loadCoversBatched(api, ids, {
+                batchSize: cache.BATCH_SIZE || 10,
+                onBatch: function (covers, chunk) {
+                    chunk.forEach(function (id) {
+                        var img = listEl.querySelector('img[data-pl-cover="' + id + '"]');
+                        if (!img) return;
+                        var src = covers[id] ? String(covers[id]) : "";
+                        applyCoverThumb(id, src, img);
+                    });
+                }
             });
             return;
         }
-        imgs.forEach(function (img) {
-            var id = img.getAttribute("data-pl-cover");
-            if (!id) return;
-            api.get("api/products/" + encodeURIComponent(id) + "/cover")
-                .then(function (data) {
-                    if (data && data.pd_image) img.src = data.pd_image;
-                    else applyEmpty(img);
+        if (api.getProductCovers) {
+            api.getProductCovers(ids)
+                .then(function (covers) {
+                    ids.forEach(function (id) {
+                        var img = listEl.querySelector('img[data-pl-cover="' + id + '"]');
+                        if (!img) return;
+                        var src = covers && covers[id] ? String(covers[id]) : "";
+                        applyCoverThumb(id, src, img);
+                    });
                 })
-                .catch(function () {
-                    applyEmpty(img);
-                });
-        });
+                .catch(function () {});
+        }
     }
 
     function bindDeleteButtons() {

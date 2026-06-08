@@ -33,7 +33,48 @@
         return out;
     }
 
+    var DEFAULT_BATCH_SIZE = 10;
+
+    /**
+     * 상품 cover API를 batchSize(기본 10)개씩 순차 호출
+     * @param {object} api THEJHON_API
+     * @param {string[]} ids
+     * @param {object} opts { batchSize, onBatch(covers, chunkIds), isCancelled() }
+     */
+    function loadCoversBatched(api, ids, opts) {
+        opts = opts || {};
+        var batchSize = Math.max(1, Number(opts.batchSize) || DEFAULT_BATCH_SIZE);
+        var list = (ids || []).filter(Boolean);
+        if (!list.length || !api || !api.getProductCovers) {
+            return Promise.resolve();
+        }
+        var idx = 0;
+        function next() {
+            if (opts.isCancelled && opts.isCancelled()) {
+                return Promise.resolve();
+            }
+            if (idx >= list.length) {
+                return Promise.resolve();
+            }
+            var chunk = list.slice(idx, idx + batchSize);
+            idx += batchSize;
+            return api
+                .getProductCovers(chunk)
+                .then(function (covers) {
+                    if (opts.onBatch) opts.onBatch(covers || {}, chunk);
+                    return next();
+                })
+                .catch(function () {
+                    if (opts.onBatch) opts.onBatch({}, chunk);
+                    return next();
+                });
+        }
+        return next();
+    }
+
     global.THEJHON_PRODUCT_COVER = {
-        getCoverSrc: getCoverSrc
+        BATCH_SIZE: DEFAULT_BATCH_SIZE,
+        getCoverSrc: getCoverSrc,
+        loadCoversBatched: loadCoversBatched
     };
 })(typeof window !== "undefined" ? window : this);

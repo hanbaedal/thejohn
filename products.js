@@ -9,6 +9,8 @@
     var lastItems = [];
     var lastItemsById = {};
     var lastOrderCardMode = null;
+    var coverLoadToken = 0;
+    var COVER_BATCH_SIZE = 10;
 
     function coverCache() {
         return window.THEJHON_PRODUCT_COVER;
@@ -92,8 +94,12 @@
     }
 
     function cardPhotoHtml(it) {
+        var stored = it && it.id && lastItemsById[it.id];
+        if (stored && stored.pd_image && !it.pd_image) {
+            it = Object.assign({}, it, { pd_image: stored.pd_image });
+        }
         var cover = productCoverSrc(it);
-        if (cover) {
+        if (cover && String(it.pd_image || "").trim()) {
             return (
                 '<div class="ps-card-photo-wrap">' +
                 '<img class="ps-card-photo" alt="" loading="lazy" decoding="async" src="' +
@@ -189,7 +195,14 @@
     }
 
     function indexItems(items) {
-        lastItems = items || [];
+        lastItems = (items || []).map(function (it) {
+            if (!it || !it.id) return it;
+            var prev = lastItemsById[it.id];
+            if (prev && prev.pd_image && !it.pd_image) {
+                return Object.assign({}, it, { pd_image: prev.pd_image });
+            }
+            return it;
+        });
         lastItemsById = {};
         lastItems.forEach(function (it) {
             if (it && it.id) lastItemsById[it.id] = it;
@@ -302,58 +315,61 @@
         img.replaceWith(span);
     }
 
+    function applyCoverToImg(id, src, img) {
+        if (!img || !id) return;
+        if (src) {
+            if (lastItemsById[id]) lastItemsById[id].pd_image = src;
+            var cache = coverCache();
+            img.src =
+                cache && cache.getCoverSrc ? cache.getCoverSrc(id, src) : src;
+            img.removeAttribute("data-ps-cover");
+            img.classList.remove("ps-card-photo--loading");
+        } else {
+            replaceCoverWithEmpty(img);
+        }
+    }
+
     function bindCoverImages() {
         if (!root || !api) return;
-        var imgs = root.querySelectorAll("img[data-ps-cover]");
-        if (!imgs.length) return;
         var ids = [];
-        imgs.forEach(function (img) {
+        root.querySelectorAll("img[data-ps-cover]").forEach(function (img) {
             var id = img.getAttribute("data-ps-cover");
             if (id) ids.push(id);
         });
-        var apply = function (covers) {
-            covers = covers || {};
-            imgs.forEach(function (img) {
-                var id = img.getAttribute("data-ps-cover");
-                var src = id && covers[id] ? String(covers[id]) : "";
-                if (src) {
-                    var cache = coverCache();
-                    img.src =
-                        cache && cache.getCoverSrc
-                            ? cache.getCoverSrc(id, src)
-                            : src;
-                    img.classList.remove("ps-card-photo--loading");
-                } else {
-                    replaceCoverWithEmpty(img);
+        if (!ids.length) return;
+
+        var token = ++coverLoadToken;
+        var batchLoader = coverCache();
+        if (batchLoader && batchLoader.loadCoversBatched) {
+            batchLoader.loadCoversBatched(api, ids, {
+                batchSize: COVER_BATCH_SIZE,
+                isCancelled: function () {
+                    return token !== coverLoadToken;
+                },
+                onBatch: function (covers, chunk) {
+                    if (token !== coverLoadToken) return;
+                    chunk.forEach(function (id) {
+                        var img = root.querySelector('img[data-ps-cover="' + id + '"]');
+                        if (!img) return;
+                        var src = covers[id] ? String(covers[id]) : "";
+                        applyCoverToImg(id, src, img);
+                    });
                 }
-            });
-        };
-        if (api.getProductCovers) {
-            api.getProductCovers(ids).then(apply).catch(function () {
-                apply({});
             });
             return;
         }
-        imgs.forEach(function (img) {
-            var id = img.getAttribute("data-ps-cover");
-            if (!id) return;
-            api.get("api/products/" + encodeURIComponent(id) + "/cover")
-                .then(function (data) {
-                    if (data && data.pd_image) {
-                        var cache = coverCache();
-                        img.src =
-                            cache && cache.getCoverSrc
-                                ? cache.getCoverSrc(id, data.pd_image)
-                                : data.pd_image;
-                        img.classList.remove("ps-card-photo--loading");
-                    } else {
-                        replaceCoverWithEmpty(img);
-                    }
-                })
-                .catch(function () {
-                    replaceCoverWithEmpty(img);
+
+        api.getProductCovers(ids)
+            .then(function (covers) {
+                if (token !== coverLoadToken) return;
+                ids.forEach(function (id) {
+                    var img = root.querySelector('img[data-ps-cover="' + id + '"]');
+                    if (!img) return;
+                    var src = covers && covers[id] ? String(covers[id]) : "";
+                    applyCoverToImg(id, src, img);
                 });
-        });
+            })
+            .catch(function () {});
     }
 
     function loadDeptProducts(attempt) {
@@ -367,6 +383,7 @@
         }
 
         var token = ++loadToken;
+        coverLoadToken += 1;
         root.innerHTML = '<p class="ps-empty">상품을 불러오는 중…</p>';
 
         api.listProducts({ dept: activeDept })
