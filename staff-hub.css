@@ -186,24 +186,21 @@ body.staff-nav-order .header-nav-link.is-order-subnav.is-current {
     color: #6b5a3d;
 }
 
-/* 관리자관리 허브 — 업체관리와 동일 2열 카드 */
+/* 관리자관리 허브 — 1열 카드 */
 .sm-hub-rows {
     display: flex;
     flex-direction: column;
     gap: 0;
+    max-width: 28rem;
+    margin: 0 auto;
 }
 .sm-hub-group--spaced {
     margin-top: 2.5rem;
 }
 .sm-hub-row {
     display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: 1fr;
     gap: 0.95rem;
-}
-@media (max-width: 720px) {
-    .sm-hub-row {
-        grid-template-columns: 1fr;
-    }
 }
 
 .shub-list-scroll {
