@@ -2,6 +2,8 @@ const express = require("express");
 const { getDb } = require("../db");
 const { requireRole } = require("../middleware/auth");
 const { queryAccessStats, queryUsageStats, parseYmdToMs } = require("../lib/accessLog");
+const { querySolapiStats } = require("../lib/solapiLog");
+const { isSolapiConfigured } = require("../lib/solapiSms");
 const { F: PF } = require("../lib/productFields");
 const { F: VF } = require("../lib/vendorFields");
 const { normalizeStaffLoginId } = require("../lib/orderAccess");
@@ -188,6 +190,28 @@ router.get("/access-stats", requireRole("supervisor"), async function (req, res)
     } catch (e) {
         console.error("GET /api/supervisor/access-stats", e);
         return res.status(500).json({ ok: false, error: "접속 통계를 불러오지 못했습니다." });
+    }
+});
+
+router.get("/solapi-stats", requireRole("supervisor"), async function (req, res) {
+    try {
+        var dateFrom = String(req.query.dateFrom || "").trim();
+        var dateTo = String(req.query.dateTo || "").trim();
+        var result = await querySolapiStats(getDb(), dateFrom, dateTo);
+        if (result.error) {
+            return res.status(400).json({ ok: false, error: result.error });
+        }
+        return res.json({
+            ok: true,
+            configured: isSolapiConfigured(),
+            summary: result.summary,
+            byAdmin: result.byAdmin,
+            recent: result.recent,
+            truncated: result.truncated
+        });
+    } catch (e) {
+        console.error("GET /api/supervisor/solapi-stats", e);
+        return res.status(500).json({ ok: false, error: "SOLAPI 이용 현황을 불러오지 못했습니다." });
     }
 });
 

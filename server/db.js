@@ -220,6 +220,8 @@ async function runStartupMigrations(database) {
     await ensureVendorNewIndexes(database);
     const { ensureAccessLogIndexes } = require("./lib/accessLog");
     await ensureAccessLogIndexes(database);
+    const { ensureSolapiLogIndexes } = require("./lib/solapiLog");
+    await ensureSolapiLogIndexes(database);
     await safeCreateIndex(database.collection("support_news"), { id: 1 }, { unique: true });
     await safeCreateIndex(database.collection("support_news_comments"), { id: 1 }, { unique: true });
     await safeCreateIndex(

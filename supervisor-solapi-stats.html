@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="auth-storage.js"></script>
+    <script src="site-brand-boot.js"></script>
+    <title>SOLAPI 이용 현황 — 더존</title>
+    <link rel="stylesheet" href="common.css">
+    <link rel="stylesheet" href="admin-manage.css">
+    <link rel="stylesheet" href="staff-hub.css">
+    <link rel="stylesheet" href="order-list-filters.css">
+    <script src="api-config.js"></script>
+    <script src="thejhon-api.js"></script>
+    <script src="auth.js"></script>
+    <script src="admin-header.js"></script>
+    <script src="nav.js" defer></script>
+</head>
+<body>
+    <header class="site-header">
+        <div class="site-header-start">
+            <a href="work-hub.html" class="dz-logo dz-logo--compact" aria-label="그룹 마케팅 관리"><img src="img/logo.png" alt="" width="72" height="72" class="dz-logo-img"></a>
+            <nav class="site-header-nav" aria-label="업무관리 메뉴"></nav>
+        </div>
+        <nav class="site-header-actions" aria-label="계정">
+            <time class="header-date" id="headerToday" datetime=""></time>
+            <button type="button" class="btn btn-auth-icon btn-logout" id="btnLogout" hidden aria-label="로그아웃"></button>
+        </nav>
+    </header>
+    <main class="page-main page-main--hide-scrollbar shub-page sds-page">
+        <p class="shub-subnav"><a href="staff-manage-hub.html">← 업무관리</a></p>
+        <h1>SOLAPI 이용 현황</h1>
+        <p class="shub-lead">등록 업체 주문 접수 시 발송되는 SOLAPI SMS 건수를 담당 관리자·등록 업체별로 조회합니다. 슈퍼바이저 전용입니다.</p>
+        <p id="sls-status" class="shub-status" role="status"></p>
+        <p id="sls-config-note" class="shub-note" hidden>SOLAPI 환경 변수가 설정되지 않았습니다. 발송 시도는 기록되지만 실제 전송은 건너뜁니다.</p>
+        <p class="shub-note">기록은 기능 적용 이후 주문 알림부터 집계됩니다. 이전 주문 건은 포함되지 않습니다.</p>
+        <div class="ol-query-filters" aria-label="SOLAPI 이용 현황 조회 조건">
+            <section class="ol-query-filters__section" aria-labelledby="sls-filter-period-heading">
+                <h2 id="sls-filter-period-heading" class="ol-query-filters__heading">기간으로 조회</h2>
+                <div class="ol-query-filters__row">
+                    <label for="sls-date-from">시작일</label>
+                    <input type="date" id="sls-date-from">
+                </div>
+                <div class="ol-query-filters__row">
+                    <label for="sls-date-to">종료일</label>
+                    <input type="date" id="sls-date-to">
+                </div>
+                <div class="ol-query-filters__row ol-query-filters__row--actions">
+                    <button type="button" class="btn btn-primary" id="sls-search">조회</button>
+                </div>
+            </section>
+        </div>
+        <section class="shub-panel">
+            <div id="sls-summary" class="shub-summary" hidden></div>
+            <p id="sls-truncated" class="shub-note" hidden>기록이 많아 일부만 집계했습니다. 기간을 좁혀 조회해 주세요.</p>
+            <h2>관리자별 집계</h2>
+            <div id="sls-by-admin" class="shub-table-wrap"></div>
+            <h2 style="margin-top:1.25rem">관리자별 등록 업체 이용</h2>
+            <div id="sls-vendors" class="shub-table-wrap shub-list-scroll"></div>
+            <h2 style="margin-top:1.25rem">최근 발송 기록</h2>
+            <div id="sls-recent" class="shub-table-wrap shub-list-scroll"></div>
+        </section>
+    </main>
+    <footer class="site-footer">
+        <div class="site-footer-inner">
+            <dl class="site-footer-grid" id="siteFooterCompanyGrid" aria-live="polite"></dl>
+            <p class="site-footer-company-msg" id="siteFooterCompanyMsg" hidden></p>
+        </div>
+    </footer>
+    <script src="supervisor-solapi-stats.js"></script>
+</body>
+</html>

@@ -922,7 +922,8 @@
         "system-structure-docs.html": true,
         "supervisor-access-stats.html": true,
         "supervisor-usage-stats.html": true,
-        "supervisor-db-stats.html": true
+        "supervisor-db-stats.html": true,
+        "supervisor-solapi-stats.html": true
     };
     var SYSTEM_STRUCTURE_DOCS_PAGE = "system-structure-docs.html";
     var STAFF_MANAGE_PAGES = [
@@ -933,7 +934,8 @@
         "supervisor-transaction-list.html",
         "supervisor-access-stats.html",
         "supervisor-usage-stats.html",
-        "supervisor-db-stats.html"
+        "supervisor-db-stats.html",
+        "supervisor-solapi-stats.html"
     ];
     var ADMIN_REGISTER_PAGES = PRODUCT_ADMIN_PAGES.concat(VENDOR_ADMIN_PAGES);
 

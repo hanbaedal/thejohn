@@ -148,14 +148,32 @@ async function sendOrderSms(toPhone, body) {
 async function notifyOrderAdmin(db, order) {
     var to = await getAdminNotifyPhone(db, order);
     if (!to) {
-        return { ok: false, error: "수신 전화번호(관리자 대표 연락처)를 찾을 수 없습니다." };
+        var noPhone = { ok: false, error: "수신 전화번호(관리자 대표 연락처)를 찾을 수 없습니다." };
+        if (db) {
+            try {
+                const { logSolapiSend } = require("./solapiLog");
+                await logSolapiSend(db, order, noPhone);
+            } catch (logErr) {
+                console.error("[solapiLog]", logErr.message);
+            }
+        }
+        return noPhone;
     }
 
     var mode = getNotifyMode();
     var textBody = mode === "full" ? buildSmsBody(order) : buildShortSmsBody(order);
 
     var smsResult = await sendOrderSms(to, textBody);
-    return Object.assign({ mode: mode, pdfSent: false, to: to, provider: "solapi" }, smsResult);
+    var result = Object.assign({ mode: mode, pdfSent: false, to: to, provider: "solapi" }, smsResult);
+    if (db) {
+        try {
+            const { logSolapiSend } = require("./solapiLog");
+            await logSolapiSend(db, order, result);
+        } catch (logErr) {
+            console.error("[solapiLog]", logErr.message);
+        }
+    }
+    return result;
 }
 
 async function notifyOrderSms(db, order) {

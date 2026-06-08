@@ -430,6 +430,14 @@
             var q = qs.length ? "?" + qs.join("&") : "";
             return request("GET", "/api/supervisor/db-stats" + q);
         },
+        getSupervisorSolapiStats: function (opts) {
+            opts = opts || {};
+            var qs = [];
+            if (opts.dateFrom) qs.push("dateFrom=" + encodeURIComponent(String(opts.dateFrom)));
+            if (opts.dateTo) qs.push("dateTo=" + encodeURIComponent(String(opts.dateTo)));
+            var q = qs.length ? "?" + qs.join("&") : "";
+            return request("GET", "/api/supervisor/solapi-stats" + q);
+        },
         trackPageView: function (page) {
             var body = { page: page };
             var Auth = global.THEJHON_AUTH;
