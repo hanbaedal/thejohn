@@ -138,6 +138,12 @@ router.get("/db-stats", requireRole("supervisor"), async function (req, res) {
         Object.keys(vendorsBy).forEach(function (k) {
             adminKeys[k] = true;
         });
+        Object.keys(vendorNewBy).forEach(function (k) {
+            adminKeys[k] = true;
+        });
+        Object.keys(prospectsBy).forEach(function (k) {
+            adminKeys[k] = true;
+        });
         Object.keys(ordersBy).forEach(function (k) {
             adminKeys[k] = true;
         });
@@ -165,7 +171,7 @@ router.get("/db-stats", requireRole("supervisor"), async function (req, res) {
                         (productsBy[loginId] || 0) +
                         (vendorsBy[loginId] || 0) +
                         (vendorNewBy[loginId] || 0) +
-                        (vendorProspectsBy[loginId] || 0) +
+                        (prospectsBy[loginId] || 0) +
                         (ordersBy[loginId] || 0)
                 };
             });
