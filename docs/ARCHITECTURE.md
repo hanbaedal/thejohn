@@ -79,7 +79,7 @@
 | `/api/orders` | `orders.js` | 주문·발주서 PDF·거래명세 PDF |
 | `/api/transaction-manual` | `transactionManual.js` | 수기 거래명세서 CRUD·PDF |
 | `/api/vendor-email` | `vendorEmail.js` | 업체 메일 발송 |
-| `/api/supervisor` | `supervisor.js` | 슈퍼바이저 통계·발주 집계 |
+| `/api/supervisor` | `supervisor.js` | 슈퍼바이저 통계(접속·이용·DB·SOLAPI)·발주 집계 |
 | `/api/access` | `access.js` | 접속·페이지 뷰 통계 |
 | `/api/support-news` | `supportNews.js` | 소식 |
 | `/api/support-board` | `supportBoard.js` | 게시판 |
@@ -99,7 +99,9 @@
 | `transactionManual.js` | 수기 거래명세 DB·검증 |
 | `staff.js`, `staffFields.js` | 직원 계정·시드 |
 | `vendorPricing.js` | 업체 등급별 단가 |
-| `orderNotify.js`, `solapiSms.js` | 주문 알림·SMS |
+| `orderNotify.js`, `solapiSms.js`, `solapiLog.js` | 주문 알림·SMS·발송 로그 |
+| `productInfo.js` | 상품정보(식품 표시사항) CRUD |
+| `accessLog.js` | 접속·세션·이용 통계 집계 |
 
 ### 3.4 인증 (`server/middleware/auth.js`)
 
@@ -141,7 +143,7 @@
 | **주문서 관리** | `order-manage-hub.html`, `order-list-admin.html`, `supervisor-order-list.html`, `supervisor-*-pdf.html` | 발주·거래명세 조회·PDF |
 | **수기 거래명세** | `transaction-manual-register.html`, `transaction-manual-list.html` | 작성·목록·모달 PDF |
 | **고객지원** | `support-news.html`, `support-qna.html`, `support-inquiry.html`, `support-library.html` | 소식·QnA·문의·자료 |
-| **통계** | `supervisor-access-stats.html`, `supervisor-db-stats.html` | 접속·DB 요약 |
+| **통계** | `supervisor-usage-stats.html`, `supervisor-db-stats.html`, `supervisor-solapi-stats.html`, `supervisor-access-stats.html` | 접속·이용·DB·SOLAPI (슈퍼바이저) |
 
 페이지마다 전용 `*.js` / `*.css`가 붙는 **멀티 페이지(MPA)** 패턴입니다.
 
@@ -185,8 +187,11 @@
 |--------|------|
 | `staff` | 내부 직원 계정 |
 | `vendors` | 거래처 로그인·등급·담당 관리자 |
-| `products` | 상품 마스터 |
+| `products` | 상품 마스터 (사진 1장) |
+| `product_info` | 상품정보(식품 표시사항 등) |
 | `orders` | 주문·발주 |
+| `access_logs` | 접속·페이지 방문·세션 |
+| `solapi_logs` | SOLAPI SMS 발송 기록 |
 | `transaction_manual` | 수기 거래명세서 |
 | (지원) | 소식·게시판·문의 등 `support*` 라우트 연동 |
 
@@ -265,4 +270,4 @@ python scripts/generate-management-docs.py
 
 ---
 
-*문서 버전: 2026-05 기준 코드베이스 (`main`)에 맞춤.*
+*문서 버전: 2026-06 기준 코드베이스 (`main`)에 맞춤. Word/PPT는 `scripts/generate-*.py` 실행 시 작성 기준일이 갱신됩니다.*
