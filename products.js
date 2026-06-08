@@ -11,6 +11,7 @@
     var lastOrderCardMode = null;
     var coverLoadToken = 0;
     var COVER_BATCH_SIZE = 10;
+    var deptItemsCache = Object.create(null);
 
     function coverCache() {
         return window.THEJHON_PRODUCT_COVER;
@@ -183,6 +184,19 @@
         );
     }
 
+    function skeletonListHtml() {
+        var cards = [];
+        for (var i = 0; i < 6; i++) {
+            cards.push(
+                '<li class="ps-card-wrap"><div class="ps-card-skeleton" aria-hidden="true">' +
+                '<div class="ps-card-skeleton__visual"></div>' +
+                '<div class="ps-card-skeleton__body"><span></span><span></span></div>' +
+                "</div></li>"
+            );
+        }
+        return '<ul class="ps-grid ps-grid--skeleton" role="list">' + cards.join("") + "</ul>";
+    }
+
     function renderProductList(items) {
         if (!items.length) {
             return '<p class="ps-empty">이 분야에 등록된 상품이 없습니다.</p>';
@@ -192,6 +206,14 @@
             items.map(renderProductCard).join("") +
             "</ul>"
         );
+    }
+
+    function showCachedDeptIfAny(deptId) {
+        if (!Object.prototype.hasOwnProperty.call(deptItemsCache, deptId)) return false;
+        var cached = deptItemsCache[deptId] || [];
+        showList(cached);
+        if (cached.length && needsCoverFetch(cached)) bindCoverImages();
+        return true;
     }
 
     function indexItems(items) {
@@ -384,11 +406,19 @@
 
         var token = ++loadToken;
         coverLoadToken += 1;
-        root.innerHTML = '<p class="ps-empty">상품을 불러오는 중…</p>';
+        var hasListOnScreen = !!root.querySelector(".ps-grid");
+        if (!hasListOnScreen) {
+            root.innerHTML = skeletonListHtml();
+        } else {
+            root.classList.add("ps-root--refreshing");
+        }
 
         api.listProducts({ dept: activeDept })
             .then(function (items) {
                 if (token !== loadToken) return;
+                items = Array.isArray(items) ? items : [];
+                deptItemsCache[activeDept] = items;
+                root.classList.remove("ps-root--refreshing");
                 showList(items);
                 if (needsCoverFetch(items)) bindCoverImages();
             })
@@ -402,6 +432,7 @@
                     }, status === 503 ? 2500 : 1000);
                     return;
                 }
+                root.classList.remove("ps-root--refreshing");
                 root.innerHTML = loadErrorHtml((err && err.message) || "");
                 bindRetry();
             });
@@ -409,9 +440,13 @@
 
     function setDept(deptId) {
         if (!catalog || !catalog.normalizeDept(deptId)) return;
+        if (deptId === activeDept && lastItems.length) return;
         activeDept = deptId;
         syncDeptActive();
         syncUrl();
+        if (!showCachedDeptIfAny(activeDept)) {
+            root.innerHTML = skeletonListHtml();
+        }
         loadDeptProducts(0);
     }
 
@@ -426,6 +461,9 @@
     readUrlState();
     syncDeptActive();
     syncUrl();
+    if (!showCachedDeptIfAny(activeDept)) {
+        root.innerHTML = skeletonListHtml();
+    }
     loadDeptProducts(0);
 
     window.addEventListener("thejhon-auth-permissions-updated", refreshAfterAuth);
