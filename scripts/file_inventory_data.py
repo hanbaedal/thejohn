@@ -451,7 +451,7 @@ def add_file_inventory_table(doc, rows, font_pt=9):
     from docx.shared import Cm, Pt
 
     headers = ["순번", "파일명", "용도"]
-    col_widths = (Cm(0.9), Cm(10.2), Cm(5.0))
+    col_widths = (Cm(0.45), Cm(10.65), Cm(5.0))
 
     table = doc.add_table(rows=1 + len(rows), cols=3)
     table.style = "Table Grid"
