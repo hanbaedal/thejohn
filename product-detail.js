@@ -199,6 +199,26 @@
         });
     }
 
+    function bindHeroDotIndicators(container) {
+        if (!container) return;
+        container.querySelectorAll(".pd-hero-gallery").forEach(function (gallery) {
+            var scroller = gallery.querySelector(".pd-hero-scroll");
+            var dots = gallery.querySelectorAll(".pd-hero-dot");
+            if (!scroller || !dots.length) return;
+            function sync() {
+                var w = scroller.clientWidth || 1;
+                var idx = Math.round(scroller.scrollLeft / w);
+                if (idx < 0) idx = 0;
+                if (idx >= dots.length) idx = dots.length - 1;
+                for (var i = 0; i < dots.length; i++) {
+                    dots[i].classList.toggle("is-active", i === idx);
+                }
+            }
+            scroller.addEventListener("scroll", sync, { passive: true });
+            sync();
+        });
+    }
+
     function bindHeroSwipeScroll(container) {
         if (!container) return;
         container.querySelectorAll(".pd-hero-scroll").forEach(function (scroller) {
@@ -349,13 +369,23 @@
             slides.push(heroSlideHtml(it, i, isCurrent));
         }
         return (
+            '<div class="pd-hero-gallery">' +
             '<div class="pd-hero-scroll" role="region" aria-label="상품 사진" tabindex="0">' +
             slides.join("") +
             "</div>" +
-            '<p class="pd-hero-scroll-hint">좌우로 밀어 사진 ' +
-            count +
-            "장을 볼 수 있습니다</p>"
+            heroDotsHtml(count) +
+            "</div>"
         );
+    }
+
+    function heroDotsHtml(count) {
+        var dots = [];
+        for (var i = 0; i < count; i++) {
+            dots.push(
+                '<span class="pd-hero-dot' + (i === 0 ? " is-active" : "") + '"></span>'
+            );
+        }
+        return '<div class="pd-hero-dots" aria-hidden="true">' + dots.join("") + "</div>";
     }
 
     function articleHtml(it, isCurrent) {
@@ -483,11 +513,8 @@
         return list;
     }
 
-    function feedHintHtml(count) {
-        if (!count || count < 2) return "";
-        return (
-            '<p class="pd-feed-hint">위·아래로 스크롤해 같은 분야의 다른 상품을 볼 수 있습니다.</p>'
-        );
+    function feedHintHtml() {
+        return "";
     }
     function scrollToProduct(id) {
         if (!id) return;
@@ -548,7 +575,7 @@
             '<div class="pd-feed">' +
             '<div class="pd-feed-toolbar">' +
             backLinkHtml(listHref) +
-            feedHintHtml(items.length) +
+            feedHintHtml() +
             "</div>" +
             '<div class="pd-feed-list" role="feed">' +
             items
@@ -560,6 +587,7 @@
 
         loadFullHeroImages(root);
         bindHeroSwipeScroll(root);
+        bindHeroDotIndicators(root);
         bindProductInfoButtons(root);
         bindDetailOrders(items);
         bindFeedFocusTracking(focusId);

@@ -111,8 +111,11 @@
             border-radius: 8px;
             overflow: hidden;
         }
-        .pd-hero-wrap:has(.pd-hero-scroll) {
-            overflow: visible;
+        .pd-hero-gallery {
+            position: relative;
+            border-radius: 8px;
+            overflow: hidden;
+            background: #f4f6f9;
         }
         .pd-hero-zone {
             position: absolute;
@@ -173,24 +176,43 @@
             touch-action: pan-x;
             overscroll-behavior-x: contain;
             width: 100%;
-            scrollbar-width: thin;
-            border-radius: 8px;
+            scrollbar-width: none;
+            -ms-overflow-style: none;
             background: #f4f6f9;
+        }
+        .pd-hero-scroll::-webkit-scrollbar {
+            display: none;
+        }
+        .pd-hero-dots {
+            position: absolute;
+            left: 50%;
+            bottom: 0.6rem;
+            transform: translateX(-50%);
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+            z-index: 3;
+            pointer-events: none;
+            padding: 0.2rem 0.45rem;
+            border-radius: 999px;
+            background: rgba(20, 35, 50, 0.28);
+        }
+        .pd-hero-dot {
+            width: 0.42rem;
+            height: 0.42rem;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.45);
+            flex: 0 0 auto;
+        }
+        .pd-hero-dot.is-active {
+            background: #fff;
+            transform: scale(1.2);
         }
         .pd-hero-slide {
             flex: 0 0 100%;
             scroll-snap-align: start;
             scroll-snap-stop: always;
             min-width: 100%;
-        }
-        .pd-hero-scroll-hint {
-            margin: 0;
-            padding: 0.35rem 0.55rem 0.45rem;
-            font-size: 0.78rem;
-            color: #6a7d8f;
-            text-align: center;
-            background: #eef2f6;
-            border-top: 1px solid #e0e6ed;
         }
         .pd-actions {
             margin-top: 0.85rem;
