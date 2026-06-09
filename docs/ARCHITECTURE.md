@@ -244,6 +244,7 @@ npm start
 | `docs/thejohn-user-manual.docx` | **사용자 매뉴얼** (화면·역할별 조작) |
 | `docs/thejohn-system-structure-management.docx` | 시스템 구조 설명서 (관리·기획) |
 | `docs/thejohn-system-structure-management.pptx` | 시스템 구조 요약 슬라이드 |
+| `docs/thejohn-system-technical.docx` | **기술 구조** (`ARCHITECTURE.md` 기반) |
 
 재생성:
 
@@ -251,6 +252,7 @@ npm start
 pip install python-docx python-pptx
 python scripts/generate-user-manual.py
 python scripts/generate-management-docs.py
+python scripts/generate-technical-doc.py
 ```
 
 웹 다운로드: 로그인(관리자·슈퍼바이저) → **업무관리** → **문서 다운로드**

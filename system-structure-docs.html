@@ -15,16 +15,61 @@
     <script src="admin-header.js"></script>
     <script src="nav.js" defer></script>
     <style>
-        .ssd-panel { max-width: 40rem; margin: 0 auto; }
-        .ssd-dl { display: grid; gap: 0.75rem; margin: 1.25rem 0 0; }
-        .ssd-item {
-            display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between;
-            gap: 0.5rem 1rem; padding: 1rem 1.1rem; background: #fff;
-            border: 1px solid #d4e0eb; border-radius: 10px;
+        .ssd-panel { max-width: 52rem; margin: 0 auto; }
+        .ssd-table-wrap {
+            margin-top: 1rem;
+            background: #fff;
+            border: 1px solid #d4e0eb;
+            border-radius: 10px;
+            overflow-x: auto;
         }
-        .ssd-item h2 { margin: 0; font-size: 1rem; color: #1e3a52; }
-        .ssd-item p { margin: 0.25rem 0 0; font-size: 0.85rem; color: #5a6d7e; flex: 1 1 100%; }
-        .ssd-item .btn { flex-shrink: 0; }
+        .ssd-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.88rem;
+        }
+        .ssd-table th,
+        .ssd-table td {
+            padding: 0.65rem 0.75rem;
+            border-bottom: 1px solid #e8edf2;
+            vertical-align: middle;
+            text-align: left;
+        }
+        .ssd-table thead th {
+            background: #f4f7fb;
+            color: #3d5166;
+            font-weight: 600;
+            font-size: 0.8rem;
+        }
+        .ssd-table tbody tr:last-child td { border-bottom: none; }
+        .ssd-table .ssd-label {
+            font-weight: 600;
+            color: #1e3a52;
+            white-space: nowrap;
+            min-width: 7.5rem;
+        }
+        .ssd-table .ssd-file {
+            font-family: Consolas, "Courier New", monospace;
+            font-size: 0.78rem;
+            color: #4a5f72;
+            word-break: break-all;
+        }
+        .ssd-table .ssd-mtime {
+            font-size: 0.78rem;
+            color: #6a7d8f;
+            white-space: nowrap;
+        }
+        .ssd-actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.35rem;
+            justify-content: flex-end;
+        }
+        .ssd-actions .btn {
+            min-width: 3.1rem;
+            padding: 0.35rem 0.65rem;
+            font-size: 0.8rem;
+        }
         .ssd-regen {
             margin-top: 1.25rem;
             padding: 1rem 1.1rem;
@@ -35,6 +80,9 @@
         .ssd-regen h2 { margin: 0 0 0.35rem; font-size: 1rem; color: #1e3a52; }
         .ssd-regen p { margin: 0 0 0.75rem; font-size: 0.85rem; color: #5a6d7e; line-height: 1.45; }
         .ssd-regen-meta { font-size: 0.78rem; color: #6a7d8f; margin: 0.5rem 0 0; }
+        @media (max-width: 640px) {
+            .ssd-table .ssd-mtime { white-space: normal; }
+        }
     </style>
 </head>
 <body>
@@ -52,43 +100,26 @@
     <main class="page-main page-main--hide-scrollbar company-main">
         <p class="shub-subnav"><a href="staff-manage-hub.html">← 업무관리</a></p>
         <h1>문서 다운로드</h1>
-        <p id="ssd-status" class="shub-status" role="status">아래에서 파일을 받아 PC에서 열어 보세요.</p>
+        <p id="ssd-status" class="shub-status" role="status">보기는 브라우저에서 열고, 저장은 PC에 파일로 받습니다.</p>
         <section class="ssd-panel" aria-label="다운로드">
-            <div class="ssd-dl">
-                <article class="ssd-item">
-                    <div>
-                        <h2>사용자 매뉴얼 (Word)</h2>
-                        <p>로그인·주문·발주·거래명세·상품·업체 관리 화면 사용법 (역할별)</p>
-                    </div>
-                    <a class="btn btn-primary" href="docs/thejohn-user-manual.docx" download="더존-사용자-매뉴얼.docx">다운로드 (.docx)</a>
-                </article>
-                <article class="ssd-item">
-                    <div>
-                        <h2>시스템 구조 설명서 (Word)</h2>
-                        <p>권한·업무 메뉴·데이터·인프라 등 관리·기획용 상세 문서</p>
-                    </div>
-                    <a class="btn btn-primary" href="docs/thejohn-system-structure-management.docx" download="더존-시스템구조-관리용.docx">다운로드 (.docx)</a>
-                </article>
-                <article class="ssd-item">
-                    <div>
-                        <h2>시스템 구조 요약 (PowerPoint)</h2>
-                        <p>회의·보고용 슬라이드 (약 7장)</p>
-                    </div>
-                    <a class="btn btn-primary" href="docs/thejohn-system-structure-management.pptx" download="더존-시스템구조-관리용.pptx">다운로드 (.pptx)</a>
-                </article>
-                <article class="ssd-item">
-                    <div>
-                        <h2>기술 구조 (Markdown)</h2>
-                        <p>개발·운영 담당자용 상세 (브라우저에서 열림)</p>
-                    </div>
-                    <a class="btn btn-secondary" href="docs/ARCHITECTURE.md" target="_blank" rel="noopener">열기</a>
-                </article>
+            <div class="ssd-table-wrap">
+                <table class="ssd-table">
+                    <thead>
+                        <tr>
+                            <th scope="col">문서</th>
+                            <th scope="col">파일</th>
+                            <th scope="col">최근 생성</th>
+                            <th scope="col">보기 · 저장</th>
+                        </tr>
+                    </thead>
+                    <tbody id="ssd-tbody"></tbody>
+                </table>
             </div>
             <section id="ssd-regen" class="ssd-regen" hidden aria-label="문서 최신 생성">
                 <h2>문서 최신 생성</h2>
                 <p>
-                    매뉴얼·구조 설명서를 오늘 기준으로 다시 만듭니다.
-                    생성 후 위 다운로드 파일이 갱신됩니다. (서버에 Python이 있어야 합니다.)
+                    매뉴얼·구조·기술 문서를 오늘 기준으로 다시 만듭니다.
+                    생성 후 위 파일이 갱신됩니다. (서버에 Python이 있어야 합니다.)
                 </p>
                 <button type="button" class="btn btn-secondary" id="ssd-regen-btn">문서 최신 생성</button>
                 <p id="ssd-regen-meta" class="ssd-regen-meta" role="status"></p>
@@ -100,9 +131,33 @@
             var Auth = window.THEJHON_AUTH;
             var api = window.THEJHON_API;
             var statusEl = document.getElementById("ssd-status");
+            var tbody = document.getElementById("ssd-tbody");
             var regenSec = document.getElementById("ssd-regen");
             var regenBtn = document.getElementById("ssd-regen-btn");
             var regenMeta = document.getElementById("ssd-regen-meta");
+
+            var SSD_DOCS = [
+                {
+                    label: "사용자 매뉴얼",
+                    file: "thejohn-user-manual.docx",
+                    saveName: "더존-사용자-매뉴얼.docx"
+                },
+                {
+                    label: "시스템 구조 설명서",
+                    file: "thejohn-system-structure-management.docx",
+                    saveName: "더존-시스템구조-관리용.docx"
+                },
+                {
+                    label: "시스템 구조 요약",
+                    file: "thejohn-system-structure-management.pptx",
+                    saveName: "더존-시스템구조-관리용.pptx"
+                },
+                {
+                    label: "기술 구조",
+                    file: "thejohn-system-technical.docx",
+                    saveName: "더존-기술구조.docx"
+                }
+            ];
 
             function formatMtime(iso) {
                 if (!iso) return "—";
@@ -115,21 +170,90 @@
                 }
             }
 
-            function showRegenMeta(files) {
-                if (!regenMeta || !files || !files.length) return;
-                var lines = files.map(function (f) {
-                    return f.name + " · " + formatMtime(f.mtime);
+            function docHref(file) {
+                return "docs/" + encodeURIComponent(file);
+            }
+
+            function absoluteDocUrl(file) {
+                try {
+                    return new URL(docHref(file), window.location.href).href;
+                } catch (e) {
+                    return docHref(file);
+                }
+            }
+
+            function officeViewUrl(file) {
+                return (
+                    "https://view.officeapps.live.com/op/view.aspx?src=" +
+                    encodeURIComponent(absoluteDocUrl(file))
+                );
+            }
+
+            function renderRows(fileMap) {
+                if (!tbody) return;
+                fileMap = fileMap || {};
+                tbody.innerHTML = SSD_DOCS.map(function (item) {
+                    var info = fileMap[item.file] || {};
+                    var mtime = formatMtime(info.mtime);
+                    var viewHref = officeViewUrl(item.file);
+                    var saveHref = docHref(item.file);
+                    return (
+                        "<tr>" +
+                        '<td class="ssd-label">' +
+                        escapeHtml(item.label) +
+                        "</td>" +
+                        '<td class="ssd-file">' +
+                        escapeHtml(item.file) +
+                        "</td>" +
+                        '<td class="ssd-mtime" data-file-mtime="' +
+                        escapeHtml(item.file) +
+                        '">' +
+                        escapeHtml(mtime) +
+                        "</td>" +
+                        '<td><div class="ssd-actions">' +
+                        '<a class="btn btn-secondary" href="' +
+                        escapeHtml(viewHref) +
+                        '" target="_blank" rel="noopener noreferrer">보기</a>' +
+                        '<a class="btn btn-primary" href="' +
+                        escapeHtml(saveHref) +
+                        '" download="' +
+                        escapeHtml(item.saveName) +
+                        '">저장</a>' +
+                        "</div></td>" +
+                        "</tr>"
+                    );
+                }).join("");
+            }
+
+            function escapeHtml(s) {
+                return String(s)
+                    .replace(/&/g, "&amp;")
+                    .replace(/</g, "&lt;")
+                    .replace(/>/g, "&gt;")
+                    .replace(/"/g, "&quot;");
+            }
+
+            function applyFileStats(files) {
+                var map = {};
+                (files || []).forEach(function (f) {
+                    if (f && f.name) map[f.name] = f;
                 });
-                regenMeta.textContent = "최근 파일: " + lines.join(" / ");
+                renderRows(map);
             }
 
             function loadDocsInfo() {
-                if (!api || !api.getSupervisorDocsInfo) return;
-                api.getSupervisorDocsInfo()
-                    .then(function (d) {
-                        if (d && d.files) showRegenMeta(d.files);
-                    })
-                    .catch(function () {});
+                if (api && api.getSupervisorDocsInfo) {
+                    return api
+                        .getSupervisorDocsInfo()
+                        .then(function (d) {
+                            if (d && d.files) applyFileStats(d.files);
+                        })
+                        .catch(function () {
+                            renderRows();
+                        });
+                }
+                renderRows();
+                return Promise.resolve();
             }
 
             if (!Auth || !Auth.getWorkHubAccess) {
@@ -147,14 +271,15 @@
             if (Auth.bindLogoutButton) Auth.bindLogoutButton(document.getElementById("btnLogout"));
             if (Auth.bindHeaderDate) Auth.bindHeaderDate(document.getElementById("headerToday"));
 
+            loadDocsInfo();
+
             if (Auth.isSupervisorStaff && Auth.isSupervisorStaff()) {
                 if (regenSec) regenSec.hidden = false;
-                loadDocsInfo();
                 if (regenBtn && api && api.regenerateSupervisorDocs) {
                     regenBtn.addEventListener("click", function () {
                         if (
                             !window.confirm(
-                                "매뉴얼·구조 설명서를 오늘 기준으로 다시 생성할까요?\n(1~2분 걸릴 수 있습니다.)"
+                                "매뉴얼·구조·기술 문서를 오늘 기준으로 다시 생성할까요?\n(1~2분 걸릴 수 있습니다.)"
                             )
                         ) {
                             return;
@@ -167,9 +292,9 @@
                                     regenMeta.textContent =
                                         "생성 완료 (" +
                                         formatMtime(d && d.generatedAt) +
-                                        "). 다시 다운로드해 주세요.";
+                                        "). 보기·저장을 다시 이용해 주세요.";
                                 }
-                                if (d && d.files) showRegenMeta(d.files);
+                                if (d && d.files) applyFileStats(d.files);
                             })
                             .catch(function (err) {
                                 if (regenMeta) {
