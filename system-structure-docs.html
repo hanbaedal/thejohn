@@ -15,7 +15,15 @@
     <script src="admin-header.js"></script>
     <script src="nav.js" defer></script>
     <style>
-        .ssd-panel { max-width: 52rem; margin: 0 auto; }
+        .page-main.ssd-page {
+            max-width: min(100%, 90rem);
+            width: 100%;
+        }
+        .ssd-panel {
+            max-width: none;
+            width: 100%;
+            margin: 0;
+        }
         .ssd-table-wrap {
             margin-top: 1rem;
             background: #fff;
@@ -52,7 +60,12 @@
             font-family: Consolas, "Courier New", monospace;
             font-size: 0.78rem;
             color: #4a5f72;
-            word-break: break-all;
+            white-space: nowrap;
+            word-break: normal;
+        }
+        .ssd-table .ssd-file-col {
+            width: 42%;
+            min-width: 18rem;
         }
         .ssd-table .ssd-mtime {
             font-size: 0.78rem;
@@ -109,7 +122,7 @@
             <button type="button" class="btn btn-auth-icon btn-logout" id="btnLogout" hidden aria-label="로그아웃" title="로그아웃"></button>
         </nav>
     </header>
-    <main class="page-main page-main--hide-scrollbar company-main">
+    <main class="page-main page-main--hide-scrollbar company-main ssd-page">
         <p class="shub-subnav"><a href="staff-manage-hub.html">← 업무관리</a></p>
         <h1>문서 다운로드</h1>
         <p id="ssd-status" class="shub-status" role="status">보기는 PC 브라우저에서 열고, 저장은 PC에 파일로 받습니다. 파일 목록은 「프로그램 파일 목록」 또는 서버·인프라 문서 맨 끝 10장을 참고하세요.</p>
