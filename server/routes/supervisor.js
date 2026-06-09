@@ -439,7 +439,7 @@ router.post("/regenerate-docs", requireRole("supervisor"), async function (req, 
     }
 });
 
-router.get("/docs-info", requireRole("supervisor"), function (req, res) {
+router.get("/docs-info", requireRole("supervisor", "admin"), function (req, res) {
     try {
         const { listDocFileStats } = require("../lib/regenerateDocs");
         res.json({ ok: true, files: listDocFileStats() });

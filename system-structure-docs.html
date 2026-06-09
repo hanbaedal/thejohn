@@ -206,22 +206,36 @@
                 }
             }
 
-            function docHref(file) {
-                return "docs/" + encodeURIComponent(file);
-            }
-
-            function absoluteDocUrl(file) {
+            function docVersionSuffix(info) {
+                if (!info || !info.mtime) return "";
                 try {
-                    return new URL(docHref(file), window.location.href).href;
+                    var t = new Date(info.mtime).getTime();
+                    return isFinite(t) ? "?v=" + t : "";
                 } catch (e) {
-                    return docHref(file);
+                    return "";
                 }
             }
 
-            function officeViewUrl(file) {
+            function docHref(file, info) {
+                return (
+                    "docs/" +
+                    encodeURIComponent(file) +
+                    docVersionSuffix(info)
+                );
+            }
+
+            function absoluteDocUrl(file, info) {
+                try {
+                    return new URL(docHref(file, info), window.location.href).href;
+                } catch (e) {
+                    return docHref(file, info);
+                }
+            }
+
+            function officeViewUrl(file, info) {
                 return (
                     "https://view.officeapps.live.com/op/view.aspx?src=" +
-                    encodeURIComponent(absoluteDocUrl(file))
+                    encodeURIComponent(absoluteDocUrl(file, info))
                 );
             }
 
@@ -231,8 +245,8 @@
                 tbody.innerHTML = SSD_DOCS.map(function (item) {
                     var info = fileMap[item.file] || {};
                     var mtime = formatMtimeDate(info.mtime);
-                    var viewHref = officeViewUrl(item.file);
-                    var saveHref = docHref(item.file);
+                    var viewHref = officeViewUrl(item.file, info);
+                    var saveHref = docHref(item.file, info);
                     return (
                         "<tr>" +
                         '<td class="ssd-label">' +
@@ -277,19 +291,57 @@
                 renderRows(map);
             }
 
+            function fetchDocStatsFromHead() {
+                return Promise.all(
+                    SSD_DOCS.map(function (item) {
+                        return fetch(docHref(item.file), {
+                            method: "HEAD",
+                            credentials: "same-origin"
+                        })
+                            .then(function (res) {
+                                var lm = res.headers.get("Last-Modified");
+                                var size = parseInt(
+                                    res.headers.get("Content-Length") || "0",
+                                    10
+                                );
+                                return {
+                                    name: item.file,
+                                    mtime: lm
+                                        ? new Date(lm).toISOString()
+                                        : "",
+                                    size: isFinite(size) ? size : 0,
+                                    exists: res.ok
+                                };
+                            })
+                            .catch(function () {
+                                return {
+                                    name: item.file,
+                                    mtime: "",
+                                    size: 0,
+                                    exists: false
+                                };
+                            });
+                    })
+                );
+            }
+
             function loadDocsInfo() {
+                var headPromise = fetchDocStatsFromHead();
                 if (api && api.getSupervisorDocsInfo) {
                     return api
                         .getSupervisorDocsInfo()
                         .then(function (d) {
-                            if (d && d.files) applyFileStats(d.files);
+                            if (d && d.files && d.files.length) {
+                                applyFileStats(d.files);
+                                return;
+                            }
+                            return headPromise.then(applyFileStats);
                         })
                         .catch(function () {
-                            renderRows();
+                            return headPromise.then(applyFileStats);
                         });
                 }
-                renderRows();
-                return Promise.resolve();
+                return headPromise.then(applyFileStats);
             }
 
             if (!Auth || !Auth.getWorkHubAccess) {

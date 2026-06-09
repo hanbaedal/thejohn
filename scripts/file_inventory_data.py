@@ -445,13 +445,24 @@ def _set_table_fixed_layout(table):
     tbl_pr.append(layout)
 
 
+def _seq_col_width_cm(font_pt=9):
+    """표 제목 '순번' 글자 폭의 1.5배 (9pt 한글 기준 약 0.28cm/자)."""
+    header = "순번"
+    char_cm = 0.28 * (font_pt / 9.0)
+    return round(len(header) * char_cm * 1.5, 2)
+
+
 def add_file_inventory_table(doc, rows, font_pt=9):
-    """순번(좁음)·파일명(넓음·한 줄)·용도 표."""
+    """순번(제목 1.5배)·파일명(넓음·한 줄)·용도 표."""
     from docx.enum.text import WD_ALIGN_PARAGRAPH
     from docx.shared import Cm, Pt
 
     headers = ["순번", "파일명", "용도"]
-    col_widths = (Cm(0.45), Cm(10.65), Cm(5.0))
+    table_total_cm = 16.1
+    purpose_cm = 5.0
+    seq_cm = _seq_col_width_cm(font_pt)
+    file_cm = round(table_total_cm - seq_cm - purpose_cm, 2)
+    col_widths = (Cm(seq_cm), Cm(file_cm), Cm(purpose_cm))
 
     table = doc.add_table(rows=1 + len(rows), cols=3)
     table.style = "Table Grid"
