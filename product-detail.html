@@ -111,6 +111,9 @@
             border-radius: 8px;
             overflow: hidden;
         }
+        .pd-hero-wrap:has(.pd-hero-gallery) {
+            overflow: visible;
+        }
         .pd-hero-gallery {
             position: relative;
             border-radius: 8px;
@@ -173,15 +176,10 @@
             overflow-y: hidden;
             scroll-snap-type: x mandatory;
             -webkit-overflow-scrolling: touch;
-            touch-action: pan-x;
-            overscroll-behavior-x: contain;
             width: 100%;
-            scrollbar-width: none;
-            -ms-overflow-style: none;
+            scrollbar-width: thin;
+            border-radius: 8px;
             background: #f4f6f9;
-        }
-        .pd-hero-scroll::-webkit-scrollbar {
-            display: none;
         }
         .pd-hero-dots {
             position: absolute;

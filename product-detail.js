@@ -219,44 +219,6 @@
         });
     }
 
-    function bindHeroSwipeScroll(container) {
-        if (!container) return;
-        container.querySelectorAll(".pd-hero-scroll").forEach(function (scroller) {
-            var startX = 0;
-            var startY = 0;
-            var tracking = false;
-            scroller.addEventListener(
-                "touchstart",
-                function (e) {
-                    if (!e.touches || !e.touches.length) return;
-                    startX = e.touches[0].clientX;
-                    startY = e.touches[0].clientY;
-                    tracking = true;
-                },
-                { passive: true }
-            );
-            scroller.addEventListener(
-                "touchmove",
-                function (e) {
-                    if (!tracking || !e.touches || !e.touches.length) return;
-                    var dx = e.touches[0].clientX - startX;
-                    var dy = e.touches[0].clientY - startY;
-                    if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 10) {
-                        if (e.cancelable) e.preventDefault();
-                    }
-                },
-                { passive: false }
-            );
-            scroller.addEventListener(
-                "touchend",
-                function () {
-                    tracking = false;
-                },
-                { passive: true }
-            );
-        });
-    }
-
     function heroThumbSrc(it, index) {
         if (!it || !productHasPhoto(it)) return "";
         var idx = index || 0;
@@ -586,7 +548,6 @@
             "</div></div>";
 
         loadFullHeroImages(root);
-        bindHeroSwipeScroll(root);
         bindHeroDotIndicators(root);
         bindProductInfoButtons(root);
         bindDetailOrders(items);
