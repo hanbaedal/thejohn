@@ -136,8 +136,9 @@
 /* 상품 사진 — 라벨·아이콘 한 줄 */
 .pr-form-page .pr-photo-toolbar {
     display: flex;
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
     align-items: center;
+    justify-content: space-between;
     gap: 0.4rem 0.55rem;
     margin-bottom: 0.5rem;
 }
@@ -160,6 +161,18 @@
     display: flex;
     flex-wrap: nowrap;
     gap: 0.35rem;
+    margin-left: auto;
+    flex-shrink: 0;
+}
+.pr-form-page .pr-photo-hint {
+    margin-top: 0;
+    margin-bottom: 0.35rem;
+}
+.pr-form-page .pr-photo-hint-line {
+    display: block;
+}
+.pr-form-page .pr-photo-hint-line + .pr-photo-hint-line {
+    margin-top: 0.2rem;
 }
 .pr-form-page .pr-photo-icon-btn {
     display: inline-flex;
@@ -490,21 +503,23 @@
     }
 
     .pr-form-page .pr-photo-toolbar {
-        display: grid;
-        grid-template-columns: var(--pr-label-w) minmax(0, 1fr) auto;
+        display: flex;
+        flex-wrap: nowrap;
         align-items: center;
+        justify-content: space-between;
         gap: 0.3rem 0.45rem;
         margin-bottom: 0.35rem;
     }
     .pr-form-page .pr-photo-toolbar > .pr-photo-label {
-        grid-column: 1;
         font-size: var(--pr-desc-size);
         font-weight: 700;
         color: #2a4560;
+        flex-shrink: 0;
     }
     .pr-form-page .pr-photo-toolbar .pr-photo-icon-actions {
-        grid-column: 2;
-        justify-self: start;
+        margin-left: auto;
+        justify-self: end;
+        flex-shrink: 0;
     }
     .pr-form-page .pr-photo-toolbar .pr-photo-count--inline {
         grid-column: 3;

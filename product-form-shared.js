@@ -414,6 +414,24 @@
      * options: { slotsRoot, countEl, hintEl, btnGallery, btnCamera, galleryInput, cameraInput,
      *   maxPhotos?, onChange(images[]), onError(err), onStatus?(msg) }
      */
+    var PRODUCT_PHOTO_HINT_LINES = [
+        "상품과 관련된 사진 5장까지 등록할 수 있습니다.",
+        "홈페이지에서 상품 상세보기하면 스크롤해서 볼 수 있습니다."
+    ];
+    var PRODUCT_PHOTO_HINT_FULL =
+        "등록된 사진을 삭제한 뒤 다시 선택할 수 있습니다.";
+
+    function setProductPhotoHint(el, full) {
+        if (!el) return;
+        if (full) {
+            el.textContent = PRODUCT_PHOTO_HINT_FULL;
+            return;
+        }
+        el.innerHTML = PRODUCT_PHOTO_HINT_LINES.map(function (line) {
+            return '<span class="pr-photo-hint-line">' + line + "</span>";
+        }).join("");
+    }
+
     function initProductPhotoGallery(options) {
         options = options || {};
         var maxPhotos = options.maxPhotos || MAX_PRODUCT_PHOTOS;
@@ -430,16 +448,7 @@
                     ? images.length + "장 등록됨"
                     : "사진 없음";
             }
-            if (hintEl) {
-                hintEl.textContent =
-                    images.length >= maxPhotos
-                        ? "등록된 사진을 삭제한 뒤 다시 선택할 수 있습니다."
-                        : "앨범·카메라로 선택하면 " +
-                          PRODUCT_IMAGE_PIXEL_SIZE +
-                          "×" +
-                          PRODUCT_IMAGE_PIXEL_SIZE +
-                          "·1MB 이하로 자동 맞춥니다.";
-            }
+            setProductPhotoHint(hintEl, images.length >= maxPhotos);
             if (typeof onChange === "function") onChange(images.slice());
         }
 
