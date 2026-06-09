@@ -247,6 +247,12 @@ npm start
 | `docs/thejohn-system-technical.docx` | **기술 구조** (`ARCHITECTURE.md` 기반) |
 | `docs/thejohn-server-infrastructure.docx` | **이용 서버·인프라** (Render, MongoDB, 도메인 등) |
 | `docs/thejohn-file-inventory.docx` | **프로그램 파일 목록** (순번·파일명·용도) |
+| `docs/thejohn-deploy-gabia.docx` | 배포: 가비아 DNS·Render (`deploy/DEPLOY-GABIA.md`) |
+| `docs/thejohn-deploy-render.docx` | 배포: Render 설정 (`deploy/RENDER-FIX.md`) |
+| `docs/thejohn-deploy-mongodb.docx` | 배포: MongoDB 연결 (`deploy/MONGODB-FIX.md`) |
+| `docs/thejohn-deploy-login-permissions.docx` | 배포: 로그인·권한 (`deploy/LOGIN-PERMISSIONS.md`) |
+| `docs/thejohn-deploy-staff-accounts.docx` | 배포: 직원 계정 (`deploy/STAFF-ACCOUNTS.md`) |
+| `docs/thejohn-deploy-vendor-registration.docx` | 배포: 업체 등록 (`deploy/VENDOR-REGISTRATION.md`) |
 
 재생성:
 
@@ -257,6 +263,7 @@ python scripts/generate-management-docs.py
 python scripts/generate-technical-doc.py
 python scripts/generate-server-doc.py
 python scripts/generate-file-inventory-doc.py
+python scripts/generate-deploy-docs.py
 ```
 
 웹 다운로드: 로그인(관리자·슈퍼바이저) → **업무관리** → **문서 다운로드**

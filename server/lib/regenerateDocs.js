@@ -11,7 +11,13 @@ const DOC_FILES = [
     "thejohn-system-structure-management.pptx",
     "thejohn-system-technical.docx",
     "thejohn-server-infrastructure.docx",
-    "thejohn-file-inventory.docx"
+    "thejohn-file-inventory.docx",
+    "thejohn-deploy-gabia.docx",
+    "thejohn-deploy-render.docx",
+    "thejohn-deploy-mongodb.docx",
+    "thejohn-deploy-login-permissions.docx",
+    "thejohn-deploy-staff-accounts.docx",
+    "thejohn-deploy-vendor-registration.docx"
 ];
 
 function resolveProjectRoot() {
@@ -96,6 +102,7 @@ async function regenerateAllDocs() {
     steps.push(await runPythonScript(python, "generate-technical-doc.py"));
     steps.push(await runPythonScript(python, "generate-server-doc.py"));
     steps.push(await runPythonScript(python, "generate-file-inventory-doc.py"));
+    steps.push(await runPythonScript(python, "generate-deploy-docs.py"));
 
     const files = listDocFileStats();
     const missing = files.filter(function (f) {
