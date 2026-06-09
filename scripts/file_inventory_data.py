@@ -460,7 +460,7 @@ def add_file_inventory_table(doc, rows, font_pt=9):
     headers = ["순번", "파일명", "용도"]
     table_total_cm = 16.1
     purpose_cm = 5.0
-    seq_cm = _seq_col_width_cm(font_pt)
+    seq_cm = round(_seq_col_width_cm(font_pt) * 2, 2)
     file_cm = round(table_total_cm - seq_cm - purpose_cm, 2)
     col_widths = (Cm(seq_cm), Cm(file_cm), Cm(purpose_cm))
 
