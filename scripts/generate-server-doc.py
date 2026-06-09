@@ -11,7 +11,7 @@ from docx.enum.text import WD_ALIGN_PARAGRAPH
 from docx.shared import Cm, Pt
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from file_inventory_data import build_file_sections  # noqa: E402
+from file_inventory_data import add_file_inventory_table, build_file_sections  # noqa: E402
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DOCS = os.path.join(ROOT, "docs")
@@ -68,7 +68,7 @@ def append_file_inventory(doc):
         for rel, purpose in items:
             rows.append([str(global_no), rel, purpose])
             global_no += 1
-        add_table(doc, ["순번", "파일명", "용도"], rows, small=True)
+        add_file_inventory_table(doc, rows)
 
 
 def build_word(path):

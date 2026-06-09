@@ -422,3 +422,64 @@ def build_file_sections(root: str = ROOT):
         if items:
             sections.append((cat, sorted(items, key=lambda x: x[0].lower())))
     return sections
+
+
+def _set_cell_nowrap(cell):
+    from docx.oxml import OxmlElement
+
+    tc_pr = cell._tc.get_or_add_tcPr()
+    tc_pr.append(OxmlElement("w:noWrap"))
+
+
+def _set_table_fixed_layout(table):
+    from docx.oxml import OxmlElement
+    from docx.oxml.ns import qn
+
+    tbl = table._tbl
+    tbl_pr = tbl.tblPr
+    if tbl_pr is None:
+        tbl_pr = OxmlElement("w:tblPr")
+        tbl.insert(0, tbl_pr)
+    layout = OxmlElement("w:tblLayout")
+    layout.set(qn("w:type"), "fixed")
+    tbl_pr.append(layout)
+
+
+def add_file_inventory_table(doc, rows, font_pt=9):
+    """순번(좁음)·파일명(넓음·한 줄)·용도 표."""
+    from docx.enum.text import WD_ALIGN_PARAGRAPH
+    from docx.shared import Cm, Pt
+
+    headers = ["순번", "파일명", "용도"]
+    col_widths = (Cm(0.9), Cm(10.2), Cm(5.0))
+
+    table = doc.add_table(rows=1 + len(rows), cols=3)
+    table.style = "Table Grid"
+    table.autofit = False
+    table.allow_autofit = False
+    _set_table_fixed_layout(table)
+
+    for col_idx, width in enumerate(col_widths):
+        for cell in table.columns[col_idx].cells:
+            cell.width = width
+
+    def fill_cell(cell, col_idx, text, is_header=False):
+        cell.text = str(text)
+        for paragraph in cell.paragraphs:
+            if col_idx == 0:
+                paragraph.alignment = WD_ALIGN_PARAGRAPH.CENTER
+            for run in paragraph.runs:
+                run.font.size = Pt(font_pt)
+                if col_idx == 1 and not is_header:
+                    run.font.name = "Consolas"
+        if col_idx == 1:
+            _set_cell_nowrap(cell)
+
+    for col_idx, header in enumerate(headers):
+        fill_cell(table.rows[0].cells[col_idx], col_idx, header, is_header=True)
+
+    for row_idx, row in enumerate(rows):
+        for col_idx, val in enumerate(row):
+            fill_cell(table.rows[row_idx + 1].cells[col_idx], col_idx, val)
+
+    doc.add_paragraph()

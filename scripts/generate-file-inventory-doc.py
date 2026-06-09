@@ -11,27 +11,12 @@ from docx.enum.text import WD_ALIGN_PARAGRAPH
 from docx.shared import Cm, Pt
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from file_inventory_data import build_file_sections  # noqa: E402
+from file_inventory_data import add_file_inventory_table, build_file_sections  # noqa: E402
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DOCS = os.path.join(ROOT, "docs")
 OUT = os.path.join(DOCS, "thejohn-file-inventory.docx")
 TODAY = date.today().strftime("%Y-%m-%d")
-
-
-def add_table(doc, headers, rows):
-    table = doc.add_table(rows=1 + len(rows), cols=len(headers))
-    table.style = "Table Grid"
-    for i, h in enumerate(headers):
-        table.rows[0].cells[i].text = h
-    for ri, row in enumerate(rows):
-        for ci, val in enumerate(row):
-            cell = table.rows[ri + 1].cells[ci]
-            cell.text = str(val)
-            for p in cell.paragraphs:
-                for r in p.runs:
-                    r.font.size = Pt(9)
-    doc.add_paragraph()
 
 
 def build_word(path):
@@ -64,7 +49,7 @@ def build_word(path):
         for rel, purpose in items:
             rows.append([str(global_no), rel, purpose])
             global_no += 1
-        add_table(doc, ["순번", "파일명", "용도"], rows)
+        add_file_inventory_table(doc, rows)
 
     doc.add_paragraph()
     foot = doc.add_paragraph()
