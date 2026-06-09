@@ -9,7 +9,8 @@ const DOC_FILES = [
     "thejohn-user-manual.docx",
     "thejohn-system-structure-management.docx",
     "thejohn-system-structure-management.pptx",
-    "thejohn-system-technical.docx"
+    "thejohn-system-technical.docx",
+    "thejohn-server-infrastructure.docx"
 ];
 
 function resolveProjectRoot() {
@@ -92,6 +93,7 @@ async function regenerateAllDocs() {
     steps.push(await runPythonScript(python, "generate-user-manual.py"));
     steps.push(await runPythonScript(python, "generate-management-docs.py"));
     steps.push(await runPythonScript(python, "generate-technical-doc.py"));
+    steps.push(await runPythonScript(python, "generate-server-doc.py"));
 
     const files = listDocFileStats();
     const missing = files.filter(function (f) {

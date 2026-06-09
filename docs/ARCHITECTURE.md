@@ -245,6 +245,7 @@ npm start
 | `docs/thejohn-system-structure-management.docx` | 시스템 구조 설명서 (관리·기획) |
 | `docs/thejohn-system-structure-management.pptx` | 시스템 구조 요약 슬라이드 |
 | `docs/thejohn-system-technical.docx` | **기술 구조** (`ARCHITECTURE.md` 기반) |
+| `docs/thejohn-server-infrastructure.docx` | **이용 서버·인프라** (Render, MongoDB, 도메인 등) |
 
 재생성:
 
@@ -253,6 +254,7 @@ pip install python-docx python-pptx
 python scripts/generate-user-manual.py
 python scripts/generate-management-docs.py
 python scripts/generate-technical-doc.py
+python scripts/generate-server-doc.py
 ```
 
 웹 다운로드: 로그인(관리자·슈퍼바이저) → **업무관리** → **문서 다운로드**
