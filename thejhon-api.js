@@ -100,6 +100,12 @@
         });
     }
 
+    function appendImageAccessToken(url) {
+        var token = getToken();
+        if (!token) return url;
+        return url + (url.indexOf("?") >= 0 ? "&" : "?") + "access=" + encodeURIComponent(token);
+    }
+
     global.THEJHON_API = {
         config: config,
         TOKEN_KEY: TOKEN_KEY,
@@ -150,12 +156,17 @@
         productThumbUrl: function (id) {
             var pid = String(id || "").trim();
             if (!pid) return "";
-            var url = apiUrl("/api/products/" + encodeURIComponent(pid) + "/thumb.jpg");
-            var token = getToken();
-            if (token) {
-                url += (url.indexOf("?") >= 0 ? "&" : "?") + "access=" + encodeURIComponent(token);
-            }
-            return url;
+            return appendImageAccessToken(
+                apiUrl("/api/products/" + encodeURIComponent(pid) + "/thumb.jpg")
+            );
+        },
+        /** 상세보기 — 540px JPEG 원본 URL */
+        productCoverUrl: function (id) {
+            var pid = String(id || "").trim();
+            if (!pid) return "";
+            return appendImageAccessToken(
+                apiUrl("/api/products/" + encodeURIComponent(pid) + "/cover.jpg")
+            );
         },
         getProduct: function (id) {
             return request("GET", "/api/products/" + encodeURIComponent(id)).then(function (d) {

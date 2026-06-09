@@ -61,16 +61,17 @@ function optionalAuth(req) {
 }
 
 const thumbBufCache = new Map();
-const THUMB_BUF_CACHE_MAX = 400;
+const coverBufCache = new Map();
+const IMAGE_BUF_CACHE_MAX = 400;
 
-function rememberThumbBuf(productId, buf) {
+function rememberImageBuf(cache, productId, buf) {
     const id = String(productId || "").trim();
     if (!id || !buf) return;
-    if (thumbBufCache.size >= THUMB_BUF_CACHE_MAX) {
-        const first = thumbBufCache.keys().next().value;
-        thumbBufCache.delete(first);
+    if (cache.size >= IMAGE_BUF_CACHE_MAX) {
+        const first = cache.keys().next().value;
+        cache.delete(first);
     }
-    thumbBufCache.set(id, buf);
+    cache.set(id, buf);
 }
 
 async function buildListFindQuery(auth, reqQuery, vendorDoc) {
@@ -336,11 +337,68 @@ router.get("/:id/thumb.jpg", async function (req, res) {
         if (!buf) {
             return res.status(404).end();
         }
-        rememberThumbBuf(pid, buf);
+        rememberImageBuf(thumbBufCache, pid, buf);
         res.set("Cache-Control", "public, max-age=604800, immutable");
         res.type("image/jpeg").send(buf);
     } catch (e) {
         console.error("GET /api/products/:id/thumb.jpg", e);
+        res.status(500).end();
+    }
+});
+
+/** 상세보기용 JPEG 원본(540) — 썸네일 표시 후 고해상도로 교체 */
+router.get("/:id/cover.jpg", async function (req, res) {
+    try {
+        if (!isDbReady()) {
+            return res.status(503).end();
+        }
+        const auth = optionalAuth(req);
+        const vendorDoc = await resolveVendorForAuth(auth);
+        const pid = String(req.params.id || "").trim();
+        if (!pid) {
+            return res.status(404).end();
+        }
+
+        const cached = coverBufCache.get(pid);
+        if (cached) {
+            res.set("Cache-Control", "public, max-age=604800, immutable");
+            return res.type("image/jpeg").send(cached);
+        }
+
+        const doc = await getDb()
+            .collection("products")
+            .findOne(
+                { id: pid },
+                {
+                    projection: {
+                        id: 1,
+                        [F.image]: 1,
+                        [F.images]: 1,
+                        pd_image: 1,
+                        pd_images: 1,
+                        [F.registeredBy]: 1
+                    }
+                }
+            );
+        if (!doc) {
+            return res.status(404).end();
+        }
+        if (auth && auth.role === "vendor" && !vendorCanAccessProduct(vendorDoc, doc, auth)) {
+            return res.status(404).end();
+        }
+
+        const { fullCoverJpegBufferFromDataUrl } = require("../lib/image540");
+        const images = readImagesFromDoc(doc);
+        const main = images[0] || "";
+        const buf = main ? await fullCoverJpegBufferFromDataUrl(main) : null;
+        if (!buf) {
+            return res.status(404).end();
+        }
+        rememberImageBuf(coverBufCache, pid, buf);
+        res.set("Cache-Control", "public, max-age=604800, immutable");
+        res.type("image/jpeg").send(buf);
+    } catch (e) {
+        console.error("GET /api/products/:id/cover.jpg", e);
         res.status(500).end();
     }
 });
@@ -543,6 +601,10 @@ router.get("/:id", async (req, res) => {
             return s;
         });
         item.pd_image = item.pd_images[0] || "";
+        const thumbStored = String(doc.pd_image_thumb || "").trim();
+        if (thumbStored && thumbStored.length <= 32000) {
+            item.pd_thumb = thumbStored;
+        }
         if (contactNeedsStaffFallback(item)) {
             const staff = await findStaffByLoginId(String(item.pd_registered_by || "").trim());
             item = applyStaffContactFallback(item, staff);

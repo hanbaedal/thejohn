@@ -250,6 +250,10 @@ function toPublic(doc) {
         pd_image: images[0] || "",
         pd_has_image: images.length > 0,
         pd_image_count: images.length,
+        pd_thumb: (() => {
+            const thumb = str(d.pd_image_thumb);
+            return thumb && thumb.length <= 32000 ? thumb : "";
+        })(),
         pd_explain: str(d[F.explain]),
         pd_dept: normalizeDeptForStorage(d[F.dept]) || str(d[F.dept]),
         pd_group: str(d[F.group]),

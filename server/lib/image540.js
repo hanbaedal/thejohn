@@ -109,6 +109,24 @@ function jpegBufferFromThumbDataUrl(dataUrl) {
     return parsed ? parsed.buffer : null;
 }
 
+/** 상세보기용 원본(540) JPEG 바이너리 */
+async function fullCoverJpegBufferFromDataUrl(dataUrl) {
+    const raw = String(dataUrl || "").trim();
+    if (!raw) return null;
+    if (!/^data:image\//i.test(raw)) return null;
+    const parsed = parseDataUrl(raw);
+    if (!parsed) return null;
+    try {
+        return await sharp(parsed.buffer)
+            .rotate()
+            .jpeg({ quality: JPEG_QUALITY, mozjpeg: true })
+            .toBuffer();
+    } catch (e) {
+        console.warn("[image540] full cover skip:", e.message);
+        return null;
+    }
+}
+
 /** HTTP 썸네일 응답용 JPEG 바이너리 */
 async function thumbJpegBufferFromDataUrl(dataUrl) {
     const raw = String(dataUrl || "").trim();
@@ -273,6 +291,7 @@ module.exports = {
     resizeSquare540Contain,
     makeProductThumbDataUrl,
     jpegBufferFromThumbDataUrl,
+    fullCoverJpegBufferFromDataUrl,
     thumbJpegBufferFromDataUrl,
     normalizeProductImages540,
     normalizeVendorLogo540,
