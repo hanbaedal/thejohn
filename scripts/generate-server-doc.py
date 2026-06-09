@@ -32,7 +32,7 @@ def add_table(doc, headers, rows, small=False):
         if small:
             for p in hdr[i].paragraphs:
                 for r in p.runs:
-                    r.font.size = Pt(8)
+                    r.font.size = Pt(9)
     for ri, row in enumerate(rows):
         for ci, val in enumerate(row):
             cell = table.rows[ri + 1].cells[ci]
@@ -40,7 +40,7 @@ def add_table(doc, headers, rows, small=False):
             if small:
                 for p in cell.paragraphs:
                     for r in p.runs:
-                        r.font.size = Pt(8)
+                        r.font.size = Pt(9)
     doc.add_paragraph()
 
 
@@ -50,8 +50,14 @@ def append_file_inventory(doc):
 
     doc.add_page_break()
     add_heading(doc, "10. 프로그램 파일 목록", 1)
+    note = doc.add_paragraph()
+    note.add_run(
+        "※ 아래 표는 본 문서 맨 끝(10장)에 이어집니다. "
+        "브라우저 「보기」에서는 뒤쪽이 잘 안 보일 수 있으니 "
+        "「저장」 후 Word로 열거나, 문서 다운로드의 「프로그램 파일 목록」을 이용하세요."
+    ).bold = True
     doc.add_paragraph(
-        f"본 절은 저장소에 포함된 프로그램·문서·자산 파일을 구분별로 정리한 목록입니다. "
+        f"저장소에 포함된 프로그램·문서·자산 파일을 구분별로 정리한 목록입니다. "
         f"(node_modules, .git, server/public 등 빌드·시스템 폴더 제외, 총 {total}개)"
     )
 
@@ -190,6 +196,7 @@ def build_word(path):
             ["시스템 구조 요약", "thejohn-system-structure-management.pptx", "회의·보고용 슬라이드"],
             ["기술 구조", "thejohn-system-technical.docx", "개발·운영 상세(ARCHITECTURE.md 기반)"],
             ["이용 서버·인프라", "thejohn-server-infrastructure.docx", "본 문서"],
+            ["프로그램 파일 목록", "thejohn-file-inventory.docx", "순번·파일명·용도 전체 목록"],
         ],
     )
     doc.add_paragraph(

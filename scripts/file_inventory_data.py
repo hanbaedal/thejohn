@@ -278,6 +278,8 @@ PURPOSE_MAP = {
     "scripts/generate-technical-doc.py": "기술 구조 Word 생성",
     "scripts/generate-management-docs.py": "구조·관리 문서·PPT 생성",
     "scripts/generate-server-doc.py": "서버·인프라 Word 생성",
+    "scripts/generate-file-inventory-doc.py": "프로그램 파일 목록 Word 생성",
+    "docs/thejohn-file-inventory.docx": "프로그램 파일 목록(생성물)",
     "scripts/file_inventory_data.py": "파일 목록·용도 데이터",
     "scripts/patch-html-brand-boot.js": "HTML brand-boot 패치",
     "scripts/sync-footer-html.js": "푸터 HTML 동기화",
