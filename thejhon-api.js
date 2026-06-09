@@ -477,6 +477,12 @@
             var q = qs.length ? "?" + qs.join("&") : "";
             return request("GET", "/api/supervisor/solapi-stats" + q);
         },
+        getSupervisorDocsInfo: function () {
+            return request("GET", "/api/supervisor/docs-info");
+        },
+        regenerateSupervisorDocs: function () {
+            return request("POST", "/api/supervisor/regenerate-docs");
+        },
         trackPageView: function (page) {
             var body = { page: page };
             var Auth = global.THEJHON_AUTH;

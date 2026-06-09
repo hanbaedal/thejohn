@@ -25,6 +25,16 @@
         .ssd-item h2 { margin: 0; font-size: 1rem; color: #1e3a52; }
         .ssd-item p { margin: 0.25rem 0 0; font-size: 0.85rem; color: #5a6d7e; flex: 1 1 100%; }
         .ssd-item .btn { flex-shrink: 0; }
+        .ssd-regen {
+            margin-top: 1.25rem;
+            padding: 1rem 1.1rem;
+            background: #f8fafc;
+            border: 1px dashed #b8c8dc;
+            border-radius: 10px;
+        }
+        .ssd-regen h2 { margin: 0 0 0.35rem; font-size: 1rem; color: #1e3a52; }
+        .ssd-regen p { margin: 0 0 0.75rem; font-size: 0.85rem; color: #5a6d7e; line-height: 1.45; }
+        .ssd-regen-meta { font-size: 0.78rem; color: #6a7d8f; margin: 0.5rem 0 0; }
     </style>
 </head>
 <body>
@@ -74,12 +84,54 @@
                     <a class="btn btn-secondary" href="docs/ARCHITECTURE.md" target="_blank" rel="noopener">열기</a>
                 </article>
             </div>
+            <section id="ssd-regen" class="ssd-regen" hidden aria-label="문서 최신 생성">
+                <h2>문서 최신 생성</h2>
+                <p>
+                    매뉴얼·구조 설명서를 오늘 기준으로 다시 만듭니다.
+                    생성 후 위 다운로드 파일이 갱신됩니다. (서버에 Python이 있어야 합니다.)
+                </p>
+                <button type="button" class="btn btn-secondary" id="ssd-regen-btn">문서 최신 생성</button>
+                <p id="ssd-regen-meta" class="ssd-regen-meta" role="status"></p>
+            </section>
         </section>
     </main>
     <script>
         (function () {
             var Auth = window.THEJHON_AUTH;
+            var api = window.THEJHON_API;
             var statusEl = document.getElementById("ssd-status");
+            var regenSec = document.getElementById("ssd-regen");
+            var regenBtn = document.getElementById("ssd-regen-btn");
+            var regenMeta = document.getElementById("ssd-regen-meta");
+
+            function formatMtime(iso) {
+                if (!iso) return "—";
+                try {
+                    var d = new Date(iso);
+                    if (!isFinite(d.getTime())) return "—";
+                    return d.toLocaleString("ko-KR");
+                } catch (e) {
+                    return "—";
+                }
+            }
+
+            function showRegenMeta(files) {
+                if (!regenMeta || !files || !files.length) return;
+                var lines = files.map(function (f) {
+                    return f.name + " · " + formatMtime(f.mtime);
+                });
+                regenMeta.textContent = "최근 파일: " + lines.join(" / ");
+            }
+
+            function loadDocsInfo() {
+                if (!api || !api.getSupervisorDocsInfo) return;
+                api.getSupervisorDocsInfo()
+                    .then(function (d) {
+                        if (d && d.files) showRegenMeta(d.files);
+                    })
+                    .catch(function () {});
+            }
+
             if (!Auth || !Auth.getWorkHubAccess) {
                 if (statusEl) statusEl.textContent = "권한 확인을 할 수 없습니다.";
                 return;
@@ -94,6 +146,43 @@
             }
             if (Auth.bindLogoutButton) Auth.bindLogoutButton(document.getElementById("btnLogout"));
             if (Auth.bindHeaderDate) Auth.bindHeaderDate(document.getElementById("headerToday"));
+
+            if (Auth.isSupervisorStaff && Auth.isSupervisorStaff()) {
+                if (regenSec) regenSec.hidden = false;
+                loadDocsInfo();
+                if (regenBtn && api && api.regenerateSupervisorDocs) {
+                    regenBtn.addEventListener("click", function () {
+                        if (
+                            !window.confirm(
+                                "매뉴얼·구조 설명서를 오늘 기준으로 다시 생성할까요?\n(1~2분 걸릴 수 있습니다.)"
+                            )
+                        ) {
+                            return;
+                        }
+                        regenBtn.disabled = true;
+                        if (regenMeta) regenMeta.textContent = "생성 중…";
+                        api.regenerateSupervisorDocs()
+                            .then(function (d) {
+                                if (regenMeta) {
+                                    regenMeta.textContent =
+                                        "생성 완료 (" +
+                                        formatMtime(d && d.generatedAt) +
+                                        "). 다시 다운로드해 주세요.";
+                                }
+                                if (d && d.files) showRegenMeta(d.files);
+                            })
+                            .catch(function (err) {
+                                if (regenMeta) {
+                                    regenMeta.textContent =
+                                        (err && err.message) || "문서 생성에 실패했습니다.";
+                                }
+                            })
+                            .finally(function () {
+                                regenBtn.disabled = false;
+                            });
+                    });
+                }
+            }
         })();
     </script>
 </body>

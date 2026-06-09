@@ -424,4 +424,29 @@ router.get("/order-stats", requireRole("supervisor"), async function (req, res) 
     }
 });
 
+/** Word·PPT 매뉴얼 재생성 (scripts/generate-*.py) — 슈퍼바이저 전용 */
+router.post("/regenerate-docs", requireRole("supervisor"), async function (req, res) {
+    try {
+        const { regenerateAllDocs } = require("../lib/regenerateDocs");
+        const payload = await regenerateAllDocs();
+        res.json(payload);
+    } catch (e) {
+        console.error("POST /api/supervisor/regenerate-docs", e);
+        res.status(e.status || 500).json({
+            ok: false,
+            error: e.message || "문서를 생성하지 못했습니다."
+        });
+    }
+});
+
+router.get("/docs-info", requireRole("supervisor"), function (req, res) {
+    try {
+        const { listDocFileStats } = require("../lib/regenerateDocs");
+        res.json({ ok: true, files: listDocFileStats() });
+    } catch (e) {
+        console.error("GET /api/supervisor/docs-info", e);
+        res.status(500).json({ ok: false, error: "문서 정보를 불러오지 못했습니다." });
+    }
+});
+
 module.exports = router;
