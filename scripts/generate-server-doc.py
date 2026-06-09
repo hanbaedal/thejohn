@@ -3,11 +3,15 @@
 from __future__ import annotations
 
 import os
+import sys
 from datetime import date
 
 from docx import Document
 from docx.enum.text import WD_ALIGN_PARAGRAPH
 from docx.shared import Cm, Pt
+
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from file_inventory_data import build_file_sections  # noqa: E402
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DOCS = os.path.join(ROOT, "docs")
@@ -19,16 +23,46 @@ def add_heading(doc, text, level=1):
     doc.add_heading(text, level=level)
 
 
-def add_table(doc, headers, rows):
+def add_table(doc, headers, rows, small=False):
     table = doc.add_table(rows=1 + len(rows), cols=len(headers))
     table.style = "Table Grid"
     hdr = table.rows[0].cells
     for i, h in enumerate(headers):
         hdr[i].text = h
+        if small:
+            for p in hdr[i].paragraphs:
+                for r in p.runs:
+                    r.font.size = Pt(8)
     for ri, row in enumerate(rows):
         for ci, val in enumerate(row):
-            table.rows[ri + 1].cells[ci].text = str(val)
+            cell = table.rows[ri + 1].cells[ci]
+            cell.text = str(val)
+            if small:
+                for p in cell.paragraphs:
+                    for r in p.runs:
+                        r.font.size = Pt(8)
     doc.add_paragraph()
+
+
+def append_file_inventory(doc):
+    sections = build_file_sections(ROOT)
+    total = sum(len(items) for _, items in sections)
+
+    doc.add_page_break()
+    add_heading(doc, "10. 프로그램 파일 목록", 1)
+    doc.add_paragraph(
+        f"본 절은 저장소에 포함된 프로그램·문서·자산 파일을 구분별로 정리한 목록입니다. "
+        f"(node_modules, .git, server/public 등 빌드·시스템 폴더 제외, 총 {total}개)"
+    )
+
+    global_no = 1
+    for section_title, items in sections:
+        add_heading(doc, section_title, 2)
+        rows = []
+        for rel, purpose in items:
+            rows.append([str(global_no), rel, purpose])
+            global_no += 1
+        add_table(doc, ["순번", "파일명", "용도"], rows, small=True)
 
 
 def build_word(path):
@@ -161,6 +195,8 @@ def build_word(path):
     doc.add_paragraph(
         "웹에서 받기: 로그인(관리자·슈퍼바이저) → 업무관리 → 문서 다운로드"
     )
+
+    append_file_inventory(doc)
 
     doc.add_paragraph()
     foot = doc.add_paragraph()
