@@ -156,14 +156,85 @@
     function imageCount(it) {
         if (!it) return 0;
         var n = Number(it.pd_image_count);
-        if (isFinite(n) && n > 0) return n;
+        if (isFinite(n) && n > 1) return n;
+        if (n === 1) return 1;
         if (Array.isArray(it.pd_images)) {
             var c = it.pd_images.filter(function (u) {
                 return String(u || "").trim();
             }).length;
-            if (c) return c;
+            if (c > 1) return c;
+            if (c === 1) return 1;
         }
         return productHasPhoto(it) ? 1 : 0;
+    }
+
+    function fetchImageCount(productId) {
+        if (!api || !productId) return Promise.resolve(0);
+        return api
+            .get("api/products/" + encodeURIComponent(productId) + "/image-count")
+            .then(function (d) {
+                return d && typeof d.count === "number" ? d.count : 0;
+            })
+            .catch(function () {
+                return 0;
+            });
+    }
+
+    /** 목록 API pd_image_count 누락 시 DB 실제 장수로 보정 */
+    function ensureImageCounts(items) {
+        if (!items || !items.length) return Promise.resolve(items || []);
+        return Promise.all(
+            items.map(function (it) {
+                if (!it || !it.id || !productHasPhoto(it)) return Promise.resolve(it);
+                var n = Number(it.pd_image_count);
+                if (isFinite(n) && n > 1) return Promise.resolve(it);
+                return fetchImageCount(it.id).then(function (c) {
+                    if (c > 0) it.pd_image_count = c;
+                    else if (!isFinite(n) || n < 1) it.pd_image_count = 1;
+                    return it;
+                });
+            })
+        ).then(function () {
+            return items;
+        });
+    }
+
+    function bindHeroSwipeScroll(container) {
+        if (!container) return;
+        container.querySelectorAll(".pd-hero-scroll").forEach(function (scroller) {
+            var startX = 0;
+            var startY = 0;
+            var tracking = false;
+            scroller.addEventListener(
+                "touchstart",
+                function (e) {
+                    if (!e.touches || !e.touches.length) return;
+                    startX = e.touches[0].clientX;
+                    startY = e.touches[0].clientY;
+                    tracking = true;
+                },
+                { passive: true }
+            );
+            scroller.addEventListener(
+                "touchmove",
+                function (e) {
+                    if (!tracking || !e.touches || !e.touches.length) return;
+                    var dx = e.touches[0].clientX - startX;
+                    var dy = e.touches[0].clientY - startY;
+                    if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 10) {
+                        if (e.cancelable) e.preventDefault();
+                    }
+                },
+                { passive: false }
+            );
+            scroller.addEventListener(
+                "touchend",
+                function () {
+                    tracking = false;
+                },
+                { passive: true }
+            );
+        });
     }
 
     function heroThumbSrc(it, index) {
@@ -488,6 +559,7 @@
             "</div></div>";
 
         loadFullHeroImages(root);
+        bindHeroSwipeScroll(root);
         bindProductInfoButtons(root);
         bindDetailOrders(items);
         bindFeedFocusTracking(focusId);
@@ -500,8 +572,9 @@
         var listHref = productsListHref(focus);
         var dept = String(focus.pd_dept || "").trim();
         if (!dept) {
-            renderFeed([focus], focus.id, listHref);
-            return Promise.resolve();
+            return ensureImageCounts([focus]).then(function (items) {
+                renderFeed(items, focus.id, listHref);
+            });
         }
         return api
             .listProducts({ dept: dept, fullExplain: true })
@@ -509,10 +582,15 @@
                 items = (items || []).filter(isCatalogProduct).map(normalizeItem);
                 items = mergeFocusIntoList(items, focus);
                 if (!items.length) items = [focus];
+                return ensureImageCounts(items);
+            })
+            .then(function (items) {
                 renderFeed(items, focus.id, listHref);
             })
             .catch(function () {
-                renderFeed([focus], focus.id, listHref);
+                ensureImageCounts([focus]).then(function (items) {
+                    renderFeed(items, focus.id, listHref);
+                });
             });
     }
 

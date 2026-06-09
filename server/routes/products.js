@@ -420,6 +420,42 @@ router.get("/:id/cover.jpg", async function (req, res) {
     }
 });
 
+/** 상품 사진 장수만 (상세 갤러리용 — base64 본문 없음) */
+router.get("/:id/image-count", async function (req, res) {
+    try {
+        const auth = optionalAuth(req);
+        const vendorDoc = await resolveVendorForAuth(auth);
+        const pid = String(req.params.id || "").trim();
+        const doc = await getDb()
+            .collection("products")
+            .findOne(
+                { id: pid },
+                {
+                    projection: {
+                        id: 1,
+                        [F.image]: 1,
+                        [F.images]: 1,
+                        pd_image: 1,
+                        pd_images: 1,
+                        pd_has_image: 1,
+                        [F.registeredBy]: 1
+                    }
+                }
+            );
+        if (!doc) {
+            return res.status(404).json({ ok: false, error: "상품을 찾을 수 없습니다." });
+        }
+        if (auth && auth.role === "vendor" && !vendorCanAccessProduct(vendorDoc, doc, auth)) {
+            return res.status(404).json({ ok: false, error: "상품을 찾을 수 없습니다." });
+        }
+        const images = readImagesFromDoc(doc);
+        res.json({ ok: true, count: images.length });
+    } catch (e) {
+        console.error("GET /api/products/:id/image-count", e);
+        res.status(500).json({ ok: false, error: "사진 정보를 불러오지 못했습니다." });
+    }
+});
+
 /** 상품 사진 전체(호환) — 최대 5장 */
 router.get("/:id/images", async function (req, res) {
     try {

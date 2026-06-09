@@ -168,9 +168,11 @@ function toPublicListItem(doc, opts) {
     if (!id) return null;
     const prices = readPricesFromDoc(d);
     const images = readImagesFromDoc(d);
+    const countFromDoc = toNum(d.pd_image_count);
+    const imageCountVal = countFromDoc > 0 ? countFromDoc : images.length;
     const hasImage =
         d.pd_has_image === true ||
-        (d.pd_has_image !== false && images.length > 0);
+        (d.pd_has_image !== false && (imageCountVal > 0 || images.length > 0));
     const pd_dept = readDeptFromDoc(d) || normalizeDeptForStorage(d[F.dept] || d.pd_dept);
     const row = {
         id: id,
@@ -186,7 +188,7 @@ function toPublicListItem(doc, opts) {
             ? str(d[F.explain] || d.pd_explain)
             : str(d[F.explain] || d.pd_explain).slice(0, 120),
         pd_has_image: hasImage,
-        pd_image_count: images.length,
+        pd_image_count: imageCountVal > 0 ? imageCountVal : images.length,
         pd_record_type: normalizeRecordType(d[F.recordType] || d.pd_record_type),
         pd_registered_by: str(d[F.registeredBy] || d.pd_registered_by),
         pd_registered_by_name: str(d[F.registeredByName] || d.pd_registered_by_name),
@@ -451,6 +453,11 @@ async function findProductsForList(db, query, opts) {
         { $sort: { updatedAt: -1 } },
         {
             $addFields: {
+                pd_images_size: { $size: { $ifNull: ["$pd_images", []] } }
+            }
+        },
+        {
+            $addFields: {
                 pd_has_image: {
                     $cond: [
                         { $eq: ["$pd_has_image", true] },
@@ -459,15 +466,23 @@ async function findProductsForList(db, query, opts) {
                             $cond: [
                                 { $eq: ["$pd_has_image", false] },
                                 false,
-                                {
-                                    $gt: [{ $size: { $ifNull: ["$pd_images", []] } }, 0]
-                                }
+                                { $gt: ["$pd_images_size", 0] }
                             ]
+                        }
+                    ]
+                },
+                pd_image_count: {
+                    $cond: [
+                        { $gt: ["$pd_images_size", 0] },
+                        "$pd_images_size",
+                        {
+                            $cond: [{ $eq: ["$pd_has_image", true] }, 1, 0]
                         }
                     ]
                 }
             }
-        }
+        },
+        { $project: { pd_images_size: 0 } }
     ];
     const projectExclude = {
         [imgKey]: 0,
