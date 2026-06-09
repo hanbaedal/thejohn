@@ -64,7 +64,7 @@ function jsonSafeStr(v) {
 }
 
 const PRODUCT_CODE_MAX_LEN = 16;
-const MAX_PRODUCT_IMAGES = 1;
+const MAX_PRODUCT_IMAGES = 5;
 
 function normalizeProductCode(v) {
     return str(v).slice(0, PRODUCT_CODE_MAX_LEN);
@@ -121,7 +121,7 @@ function fromLegacyDoc(doc) {
     return d;
 }
 
-/** 저장·응답용 이미지 URL 배열 (1장, 레거시 pd_image 호환) */
+/** 저장·응답용 이미지 URL 배열 (최대 5장, 레거시 pd_image 호환) */
 function readImagesFromDoc(doc) {
     const d = fromLegacyDoc(doc) || doc || {};
     let arr = [];
@@ -430,7 +430,7 @@ function validateBuilt(built, requireImage) {
         return "신규 등록 시 상품 사진을 1장 이상 선택해 주세요.";
     }
     if (built.pd_images.length > MAX_PRODUCT_IMAGES) {
-        return "상품 사진은 1장만 등록할 수 있습니다.";
+        return "상품 사진은 최대 " + MAX_PRODUCT_IMAGES + "장까지 등록할 수 있습니다.";
     }
     return "";
 }

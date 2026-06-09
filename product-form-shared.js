@@ -397,7 +397,7 @@
         };
     }
 
-    var MAX_PRODUCT_PHOTOS = 1;
+    var MAX_PRODUCT_PHOTOS = 5;
 
     function hasProductImages(data) {
         if (!data) return false;
@@ -410,7 +410,7 @@
     }
 
     /**
-     * 상품 사진 1장 — 슬롯 미리보기·삭제, 앨범/카메라로 선택
+     * 상품 사진 최대 5장 — 슬롯 미리보기·삭제, 앨범/카메라로 선택
      * options: { slotsRoot, countEl, hintEl, btnGallery, btnCamera, galleryInput, cameraInput,
      *   maxPhotos?, onChange(images[]), onError(err), onStatus?(msg) }
      */
@@ -426,7 +426,9 @@
 
         function notify() {
             if (countEl) {
-                countEl.textContent = images.length ? "1장 등록됨" : "사진 없음";
+                countEl.textContent = images.length
+                    ? images.length + "장 등록됨"
+                    : "사진 없음";
             }
             if (hintEl) {
                 hintEl.textContent =
@@ -485,10 +487,10 @@
             processOptions: options.processOptions || PRODUCT_IMAGE_PROCESS_OPTIONS,
             onSelect: function (dataUrl) {
                 if (images.length >= maxPhotos) {
-                    images = [dataUrl];
-                } else {
-                    images.push(dataUrl);
+                    onStatus("최대 " + maxPhotos + "장까지 등록할 수 있습니다.");
+                    return;
                 }
+                images.push(dataUrl);
                 renderSlots();
                 onStatus("사진을 추가했습니다. (" + images.length + "/" + maxPhotos + ")");
             },

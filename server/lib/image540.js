@@ -180,13 +180,14 @@ async function migrateStoredImagesTo540(db) {
         const { readImagesFromDoc, F } = require("./productFields");
         const before = readImagesFromDoc(doc);
         if (!before.length) continue;
+        const { MAX_PRODUCT_IMAGES } = require("./productFields");
         let after = await normalizeProductImages540(before);
-        after = after.slice(0, 1);
-        const beforeOne = before.slice(0, 1);
+        after = after.slice(0, MAX_PRODUCT_IMAGES);
+        const beforeSlice = before.slice(0, MAX_PRODUCT_IMAGES);
         const changed =
-            after.length !== beforeOne.length ||
+            after.length !== beforeSlice.length ||
             after.some(function (u, i) {
-                return u !== beforeOne[i];
+                return u !== beforeSlice[i];
             });
         if (!changed) continue;
         await products.updateOne(

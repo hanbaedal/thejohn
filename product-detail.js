@@ -153,63 +153,137 @@
         return raw;
     }
 
-    function heroThumbSrc(it) {
+    function imageCount(it) {
+        if (!it) return 0;
+        var n = Number(it.pd_image_count);
+        if (isFinite(n) && n > 0) return n;
+        if (Array.isArray(it.pd_images)) {
+            var c = it.pd_images.filter(function (u) {
+                return String(u || "").trim();
+            }).length;
+            if (c) return c;
+        }
+        return productHasPhoto(it) ? 1 : 0;
+    }
+
+    function heroThumbSrc(it, index) {
         if (!it || !productHasPhoto(it)) return "";
-        var thumb = String(it.pd_thumb || "").trim();
-        if (thumb) {
-            return productCoverSrc(it.id, thumb);
+        var idx = index || 0;
+        if (idx === 0) {
+            var thumb = String(it.pd_thumb || "").trim();
+            if (thumb) return productCoverSrc(it.id, thumb);
         }
         if (api && api.productThumbUrl) {
-            return api.productThumbUrl(it.id);
+            return api.productThumbUrl(it.id, idx);
         }
         return "";
     }
 
-    /** 썸네일 즉시 표시 → cover.jpg로 고해상도 교체 */
-    function heroHtml(it, isCurrent) {
-        var thumbSrc = heroThumbSrc(it);
+    function heroSlideHtml(it, index, isCurrent) {
+        var thumbSrc = heroThumbSrc(it, index);
+        var eager = isCurrent && index === 0 ? ' fetchpriority="high"' : "";
         if (thumbSrc) {
-            var eager = isCurrent ? ' fetchpriority="high"' : "";
             return (
+                '<div class="pd-hero-slide">' +
                 '<img class="pd-hero-img" src="' +
                 escapeHtml(thumbSrc) +
                 '" data-pd-full-cover="' +
                 escapeHtml(it.id) +
-                '" alt="상품 사진" decoding="async"' +
+                '" data-pd-cover-index="' +
+                String(index) +
+                '" alt="상품 사진 ' +
+                (index + 1) +
+                '" decoding="async"' +
                 eager +
-                ">"
+                "></div>"
             );
         }
-        var cover = productCoverSrc(it.id, it.pd_image);
+        var cover = index === 0 ? productCoverSrc(it.id, it.pd_image) : "";
         if (cover) {
             return (
+                '<div class="pd-hero-slide">' +
                 '<img class="pd-hero-img" src="' +
                 escapeHtml(cover) +
-                '" alt="상품 사진" decoding="async">'
+                '" alt="상품 사진" decoding="async"></div>'
             );
         }
-        if (productHasPhoto(it) && api && api.productCoverUrl) {
+        if (api && api.productCoverUrl) {
             return (
+                '<div class="pd-hero-slide">' +
                 '<img class="pd-hero-img" src="' +
-                escapeHtml(api.productCoverUrl(it.id)) +
-                '" alt="상품 사진" decoding="async">'
+                escapeHtml(api.productCoverUrl(it.id, index)) +
+                '" alt="상품 사진 ' +
+                (index + 1) +
+                '" decoding="async"></div>'
             );
         }
-        var legacy = String(it.pd_image || "").trim();
-        if (legacy && !/^data:/i.test(legacy)) {
+        return (
+            '<div class="pd-hero-slide">' +
+            '<div class="pd-hero-img pd-hero-img--empty" role="img" aria-label="사진 로딩">사진 불러오는 중…</div>' +
+            "</div>"
+        );
+    }
+
+    /** 썸네일 즉시 표시 — 2장 이상이면 좌우 스크롤, cover.jpg로 고해상도 교체 */
+    function heroHtml(it, isCurrent) {
+        var count = imageCount(it);
+        if (!count) {
+            var legacy = String(it.pd_image || "").trim();
+            if (legacy && !/^data:/i.test(legacy)) {
+                return (
+                    '<img class="pd-hero-img" src="' +
+                    escapeHtml(legacy) +
+                    '" alt="" decoding="async">'
+                );
+            }
             return (
-                '<img class="pd-hero-img" src="' +
-                escapeHtml(legacy) +
-                '" alt="" decoding="async">'
+                '<div class="pd-hero-img pd-hero-img--empty" role="img" aria-label="사진 없음">사진 없음</div>'
             );
         }
-        if (productHasPhoto(it)) {
+        if (count === 1) {
+            var thumbOne = heroThumbSrc(it, 0);
+            if (thumbOne) {
+                var eagerOne = isCurrent ? ' fetchpriority="high"' : "";
+                return (
+                    '<img class="pd-hero-img" src="' +
+                    escapeHtml(thumbOne) +
+                    '" data-pd-full-cover="' +
+                    escapeHtml(it.id) +
+                    '" data-pd-cover-index="0" alt="상품 사진" decoding="async"' +
+                    eagerOne +
+                    ">"
+                );
+            }
+            var coverOne = productCoverSrc(it.id, it.pd_image);
+            if (coverOne) {
+                return (
+                    '<img class="pd-hero-img" src="' +
+                    escapeHtml(coverOne) +
+                    '" alt="상품 사진" decoding="async">'
+                );
+            }
+            if (api && api.productCoverUrl) {
+                return (
+                    '<img class="pd-hero-img" src="' +
+                    escapeHtml(api.productCoverUrl(it.id, 0)) +
+                    '" alt="상품 사진" decoding="async">'
+                );
+            }
             return (
                 '<div class="pd-hero-img pd-hero-img--empty" role="img" aria-label="사진 로딩">사진 불러오는 중…</div>'
             );
         }
+        var slides = [];
+        for (var i = 0; i < count; i++) {
+            slides.push(heroSlideHtml(it, i, isCurrent));
+        }
         return (
-            '<div class="pd-hero-img pd-hero-img--empty" role="img" aria-label="사진 없음">사진 없음</div>'
+            '<div class="pd-hero-scroll" role="region" aria-label="상품 사진" tabindex="0">' +
+            slides.join("") +
+            "</div>" +
+            '<p class="pd-hero-scroll-hint">좌우로 밀어 사진 ' +
+            count +
+            "장을 볼 수 있습니다</p>"
         );
     }
 
@@ -278,7 +352,9 @@
         container.querySelectorAll("img.pd-hero-img[data-pd-full-cover]").forEach(function (img) {
             var id = img.getAttribute("data-pd-full-cover");
             if (!id) return;
-            var fullUrl = api.productCoverUrl(id);
+            var idx = parseInt(img.getAttribute("data-pd-cover-index") || "0", 10);
+            if (!isFinite(idx) || idx < 0) idx = 0;
+            var fullUrl = api.productCoverUrl(id, idx);
             if (!fullUrl || img.dataset.pdFullLoading === "1") return;
             img.dataset.pdFullLoading = "1";
             var preload = new Image();
@@ -305,7 +381,7 @@
         }
         if (it.pd_has_image == null && it.pd_image_count == null && (it.pd_image || it.pd_thumb)) {
             it.pd_has_image = true;
-            it.pd_image_count = 1;
+            it.pd_image_count = imageCount(it) || 1;
         }
         return it;
     }

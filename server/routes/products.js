@@ -64,14 +64,27 @@ const thumbBufCache = new Map();
 const coverBufCache = new Map();
 const IMAGE_BUF_CACHE_MAX = 400;
 
-function rememberImageBuf(cache, productId, buf) {
+function imageCacheKey(productId, index) {
     const id = String(productId || "").trim();
-    if (!id || !buf) return;
+    const idx = Math.max(0, parseInt(String(index || "0"), 10) || 0);
+    return id + ":" + idx;
+}
+
+function parseImageIndexQuery(req) {
+    let idx = parseInt(String(req.query.index || "0"), 10);
+    if (!isFinite(idx) || idx < 0) idx = 0;
+    if (idx >= MAX_PRODUCT_IMAGES) idx = MAX_PRODUCT_IMAGES - 1;
+    return idx;
+}
+
+function rememberImageBuf(cache, productId, index, buf) {
+    const key = imageCacheKey(productId, index);
+    if (!key || key === ":" || !buf) return;
     if (cache.size >= IMAGE_BUF_CACHE_MAX) {
         const first = cache.keys().next().value;
         cache.delete(first);
     }
-    cache.set(id, buf);
+    cache.set(key, buf);
 }
 
 async function buildListFindQuery(auth, reqQuery, vendorDoc) {
@@ -280,7 +293,9 @@ router.get("/:id/thumb.jpg", async function (req, res) {
             return res.status(404).end();
         }
 
-        const cached = thumbBufCache.get(pid);
+        const imgIdx = parseImageIndexQuery(req);
+        const cacheKey = imageCacheKey(pid, imgIdx);
+        const cached = thumbBufCache.get(cacheKey);
         if (cached) {
             res.set("Cache-Control", "public, max-age=604800, immutable");
             return res.type("image/jpeg").send(cached);
@@ -315,12 +330,12 @@ router.get("/:id/thumb.jpg", async function (req, res) {
             makeProductThumbDataUrl
         } = require("../lib/image540");
         const images = readImagesFromDoc(doc);
-        const main = images[0] || "";
-        const storedThumb = String(doc.pd_image_thumb || "").trim();
+        const main = images[imgIdx] || "";
+        const storedThumb = imgIdx === 0 ? String(doc.pd_image_thumb || "").trim() : "";
         let buf = storedThumb ? jpegBufferFromThumbDataUrl(storedThumb) : null;
         if (!buf && main) {
             buf = await thumbJpegBufferFromDataUrl(main);
-            if (buf && !storedThumb) {
+            if (buf && imgIdx === 0 && !storedThumb) {
                 makeProductThumbDataUrl(main)
                     .then(function (thumbUrl) {
                         if (!thumbUrl) return;
@@ -337,7 +352,7 @@ router.get("/:id/thumb.jpg", async function (req, res) {
         if (!buf) {
             return res.status(404).end();
         }
-        rememberImageBuf(thumbBufCache, pid, buf);
+        rememberImageBuf(thumbBufCache, pid, imgIdx, buf);
         res.set("Cache-Control", "public, max-age=604800, immutable");
         res.type("image/jpeg").send(buf);
     } catch (e) {
@@ -359,7 +374,9 @@ router.get("/:id/cover.jpg", async function (req, res) {
             return res.status(404).end();
         }
 
-        const cached = coverBufCache.get(pid);
+        const imgIdx = parseImageIndexQuery(req);
+        const cacheKey = imageCacheKey(pid, imgIdx);
+        const cached = coverBufCache.get(cacheKey);
         if (cached) {
             res.set("Cache-Control", "public, max-age=604800, immutable");
             return res.type("image/jpeg").send(cached);
@@ -389,12 +406,12 @@ router.get("/:id/cover.jpg", async function (req, res) {
 
         const { fullCoverJpegBufferFromDataUrl } = require("../lib/image540");
         const images = readImagesFromDoc(doc);
-        const main = images[0] || "";
+        const main = images[imgIdx] || "";
         const buf = main ? await fullCoverJpegBufferFromDataUrl(main) : null;
         if (!buf) {
             return res.status(404).end();
         }
-        rememberImageBuf(coverBufCache, pid, buf);
+        rememberImageBuf(coverBufCache, pid, imgIdx, buf);
         res.set("Cache-Control", "public, max-age=604800, immutable");
         res.type("image/jpeg").send(buf);
     } catch (e) {
@@ -403,7 +420,7 @@ router.get("/:id/cover.jpg", async function (req, res) {
     }
 });
 
-/** 상품 사진 전체(호환) — 최대 1장 */
+/** 상품 사진 전체(호환) — 최대 5장 */
 router.get("/:id/images", async function (req, res) {
     try {
         const auth = optionalAuth(req);

@@ -13,6 +13,7 @@
     <link rel="stylesheet" href="common.css">
     <link rel="stylesheet" href="admin-manage.css">
     <link rel="stylesheet" href="vendor-form-page.css">
+    <link rel="stylesheet" href="product-photo-gallery.css">
     <style>
         .pr-form { margin: 0 auto 2rem; padding: 1.25rem 1.1rem; background: #fff; border: 1px solid #e0e6ed; border-radius: 10px; box-shadow: 0 2px 12px rgba(10, 77, 156, 0.06); }
         .pr-field { margin-bottom: 1rem; }
@@ -161,8 +162,9 @@
                         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
                     </button>
                 </div>
-                <p id="pr-photo-hint" class="pr-hint">앨범·카메라로 선택하면 540×540·1MB 이하로 자동 맞춥니다. (1장)</p>
-                <img id="pr-photo-preview" class="pr-photo-preview tj-image-preview" alt="선택한 상품 사진 미리보기" width="120" height="120" hidden>
+                <p id="pr-photo-hint" class="pr-hint">앨범·카메라로 선택하면 540×540·1MB 이하로 자동 맞춥니다. (최대 5장)</p>
+                <div id="pr-photo-slots" class="pr-photo-gallery" aria-live="polite"></div>
+                <p id="pr-photo-count" class="pr-photo-count">사진 없음</p>
             </div>
             <div class="pr-divider" role="separator" aria-hidden="true"></div>
 

@@ -153,20 +153,26 @@
             });
         },
         /** 목록 카드 — JPEG 썸네일 URL(img src 병렬 로드) */
-        productThumbUrl: function (id) {
+        productThumbUrl: function (id, index) {
             var pid = String(id || "").trim();
             if (!pid) return "";
-            return appendImageAccessToken(
-                apiUrl("/api/products/" + encodeURIComponent(pid) + "/thumb.jpg")
-            );
+            var url = apiUrl("/api/products/" + encodeURIComponent(pid) + "/thumb.jpg");
+            var idx = parseInt(index, 10);
+            if (isFinite(idx) && idx > 0) {
+                url += (url.indexOf("?") >= 0 ? "&" : "?") + "index=" + idx;
+            }
+            return appendImageAccessToken(url);
         },
         /** 상세보기 — 540px JPEG 원본 URL */
-        productCoverUrl: function (id) {
+        productCoverUrl: function (id, index) {
             var pid = String(id || "").trim();
             if (!pid) return "";
-            return appendImageAccessToken(
-                apiUrl("/api/products/" + encodeURIComponent(pid) + "/cover.jpg")
-            );
+            var url = apiUrl("/api/products/" + encodeURIComponent(pid) + "/cover.jpg");
+            var idx = parseInt(index, 10);
+            if (isFinite(idx) && idx > 0) {
+                url += (url.indexOf("?") >= 0 ? "&" : "?") + "index=" + idx;
+            }
+            return appendImageAccessToken(url);
         },
         getProduct: function (id) {
             return request("GET", "/api/products/" + encodeURIComponent(id)).then(function (d) {

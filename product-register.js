@@ -9,9 +9,7 @@
     var deptHidden = document.getElementById("pr-pd-dept");
     var codeInput = document.getElementById("pr-pd-code");
     var nameInput = document.getElementById("pr-pd-name");
-    var photoPreview = document.getElementById("pr-photo-preview");
-    var photoPicker = null;
-    var pendingImageData = "";
+    var photoGallery = null;
     var explainInput = document.getElementById("pr-pd-explain");
     var price1Input = document.getElementById("pr-pd-price1");
     var price2Input = document.getElementById("pr-pd-price2");
@@ -36,19 +34,8 @@
         statusEl.style.color = isError ? "#a12c2c" : "#3d5166";
     }
 
-    function updatePhotoPreview(src) {
-        if (PF && PF.showImagePreview) {
-            PF.showImagePreview(photoPreview, src);
-            return;
-        }
-        if (!photoPreview) return;
-        if (src) {
-            photoPreview.src = src;
-            photoPreview.removeAttribute("hidden");
-        } else {
-            photoPreview.removeAttribute("src");
-            photoPreview.setAttribute("hidden", "");
-        }
+    function getPendingImages() {
+        return photoGallery ? photoGallery.getImages() : [];
     }
 
     function resetFormAfterSave() {
@@ -57,9 +44,7 @@
             PInfo.setValues(PInfo.emptyValues());
         }
         form.reset();
-        pendingImageData = "";
-        if (photoPicker) photoPicker.clear();
-        updatePhotoPreview("");
+        if (photoGallery) photoGallery.clear();
         if (nameDupCheck) nameDupCheck.reset();
         if (codeDupCheck) codeDupCheck.reset();
         if (deptPicker) deptPicker.clear();
@@ -140,31 +125,27 @@
         });
     }
 
-    function handlePhotoFile(dataUrl) {
-        pendingImageData = dataUrl;
-        updatePhotoPreview(dataUrl);
-        setStatus("사진을 540×540·1MB 이하로 맞춰 적용했습니다.");
-    }
-
-    if (PF && PF.initProductPhotoPicker) {
-        photoPicker = PF.initProductPhotoPicker({
+    if (PF && PF.initProductPhotoGallery) {
+        photoGallery = PF.initProductPhotoGallery({
+            maxPhotos: PF.MAX_PRODUCT_PHOTOS || 5,
+            slotsRoot: document.getElementById("pr-photo-slots"),
+            countEl: document.getElementById("pr-photo-count"),
+            hintEl: document.getElementById("pr-photo-hint"),
             galleryInput: document.getElementById("pr-pd-image-gallery"),
             cameraInput: document.getElementById("pr-pd-image-camera"),
             btnGallery: document.getElementById("pr-photo-gallery-btn"),
             btnCamera: document.getElementById("pr-photo-camera-btn"),
             processOptions: PF.PRODUCT_IMAGE_PROCESS_OPTIONS,
-            onSelect: handlePhotoFile,
+            onStatus: setStatus,
             onError: function (err) {
                 setStatus((err && err.message) || "이미지 오류", true);
-                pendingImageData = "";
-                updatePhotoPreview("");
             }
         });
     }
 
     form.addEventListener("submit", function (e) {
         e.preventDefault();
-        var img = pendingImageData || "";
+        var imgs = getPendingImages();
         var body = {
             pd_code: codeInput ? codeInput.value.trim() : "",
             pd_name: nameInput.value.trim(),
@@ -176,8 +157,8 @@
             pd_price2: PF.parsePriceInput(price2Input),
             pd_price3: PF.parsePriceInput(price3Input),
             pd_price4: PF.parsePriceInput(price4Input),
-            pd_image: img,
-            pd_images: img ? [img] : [],
+            pd_image: imgs[0] || "",
+            pd_images: imgs,
             pd_record_type: "catalog",
             per_name: perNameInput ? perNameInput.value.trim() : "",
             "per-number": perNumberInput ? perNumberInput.value.trim() : "",
