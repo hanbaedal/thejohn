@@ -87,8 +87,13 @@
         .ssd-regen h2 { margin: 0 0 0.35rem; font-size: 1rem; color: #1e3a52; }
         .ssd-regen p { margin: 0 0 0.75rem; font-size: 0.85rem; color: #5a6d7e; line-height: 1.45; }
         .ssd-regen-meta { font-size: 0.78rem; color: #6a7d8f; margin: 0.5rem 0 0; }
+        .ssd-actions-head-mobile { display: none; }
         @media (max-width: 640px) {
-            .ssd-table .ssd-mtime { white-space: normal; }
+            .ssd-table .ssd-file-col { display: none; }
+            .ssd-actions .ssd-btn-view { display: none; }
+            .ssd-actions-head-full { display: none; }
+            .ssd-actions-head-mobile { display: inline; }
+            .ssd-table .ssd-mtime { white-space: nowrap; }
         }
     </style>
 </head>
@@ -114,9 +119,12 @@
                     <thead>
                         <tr>
                             <th scope="col">문서</th>
-                            <th scope="col">파일</th>
+                            <th scope="col" class="ssd-file-col">파일</th>
                             <th scope="col">최근 생성</th>
-                            <th scope="col" class="ssd-actions-col">보기 · 저장</th>
+                            <th scope="col" class="ssd-actions-col">
+                                <span class="ssd-actions-head-full">보기 · 저장</span>
+                                <span class="ssd-actions-head-mobile">저장</span>
+                            </th>
                         </tr>
                     </thead>
                     <tbody id="ssd-tbody"></tbody>
@@ -177,6 +185,17 @@
                 }
             }
 
+            function formatMtimeDate(iso) {
+                if (!iso) return "—";
+                try {
+                    var d = new Date(iso);
+                    if (!isFinite(d.getTime())) return "—";
+                    return d.toLocaleDateString("ko-KR");
+                } catch (e) {
+                    return "—";
+                }
+            }
+
             function docHref(file) {
                 return "docs/" + encodeURIComponent(file);
             }
@@ -201,7 +220,7 @@
                 fileMap = fileMap || {};
                 tbody.innerHTML = SSD_DOCS.map(function (item) {
                     var info = fileMap[item.file] || {};
-                    var mtime = formatMtime(info.mtime);
+                    var mtime = formatMtimeDate(info.mtime);
                     var viewHref = officeViewUrl(item.file);
                     var saveHref = docHref(item.file);
                     return (
@@ -209,7 +228,7 @@
                         '<td class="ssd-label">' +
                         escapeHtml(item.label) +
                         "</td>" +
-                        '<td class="ssd-file">' +
+                        '<td class="ssd-file ssd-file-col">' +
                         escapeHtml(item.file) +
                         "</td>" +
                         '<td class="ssd-mtime" data-file-mtime="' +
@@ -218,7 +237,7 @@
                         escapeHtml(mtime) +
                         "</td>" +
                         '<td class="ssd-actions-col"><div class="ssd-actions">' +
-                        '<a class="btn btn-secondary" href="' +
+                        '<a class="btn btn-secondary ssd-btn-view" href="' +
                         escapeHtml(viewHref) +
                         '" target="_blank" rel="noopener noreferrer">보기</a>' +
                         '<a class="btn btn-primary" href="' +
