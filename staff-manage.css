@@ -711,6 +711,74 @@
 }
 
 /* 회사 소개 관리 */
+@media (min-width: 768px) {
+    .page-main.sm-company-intro-page {
+        max-width: min(100% - 2.5rem, 90rem);
+        margin-left: auto;
+        margin-right: auto;
+        padding-left: 1.5rem;
+        padding-right: 1.5rem;
+        box-sizing: border-box;
+    }
+}
+.sm-company-intro-page .sm-panel {
+    max-width: 100%;
+}
+.sm-company-intro-page .pr-photo-toolbar {
+    display: flex;
+    flex-wrap: nowrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.4rem 0.55rem;
+    margin-bottom: 0.5rem;
+}
+.sm-company-intro-page .pr-photo-toolbar .pr-photo-file-input {
+    position: absolute;
+    width: 0;
+    height: 0;
+    opacity: 0;
+    overflow: hidden;
+    pointer-events: none;
+}
+.sm-company-intro-page .pr-photo-toolbar > .pr-photo-label {
+    margin: 0;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #3d5166;
+    white-space: nowrap;
+}
+.sm-company-intro-page .pr-photo-toolbar .pr-photo-actions {
+    display: flex;
+    flex-wrap: nowrap;
+    gap: 0.35rem;
+    margin-left: auto;
+    flex-shrink: 0;
+}
+.sm-company-intro-page .pr-photo-hint-line {
+    display: block;
+}
+.sm-company-intro-page .pr-photo-hint-line + .pr-photo-hint-line {
+    margin-top: 0.2rem;
+}
+.sm-company-intro-page .sci-intro-slots {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    gap: 0.65rem;
+    width: 100%;
+    margin-top: 0.65rem;
+}
+.sm-company-intro-page .sci-intro-slots .pr-photo-slot {
+    width: 6.5rem;
+    height: 6.5rem;
+    flex: 0 0 auto;
+}
+@media (min-width: 900px) {
+    .sm-company-intro-page .sci-intro-slots .pr-photo-slot {
+        width: 7.25rem;
+        height: 7.25rem;
+    }
+}
 .sm-company-intro-page .sci-greeting-input {
     width: 100%;
     min-height: 12rem;
@@ -735,9 +803,6 @@
 }
 .sci-intro-field {
     margin-top: 0;
-}
-.sci-intro-slots .pr-photo-slot {
-    position: relative;
 }
 .sci-intro-slot-label {
     position: absolute;
