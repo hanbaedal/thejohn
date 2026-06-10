@@ -10,6 +10,9 @@
    */
   var COMPANY_GREETING_SUBJECT = "(주)더존";
   var guestIntroLoadPending = false;
+  var staffIntroLoadPending = false;
+  var lastGreetingKey = "";
+  var lastIntroImagesKey = "";
 
   /** 이 문자열을 포함하면 조사를 무조건 '는'으로 (예: 우일푸드) */
   var SUBJECT_FORCE_NEUN = ["우일푸드"];
@@ -116,11 +119,29 @@
     return count;
   }
 
+  function introImagesKey(images) {
+    if (!images || !images.length) return "";
+    return (
+      images.length +
+      ":" +
+      images
+        .map(function (u) {
+          return String(u || "").length;
+        })
+        .join(",")
+    );
+  }
+
   function buildDbIntroGallery(images) {
     var section = dbGallerySection();
     var track = document.getElementById("companyIntroGalleryDbTrack");
     if (!section || !track || !images || !images.length) return;
-    track.dataset.built = "";
+    var key = introImagesKey(images);
+    if (key === lastIntroImagesKey && track.dataset.built === "1") {
+      section.hidden = false;
+      return;
+    }
+    lastIntroImagesKey = key;
     buildIntroGalleryTrack(
       track,
       images,
@@ -153,6 +174,9 @@
     var body = greetingBodyEl();
     if (!body) return;
     var list = chunks || [];
+    var key = list.join("\n");
+    if (key && key === lastGreetingKey) return;
+    lastGreetingKey = key;
     body.innerHTML = "";
     for (var i = 0; i < list.length; i++) {
       var chunk = String(list[i] || "").trim();
@@ -208,27 +232,32 @@
     ]);
   }
 
-  function applyForStaff(st) {
+  function applyGreetingForStaffRecord(st) {
     if (!st) return false;
     var company = staffCompanyName(st);
     var greetingDb = greetingFromStaff(st);
-    var introImages = introImagesFromStaff(st);
-
-    setDbIntroGalleryVisible(false);
-
     if (greetingDb) {
       applyGreetingFromDb(greetingDb);
     } else if (matchesWooilFood(company)) {
       applyWooilFoodGreetingText(company);
-    } else if (!company) {
-      return false;
     } else {
-      applyDefaultGreeting(company);
+      applyDefaultGreeting(company || COMPANY_GREETING_SUBJECT);
     }
+    return true;
+  }
+
+  function applyForStaff(st) {
+    if (!st) return false;
+    var introImages = introImagesFromStaff(st);
+
+    applyGreetingForStaffRecord(st);
 
     if (introImages.length) {
       buildDbIntroGallery(introImages);
       setDbIntroGalleryVisible(true);
+    } else {
+      lastIntroImagesKey = "";
+      setDbIntroGalleryVisible(false);
     }
 
     return true;
@@ -245,17 +274,17 @@
     return role === "admin" || role === "supervisor" || role === "vendor";
   }
 
-  /** 게스트 — 더존(thejohn) staff DB만 사용, 소스 인사말 없음 */
+  /** 게스트 — 더존(thejohn) staff DB, 비어 있으면 회사명 기준 기본 인사말 */
   function applyForGuestStaff(st) {
     if (!st) return false;
-    setDbIntroGalleryVisible(false);
-    var greetingDb = greetingFromStaff(st);
-    if (!greetingDb) return false;
-    applyGreetingFromDb(greetingDb);
+    applyGreetingForStaffRecord(st);
     var introImages = introImagesFromStaff(st);
     if (introImages.length) {
       buildDbIntroGallery(introImages);
       setDbIntroGalleryVisible(true);
+    } else {
+      lastIntroImagesKey = "";
+      setDbIntroGalleryVisible(false);
     }
     var sign = document.querySelector(".company-greeting-sign");
     if (sign && st.st_ceo) {
@@ -266,6 +295,22 @@
       orgRoot.textContent = st.st_company;
     }
     return true;
+  }
+
+  function loadStaffCompanyIntroFromDb() {
+    var Api = global.THEJHON_API;
+    if (!Api || !Api.getStaffProfile) return;
+    if (staffIntroLoadPending) return;
+    staffIntroLoadPending = true;
+    Api.getStaffProfile()
+      .then(function (st) {
+        staffIntroLoadPending = false;
+        if (st) applyForStaff(st);
+      })
+      .catch(function () {
+        staffIntroLoadPending = false;
+        loadGuestCompanyIntroFromDb();
+      });
   }
 
   function loadGuestCompanyIntroFromDb() {
@@ -283,16 +328,37 @@
       });
   }
 
-  function run() {
+  function refreshCompanyIntro(st) {
+    if (st) {
+      var role = getGreetingRole();
+      if (usesStaffDbGreeting(role)) {
+        applyForStaff(st);
+      } else {
+        applyForGuestStaff(st);
+      }
+      return;
+    }
+    var Auth = global.THEJHON_AUTH;
+    if (Auth && Auth.isLoggedIn && !Auth.isLoggedIn()) {
+      return;
+    }
     var role = getGreetingRole();
-    if (usesStaffDbGreeting(role)) return;
+    if (usesStaffDbGreeting(role)) {
+      loadStaffCompanyIntroFromDb();
+      return;
+    }
     loadGuestCompanyIntroFromDb();
+  }
+
+  function run() {
+    refreshCompanyIntro();
   }
 
   global.THEJHON_COMPANY_GREETING = {
     applyForStaff: applyForStaff,
     applyForGuestStaff: applyForGuestStaff,
-    loadGuestCompanyIntroFromDb: loadGuestCompanyIntroFromDb,
+    loadStaffCompanyIntroFromDb: loadStaffCompanyIntroFromDb,
+    refreshCompanyIntro: refreshCompanyIntro,
     applyDefaultGreeting: applyDefaultGreeting,
     matchesWooilFood: matchesWooilFood,
     setDbIntroGalleryVisible: setDbIntroGalleryVisible,
@@ -301,16 +367,7 @@
   };
 
   global.__thejhonRefreshCompanyGreeting = function (st) {
-    var role = getGreetingRole();
-    if (usesStaffDbGreeting(role)) {
-      if (st && applyForStaff(st)) return;
-      return;
-    }
-    if (st) {
-      applyForGuestStaff(st);
-      return;
-    }
-    loadGuestCompanyIntroFromDb();
+    refreshCompanyIntro(st);
   };
 
   if (document.readyState === "loading") {
@@ -318,4 +375,7 @@
   } else {
     run();
   }
+  global.addEventListener("thejhon-auth-permissions-updated", function () {
+    refreshCompanyIntro();
+  });
 })(typeof window !== "undefined" ? window : this);

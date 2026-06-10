@@ -106,15 +106,23 @@
 
     function cardPhotoHtml(it, index) {
         var attrs = cardImgAttrs(index);
+        if (it && it.pd_has_image && api && api.productThumbUrl) {
+            return (
+                '<div class="ps-card-photo-wrap">' +
+                '<img class="ps-card-photo" alt=""' +
+                attrs +
+                ' src="' +
+                escapeHtml(api.productThumbUrl(it.id)) +
+                '">' +
+                "</div>"
+            );
+        }
         var thumb = String((it && it.pd_thumb) || "").trim();
         if (!thumb && it && it.id && lastItemsById[it.id]) {
             thumb = String(lastItemsById[it.id].pd_thumb || "").trim();
         }
-        if (thumb) {
+        if (thumb && !/^data:/i.test(thumb)) {
             var inlineSrc = productCoverSrc(it.id, thumb);
-            if (!inlineSrc && api && api.productThumbUrl) {
-                inlineSrc = api.productThumbUrl(it.id);
-            }
             if (inlineSrc) {
                 return (
                     '<div class="ps-card-photo-wrap">' +
@@ -126,17 +134,6 @@
                     "</div>"
                 );
             }
-        }
-        if (it.pd_has_image && api && api.productThumbUrl) {
-            return (
-                '<div class="ps-card-photo-wrap">' +
-                '<img class="ps-card-photo" alt=""' +
-                attrs +
-                ' src="' +
-                escapeHtml(api.productThumbUrl(it.id)) +
-                '">' +
-                "</div>"
-            );
         }
         return (
             '<span class="ps-card-photo ps-card-photo--empty" aria-hidden="true">사진<br>없음</span>'

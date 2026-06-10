@@ -235,16 +235,21 @@
     function heroSlideHtml(it, index, isCurrent) {
         var thumbSrc = heroThumbSrc(it, index);
         var eager = isCurrent && index === 0 ? ' fetchpriority="high"' : "";
+        var multi = imageCount(it) > 1;
         if (thumbSrc) {
             return (
                 '<div class="pd-hero-slide">' +
                 '<img class="pd-hero-img" src="' +
                 escapeHtml(thumbSrc) +
-                '" data-pd-full-cover="' +
-                escapeHtml(it.id) +
-                '" data-pd-cover-index="' +
-                String(index) +
-                '" alt="상품 사진 ' +
+                '"' +
+                (multi
+                    ? ' data-pd-full-cover="' +
+                      escapeHtml(it.id) +
+                      '" data-pd-cover-index="' +
+                      String(index) +
+                      '"'
+                    : "") +
+                ' alt="상품 사진 ' +
                 (index + 1) +
                 '" decoding="async"' +
                 eager +
@@ -300,9 +305,7 @@
                 return (
                     '<img class="pd-hero-img" src="' +
                     escapeHtml(thumbOne) +
-                    '" data-pd-full-cover="' +
-                    escapeHtml(it.id) +
-                    '" data-pd-cover-index="0" alt="상품 사진" decoding="async"' +
+                    '" alt="상품 사진" decoding="async"' +
                     eagerOne +
                     ">"
                 );
