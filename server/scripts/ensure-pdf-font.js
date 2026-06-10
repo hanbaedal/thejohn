@@ -117,11 +117,10 @@ async function main() {
             console.warn("[ensure-pdf-font] failed:", SOURCES[i], e.message);
         }
     }
-    console.error(
+    console.warn(
         "[ensure-pdf-font] 한글 폰트를 받지 못했습니다. PDF 한글이 깨질 수 있습니다.",
         lastErr ? lastErr.message : ""
     );
-    process.exitCode = 1;
 }
 
 main();

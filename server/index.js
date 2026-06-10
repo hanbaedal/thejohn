@@ -139,15 +139,15 @@ app.use(
 app.use(express.json({ limit: "15mb" }));
 
 app.get("/api/health", async function (req, res) {
-    try {
-        const payload = {
-            ok: true,
-            service: "thejhon-homepage",
-            db: isDbReady(),
-            dbError: isDbReady() ? "" : getLastDbError(),
-            loginSource: "mongodb collections staff and vendors (not source code)"
-        };
-        if (isDbReady()) {
+    const payload = {
+        ok: true,
+        service: "thejhon-homepage",
+        db: isDbReady(),
+        dbError: isDbReady() ? "" : getLastDbError(),
+        loginSource: "mongodb collections staff and vendors (not source code)"
+    };
+    if (isDbReady()) {
+        try {
             const { DEFAULT_STAFF_IDS, findExpectedStaffInDb, staffSeedAccountsOk } = require("./lib/staffFields");
             const { getOrderEnabledStaffLoginIds } = require("./lib/staffOrderEnabled");
             const docs = await findExpectedStaffInDb(getDb());
@@ -156,11 +156,11 @@ app.get("/api/health", async function (req, res) {
             payload.staffOk = staffSeedAccountsOk(docs);
             payload.orderEnabledStaffLoginIds = await getOrderEnabledStaffLoginIds();
             payload.vendorCount = await getDb().collection("vendors").countDocuments();
+        } catch (detailErr) {
+            payload.healthDetailError = detailErr.message || String(detailErr);
         }
-        res.json(payload);
-    } catch (e) {
-        res.status(500).json({ ok: false, error: e.message });
     }
+    res.json(payload);
 });
 
 app.get("/api/env-check", (req, res) => {
@@ -258,7 +258,11 @@ function startMongoConnect() {
         });
 }
 
-app.listen(PORT, "0.0.0.0", function () {
+var server = app.listen(PORT, "0.0.0.0", function () {
     console.log("[thejohn] listening on port " + PORT);
     startMongoConnect();
+});
+server.on("error", function (err) {
+    console.error("[thejohn] listen failed:", err.message);
+    process.exit(1);
 });
