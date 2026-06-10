@@ -6,24 +6,26 @@ const fs = require("fs");
 const path = require("path");
 const sharp = require("sharp");
 const {
-    buildWooilGreetingText,
-    buildDefaultDojeonGreetingText,
+    buildHomepageGreetingText,
     matchesWooilFoodCompany,
     matchesAkSangsaCompany
 } = require("./companyIntro");
 
 const AEK_GALLERY_COUNT = 12;
 const WOOIL_BLOCK_COUNT = 4;
+/** SVG→JPEG 한글 폰트 방식 변경 시 우일푸드 이미지 재생성 */
+const WOOIL_INTRO_IMAGE_GEN = 2;
 const INTRO_IMAGE_SIZE = 800;
 const FONT_REGULAR = path.join(__dirname, "..", "fonts", "NotoSansKR-Regular.ttf");
 const FONT_BOLD = path.join(__dirname, "..", "fonts", "NotoSansKR-Bold.ttf");
 
-function toFileUri(filePath) {
-    const resolved = path.resolve(filePath).replace(/\\/g, "/");
-    if (/^[A-Za-z]:\//.test(resolved)) {
-        return "file:///" + resolved;
-    }
-    return "file://" + resolved;
+let cachedFontCssEmbedded = "";
+
+function fontFaceDataUrl(filePath) {
+    const buf = fs.readFileSync(filePath);
+    return (
+        "data:application/font-ttf;base64," + buf.toString("base64")
+    );
 }
 
 function resolveAekGalleryDir() {
@@ -64,21 +66,23 @@ function wrapLines(text, maxChars) {
     return lines;
 }
 
-function fontCssFromFiles() {
+/** Render·librsvg 에서 file:// 폰트가 깨지므로 base64 임베드 */
+function fontCssEmbedded() {
+    if (cachedFontCssEmbedded) return cachedFontCssEmbedded;
     if (!fs.existsSync(FONT_REGULAR)) {
         throw new Error("한글 폰트 없음: server/fonts/NotoSansKR-Regular.ttf");
     }
-    const regularUri = toFileUri(FONT_REGULAR);
     let css =
         "@font-face{font-family:'NotoKR';font-weight:400;font-style:normal;src:url('" +
-        regularUri +
+        fontFaceDataUrl(FONT_REGULAR) +
         "') format('truetype');}";
     if (fs.existsSync(FONT_BOLD)) {
         css +=
             "@font-face{font-family:'NotoKR';font-weight:700;font-style:normal;src:url('" +
-            toFileUri(FONT_BOLD) +
+            fontFaceDataUrl(FONT_BOLD) +
             "') format('truetype');}";
     }
+    cachedFontCssEmbedded = css;
     return css;
 }
 
@@ -115,7 +119,7 @@ async function renderIntroBlockImage(opts) {
         height +
         '">' +
         "<defs><style>" +
-        fontCssFromFiles() +
+        fontCssEmbedded() +
         "</style></defs>" +
         '<rect width="100%" height="100%" fill="#ffffff"/>' +
         '<rect x="12" y="12" width="776" height="' +
@@ -201,29 +205,24 @@ async function migrateStaffDoc(col, staff) {
         Array.isArray(staff.st_company_intro_images) &&
         staff.st_company_intro_images.length > 0;
 
+    if (!hasGreeting) {
+        update.st_company_greeting = buildHomepageGreetingText(company, loginId);
+    }
+
     if (matchesWooilFoodCompany(company)) {
-        if (!hasGreeting) {
-            update.st_company_greeting = buildWooilGreetingText(company);
-        }
-        if (!hasImages) {
+        const imgGen = Number(staff.st_company_intro_images_gen) || 0;
+        const needsWooilImages = !hasImages || imgGen !== WOOIL_INTRO_IMAGE_GEN;
+        if (needsWooilImages) {
             try {
                 update.st_company_intro_images = await buildWooilIntroImages(company);
+                update.st_company_intro_images_gen = WOOIL_INTRO_IMAGE_GEN;
             } catch (imgErr) {
                 console.warn("[staff] wooil intro images skip:", label, imgErr.message);
             }
         }
     } else if (loginId === "ak20140516" || matchesAkSangsaCompany(company)) {
-        if (!hasGreeting) {
-            update.st_company_greeting = buildDefaultDojeonGreetingText(
-                company || "(주)에이케이상사"
-            );
-        }
         if (!hasImages) {
             update.st_company_intro_images = await loadAekGalleryImages();
-        }
-    } else if (loginId === "thejohn" || company.indexOf("더존") !== -1) {
-        if (!hasGreeting) {
-            update.st_company_greeting = buildDefaultDojeonGreetingText(company || "(주)더존");
         }
     }
 
@@ -261,5 +260,6 @@ async function migrateCompanyIntroCollection(database) {
 module.exports = {
     migrateCompanyIntroCollection,
     buildWooilIntroImages,
-    WOOIL_BLOCK_COUNT
+    WOOIL_BLOCK_COUNT,
+    WOOIL_INTRO_IMAGE_GEN
 };

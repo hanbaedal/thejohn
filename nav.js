@@ -663,7 +663,9 @@
             if (orgRoot && st.st_company) {
                 orgRoot.textContent = st.st_company;
             }
-            if (window.THEJHON_COMPANY_GREETING && THEJHON_COMPANY_GREETING.applyForStaff(st)) {
+            if (global.__thejhonRefreshCompanyGreeting) {
+                global.__thejhonRefreshCompanyGreeting(st);
+            } else if (window.THEJHON_COMPANY_GREETING && THEJHON_COMPANY_GREETING.applyForStaff(st)) {
                 /* 회사별 인사문·회사소개(우일푸드·에이케이상사 등) */
             } else if (st.st_company) {
                 var greetingBody = document.querySelector(".company-greeting-body");
@@ -693,6 +695,9 @@
             var role = Auth.getRole ? Auth.getRole() : "";
             if (role === "guest") {
                 applyDefaultBrandedLogo("");
+                if (global.__thejhonRefreshCompanyGreeting) {
+                    global.__thejhonRefreshCompanyGreeting();
+                }
                 return;
             }
             if (role !== "admin" && role !== "supervisor" && role !== "vendor") {

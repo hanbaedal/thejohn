@@ -1,9 +1,14 @@
 (function (global) {
   /**
-   * 인사문 상단에 쓰이는 회사 표기 한 곳만 바꾸면 (은/는)이 맞춰집니다.
-   * 예: 더존→은, …상사→는, 우일푸드 포함 상호→는(사이트 표기 통일 예외).
+   * 회사소개 인사말 — 반드시 로그인 후 이용 (게스트·업체·관리자·슈퍼바이저)
+   * - 게스트: 더존(thejohn) staff DB — GET /api/auth/public-footer-staff (소스 하드코딩 없음)
+   * - 관리자·슈퍼바이저: 본인 staff DB (st_company_greeting)
+   * - 업체: 등록 담당 관리자 staff DB (nav.js → GET /api/auth/staff-profile)
+   *
+   * 인사문 상단 회사 표기 — (은/는) 조사: 더존→은, …상사→는, 우일푸드→는
    */
   var COMPANY_GREETING_SUBJECT = "(주)더존";
+  var guestIntroLoadPending = false;
 
   /** 이 문자열을 포함하면 조사를 무조건 '는'으로 (예: 우일푸드) */
   var SUBJECT_FORCE_NEUN = ["우일푸드"];
@@ -352,19 +357,67 @@
     return true;
   }
 
-  function run() {
+  function getGreetingRole() {
     var Auth = global.THEJHON_AUTH;
-    if (Auth && Auth.isLoggedIn && Auth.isLoggedIn()) {
-      return;
-    }
+    if (!Auth || !Auth.isLoggedIn || !Auth.isLoggedIn()) return "";
+    return String(Auth.getRole ? Auth.getRole() : "").trim();
+  }
+
+  /** 관리자·슈퍼바이저·업체 — staff DB 인사말 (게스트 제외) */
+  function usesStaffDbGreeting(role) {
+    return role === "admin" || role === "supervisor" || role === "vendor";
+  }
+
+  /** 게스트 — 더존(thejohn) staff DB만 사용, 소스 인사말 없음 */
+  function applyForGuestStaff(st) {
+    if (!st) return false;
     setWooilPhilosophyVisible(false);
     setAkGalleryVisible(false);
     setDbIntroGalleryVisible(false);
-    applyDefaultGreeting(COMPANY_GREETING_SUBJECT);
+    var greetingDb = greetingFromStaff(st);
+    if (!greetingDb) return false;
+    applyGreetingFromDb(greetingDb);
+    var introImages = introImagesFromStaff(st);
+    if (introImages.length) {
+      buildDbIntroGallery(introImages);
+      setDbIntroGalleryVisible(true);
+    }
+    var sign = document.querySelector(".company-greeting-sign");
+    if (sign && st.st_ceo) {
+      sign.textContent = "대표 " + st.st_ceo;
+    }
+    var orgRoot = document.querySelector(".company-org-root");
+    if (orgRoot && st.st_company) {
+      orgRoot.textContent = st.st_company;
+    }
+    return true;
+  }
+
+  function loadGuestCompanyIntroFromDb() {
+    var Api = global.THEJHON_API;
+    if (!Api || !Api.getPublicFooterStaff) return;
+    if (guestIntroLoadPending) return;
+    guestIntroLoadPending = true;
+    Api.getPublicFooterStaff()
+      .then(function (st) {
+        guestIntroLoadPending = false;
+        applyForGuestStaff(st);
+      })
+      .catch(function () {
+        guestIntroLoadPending = false;
+      });
+  }
+
+  function run() {
+    var role = getGreetingRole();
+    if (usesStaffDbGreeting(role)) return;
+    loadGuestCompanyIntroFromDb();
   }
 
   global.THEJHON_COMPANY_GREETING = {
     applyForStaff: applyForStaff,
+    applyForGuestStaff: applyForGuestStaff,
+    loadGuestCompanyIntroFromDb: loadGuestCompanyIntroFromDb,
     applyDefaultGreeting: applyDefaultGreeting,
     applyWooilFoodGreeting: applyWooilFoodGreeting,
     applyAkSangsaIntro: applyAkSangsaIntro,
@@ -378,8 +431,16 @@
   };
 
   global.__thejhonRefreshCompanyGreeting = function (st) {
-    if (st && applyForStaff(st)) return;
-    run();
+    var role = getGreetingRole();
+    if (usesStaffDbGreeting(role)) {
+      if (st && applyForStaff(st)) return;
+      return;
+    }
+    if (st) {
+      applyForGuestStaff(st);
+      return;
+    }
+    loadGuestCompanyIntroFromDb();
   };
 
   if (document.readyState === "loading") {

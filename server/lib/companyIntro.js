@@ -105,6 +105,19 @@ function matchesAkSangsaCompany(company) {
     return c.indexOf("에이케이") !== -1 || c.indexOf("에이메이") !== -1;
 }
 
+/** 홈페이지에 보이던 회사별 인사말 — DB 비어 있을 때만 마이그레이션·표시 fallback */
+function buildHomepageGreetingText(companyName, loginId) {
+    const company = str(companyName);
+    const lid = String(loginId || "").trim().toLowerCase();
+    if (matchesWooilFoodCompany(company)) {
+        return buildWooilGreetingText(company);
+    }
+    if (lid === "ak20140516" || matchesAkSangsaCompany(company)) {
+        return buildDefaultDojeonGreetingText(company || "(주)에이케이상사");
+    }
+    return buildDefaultDojeonGreetingText(company || "(주)더존");
+}
+
 module.exports = {
     MAX_COMPANY_GREETING_CHARS,
     MAX_COMPANY_INTRO_IMAGES,
@@ -114,6 +127,7 @@ module.exports = {
     readCompanyIntroImagesFromDoc,
     buildWooilGreetingText,
     buildDefaultDojeonGreetingText,
+    buildHomepageGreetingText,
     matchesWooilFoodCompany,
     matchesAkSangsaCompany
 };
