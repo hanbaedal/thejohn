@@ -203,9 +203,37 @@
         return "";
     }
 
+    /** 상세 첫 장 — cover.jpg 직접(썸네일→교체 시 좁았다 넓어지는 깜빡임 방지) */
+    function heroCoverUrl(it, index) {
+        if (!it || !productHasPhoto(it)) return "";
+        var idx = index || 0;
+        if (api && api.productCoverUrl) {
+            return api.productCoverUrl(it.id, idx);
+        }
+        if (idx === 0) {
+            return productCoverSrc(it.id, it.pd_image);
+        }
+        return "";
+    }
+
     function heroSlideHtml(it, index, isCurrent) {
-        var thumbSrc = heroThumbSrc(it, index);
         var eager = isCurrent && index === 0 ? ' fetchpriority="high"' : "";
+        if (isCurrent) {
+            var coverDirect = heroCoverUrl(it, index);
+            if (coverDirect) {
+                return (
+                    '<div class="pd-hero-slide">' +
+                    '<img class="pd-hero-img" src="' +
+                    escapeHtml(coverDirect) +
+                    '" alt="상품 사진 ' +
+                    (index + 1) +
+                    '" decoding="async"' +
+                    eager +
+                    "></div>"
+                );
+            }
+        }
+        var thumbSrc = heroThumbSrc(it, index);
         if (thumbSrc) {
             return (
                 '<div class="pd-hero-slide">' +
@@ -248,7 +276,7 @@
         );
     }
 
-    /** 썸네일 즉시 표시 — 2장 이상이면 좌우 스크롤, cover.jpg로 고해상도 교체 */
+    /** 현재 상품: cover.jpg 직접 / 피드 다른 상품: 썸네일(아래·스크롤 시 cover 교체) */
     function heroHtml(it, isCurrent) {
         var count = imageCount(it);
         if (!count) {
