@@ -45,6 +45,17 @@ const F = {
     orderEnabled: "st_order_enabled"
 };
 
+/** 로그인·헤더용 — 회사소개 이미지 배열(base64 다수) 제외 */
+const STAFF_PROJECTION_NO_INTRO = { st_company_intro_images: 0 };
+
+/** 로그인 검증용 — 대용량 미디어·인사말 제외(로고는 이후 staff-profile에서) */
+const STAFF_PROJECTION_LOGIN = {
+    st_company_intro_images: 0,
+    st_company_greeting: 0,
+    st_seal: 0,
+    st_logo: 0
+};
+
 /**
  * 기본 staff 시드 — 서버 기동 시 MongoDB에만 반영·비어 있는 필드만 보강합니다.
  * 로그인은 항상 DB 조회(loginResolve.js). 슈퍼바이저는 hanbaedal 하나,
@@ -215,9 +226,11 @@ function toPublic(doc, options) {
         st_logo: String(d[F.logo] || ""),
         st_seal: String(d[F.seal] || ""),
         st_company_greeting: String(d[F.companyGreeting] || ""),
-        st_company_intro_images: Array.isArray(d[F.companyIntroImages])
-            ? d[F.companyIntroImages].slice()
-            : [],
+        st_company_intro_images: opts.light
+            ? []
+            : Array.isArray(d[F.companyIntroImages])
+              ? d[F.companyIntroImages].slice()
+              : [],
         role: d.role || "admin",
         active: d.active !== false,
         loginEnabled: d.loginEnabled !== false,
@@ -697,6 +710,8 @@ function staffSeedAccountsOk(docs) {
 
 module.exports = {
     F,
+    STAFF_PROJECTION_NO_INTRO,
+    STAFF_PROJECTION_LOGIN,
     fromLegacyDoc,
     DEFAULT_STAFF_ACCOUNTS,
     DEFAULT_STAFF_IDS,

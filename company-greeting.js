@@ -302,7 +302,7 @@
     if (!Api || !Api.getStaffProfile) return;
     if (staffIntroLoadPending) return;
     staffIntroLoadPending = true;
-    Api.getStaffProfile()
+    Api.getStaffProfile({ full: true })
       .then(function (st) {
         staffIntroLoadPending = false;
         if (st) applyForStaff(st);

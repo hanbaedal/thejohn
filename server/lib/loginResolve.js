@@ -26,7 +26,7 @@ function vendorGradeFromDoc(vendor) {
 /** staff · vendors 동시 조회 */
 async function lookupStaffAndVendor(loginId) {
     const [staff, vendorDocs] = await Promise.all([
-        findStaffByLoginId(loginId),
+        findStaffByLoginId(loginId, { login: true }),
         findVendorDocsByLoginId(loginId)
     ]);
     return { staff, vendorDocs, vendor: vendorDocs[0] || null };
@@ -40,8 +40,6 @@ async function tryStaffLogin(staff, loginId, password) {
 
     const company = getStaffCompanyName(staff);
     const companyLabel = company || "";
-    const legacy = fromLegacyDoc(staff);
-    const stLogo = legacy ? String(legacy[SF.logo] || "").trim() : "";
     return {
         ok: true,
         role: staff.role || "admin",
@@ -49,7 +47,7 @@ async function tryStaffLogin(staff, loginId, password) {
         companyName: companyLabel,
         displayName: companyLabel || staff.loginId,
         staffOrderEnabled: staffOrderEnabledFromDoc(staff),
-        stLogo: stLogo
+        stLogo: ""
     };
 }
 
@@ -71,7 +69,7 @@ async function tryVendorLogin(vendor, loginId, password) {
     let brandCompanyName = String(vendor[VF.registeredByName] || "").trim();
     if (regBy) {
         try {
-            const adminStaff = await findStaffByRegisteredBy(regBy);
+            const adminStaff = await findStaffByRegisteredBy(regBy, { light: true });
             if (adminStaff) {
                 const legacy = fromLegacyDoc(adminStaff);
                 stLogo = legacy ? String(legacy[SF.logo] || "").trim() : "";

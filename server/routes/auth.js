@@ -164,11 +164,11 @@ router.get("/public-footer-staff", async function (_req, res) {
         var loginHint = normalizeFooterStaffLoginId(
             process.env.DEFAULT_FOOTER_STAFF_ID || "thejohn"
         );
-        var staff = await findStaffByLoginId(loginHint);
+        var staff = await findStaffByLoginId(loginHint, { light: true });
         if (!staff) {
             return res.status(404).json({ ok: false, error: "기본 관리자 정보를 찾을 수 없습니다." });
         }
-        return res.json({ ok: true, item: toPublicStaff(staff) });
+        return res.json({ ok: true, item: toPublicStaff(staff, { light: true }) });
     } catch (e) {
         console.error("GET /api/auth/public-footer-staff", e);
         return res.status(500).json({ ok: false, error: "관리자 정보를 불러오지 못했습니다." });
@@ -192,14 +192,19 @@ router.get("/staff-profile", requireRole("admin", "supervisor", "vendor"), async
             staffLoginId = String(req.auth.userId || "").trim();
         }
 
-        let staff = await findStaffById(staffLoginId);
-        if (!staff) staff = await findStaffByLoginId(staffLoginId);
-        if (!staff) staff = await findStaffByRegisteredBy(staffLoginId);
+        const profileFull = req.query.full === "1";
+        const loadOpts = profileFull ? { full: true } : { light: true };
+        let staff = await findStaffById(staffLoginId, loadOpts);
+        if (!staff) staff = await findStaffByLoginId(staffLoginId, loadOpts);
+        if (!staff) staff = await findStaffByRegisteredBy(staffLoginId, loadOpts);
         if (!staff) {
             return res.status(404).json({ ok: false, error: "관리자 정보를 찾을 수 없습니다." });
         }
         const includePassword = req.auth.role === "admin" || req.auth.role === "supervisor";
-        return res.json({ ok: true, item: toPublicStaff(staff, { includePassword }) });
+        return res.json({
+            ok: true,
+            item: toPublicStaff(staff, { includePassword, light: !profileFull })
+        });
     } catch (e) {
         console.error("GET /api/auth/staff-profile", e);
         return res.status(500).json({ ok: false, error: "관리자 정보를 불러오지 못했습니다." });

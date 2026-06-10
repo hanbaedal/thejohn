@@ -159,7 +159,7 @@
             return;
         }
         setStatus("불러오는 중…");
-        api.getStaffProfile()
+        api.getStaffProfile({ full: true })
             .then(function (item) {
                 if (!item) {
                     setStatus("관리자 정보를 불러오지 못했습니다.", "err");

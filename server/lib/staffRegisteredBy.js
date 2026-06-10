@@ -46,11 +46,11 @@ async function findLegacyStaffByRegisteredBy(db, vals) {
 }
 
 /** 업체·상품 vn/pd_registered_by → staff(admin) 조회 (아이디 변경·이전 loginId 포함) */
-async function findStaffByRegisteredBy(registeredBy) {
+async function findStaffByRegisteredBy(registeredBy, opts) {
     const reg = trimStaffLoginId(registeredBy);
     if (!reg || isLegacyRegisteredBy(reg)) return null;
 
-    let staff = await findStaffByLoginId(reg);
+    let staff = await findStaffByLoginId(reg, opts);
     if (staff && (staff.role === "admin" || staff.role === "supervisor")) return staff;
 
     const db = getDb();

@@ -1,5 +1,6 @@
 const { getDb } = require("../db");
 const { loginLookupFilter, getVendorStoredPassword } = require("./loginAccount");
+const { STAFF_PROJECTION_LOGIN, STAFF_PROJECTION_NO_INTRO } = require("./staffFields");
 
 function normalizeId(s) {
     return String(s || "")
@@ -41,12 +42,22 @@ function rankVendorLoginDoc(doc) {
     return 0;
 }
 
-/** staff 컬렉션 — loginId로 1건 조회 */
-async function findStaffByLoginId(loginId) {
+/**
+ * staff 컬렉션 — loginId로 1건 조회
+ * @param {object} [opts] — login: 로그인 검증(대용량 제외), light: 소개 이미지만 제외, full: 전체
+ */
+async function findStaffByLoginId(loginId, opts) {
+    opts = opts || {};
     const resolved = resolveLoginIdForLookup(loginId);
     const lf = loginLookupFilter(resolved);
-    if (lf.$or) return getDb().collection("staff").findOne({ active: { $ne: false }, $or: lf.$or });
-    return getDb().collection("staff").findOne({ active: { $ne: false }, ...lf });
+    const filter = lf.$or ? { active: { $ne: false }, $or: lf.$or } : { active: { $ne: false }, ...lf };
+    let projection = null;
+    if (opts.login) projection = STAFF_PROJECTION_LOGIN;
+    else if (opts.light !== false && !opts.full) projection = STAFF_PROJECTION_NO_INTRO;
+    if (projection) {
+        return getDb().collection("staff").findOne(filter, { projection: projection });
+    }
+    return getDb().collection("staff").findOne(filter);
 }
 
 /** vendors · vendor_new · (비밀번호 있는) vendor_prospects — 동일 loginId 전체 조회 */

@@ -401,8 +401,10 @@
                 return d.item;
             });
         },
-        getStaffProfile: function () {
-            return request("GET", "/api/auth/staff-profile").then(function (d) {
+        getStaffProfile: function (opts) {
+            opts = opts || {};
+            var q = opts.full ? "?full=1" : "";
+            return request("GET", "/api/auth/staff-profile" + q).then(function (d) {
                 return d.item;
             });
         },

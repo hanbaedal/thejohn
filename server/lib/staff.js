@@ -115,16 +115,22 @@ function pickStaffBody(body) {
     return picked;
 }
 
-async function findStaffById(idOrLogin) {
+async function findStaffById(idOrLogin, opts) {
+    opts = opts || {};
     const key = String(idOrLogin || "").trim();
     if (!key) return null;
     const col = getDb().collection("staff");
     const active = { active: { $ne: false } };
-    let doc = await col.findOne({ id: key, ...active });
-    if (!doc) doc = await col.findOne({ loginId: key, ...active });
+    const { STAFF_PROJECTION_NO_INTRO } = require("./staffFields");
+    const findOpts =
+        opts.light !== false && !opts.full
+            ? { projection: STAFF_PROJECTION_NO_INTRO }
+            : {};
+    let doc = await col.findOne({ id: key, ...active }, findOpts);
+    if (!doc) doc = await col.findOne({ loginId: key, ...active }, findOpts);
     if (!doc) {
         const lf = loginLookupFilter(key);
-        doc = await col.findOne({ ...active, ...lf });
+        doc = await col.findOne({ ...active, ...lf }, findOpts);
     }
     return doc;
 }
