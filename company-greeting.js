@@ -336,7 +336,12 @@
     }
 
     if (matchesWooilFood(company)) {
-      setWooilPhilosophyVisible(true, company);
+      if (introImages.length) {
+        buildDbIntroGallery(introImages);
+        setDbIntroGalleryVisible(true);
+      } else {
+        setWooilPhilosophyVisible(true, company);
+      }
     } else if (introImages.length) {
       buildDbIntroGallery(introImages);
       setDbIntroGalleryVisible(true);
