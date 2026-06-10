@@ -205,6 +205,12 @@ async function runStartupMigrations(database) {
     await staff.ensureStaffIndexes(database);
     await ensureDefaultStaffSeeds(database);
     await migrateStaffCollection(database);
+    try {
+        const { migrateCompanyIntroCollection } = require("./lib/migrateCompanyIntro");
+        await migrateCompanyIntroCollection(database);
+    } catch (introErr) {
+        console.warn("[thejohn] company-intro migrate:", introErr.message);
+    }
     const {
         reconcileStaleRegisteredByReferences,
         reconcileRegisteredByCase
