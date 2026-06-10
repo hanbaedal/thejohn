@@ -138,7 +138,17 @@ app.use(
 );
 app.use(express.json({ limit: "15mb" }));
 
-app.get("/api/health", async function (req, res) {
+/** Render health check — 즉시 200 (DB 상세 조회·마이그레이션과 분리) */
+app.get("/api/health", function (req, res) {
+    res.status(200).json({
+        ok: true,
+        service: "thejhon-homepage",
+        db: isDbReady(),
+        dbError: isDbReady() ? "" : getLastDbError()
+    });
+});
+
+app.get("/api/health/detail", async function (req, res) {
     const payload = {
         ok: true,
         service: "thejhon-homepage",
@@ -257,6 +267,13 @@ function startMongoConnect() {
             );
         });
 }
+
+process.on("uncaughtException", function (err) {
+    console.error("[thejohn] uncaughtException:", err && err.stack ? err.stack : err);
+});
+process.on("unhandledRejection", function (reason) {
+    console.error("[thejohn] unhandledRejection:", reason);
+});
 
 var server = app.listen(PORT, "0.0.0.0", function () {
     console.log("[thejohn] listening on port " + PORT);

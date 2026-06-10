@@ -219,12 +219,14 @@ async function runStartupMigrations(database) {
     await reconcileRegisteredByCase(database);
     const { migrateVendorsCollection } = require("./lib/vendorFields");
     await migrateVendorsCollection(database);
-    try {
-        const { migrateStoredImagesTo540, migrateProductThumbs } = require("./lib/image540");
-        await migrateStoredImagesTo540(database);
-        await migrateProductThumbs(database, { limit: 120 });
-    } catch (img540Err) {
-        console.warn("[thejohn] image540 migrate:", img540Err.message);
+    if (process.env.RUN_IMAGE540_MIGRATE === "1") {
+        try {
+            const { migrateStoredImagesTo540, migrateProductThumbs } = require("./lib/image540");
+            await migrateStoredImagesTo540(database);
+            await migrateProductThumbs(database, { limit: 40 });
+        } catch (img540Err) {
+            console.warn("[thejohn] image540 migrate:", img540Err.message);
+        }
     }
     const { ensureProspectIndexes } = require("./lib/vendorProspects");
     await ensureProspectIndexes(database);
@@ -306,7 +308,9 @@ async function connectDbOnce() {
             ready = true;
             lastDbError = "";
             console.log("[thejohn] MongoDB OK (" + c.label + ")");
-            scheduleStartupMigrations(database);
+            setTimeout(function () {
+                scheduleStartupMigrations(database);
+            }, 15000);
             return db;
         } catch (e) {
             lastErr = e;

@@ -575,9 +575,64 @@ function staffMigrationBodyFromDoc(doc) {
     return body;
 }
 
+var STAFF_MIGRATE_PROJECT = {
+    id: 1,
+    loginId: 1,
+    role: 1,
+    companyName: 1,
+    name: 1,
+    ceo: 1,
+    ceoPhone: 1,
+    address: 1,
+    st_company: 1,
+    st_phone: 1,
+    st_fax: 1,
+    st_ceo: 1,
+    st_ceo_tel: 1,
+    st_email: 1,
+    st_web: 1,
+    st_biz_no: 1,
+    st_biz_type: 1,
+    st_biz_item: 1,
+    st_zip: 1,
+    st_addr: 1,
+    st_addr_detail: 1,
+    st_address: 1,
+    st_facebook: 1,
+    st_instagram: 1,
+    st_naver_cafe: 1,
+    st_youtube: 1,
+    st_kakao: 1,
+    st_order_enabled: 1,
+    active: 1,
+    loginEnabled: 1,
+    password: 1,
+    passwordHash: 1
+};
+STAFF_MIGRATE_PROJECT[F.company] = 1;
+STAFF_MIGRATE_PROJECT[F.phone] = 1;
+STAFF_MIGRATE_PROJECT[F.fax] = 1;
+STAFF_MIGRATE_PROJECT[F.ceo] = 1;
+STAFF_MIGRATE_PROJECT[F.ceoTel] = 1;
+STAFF_MIGRATE_PROJECT[F.email] = 1;
+STAFF_MIGRATE_PROJECT[F.web] = 1;
+STAFF_MIGRATE_PROJECT[F.bizNo] = 1;
+STAFF_MIGRATE_PROJECT[F.bizType] = 1;
+STAFF_MIGRATE_PROJECT[F.bizItem] = 1;
+STAFF_MIGRATE_PROJECT[F.zip] = 1;
+STAFF_MIGRATE_PROJECT[F.addr] = 1;
+STAFF_MIGRATE_PROJECT[F.addrDetail] = 1;
+STAFF_MIGRATE_PROJECT[F.address] = 1;
+STAFF_MIGRATE_PROJECT[F.facebook] = 1;
+STAFF_MIGRATE_PROJECT[F.instagram] = 1;
+STAFF_MIGRATE_PROJECT[F.naverCafe] = 1;
+STAFF_MIGRATE_PROJECT[F.youtube] = 1;
+STAFF_MIGRATE_PROJECT[F.kakao] = 1;
+STAFF_MIGRATE_PROJECT[F.orderEnabled] = 1;
+
 async function migrateStaffCollection(db) {
     const col = db.collection("staff");
-    const docs = await col.find({}).toArray();
+    const docs = await col.find({}).project(STAFF_MIGRATE_PROJECT).toArray();
     let n = 0;
     let skipped = 0;
     for (const doc of docs) {
@@ -588,14 +643,16 @@ async function migrateStaffCollection(db) {
             continue;
         }
 
-        const pw = getStoredPassword(doc);
+        const full = await col.findOne({ id: doc.id });
+        if (!full) continue;
+        const pw = getStoredPassword(full);
         const built = buildFromBody(
-            staffMigrationBodyFromDoc(doc),
-            doc,
-            doc.loginId || "",
+            staffMigrationBodyFromDoc(full),
+            full,
+            full.loginId || "",
             pw
         );
-        await col.replaceOne({ id: doc.id }, toDbDoc(doc.id, built, doc));
+        await col.replaceOne({ id: doc.id }, toDbDoc(doc.id, built, full));
         n++;
     }
     if (n) console.log("[staff] migrated field names:", n, "skipped:", skipped);
@@ -603,7 +660,10 @@ async function migrateStaffCollection(db) {
 }
 
 async function migrateStaffOrderEnabled(col) {
-    const docs = await col.find({ role: "admin" }).toArray();
+    const docs = await col
+        .find({ role: "admin" })
+        .project({ id: 1, role: 1, st_order_enabled: 1, [F.orderEnabled]: 1 })
+        .toArray();
     let n = 0;
     for (const doc of docs) {
         if (doc[F.orderEnabled] !== undefined || doc.st_order_enabled !== undefined) continue;
