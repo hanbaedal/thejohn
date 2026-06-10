@@ -111,11 +111,20 @@
     updatePage();
   }
 
-  function buildIntroGalleryTrack(track, images, pageEl, section) {
+  function setIntroGalleryLayout(section, stack) {
+    if (!section) return;
+    section.classList.toggle("company-intro-gallery--stack", !!stack);
+    var pageEl = section.querySelector(".company-intro-gallery-page");
+    if (pageEl) pageEl.hidden = !!stack;
+  }
+
+  function buildIntroGalleryTrack(track, images, pageEl, section, stack) {
     if (!track || !images || !images.length) return 0;
     var count = images.length;
+    var useStack = stack !== false;
     track.dataset.built = "1";
     track.dataset.count = String(count);
+    track.dataset.layout = useStack ? "stack" : "slide";
     var html = "";
     for (var n = 0; n < count; n++) {
       html +=
@@ -124,15 +133,20 @@
         images[n] +
         '" alt="회사소개 ' +
         (n + 1) +
-        '번" width="800" height="600" loading="' +
+        '번" width="800" loading="' +
         (n === 0 ? "eager" : "lazy") +
         '">' +
         "</figure>";
     }
     track.innerHTML = html;
-    bindIntroGalleryScroll(track, pageEl, count);
-    track.scrollLeft = 0;
-    if (pageEl) pageEl.textContent = "1 / " + count;
+    if (section) setIntroGalleryLayout(section, useStack);
+    if (useStack) {
+      if (pageEl) pageEl.textContent = "";
+    } else {
+      bindIntroGalleryScroll(track, pageEl, count);
+      track.scrollLeft = 0;
+      if (pageEl) pageEl.textContent = "1 / " + count;
+    }
     if (section) section.hidden = false;
     return count;
   }
@@ -149,7 +163,8 @@
       track,
       images,
       document.getElementById("companyIntroGalleryAekPage"),
-      section
+      section,
+      true
     );
   }
 
@@ -162,7 +177,8 @@
       track,
       images,
       document.getElementById("companyIntroGalleryDbPage"),
-      section
+      section,
+      true
     );
   }
 
@@ -335,11 +351,11 @@
       applyDefaultGreeting(company);
     }
 
-    if (introImages.length) {
+    if (matchesWooilFood(company)) {
+      setWooilPhilosophyVisible(true, company);
+    } else if (introImages.length) {
       buildDbIntroGallery(introImages);
       setDbIntroGalleryVisible(true);
-    } else if (matchesWooilFood(company)) {
-      setWooilPhilosophyVisible(true, company);
     } else if (matchesAkSangsa(st)) {
       setAkGalleryVisible(true);
     }
@@ -350,19 +366,7 @@
   function run() {
     var Auth = global.THEJHON_AUTH;
     if (Auth && Auth.isLoggedIn && Auth.isLoggedIn()) {
-      var userId = Auth.getUserId && Auth.getUserId();
-      var cached =
-        Auth.getLoggedInCompanyDisplayName && Auth.getLoggedInCompanyDisplayName();
-      if (cached && matchesWooilFood(cached)) {
-        applyWooilFoodGreeting(cached);
-        return;
-      }
-      if (matchesAkSangsa(cached, userId)) {
-        applyAkSangsaIntro(
-          matchesAkSangsaByCompany(cached) ? cached : "(주)에이케이상사"
-        );
-        return;
-      }
+      return;
     }
     setWooilPhilosophyVisible(false);
     setAkGalleryVisible(false);

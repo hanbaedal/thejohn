@@ -1060,6 +1060,45 @@ a.company-division-card p {
     color: #3d5166;
     text-align: center;
 }
+.company-intro-gallery-page[hidden] {
+    display: none !important;
+}
+/* 회사소개 이미지 — 가로 슬라이드 대신 세로로 한 장씩 전체 너비 */
+.company-intro-gallery--stack .company-intro-gallery__frame {
+    display: block;
+}
+.company-intro-gallery--stack .company-intro-gallery__nav {
+    display: none !important;
+}
+.company-intro-gallery--stack .company-intro-gallery__viewport {
+    overflow: visible;
+    border: none;
+    border-radius: 0;
+    box-shadow: none;
+    background: transparent;
+}
+.company-intro-gallery--stack .company-intro-gallery__track {
+    flex-direction: column;
+    overflow: visible;
+    scroll-snap-type: none;
+    gap: 1.35rem;
+}
+.company-intro-gallery--stack .company-intro-gallery__slide {
+    flex: none;
+    width: 100%;
+    padding: 1.15rem 1.1rem 1.25rem;
+    background: #fff;
+    border: 1px solid #e0e6ed;
+    border-radius: 10px;
+    box-shadow: 0 2px 12px rgba(10, 77, 156, 0.06);
+    scroll-snap-align: none;
+}
+.company-intro-gallery--stack .company-intro-gallery__slide img {
+    width: 100%;
+    height: auto;
+    max-height: none;
+    object-fit: contain;
+}
 .company-org {
     width: 100%;
 }
