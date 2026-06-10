@@ -14,7 +14,7 @@
             Auth && Auth.getPostLoginLandingPath
                 ? Auth.getPostLoginLandingPath(role, params.get("next"))
                 : "index.html";
-        global.location.href = dest;
+        global.location.replace(dest);
     }
 
     function initGuest() {

@@ -95,12 +95,53 @@
         }
     }
 
+    var AUTH_KEY = "thejhon_logged_in";
+    var ROLE_KEY = "thejhon_role";
+    var TOKEN_KEY = "thejhon_api_token";
+    var AUTH_GATE_KEYS = [AUTH_KEY, ROLE_KEY, TOKEN_KEY, "thejhon_user_id"];
+
+    function isLoginPageEarly() {
+        var path = String(global.location.pathname || "")
+            .replace(/\\/g, "/")
+            .toLowerCase();
+        return path === "/login.html" || path.endsWith("/login.html");
+    }
+
+    /** auth.js isLoggedIn·repairInconsistentAuthState 와 동일 기준 */
+    function isLoggedInEarly() {
+        if (isPwaStandalone()) {
+            hydrateSessionFromLocal(AUTH_GATE_KEYS);
+        }
+        if (get(AUTH_KEY) !== "1" || !get(ROLE_KEY)) return false;
+        var role = String(get(ROLE_KEY) || "")
+            .trim()
+            .toLowerCase();
+        if (role === "guest" || role === "oauth") return true;
+        return !!get(TOKEN_KEY);
+    }
+
+    /** head 최상단 — 본문 렌더 전 미로그인 시 login.html로 즉시 이동 */
+    function enforceSiteLoginEarly() {
+        if (typeof global.location === "undefined") return;
+        if (isLoginPageEarly()) return;
+        if (isLoggedInEarly()) return;
+        var next =
+            global.location.pathname + global.location.search + global.location.hash;
+        if (!next || next === "/") next = "/index.html";
+        global.location.replace(
+            "login.html?next=" + encodeURIComponent(next)
+        );
+    }
+
     global.THEJHON_AUTH_STORAGE = {
         isPwaStandalone: isPwaStandalone,
         get: get,
         set: set,
         remove: remove,
         clearLocalKeys: clearLocalKeys,
-        hydrateSessionFromLocal: hydrateSessionFromLocal
+        hydrateSessionFromLocal: hydrateSessionFromLocal,
+        enforceSiteLoginEarly: enforceSiteLoginEarly
     };
+
+    enforceSiteLoginEarly();
 })(typeof window !== "undefined" ? window : this);

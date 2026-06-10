@@ -57,7 +57,7 @@
             short_name: shortName,
             description: name,
             id: "/",
-            start_url: "/index.html",
+            start_url: "/login.html",
             scope: "/",
             display: "standalone",
             background_color: "#f4f6f9",
