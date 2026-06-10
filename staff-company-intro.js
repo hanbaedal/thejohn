@@ -12,6 +12,8 @@
     var wooilBlocksHintEl = document.getElementById("sci-wooil-blocks-hint");
     var introImages = [];
     var loadedStaff = null;
+    var saveModal = document.getElementById("sci-save-modal");
+    var SELF_EDIT_PAGE = "staff-self-edit.html";
 
     var MAX_GREETING = 540;
     var MAX_INTRO =
@@ -126,6 +128,31 @@
         decorateIntroSlots();
     }
 
+    function openSaveModal() {
+        if (!saveModal) {
+            window.location.href = SELF_EDIT_PAGE;
+            return;
+        }
+        saveModal.hidden = false;
+        document.body.style.overflow = "hidden";
+        if (PF && PF.speakKorean) PF.speakKorean("저장되었습니다");
+        var continueBtn = document.getElementById("sci-save-continue");
+        if (continueBtn) continueBtn.focus();
+    }
+
+    function closeSaveModal() {
+        if (!saveModal) return;
+        saveModal.hidden = true;
+        document.body.style.overflow = "";
+    }
+
+    var saveContinueBtn = document.getElementById("sci-save-continue");
+    if (saveContinueBtn) {
+        saveContinueBtn.addEventListener("click", function () {
+            closeSaveModal();
+        });
+    }
+
     function loadProfile() {
         if (!api || !api.getStaffProfile) {
             setStatus("API를 불러오지 못했습니다.", "err");
@@ -165,8 +192,8 @@
                     st_company_intro_images: introImages.slice()
                 })
                 .then(function () {
-                    setStatus("저장되었습니다.", "ok");
-                    loadProfile();
+                    setStatus("", "");
+                    openSaveModal();
                 })
                 .catch(function (err) {
                     setStatus((err && err.message) || "저장 실패", "err");
