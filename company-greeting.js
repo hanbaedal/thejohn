@@ -205,10 +205,35 @@
     section.hidden = !show;
   }
 
-  function greetingParas() {
-    var body = document.querySelector(".company-greeting-body");
-    if (!body) return null;
-    return body.querySelectorAll("p");
+  function greetingBodyEl() {
+    return document.querySelector(".company-greeting-body");
+  }
+
+  function splitGreetingChunks(greetingText) {
+    return String(greetingText || "")
+      .split(/\n+/)
+      .map(function (line) {
+        return line.trim();
+      })
+      .filter(Boolean);
+  }
+
+  function renderGreetingChunks(chunks) {
+    var body = greetingBodyEl();
+    if (!body) return;
+    var list = chunks || [];
+    body.innerHTML = "";
+    for (var i = 0; i < list.length; i++) {
+      var chunk = String(list[i] || "").trim();
+      if (!chunk) continue;
+      var p = document.createElement("p");
+      if (chunk.indexOf("<") !== -1) {
+        p.innerHTML = chunk;
+      } else {
+        p.textContent = chunk;
+      }
+      body.appendChild(p);
+    }
   }
 
   function philosophySection() {
@@ -233,85 +258,44 @@
   }
 
   function applyGreetingFromDb(greetingText) {
-    var paras = greetingParas();
-    if (!paras || !paras.length) return;
-    var chunks = String(greetingText || "")
-      .split(/\n+/)
-      .map(function (line) {
-        return line.trim();
-      })
-      .filter(Boolean);
-    var i;
-    for (i = 0; i < paras.length; i++) {
-      if (i < chunks.length) {
-        if (chunks[i].indexOf("<") !== -1) {
-          paras[i].innerHTML = chunks[i];
-        } else {
-          paras[i].textContent = chunks[i];
-        }
-        paras[i].hidden = false;
-      } else {
-        paras[i].textContent = "";
-        paras[i].hidden = true;
-      }
-      delete paras[i].dataset.companyGreetingTpl;
-    }
+    renderGreetingChunks(splitGreetingChunks(greetingText));
   }
 
   function applyDefaultGreeting(subject) {
     var name = stripTrailingTopicParticle(subject || COMPANY_GREETING_SUBJECT);
     var eu = josaEunNeun(name);
-    var paras = greetingParas();
-    if (!paras || paras.length < 6) return;
-
-    paras[0].textContent = "안녕하십니까.";
-    paras[1].textContent =
+    renderGreetingChunks([
+      "안녕하십니까.",
       name +
-      eu +
-      " 전국 장례식장 식자재 공급 전문기업으로, 변화하는 장례식장 음식문화에 맞춰 더욱 전문적이고 체계적인 공급시스템을 구축해 운영하고 있는 중견기업입니다.";
-    paras[2].textContent =
+        eu +
+        " 전국 장례식장 식자재 공급 전문기업으로, 변화하는 장례식장 음식문화에 맞춰 더욱 전문적이고 체계적인 공급시스템을 구축해 운영하고 있는 중견기업입니다.",
       name +
-      eu +
-      " 정육, 건어물, 냉동식품, 냉동수산물, 공산품, 음료수 등 각 품목별 소사장 책임운영 체계를 도입하여, 보다 전문적이고 신속한 공급이 가능하도록 운영하고 있습니다.";
-    paras[3].textContent =
+        eu +
+        " 정육, 건어물, 냉동식품, 냉동수산물, 공산품, 음료수 등 각 품목별 소사장 책임운영 체계를 도입하여, 보다 전문적이고 신속한 공급이 가능하도록 운영하고 있습니다.",
       "각 분야 담당자가 직접 품질과 납품을 책임지는 시스템을 통해 안정적인 물류와 높은 상품 경쟁력을 제공해 드리고 있는 것이 " +
-      name +
-      "만의 차별화된 운영 시스템입니다.";
-    paras[4].textContent =
+        name +
+        "만의 차별화된 운영 시스템입니다.",
       "따라서 " +
-      name +
-      eu +
-      " 철저한 품질관리와 책임 있는 운영, 그리고 적극적인 현장 대응으로 장례식장의 든든한 파트너가 되는 것이 " +
-      name +
-      '의 "사명"입니다.';
-    paras[5].hidden = false;
-    paras[5].innerHTML =
-      '앞으로 고객의 입장에서 먼저 고민하며 함께 성장하는 기업으로 &quot;최선&quot;을 다하겠습니다.<br>감사합니다.';
-    for (var i = 0; i < paras.length; i++) {
-      delete paras[i].dataset.companyGreetingTpl;
-    }
+        name +
+        eu +
+        " 철저한 품질관리와 책임 있는 운영, 그리고 적극적인 현장 대응으로 장례식장의 든든한 파트너가 되는 것이 " +
+        name +
+        '의 "사명"입니다.',
+      '앞으로 고객의 입장에서 먼저 고민하며 함께 성장하는 기업으로 &quot;최선&quot;을 다하겠습니다.<br>감사합니다.'
+    ]);
   }
 
   function applyWooilFoodGreetingText(company) {
     var name = String(company || "(주)우일푸드").trim();
-    var paras = greetingParas();
-    if (!paras || paras.length < 6) return;
-
-    paras[0].textContent = "반갑습니다.";
-    paras[1].textContent = name + "에 오신 것을 환영합니다.";
-    paras[2].textContent =
+    renderGreetingChunks([
+      "반갑습니다.",
+      name + "에 오신 것을 환영합니다.",
       name +
-      "는 성실과 노력으로 성장하는 기틀을 두고 있는 식자재 전문 납품기업입니다. " +
-      name +
-      "는 동북아시아의 중심 인천에 자리잡고 있으며 신선한 식자재 전문 납품기업으로 설립하여 기업의 경영이익이 이윤을 찾기보다는 신선하고 품질 좋은 식재료로서 최선을 다하는 자세로 임하겠습니다.";
-    paras[3].textContent =
-      "본사는 위와 같은 설립취지의 마음으로 향후 국내 최고의 식자재 전문 유통기업으로서 책임과 의무를 다하겠습니다.";
-    paras[4].textContent = "";
-    paras[4].hidden = true;
-    paras[5].hidden = true;
-    for (var i = 0; i < paras.length; i++) {
-      delete paras[i].dataset.companyGreetingTpl;
-    }
+        "는 성실과 노력으로 성장하는 기틀을 두고 있는 식자재 전문 납품기업입니다. " +
+        name +
+        "는 동북아시아의 중심 인천에 자리잡고 있으며 신선한 식자재 전문 납품기업으로 설립하여 기업의 경영이익이 이윤을 찾기보다는 신선하고 품질 좋은 식재료로서 최선을 다하는 자세로 임하겠습니다.",
+      "본사는 위와 같은 설립취지의 마음으로 향후 국내 최고의 식자재 전문 유통기업으로서 책임과 의무를 다하겠습니다."
+    ]);
   }
 
   function applyWooilFoodGreeting(company) {
