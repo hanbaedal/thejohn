@@ -117,8 +117,14 @@ async function fullCoverJpegBufferFromDataUrl(dataUrl) {
     const parsed = parseDataUrl(raw);
     if (!parsed) return null;
     try {
+        if (parsed.mime === "image/jpeg" && parsed.buffer.length <= SKIP_IF_JPEG_BYTES) {
+            if (await shouldSkipResize(parsed)) {
+                return parsed.buffer;
+            }
+        }
         return await sharp(parsed.buffer)
             .rotate()
+            .resize(SIZE, SIZE, { fit: "cover", position: "centre" })
             .jpeg({ quality: JPEG_QUALITY, mozjpeg: true })
             .toBuffer();
     } catch (e) {
@@ -285,6 +291,20 @@ async function migrateProductThumbs(db, opts) {
     return report;
 }
 
+/** 기동 시 썸네일 백필 — 목록·상세 thumb.jpg 실시간 생성 부담 감소 */
+async function backfillProductThumbs(db, opts) {
+    opts = opts || {};
+    const batchLimit = Math.max(10, Math.min(100, Number(opts.batchLimit) || 60));
+    const maxRounds = Math.max(1, Math.min(15, Number(opts.maxRounds) || 6));
+    let total = 0;
+    for (let r = 0; r < maxRounds; r++) {
+        const report = await migrateProductThumbs(db, { limit: batchLimit });
+        total += report.products;
+        if (!report.products) break;
+    }
+    return { products: total, skipped: 0 };
+}
+
 module.exports = {
     SIZE,
     THUMB_SIZE,
@@ -297,5 +317,6 @@ module.exports = {
     normalizeProductImages540,
     normalizeVendorLogo540,
     migrateStoredImagesTo540,
-    migrateProductThumbs
+    migrateProductThumbs,
+    backfillProductThumbs
 };

@@ -336,17 +336,19 @@ router.get("/:id/thumb.jpg", async function (req, res) {
         if (!buf && main) {
             buf = await thumbJpegBufferFromDataUrl(main);
             if (buf && imgIdx === 0 && !storedThumb) {
-                makeProductThumbDataUrl(main)
-                    .then(function (thumbUrl) {
-                        if (!thumbUrl) return;
-                        return getDb()
+                try {
+                    const thumbUrl = await makeProductThumbDataUrl(main);
+                    if (thumbUrl) {
+                        await getDb()
                             .collection("products")
                             .updateOne(
                                 { id: doc.id },
                                 { $set: { pd_image_thumb: thumbUrl, updatedAt: Date.now() } }
                             );
-                    })
-                    .catch(function () {});
+                    }
+                } catch (saveErr) {
+                    console.warn("thumb.jpg save pd_image_thumb:", doc.id, saveErr.message);
+                }
             }
         }
         if (!buf) {

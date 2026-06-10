@@ -219,11 +219,22 @@ async function runStartupMigrations(database) {
     await reconcileRegisteredByCase(database);
     const { migrateVendorsCollection } = require("./lib/vendorFields");
     await migrateVendorsCollection(database);
+    try {
+        const { backfillProductThumbs } = require("./lib/image540");
+        const thumbReport = await backfillProductThumbs(database, {
+            batchLimit: 60,
+            maxRounds: 6
+        });
+        if (thumbReport.products) {
+            console.log("[image540] thumb backfill:", thumbReport.products, "건");
+        }
+    } catch (thumbErr) {
+        console.warn("[thejohn] thumb backfill:", thumbErr.message);
+    }
     if (process.env.RUN_IMAGE540_MIGRATE === "1") {
         try {
-            const { migrateStoredImagesTo540, migrateProductThumbs } = require("./lib/image540");
+            const { migrateStoredImagesTo540 } = require("./lib/image540");
             await migrateStoredImagesTo540(database);
-            await migrateProductThumbs(database, { limit: 40 });
         } catch (img540Err) {
             console.warn("[thejohn] image540 migrate:", img540Err.message);
         }
