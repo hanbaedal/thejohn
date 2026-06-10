@@ -17,6 +17,81 @@
         global.location.replace(dest);
     }
 
+    function apiBase() {
+        var b = global.THEJHON_API_BASE_URL;
+        return String(b || "").replace(/\/$/, "");
+    }
+
+    function setLoginServerStatus(text, busy) {
+        var el = $("loginServerStatus");
+        if (!el) return;
+        if (!text) {
+            el.hidden = true;
+            el.textContent = "";
+            el.classList.remove("login-server-status--busy");
+            return;
+        }
+        el.hidden = false;
+        el.textContent = text;
+        el.classList.toggle("login-server-status--busy", !!busy);
+    }
+
+    /** Render 콜드스타트·DB 연결 대기 — 로그인 전 서버 깨우기 */
+    function warmLoginServer() {
+        var maxMs = 90000;
+        var started = Date.now();
+
+        function poll() {
+            return fetch(apiBase() + "/api/health", {
+                cache: "no-store",
+                credentials: "same-origin"
+            })
+                .then(function (res) {
+                    if (!res.ok) throw new Error("health");
+                    return res.json();
+                })
+                .then(function (data) {
+                    if (data && data.db) {
+                        setLoginServerStatus("", false);
+                        return;
+                    }
+                    setLoginServerStatus(
+                        "서버 연결 중입니다. 잠시만 기다려 주세요.",
+                        true
+                    );
+                    if (Date.now() - started > maxMs) {
+                        setLoginServerStatus(
+                            "서버 응답이 느립니다. 로그인을 다시 시도해 주세요.",
+                            false
+                        );
+                        return;
+                    }
+                    return new Promise(function (resolve) {
+                        setTimeout(function () {
+                            poll().then(resolve);
+                        }, 2000);
+                    });
+                })
+                .catch(function () {
+                    setLoginServerStatus("서버를 연결하는 중…", true);
+                    if (Date.now() - started > maxMs) {
+                        setLoginServerStatus(
+                            "서버에 연결할 수 없습니다. 잠시 후 다시 시도해 주세요.",
+                            false
+                        );
+                        return;
+                    }
+                    return new Promise(function (resolve) {
+                        setTimeout(function () {
+                            poll().then(resolve);
+                        }, 2500);
+                    });
+                });
+        }
+
+        poll();
+    }
+
     function initGuest() {
         var guestBtn = document.querySelector(".login-guest");
         if (!guestBtn) return;
@@ -245,6 +320,7 @@
     }
 
     function boot() {
+        warmLoginServer();
         initGuest();
         initPasswordToggle();
         initLoginForm();

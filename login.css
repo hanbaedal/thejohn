@@ -31,6 +31,18 @@
     margin: 0;
 }
 
+.login-server-status {
+    margin: 0 0 0.75rem;
+    font-size: 0.82rem;
+    line-height: 1.45;
+    color: #5a6578;
+    text-align: center;
+}
+
+.login-server-status--busy {
+    color: #0a4d9c;
+}
+
 .page-login .login-page {
     display: flex;
     flex: 1;

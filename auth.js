@@ -393,7 +393,7 @@
             return Promise.reject(new Error("API를 불러오지 못했습니다. 페이지를 새로고침해 주세요."));
         }
         var loginPromise = THEJHON_API.login(id, pw).then(mapLoginResponse);
-        var timeoutMs = 20000;
+        var timeoutMs = 60000;
         var timed = new Promise(function (_, reject) {
             setTimeout(function () {
                 reject(

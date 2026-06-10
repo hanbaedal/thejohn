@@ -2,6 +2,18 @@
  * head 최상단 — 로그인 사용자는 기본 로고·파비콘 없이, 캐시된 관리자 로고만 즉시 표시
  */
 (function (global) {
+    (function ensurePwaMetaTags() {
+        if (typeof document === "undefined") return;
+        function ensureMeta(name, content) {
+            if (document.querySelector('meta[name="' + name + '"]')) return;
+            var meta = document.createElement("meta");
+            meta.name = name;
+            meta.content = content;
+            document.head.appendChild(meta);
+        }
+        ensureMeta("mobile-web-app-capable", "yes");
+    })();
+
     var AUTH_KEY = "thejhon_logged_in";
     var ROLE_KEY = "thejhon_role";
     var LOGO_KEY = "thejhon_staff_logo";

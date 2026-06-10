@@ -140,6 +140,9 @@ app.use(express.json({ limit: "15mb" }));
 
 /** Render health check — 즉시 200 (DB 상세 조회·마이그레이션과 분리) */
 app.get("/api/health", function (req, res) {
+    if (!isDbReady() && hasMongoConfig()) {
+        connectDb().catch(function () {});
+    }
     res.status(200).json({
         ok: true,
         service: "thejhon-homepage",
