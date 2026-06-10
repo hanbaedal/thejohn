@@ -42,6 +42,7 @@ const F = {
     seal: "st_seal",
     companyGreeting: "st_company_greeting",
     companyIntroImages: "st_company_intro_images",
+    companyIntroImageCount: "st_company_intro_image_count",
     orderEnabled: "st_order_enabled"
 };
 
@@ -54,6 +55,16 @@ const STAFF_PROJECTION_LOGIN = {
     st_company_greeting: 0,
     st_seal: 0,
     st_logo: 0
+};
+
+/** 회사 소개 관리 — 인사말·소개 이미지만 (로고·도장 제외) */
+const STAFF_PROJECTION_COMPANY_INTRO = {
+    id: 1,
+    loginId: 1,
+    role: 1,
+    st_company: 1,
+    st_company_greeting: 1,
+    st_company_intro_images: 1
 };
 
 /**
@@ -197,6 +208,17 @@ function fromLegacyDoc(doc) {
     return d;
 }
 
+function companyIntroImageCountFromDoc(doc) {
+    const d = fromLegacyDoc(doc);
+    if (!d) return 0;
+    const stored = parseInt(d[F.companyIntroImageCount], 10);
+    if (isFinite(stored) && stored >= 0) return stored;
+    if (!Array.isArray(d[F.companyIntroImages])) return 0;
+    return d[F.companyIntroImages].filter(function (item) {
+        return String(item || "").trim();
+    }).length;
+}
+
 function toPublic(doc, options) {
     const opts = options || {};
     const d = fromLegacyDoc(doc);
@@ -231,6 +253,7 @@ function toPublic(doc, options) {
             : Array.isArray(d[F.companyIntroImages])
               ? d[F.companyIntroImages].slice()
               : [],
+        st_company_intro_image_count: companyIntroImageCountFromDoc(d),
         role: d.role || "admin",
         active: d.active !== false,
         loginEnabled: d.loginEnabled !== false,
@@ -367,6 +390,11 @@ function toDbDoc(id, built, existing) {
         [F.companyIntroImages]: Array.isArray(built.st_company_intro_images)
             ? built.st_company_intro_images
             : [],
+        [F.companyIntroImageCount]: Array.isArray(built.st_company_intro_images)
+            ? built.st_company_intro_images.filter(function (item) {
+                  return String(item || "").trim();
+              }).length
+            : companyIntroImageCountFromDoc(existing),
         role: built.role,
         active: existing?.active !== false,
         loginEnabled: built.loginEnabled !== false,
@@ -712,6 +740,7 @@ module.exports = {
     F,
     STAFF_PROJECTION_NO_INTRO,
     STAFF_PROJECTION_LOGIN,
+    STAFF_PROJECTION_COMPANY_INTRO,
     fromLegacyDoc,
     DEFAULT_STAFF_ACCOUNTS,
     DEFAULT_STAFF_IDS,

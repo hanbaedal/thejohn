@@ -158,6 +158,20 @@ router.get("/vendor-profile", requireRole("vendor"), async function (req, res) {
     }
 });
 
+/**
+ * 회사소개 이미지 — 장별 JPEG (img src 병렬·캐시, MongoDB $slice로 1장만 조회)
+ * 로그인 시 ?access=JWT (상품 thumb.jpg와 동일)
+ */
+router.get("/company-intro/:index", async function (req, res) {
+    try {
+        const { serveCompanyIntroJpeg } = require("../lib/companyIntroServe");
+        await serveCompanyIntroJpeg(req, res);
+    } catch (e) {
+        console.error("GET /api/auth/company-intro/:index", e);
+        if (!res.headersSent) res.status(500).end();
+    }
+});
+
 /** 비로그인 푸터 — 기본 staff(기본 thejohn, 환경변수 DEFAULT_FOOTER_STAFF_ID로 변경) */
 router.get("/public-footer-staff", async function (_req, res) {
     try {
@@ -192,18 +206,29 @@ router.get("/staff-profile", requireRole("admin", "supervisor", "vendor"), async
             staffLoginId = String(req.auth.userId || "").trim();
         }
 
+        const profileSection = String(req.query.section || "").trim();
         const profileFull = req.query.full === "1";
-        const loadOpts = profileFull ? { full: true } : { light: true };
+        const loadOpts = profileSection === "company-intro"
+            ? { section: "company-intro" }
+            : profileFull
+              ? { full: true }
+              : { light: true };
         let staff = await findStaffById(staffLoginId, loadOpts);
         if (!staff) staff = await findStaffByLoginId(staffLoginId, loadOpts);
         if (!staff) staff = await findStaffByRegisteredBy(staffLoginId, loadOpts);
         if (!staff) {
             return res.status(404).json({ ok: false, error: "관리자 정보를 찾을 수 없습니다." });
         }
-        const includePassword = req.auth.role === "admin" || req.auth.role === "supervisor";
+        const includePassword =
+            !profileSection &&
+            (req.auth.role === "admin" || req.auth.role === "supervisor");
+        const introOnly = profileSection === "company-intro";
         return res.json({
             ok: true,
-            item: toPublicStaff(staff, { includePassword, light: !profileFull })
+            item: toPublicStaff(staff, {
+                includePassword,
+                light: !profileFull && !introOnly
+            })
         });
     } catch (e) {
         console.error("GET /api/auth/staff-profile", e);

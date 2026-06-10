@@ -26,15 +26,36 @@ async function migrateStaffDoc(col, staff) {
     return true;
 }
 
+async function backfillCompanyIntroImageCount(col, staff) {
+    const images = Array.isArray(staff.st_company_intro_images)
+        ? staff.st_company_intro_images
+        : [];
+    const imageCount = images.filter(function (item) {
+        return String(item || "").trim();
+    }).length;
+    const stored = parseInt(staff.st_company_intro_image_count, 10);
+    if (isFinite(stored) && stored === imageCount) return false;
+    await col.updateOne(
+        { id: staff.id },
+        { $set: { st_company_intro_image_count: imageCount, updatedAt: Date.now() } }
+    );
+    return true;
+}
+
 async function migrateCompanyIntroCollection(database) {
     const col = database.collection("staff");
     const staffList = await col.find({ active: { $ne: false } }).toArray();
     let count = 0;
+    let countBackfill = 0;
     for (let i = 0; i < staffList.length; i++) {
         if (await migrateStaffDoc(col, staffList[i])) count++;
+        if (await backfillCompanyIntroImageCount(col, staffList[i])) countBackfill++;
     }
     if (count) {
         console.log("[staff] company-intro migrate 완료:", count, "건");
+    }
+    if (countBackfill) {
+        console.log("[staff] company-intro image count:", countBackfill, "건");
     }
     return count;
 }

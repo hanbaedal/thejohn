@@ -1,6 +1,10 @@
 const { getDb } = require("../db");
 const { loginLookupFilter, getVendorStoredPassword } = require("./loginAccount");
-const { STAFF_PROJECTION_LOGIN, STAFF_PROJECTION_NO_INTRO } = require("./staffFields");
+const {
+    STAFF_PROJECTION_LOGIN,
+    STAFF_PROJECTION_NO_INTRO,
+    STAFF_PROJECTION_COMPANY_INTRO
+} = require("./staffFields");
 
 function normalizeId(s) {
     return String(s || "")
@@ -53,6 +57,7 @@ async function findStaffByLoginId(loginId, opts) {
     const filter = lf.$or ? { active: { $ne: false }, $or: lf.$or } : { active: { $ne: false }, ...lf };
     let projection = null;
     if (opts.login) projection = STAFF_PROJECTION_LOGIN;
+    else if (opts.section === "company-intro") projection = STAFF_PROJECTION_COMPANY_INTRO;
     else if (opts.light !== false && !opts.full) projection = STAFF_PROJECTION_NO_INTRO;
     if (projection) {
         return getDb().collection("staff").findOne(filter, { projection: projection });

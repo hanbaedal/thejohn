@@ -46,14 +46,42 @@
     return String(st.st_company || st.companyName || "").trim();
   }
 
-  function introImagesFromStaff(st) {
-    if (!st || !Array.isArray(st.st_company_intro_images)) return [];
-    var out = [];
+  function introImageCountFromStaff(st) {
+    if (!st) return 0;
+    var count = parseInt(st.st_company_intro_image_count, 10);
+    if (isFinite(count) && count > 0) return count;
+    if (!Array.isArray(st.st_company_intro_images)) return 0;
+    var n = 0;
     for (var i = 0; i < st.st_company_intro_images.length; i++) {
-      var src = String(st.st_company_intro_images[i] || "").trim();
-      if (src) out.push(src);
+      if (String(st.st_company_intro_images[i] || "").trim()) n++;
     }
-    return out;
+    return n;
+  }
+
+  function introImageUrlsFromStaff(st) {
+    var Api = global.THEJHON_API;
+    if (!Api || !Api.companyIntroImageUrl) return [];
+    var count = introImageCountFromStaff(st);
+    if (!count) return [];
+    var urls = [];
+    for (var i = 0; i < count; i++) {
+      var url = Api.companyIntroImageUrl(i);
+      if (url) urls.push(url);
+    }
+    return urls;
+  }
+
+  function introImagesFromStaff(st) {
+    if (!st) return [];
+    var inline = [];
+    if (Array.isArray(st.st_company_intro_images)) {
+      for (var i = 0; i < st.st_company_intro_images.length; i++) {
+        var src = String(st.st_company_intro_images[i] || "").trim();
+        if (src) inline.push(src);
+      }
+    }
+    if (inline.length) return inline;
+    return introImageUrlsFromStaff(st);
   }
 
   function greetingFromStaff(st) {
@@ -302,7 +330,7 @@
     if (!Api || !Api.getStaffProfile) return;
     if (staffIntroLoadPending) return;
     staffIntroLoadPending = true;
-    Api.getStaffProfile({ full: true })
+    Api.getStaffProfile()
       .then(function (st) {
         staffIntroLoadPending = false;
         if (st) applyForStaff(st);

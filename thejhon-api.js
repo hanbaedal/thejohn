@@ -153,6 +153,13 @@
             });
         },
         /** 목록 카드 — JPEG 썸네일 URL(img src 병렬 로드) */
+        /** 회사소개 페이지 — 장별 JPEG URL (JSON base64 대신 병렬 로드) */
+        companyIntroImageUrl: function (index) {
+            var idx = parseInt(index, 10);
+            if (!isFinite(idx) || idx < 0) idx = 0;
+            var url = apiUrl("/api/auth/company-intro/" + idx + ".jpg");
+            return appendImageAccessToken(url);
+        },
         productThumbUrl: function (id, index) {
             var pid = String(id || "").trim();
             if (!pid) return "";
@@ -403,7 +410,10 @@
         },
         getStaffProfile: function (opts) {
             opts = opts || {};
-            var q = opts.full ? "?full=1" : "";
+            var parts = [];
+            if (opts.full) parts.push("full=1");
+            if (opts.section) parts.push("section=" + encodeURIComponent(String(opts.section)));
+            var q = parts.length ? "?" + parts.join("&") : "";
             return request("GET", "/api/auth/staff-profile" + q).then(function (d) {
                 return d.item;
             });

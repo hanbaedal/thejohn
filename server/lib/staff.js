@@ -121,11 +121,16 @@ async function findStaffById(idOrLogin, opts) {
     if (!key) return null;
     const col = getDb().collection("staff");
     const active = { active: { $ne: false } };
-    const { STAFF_PROJECTION_NO_INTRO } = require("./staffFields");
-    const findOpts =
-        opts.light !== false && !opts.full
-            ? { projection: STAFF_PROJECTION_NO_INTRO }
-            : {};
+    const {
+        STAFF_PROJECTION_NO_INTRO,
+        STAFF_PROJECTION_COMPANY_INTRO
+    } = require("./staffFields");
+    var findOpts = {};
+    if (opts.section === "company-intro") {
+        findOpts = { projection: STAFF_PROJECTION_COMPANY_INTRO };
+    } else if (opts.light !== false && !opts.full) {
+        findOpts = { projection: STAFF_PROJECTION_NO_INTRO };
+    }
     let doc = await col.findOne({ id: key, ...active }, findOpts);
     if (!doc) doc = await col.findOne({ loginId: key, ...active }, findOpts);
     if (!doc) {

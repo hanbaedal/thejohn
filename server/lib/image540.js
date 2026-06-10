@@ -2,6 +2,7 @@ const sharp = require("sharp");
 
 const SIZE = 540;
 const THUMB_SIZE = 180;
+const COMPANY_INTRO_MAX = 800;
 const JPEG_QUALITY = 85;
 const THUMB_JPEG_QUALITY = 72;
 const MAX_THUMB_DATA_URL_LEN = 32 * 1024;
@@ -129,6 +130,28 @@ async function fullCoverJpegBufferFromDataUrl(dataUrl) {
             .toBuffer();
     } catch (e) {
         console.warn("[image540] full cover skip:", e.message);
+        return null;
+    }
+}
+
+/** 회사소개 이미지 — 긴 변 800px fit inside (업로드·표시와 동일) */
+async function companyIntroJpegBufferFromDataUrl(dataUrl) {
+    const raw = String(dataUrl || "").trim();
+    if (!raw) return null;
+    if (!/^data:image\//i.test(raw)) return null;
+    const parsed = parseDataUrl(raw);
+    if (!parsed) return null;
+    try {
+        return await sharp(parsed.buffer)
+            .rotate()
+            .resize(COMPANY_INTRO_MAX, COMPANY_INTRO_MAX, {
+                fit: "inside",
+                withoutEnlargement: true
+            })
+            .jpeg({ quality: JPEG_QUALITY, mozjpeg: true })
+            .toBuffer();
+    } catch (e) {
+        console.warn("[image540] company intro skip:", e.message);
         return null;
     }
 }
@@ -308,6 +331,8 @@ async function backfillProductThumbs(db, opts) {
 module.exports = {
     SIZE,
     THUMB_SIZE,
+    COMPANY_INTRO_MAX,
+    companyIntroJpegBufferFromDataUrl,
     resizeSquare540Cover,
     resizeSquare540Contain,
     makeProductThumbDataUrl,

@@ -153,19 +153,36 @@
         });
     }
 
+    function applyIntroImages(st) {
+        introImages = Array.isArray(st && st.st_company_intro_images)
+            ? st.st_company_intro_images.slice()
+            : [];
+        if (introGallery && introGallery.setImages) {
+            introGallery.setImages(introImages);
+        }
+        decorateIntroSlots();
+    }
+
     function loadProfile() {
         if (!api || !api.getStaffProfile) {
             setStatus("API를 불러오지 못했습니다.", "err");
             return;
         }
         setStatus("불러오는 중…");
-        api.getStaffProfile({ full: true })
+        api
+            .getStaffProfile()
             .then(function (item) {
                 if (!item) {
                     setStatus("관리자 정보를 불러오지 못했습니다.", "err");
                     return;
                 }
                 fillForm(item);
+                setStatus("소개 이미지 불러오는 중…");
+                return api.getStaffProfile({ section: "company-intro" });
+            })
+            .then(function (item) {
+                if (!item) return;
+                applyIntroImages(item);
                 setStatus("");
             })
             .catch(function (err) {

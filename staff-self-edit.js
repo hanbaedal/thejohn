@@ -311,7 +311,7 @@
         }
         setStatus("정보 불러오는 중…");
         api
-            .getStaffProfile({ full: true })
+            .getStaffProfile()
             .then(function (st) {
                 if (!st) throw new Error("관리자 정보를 찾을 수 없습니다.");
                 fillForm(st);
