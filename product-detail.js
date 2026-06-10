@@ -168,37 +168,6 @@
         return productHasPhoto(it) ? 1 : 0;
     }
 
-    function fetchImageCount(productId) {
-        if (!api || !productId) return Promise.resolve(0);
-        return api
-            .get("api/products/" + encodeURIComponent(productId) + "/image-count")
-            .then(function (d) {
-                return d && typeof d.count === "number" ? d.count : 0;
-            })
-            .catch(function () {
-                return 0;
-            });
-    }
-
-    /** 목록 API pd_image_count 누락 시 DB 실제 장수로 보정 */
-    function ensureImageCounts(items) {
-        if (!items || !items.length) return Promise.resolve(items || []);
-        return Promise.all(
-            items.map(function (it) {
-                if (!it || !it.id || !productHasPhoto(it)) return Promise.resolve(it);
-                var n = Number(it.pd_image_count);
-                if (isFinite(n) && n > 1) return Promise.resolve(it);
-                return fetchImageCount(it.id).then(function (c) {
-                    if (c > 0) it.pd_image_count = c;
-                    else if (!isFinite(n) || n < 1) it.pd_image_count = 1;
-                    return it;
-                });
-            })
-        ).then(function () {
-            return items;
-        });
-    }
-
     function bindHeroDotIndicators(container) {
         if (!container) return;
         container.querySelectorAll(".pd-hero-gallery").forEach(function (gallery) {
@@ -222,12 +191,14 @@
     function heroThumbSrc(it, index) {
         if (!it || !productHasPhoto(it)) return "";
         var idx = index || 0;
-        if (idx === 0) {
-            var thumb = String(it.pd_thumb || "").trim();
-            if (thumb) return productCoverSrc(it.id, thumb);
-        }
         if (api && api.productThumbUrl) {
             return api.productThumbUrl(it.id, idx);
+        }
+        if (idx === 0) {
+            var thumb = String(it.pd_thumb || "").trim();
+            if (thumb && !/^data:/i.test(thumb)) {
+                return productCoverSrc(it.id, thumb);
+            }
         }
         return "";
     }
@@ -412,32 +383,56 @@
         });
     }
 
-    /** 썸네일 위에 cover.jpg(540px)를 백그라운드 로드 후 교체 */
+    function upgradeHeroToCover(img) {
+        if (!api || !api.productCoverUrl || !img) return;
+        var id = img.getAttribute("data-pd-full-cover");
+        if (!id || img.dataset.pdFullLoading === "1") return;
+        var idx = parseInt(img.getAttribute("data-pd-cover-index") || "0", 10);
+        if (!isFinite(idx) || idx < 0) idx = 0;
+        var fullUrl = api.productCoverUrl(id, idx);
+        if (!fullUrl) return;
+        img.dataset.pdFullLoading = "1";
+        var preload = new Image();
+        preload.decoding = "async";
+        preload.onload = function () {
+            if (!document.body.contains(img)) return;
+            img.src = fullUrl;
+            img.removeAttribute("data-pd-full-cover");
+            img.removeAttribute("data-pd-full-loading");
+        };
+        preload.onerror = function () {
+            if (!document.body.contains(img)) return;
+            img.removeAttribute("data-pd-full-cover");
+            img.removeAttribute("data-pd-full-loading");
+        };
+        preload.src = fullUrl;
+    }
+
+    /** 다중 사진 — 1장은 즉시 cover, 나머지는 스크롤 시 고해상도 교체 */
     function loadFullHeroImages(container) {
-        if (!api || !api.productCoverUrl || !container) return;
-        container.querySelectorAll("img.pd-hero-img[data-pd-full-cover]").forEach(function (img) {
-            var id = img.getAttribute("data-pd-full-cover");
-            if (!id) return;
-            var idx = parseInt(img.getAttribute("data-pd-cover-index") || "0", 10);
-            if (!isFinite(idx) || idx < 0) idx = 0;
-            var fullUrl = api.productCoverUrl(id, idx);
-            if (!fullUrl || img.dataset.pdFullLoading === "1") return;
-            img.dataset.pdFullLoading = "1";
-            var preload = new Image();
-            preload.decoding = "async";
-            preload.onload = function () {
-                if (!document.body.contains(img)) return;
-                img.src = fullUrl;
-                img.removeAttribute("data-pd-full-cover");
-                img.removeAttribute("data-pd-full-loading");
-            };
-            preload.onerror = function () {
-                if (!document.body.contains(img)) return;
-                img.removeAttribute("data-pd-full-cover");
-                img.removeAttribute("data-pd-full-loading");
-            };
-            preload.src = fullUrl;
-        });
+        if (!container) return;
+        var imgs = container.querySelectorAll("img.pd-hero-img[data-pd-full-cover]");
+        if (!imgs.length) return;
+        upgradeHeroToCover(imgs[0]);
+        if (imgs.length < 2 || typeof IntersectionObserver === "undefined") {
+            for (var i = 1; i < imgs.length; i++) {
+                upgradeHeroToCover(imgs[i]);
+            }
+            return;
+        }
+        var observer = new IntersectionObserver(
+            function (entries) {
+                entries.forEach(function (entry) {
+                    if (!entry.isIntersecting) return;
+                    upgradeHeroToCover(entry.target);
+                    observer.unobserve(entry.target);
+                });
+            },
+            { rootMargin: "80px 0px", threshold: 0.01 }
+        );
+        for (var j = 1; j < imgs.length; j++) {
+            observer.observe(imgs[j]);
+        }
     }
 
     function normalizeItem(it) {
@@ -563,27 +558,24 @@
     function renderDeptFeed(focus) {
         var listHref = productsListHref(focus);
         var dept = String(focus.pd_dept || "").trim();
-        if (!dept) {
-            return ensureImageCounts([focus]).then(function (items) {
-                renderFeed(items, focus.id, listHref);
-            });
+        var focusItem = normalizeItem(focus);
+
+        renderFeed([focusItem], focus.id, listHref);
+
+        if (!dept || !api) {
+            return Promise.resolve();
         }
+
         return api
             .listProducts({ dept: dept, fullExplain: true })
             .then(function (items) {
                 items = (items || []).filter(isCatalogProduct).map(normalizeItem);
-                items = mergeFocusIntoList(items, focus);
-                if (!items.length) items = [focus];
-                return ensureImageCounts(items);
-            })
-            .then(function (items) {
+                items = mergeFocusIntoList(items, focusItem);
+                if (!items.length) items = [focusItem];
+                if (items.length === 1 && items[0].id === focus.id) return;
                 renderFeed(items, focus.id, listHref);
             })
-            .catch(function () {
-                ensureImageCounts([focus]).then(function (items) {
-                    renderFeed(items, focus.id, listHref);
-                });
-            });
+            .catch(function () {});
     }
 
     function render() {
