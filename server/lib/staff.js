@@ -108,7 +108,9 @@ function pickStaffBody(body) {
         "st_addr_detail",
         "st_address",
         "st_logo",
-        "st_seal"
+        "st_seal",
+        "st_company_greeting",
+        "st_company_intro_images"
     ]);
     return picked;
 }
@@ -211,6 +213,12 @@ async function createStaffAccount(body, creatorRole) {
         st_kakao: picked.st_kakao,
         st_logo: picked.st_logo !== undefined ? picked.st_logo : "",
         st_seal: picked.st_seal !== undefined ? picked.st_seal : "",
+        st_company_greeting:
+            picked.st_company_greeting !== undefined ? picked.st_company_greeting : "",
+        st_company_intro_images:
+            picked.st_company_intro_images !== undefined
+                ? picked.st_company_intro_images
+                : [],
         role: "admin",
         loginEnabled: true,
         orderEnabled: picked.orderEnabled === true
@@ -296,7 +304,9 @@ async function applyStaffAccountUpdate(staffKey, body) {
         "st_address",
         "st_kakao",
         "st_logo",
-        "st_seal"
+        "st_seal",
+        "st_company_greeting",
+        "st_company_intro_images"
     ]);
     const built = buildFromBody(buildBody, existing, nextLoginId, password);
     const doc = toDbDoc(existing.id, built, existing);

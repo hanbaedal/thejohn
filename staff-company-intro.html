@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="auth-storage.js"></script>
+    <script src="site-brand-boot.js"></script>
+    <meta name="theme-color" content="#0a4d9c">
+    <title>회사 소개 관리 — 더존</title>
+    <link rel="stylesheet" href="common.css">
+    <link rel="stylesheet" href="admin-manage.css">
+    <link rel="stylesheet" href="product-form-page.css">
+    <link rel="stylesheet" href="staff-manage.css">
+    <script src="api-config.js"></script>
+    <script src="thejhon-api.js"></script>
+    <script src="auth.js"></script>
+    <script src="nav.js" defer></script>
+</head>
+<body>
+    <header class="site-header">
+        <div class="site-header-brand">
+            <a href="work-hub.html" class="dz-logo dz-logo--compact" aria-label="그룹 마케팅 관리">
+                <img src="img/logo.png" alt="" width="72" height="72" class="dz-logo-img">
+            </a>
+        </div>
+        <nav class="site-header-actions" aria-label="계정">
+            <time class="header-date" id="headerToday" datetime=""></time>
+            <button type="button" class="btn btn-auth-icon btn-logout" id="btnLogout" hidden aria-label="로그아웃" title="로그아웃"></button>
+        </nav>
+    </header>
+    <main class="page-main page-main--hide-scrollbar sm-page sm-company-intro-page">
+        <p class="am-subnav"><a href="staff-self-edit.html">← 관리자 정보 수정</a></p>
+        <h1>회사 소개 관리</h1>
+        <p id="sci-status" class="sm-status" role="status" aria-live="polite"></p>
+
+        <section class="sm-panel">
+            <form id="sci-form" class="sm-self-form" novalidate>
+                <div class="sm-self-section">
+                    <div class="sm-self-section__body">
+                        <div class="sm-field sm-field--full">
+                            <label for="sci-greeting">인사말</label>
+                            <textarea id="sci-greeting" class="sci-greeting-input" rows="10" maxlength="540" placeholder="회사소개 페이지에 표시할 인사말을 입력하세요."></textarea>
+                            <p class="sm-field-hint sci-greeting-meta">
+                                <span id="sci-greeting-count">0</span> / 540자
+                                <span id="sci-greeting-wooil-hint" class="sci-wooil-hint" hidden> · 문단마다 줄바꿈으로 구분합니다.</span>
+                            </p>
+                        </div>
+                    </div>
+                    <div class="sm-divider" role="separator" aria-hidden="true"></div>
+                </div>
+
+                <div class="sm-self-section">
+                    <div class="sm-self-section__body">
+                        <div class="pr-photo-field sci-intro-field">
+                            <div class="pr-photo-toolbar">
+                                <span class="pr-photo-label">회사소개 이미지</span>
+                                <div class="pr-photo-actions" role="group" aria-label="회사소개 이미지 추가">
+                                    <input type="file" id="sci-intro-gallery" class="pr-photo-file-input" accept="image/*,.heic,.heif" multiple>
+                                    <input type="file" id="sci-intro-camera" class="pr-photo-file-input" accept="image/*" capture="environment">
+                                    <button type="button" class="pr-photo-icon-btn" id="sci-intro-gallery-btn" aria-label="앨범·파일에서 선택" title="앨범·파일에서 선택">
+                                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/></svg>
+                                    </button>
+                                    <button type="button" class="pr-photo-icon-btn pr-photo-icon-btn--camera" id="sci-intro-camera-btn" aria-label="카메라로 촬영" title="카메라로 촬영">
+                                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+                                    </button>
+                                </div>
+                            </div>
+                            <p id="sci-intro-count" class="pr-photo-count">사진 없음</p>
+                            <p id="sci-intro-hint" class="pr-photo-hint"></p>
+                            <p id="sci-wooil-blocks-hint" class="sm-field-hint sci-wooil-hint" hidden>
+                                우일푸드: 1~4번 이미지가 각각 비전 · 경영 방침 · 사훈 · 경영 이념 순서입니다.
+                            </p>
+                            <div id="sci-intro-slots" class="pr-photo-slots sci-intro-slots" aria-live="polite"></div>
+                        </div>
+                    </div>
+                    <div class="sm-divider" role="separator" aria-hidden="true"></div>
+                </div>
+
+                <div class="sm-field sm-field--full sm-actions">
+                    <button type="submit" class="btn btn-primary">저장</button>
+                    <a href="staff-self-edit.html" class="btn">취소</a>
+                </div>
+            </form>
+        </section>
+    </main>
+
+    <script src="product-form-shared.js"></script>
+    <script src="staff-company-intro.js"></script>
+    <script>
+        (function () {
+            var todayEl = document.getElementById("headerToday");
+            if (todayEl) {
+                var now = new Date();
+                todayEl.dateTime = now.toISOString().slice(0, 10);
+                todayEl.textContent = now.toLocaleDateString("ko-KR", {
+                    year: "numeric",
+                    month: "long",
+                    day: "numeric",
+                    weekday: "long"
+                });
+            }
+            var logoutBtn = document.getElementById("btnLogout");
+            if (logoutBtn) {
+                logoutBtn.hidden = !(window.THEJHON_AUTH && THEJHON_AUTH.isLoggedIn());
+            }
+        })();
+    </script>
+</body>
+</html>

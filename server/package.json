@@ -10,7 +10,8 @@
     "postinstall": "node scripts/ensure-pdf-font.js",
     "start": "node index.js",
     "dev": "node --watch index.js",
-    "ensure-prospects": "node scripts/ensure-vendor-prospects.js"
+    "ensure-prospects": "node scripts/ensure-vendor-prospects.js",
+    "migrate-company-intro": "node scripts/migrate-company-intro.js"
   },
   "engines": {
     "node": ">=18"

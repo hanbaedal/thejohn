@@ -1,5 +1,9 @@
 const { buildLoginFields, getStoredPassword } = require("./loginAccount");
 const {
+    normalizeCompanyGreeting,
+    normalizeCompanyIntroImages
+} = require("./companyIntro");
+const {
     formatFullAddress,
     hydrateAddressFields,
     pickAddressFromBody
@@ -36,6 +40,8 @@ const F = {
     kakao: "st_kakao",
     logo: "st_logo",
     seal: "st_seal",
+    companyGreeting: "st_company_greeting",
+    companyIntroImages: "st_company_intro_images",
     orderEnabled: "st_order_enabled"
 };
 
@@ -169,6 +175,14 @@ function fromLegacyDoc(doc) {
     if (doc.st_kakao != null) d[F.kakao] = str(doc.st_kakao);
     if (doc.st_logo != null) d[F.logo] = String(doc.st_logo);
     if (doc.st_seal != null) d[F.seal] = String(doc.st_seal);
+    if (doc.st_company_greeting != null) d[F.companyGreeting] = String(doc.st_company_greeting);
+    if (Array.isArray(doc.st_company_intro_images)) {
+        d[F.companyIntroImages] = doc.st_company_intro_images
+            .map(function (item) {
+                return String(item || "").trim();
+            })
+            .filter(Boolean);
+    }
     return d;
 }
 
@@ -200,6 +214,10 @@ function toPublic(doc, options) {
         st_kakao: normalizeKakaoChannelUrl(d[F.kakao]),
         st_logo: String(d[F.logo] || ""),
         st_seal: String(d[F.seal] || ""),
+        st_company_greeting: String(d[F.companyGreeting] || ""),
+        st_company_intro_images: Array.isArray(d[F.companyIntroImages])
+            ? d[F.companyIntroImages].slice()
+            : [],
         role: d.role || "admin",
         active: d.active !== false,
         loginEnabled: d.loginEnabled !== false,
@@ -268,6 +286,16 @@ function buildFromBody(body, existing, loginId, password) {
             body.st_seal !== undefined && body.st_seal !== null
                 ? String(body.st_seal)
                 : String(prev[F.seal] || ""),
+        st_company_greeting:
+            body.st_company_greeting !== undefined
+                ? normalizeCompanyGreeting(body.st_company_greeting) ?? ""
+                : String(prev[F.companyGreeting] || ""),
+        st_company_intro_images:
+            body.st_company_intro_images !== undefined
+                ? normalizeCompanyIntroImages(body.st_company_intro_images) ?? []
+                : Array.isArray(prev[F.companyIntroImages])
+                  ? prev[F.companyIntroImages].slice()
+                  : [],
         role: body.role || prev.role || "admin",
         loginEnabled:
             body.loginEnabled === false || body.loginEnabled === "false" || body.loginEnabled === 0
@@ -322,6 +350,10 @@ function toDbDoc(id, built, existing) {
         [F.kakao]: built.st_kakao,
         [F.logo]: built.st_logo,
         [F.seal]: built.st_seal,
+        [F.companyGreeting]: built.st_company_greeting,
+        [F.companyIntroImages]: Array.isArray(built.st_company_intro_images)
+            ? built.st_company_intro_images
+            : [],
         role: built.role,
         active: existing?.active !== false,
         loginEnabled: built.loginEnabled !== false,

@@ -674,3 +674,95 @@
     background: #f3e8e8;
     color: #8b3a3a;
 }
+
+/* 관리자 정보 수정 — 로고 | 도장 | 회사 소개 3등분 */
+.sm-self-form-page .sm-row--3 {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr auto 1fr;
+    gap: 0;
+    align-items: stretch;
+}
+.sm-self-form-page .sm-brand-slot--divider {
+    width: 1px;
+    min-width: 1px;
+    padding: 0;
+    margin: 0 0.75rem;
+    background: #d8e0ea;
+    align-self: stretch;
+}
+.sm-self-form-page .sm-brand-slot--intro .sm-brand-controls--intro {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+    min-height: 6.5rem;
+    justify-content: center;
+}
+.sm-company-intro-link {
+    white-space: nowrap;
+    font-size: 0.88rem;
+    padding: 0.45rem 0.85rem;
+}
+.sm-company-intro-hint {
+    margin: 0;
+    font-size: 0.78rem;
+    line-height: 1.45;
+    color: #5a6d7e;
+}
+
+/* 회사 소개 관리 */
+.sm-company-intro-page .sci-greeting-input {
+    width: 100%;
+    min-height: 12rem;
+    padding: 0.75rem 0.85rem;
+    border: 1px solid #c5d0dc;
+    border-radius: 8px;
+    font-size: 0.92rem;
+    line-height: 1.65;
+    resize: vertical;
+    font-family: inherit;
+    color: #2a3d52;
+}
+.sm-company-intro-page .sci-greeting-meta {
+    margin: 0.4rem 0 0;
+}
+.sci-greeting-count--over {
+    color: #c62828;
+    font-weight: 700;
+}
+.sci-wooil-hint {
+    color: #5a6d7e;
+}
+.sci-intro-field {
+    margin-top: 0;
+}
+.sci-intro-slots .pr-photo-slot {
+    position: relative;
+}
+.sci-intro-slot-label {
+    position: absolute;
+    left: 0.25rem;
+    bottom: 0.25rem;
+    padding: 0.1rem 0.35rem;
+    font-size: 0.68rem;
+    font-weight: 700;
+    color: #fff;
+    background: rgba(10, 77, 156, 0.82);
+    border-radius: 4px;
+    pointer-events: none;
+}
+
+@media (max-width: 720px) {
+    .sm-self-form-page .sm-row--3 {
+        grid-template-columns: 1fr;
+    }
+    .sm-self-form-page .sm-brand-slot--divider {
+        width: 100%;
+        height: 1px;
+        min-height: 1px;
+        margin: 0.65rem 0;
+    }
+    .sm-self-form-page .sm-brand-slot--intro .sm-brand-controls--intro {
+        min-height: 0;
+    }
+}

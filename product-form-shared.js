@@ -398,6 +398,15 @@
     }
 
     var MAX_PRODUCT_PHOTOS = 5;
+    var MAX_COMPANY_INTRO_PHOTOS = 15;
+    var COMPANY_INTRO_IMAGE_PIXEL_SIZE = 800;
+
+    var COMPANY_INTRO_IMAGE_PROCESS_OPTIONS = {
+        maxDimension: COMPANY_INTRO_IMAGE_PIXEL_SIZE,
+        fixedDimension: false,
+        fit: "inside",
+        maxBytes: MAX_IMAGE_BYTES
+    };
 
     function hasProductImages(data) {
         if (!data) return false;
@@ -1088,6 +1097,8 @@
         initProductPhotoPicker: initProductPhotoPicker,
         initProductPhotoGallery: initProductPhotoGallery,
         MAX_PRODUCT_PHOTOS: MAX_PRODUCT_PHOTOS,
+        MAX_COMPANY_INTRO_PHOTOS: MAX_COMPANY_INTRO_PHOTOS,
+        COMPANY_INTRO_IMAGE_PROCESS_OPTIONS: COMPANY_INTRO_IMAGE_PROCESS_OPTIONS,
         hasProductImages: hasProductImages,
         deptLabel: deptLabel,
         initDeptPicker: initDeptPicker,

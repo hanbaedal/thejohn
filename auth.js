@@ -2827,7 +2827,7 @@
             }
             return;
         }
-        if (page === "staff-self-edit.html") {
+        if (page === "staff-self-edit.html" || page === "staff-company-intro.html") {
             if (!isLoggedIn() || (!isAdminStaff() && !isSupervisorStaff())) {
                 redirectFromProtectedPage(isLoggedIn());
             }
