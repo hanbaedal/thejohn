@@ -206,21 +206,16 @@
     function heroSlideHtml(it, index, isCurrent) {
         var thumbSrc = heroThumbSrc(it, index);
         var eager = isCurrent && index === 0 ? ' fetchpriority="high"' : "";
-        var multi = imageCount(it) > 1;
         if (thumbSrc) {
             return (
                 '<div class="pd-hero-slide">' +
                 '<img class="pd-hero-img" src="' +
                 escapeHtml(thumbSrc) +
-                '"' +
-                (multi
-                    ? ' data-pd-full-cover="' +
-                      escapeHtml(it.id) +
-                      '" data-pd-cover-index="' +
-                      String(index) +
-                      '"'
-                    : "") +
-                ' alt="상품 사진 ' +
+                '" data-pd-full-cover="' +
+                escapeHtml(it.id) +
+                '" data-pd-cover-index="' +
+                String(index) +
+                '" alt="상품 사진 ' +
                 (index + 1) +
                 '" decoding="async"' +
                 eager +
@@ -269,37 +264,6 @@
                 '<div class="pd-hero-img pd-hero-img--empty" role="img" aria-label="사진 없음">사진 없음</div>'
             );
         }
-        if (count === 1) {
-            var thumbOne = heroThumbSrc(it, 0);
-            if (thumbOne) {
-                var eagerOne = isCurrent ? ' fetchpriority="high"' : "";
-                return (
-                    '<img class="pd-hero-img" src="' +
-                    escapeHtml(thumbOne) +
-                    '" alt="상품 사진" decoding="async"' +
-                    eagerOne +
-                    ">"
-                );
-            }
-            var coverOne = productCoverSrc(it.id, it.pd_image);
-            if (coverOne) {
-                return (
-                    '<img class="pd-hero-img" src="' +
-                    escapeHtml(coverOne) +
-                    '" alt="상품 사진" decoding="async">'
-                );
-            }
-            if (api && api.productCoverUrl) {
-                return (
-                    '<img class="pd-hero-img" src="' +
-                    escapeHtml(api.productCoverUrl(it.id, 0)) +
-                    '" alt="상품 사진" decoding="async">'
-                );
-            }
-            return (
-                '<div class="pd-hero-img pd-hero-img--empty" role="img" aria-label="사진 로딩">사진 불러오는 중…</div>'
-            );
-        }
         var slides = [];
         for (var i = 0; i < count; i++) {
             slides.push(heroSlideHtml(it, i, isCurrent));
@@ -309,7 +273,7 @@
             '<div class="pd-hero-scroll" role="region" aria-label="상품 사진" tabindex="0">' +
             slides.join("") +
             "</div>" +
-            heroDotsHtml(count) +
+            (count > 1 ? heroDotsHtml(count) : "") +
             "</div>"
         );
     }
