@@ -666,7 +666,7 @@
             if (global.__thejhonRefreshCompanyGreeting) {
                 global.__thejhonRefreshCompanyGreeting(st);
             } else if (window.THEJHON_COMPANY_GREETING && THEJHON_COMPANY_GREETING.applyForStaff(st)) {
-                /* 회사별 인사문·회사소개(우일푸드·에이케이상사 등) */
+                /* 회사별 인사문·회사소개(DB) */
             } else if (st.st_company) {
                 var greetingBody = document.querySelector(".company-greeting-body");
                 if (greetingBody && st.st_company) {

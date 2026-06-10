@@ -4,6 +4,7 @@
    * - 게스트: 더존(thejohn) staff DB — GET /api/auth/public-footer-staff (소스 하드코딩 없음)
    * - 관리자·슈퍼바이저: 본인 staff DB (st_company_greeting)
    * - 업체: 등록 담당 관리자 staff DB (nav.js → GET /api/auth/staff-profile)
+   * - 회사소개 이미지: staff DB (st_company_intro_images) — 회사 소개 관리에서 수기 등록
    *
    * 인사문 상단 회사 표기 — (은/는) 조사: 더존→은, …상사→는, 우일푸드→는
    */
@@ -37,47 +38,10 @@
     return String(company || "").indexOf("우일푸드") !== -1;
   }
 
-  var AEK_LOGIN_ID = "ak20140516";
-
-  function normalizeCompanyKey(company) {
-    return String(company || "")
-      .replace(/\s+/g, "")
-      .replace(/\(주\)/gi, "")
-      .toLowerCase();
-  }
-
   function staffCompanyName(st) {
     if (!st) return "";
     return String(st.st_company || st.companyName || "").trim();
   }
-
-  function matchesAkSangsaByLoginId(loginId) {
-    return (
-      String(loginId || "")
-        .trim()
-        .toLowerCase() === AEK_LOGIN_ID
-    );
-  }
-
-  function matchesAkSangsaByCompany(company) {
-    var c = normalizeCompanyKey(company);
-    if (!c) return false;
-    return c.indexOf("에이케이") !== -1 || c.indexOf("에이메이") !== -1;
-  }
-
-  /** (주)에이케이상사 — 회사명 또는 AK20140516 등 관리자 로그인 */
-  function matchesAkSangsa(stOrCompany, loginId) {
-    if (stOrCompany && typeof stOrCompany === "object") {
-      if (matchesAkSangsaByCompany(staffCompanyName(stOrCompany))) return true;
-      if (matchesAkSangsaByLoginId(stOrCompany.loginId || stOrCompany.id)) return true;
-      return false;
-    }
-    if (matchesAkSangsaByCompany(stOrCompany)) return true;
-    return matchesAkSangsaByLoginId(loginId);
-  }
-
-  var AEK_GALLERY_COUNT = 12;
-  var AEK_GALLERY_BASE = "img/company-intro/aek/";
 
   function introImagesFromStaff(st) {
     if (!st || !Array.isArray(st.st_company_intro_images)) return [];
@@ -91,10 +55,6 @@
 
   function greetingFromStaff(st) {
     return st ? String(st.st_company_greeting || "").trim() : "";
-  }
-
-  function akGallerySection() {
-    return document.getElementById("companyIntroGalleryAek");
   }
 
   function dbGallerySection() {
@@ -156,23 +116,6 @@
     return count;
   }
 
-  function buildAkGallery() {
-    var section = akGallerySection();
-    var track = document.getElementById("companyIntroGalleryAekTrack");
-    if (!section || !track || track.dataset.built) return;
-    var images = [];
-    for (var n = 1; n <= AEK_GALLERY_COUNT; n++) {
-      images.push(AEK_GALLERY_BASE + n + ".png");
-    }
-    buildIntroGalleryTrack(
-      track,
-      images,
-      document.getElementById("companyIntroGalleryAekPage"),
-      section,
-      true
-    );
-  }
-
   function buildDbIntroGallery(images) {
     var section = dbGallerySection();
     var track = document.getElementById("companyIntroGalleryDbTrack");
@@ -185,23 +128,6 @@
       section,
       true
     );
-  }
-
-  function setAkGalleryVisible(show) {
-    var section = akGallerySection();
-    if (!section) return;
-    if (!show) {
-      section.hidden = true;
-      return;
-    }
-    buildAkGallery();
-    section.hidden = false;
-    var track = document.getElementById("companyIntroGalleryAekTrack");
-    if (track) {
-      track.scrollLeft = 0;
-      var pageEl = document.getElementById("companyIntroGalleryAekPage");
-      if (pageEl) pageEl.textContent = "1 / " + AEK_GALLERY_COUNT;
-    }
   }
 
   function setDbIntroGalleryVisible(show) {
@@ -239,27 +165,6 @@
       }
       body.appendChild(p);
     }
-  }
-
-  function philosophySection() {
-    return document.getElementById("companyPhilosophyWooil");
-  }
-
-  function setWooilPhilosophyVisible(show, company) {
-    var section = philosophySection();
-    if (!section) return;
-    if (!show) {
-      section.hidden = true;
-      return;
-    }
-    var name = String(company || "(주)우일푸드").trim();
-    var ga = section.querySelector("[data-co-ga]");
-    var neun = section.querySelector("[data-co-neun]");
-    var wa = section.querySelector("[data-co-wa]");
-    if (ga) ga.textContent = name + "가";
-    if (neun) neun.textContent = name + "는";
-    if (wa) wa.textContent = name + "와";
-    section.hidden = false;
   }
 
   function applyGreetingFromDb(greetingText) {
@@ -303,55 +208,27 @@
     ]);
   }
 
-  function applyWooilFoodGreeting(company) {
-    setAkGalleryVisible(false);
-    setDbIntroGalleryVisible(false);
-    applyWooilFoodGreetingText(company);
-    setWooilPhilosophyVisible(true, company);
-  }
-
-  function applyAkSangsaIntro(company) {
-    var name = String(company || "(주)에이케이상사").trim() || "(주)에이케이상사";
-    setWooilPhilosophyVisible(false);
-    setDbIntroGalleryVisible(false);
-    setAkGalleryVisible(true);
-    applyDefaultGreeting(name);
-  }
-
   function applyForStaff(st) {
     if (!st) return false;
     var company = staffCompanyName(st);
     var greetingDb = greetingFromStaff(st);
     var introImages = introImagesFromStaff(st);
 
-    setWooilPhilosophyVisible(false);
-    setAkGalleryVisible(false);
     setDbIntroGalleryVisible(false);
 
     if (greetingDb) {
       applyGreetingFromDb(greetingDb);
     } else if (matchesWooilFood(company)) {
       applyWooilFoodGreetingText(company);
-    } else if (matchesAkSangsa(st)) {
-      applyDefaultGreeting(company || "(주)에이케이상사");
     } else if (!company) {
       return false;
     } else {
       applyDefaultGreeting(company);
     }
 
-    if (matchesWooilFood(company)) {
-      if (introImages.length) {
-        buildDbIntroGallery(introImages);
-        setDbIntroGalleryVisible(true);
-      } else {
-        setWooilPhilosophyVisible(true, company);
-      }
-    } else if (introImages.length) {
+    if (introImages.length) {
       buildDbIntroGallery(introImages);
       setDbIntroGalleryVisible(true);
-    } else if (matchesAkSangsa(st)) {
-      setAkGalleryVisible(true);
     }
 
     return true;
@@ -371,8 +248,6 @@
   /** 게스트 — 더존(thejohn) staff DB만 사용, 소스 인사말 없음 */
   function applyForGuestStaff(st) {
     if (!st) return false;
-    setWooilPhilosophyVisible(false);
-    setAkGalleryVisible(false);
     setDbIntroGalleryVisible(false);
     var greetingDb = greetingFromStaff(st);
     if (!greetingDb) return false;
@@ -419,12 +294,7 @@
     applyForGuestStaff: applyForGuestStaff,
     loadGuestCompanyIntroFromDb: loadGuestCompanyIntroFromDb,
     applyDefaultGreeting: applyDefaultGreeting,
-    applyWooilFoodGreeting: applyWooilFoodGreeting,
-    applyAkSangsaIntro: applyAkSangsaIntro,
     matchesWooilFood: matchesWooilFood,
-    matchesAkSangsa: matchesAkSangsa,
-    setWooilPhilosophyVisible: setWooilPhilosophyVisible,
-    setAkGalleryVisible: setAkGalleryVisible,
     setDbIntroGalleryVisible: setDbIntroGalleryVisible,
     buildDbIntroGallery: buildDbIntroGallery,
     applyGreetingFromDb: applyGreetingFromDb
