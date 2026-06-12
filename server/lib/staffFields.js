@@ -395,6 +395,11 @@ function toDbDoc(id, built, existing) {
                   return String(item || "").trim();
               }).length
             : companyIntroImageCountFromDoc(existing),
+        st_company_intro_r2: Array.isArray(built.st_company_intro_r2)
+            ? built.st_company_intro_r2.slice()
+            : Array.isArray(existing?.st_company_intro_r2)
+              ? existing.st_company_intro_r2.slice()
+              : [],
         role: built.role,
         active: existing?.active !== false,
         loginEnabled: built.loginEnabled !== false,

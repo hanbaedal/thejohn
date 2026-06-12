@@ -339,14 +339,22 @@ function buildFromBody(body, existing) {
     };
 }
 
-/** 저장 직전 — 상품 사진 540×540 + 목록용 썸네일 */
-async function finalizeProductBuilt(built) {
+/** 저장 직전 — 상품 사진 540×540 + 목록용 썸네일 + (R2) JPEG 업로드 */
+async function finalizeProductBuilt(built, productId) {
     if (!built) return built;
     const { normalizeProductImages540, makeProductThumbDataUrl } = require("./image540");
     const imgs = await normalizeProductImages540(built.pd_images);
     built.pd_images = imgs;
     built.pd_image = imgs[0] || "";
     built.pd_image_thumb = built.pd_image ? await makeProductThumbDataUrl(built.pd_image) : "";
+    const pid = String(productId || built.id || "").trim();
+    if (pid && imgs.length) {
+        const { uploadProductImagesToR2 } = require("./imageR2");
+        const r2 = await uploadProductImagesToR2(pid, built);
+        built.pd_r2_covers = r2.covers;
+        built.pd_r2_thumbs = r2.thumbs;
+        built.pd_r2_thumb = r2.thumb0 || "";
+    }
     return built;
 }
 
@@ -363,6 +371,9 @@ function toDbDoc(id, built, existing) {
         [F.image]: built.pd_image,
         [F.images]: built.pd_images,
         pd_image_thumb: built.pd_image_thumb || "",
+        pd_r2_covers: Array.isArray(built.pd_r2_covers) ? built.pd_r2_covers : [],
+        pd_r2_thumbs: Array.isArray(built.pd_r2_thumbs) ? built.pd_r2_thumbs : [],
+        pd_r2_thumb: String(built.pd_r2_thumb || ""),
         [F.explain]: built.pd_explain,
         [F.dept]: built.pd_dept,
         [F.group]: built.pd_group,

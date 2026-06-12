@@ -9,6 +9,40 @@
         baseUrl: ""
     };
 
+    /** R2/CDN 공개 베이스 — /api/health imageCdnBase (설정 시 API 우회 직링크) */
+    var imageCdnBaseCache = null;
+
+    function getImageCdnBase() {
+        if (imageCdnBaseCache === null) return "";
+        return imageCdnBaseCache;
+    }
+
+    function loadImageCdnBase() {
+        if (imageCdnBaseCache !== null) {
+            return Promise.resolve(imageCdnBaseCache);
+        }
+        return fetch(apiUrl("/api/health"), { headers: { Accept: "application/json" } })
+            .then(function (res) {
+                return res.json().catch(function () {
+                    return {};
+                });
+            })
+            .then(function (d) {
+                imageCdnBaseCache = String((d && d.imageCdnBase) || "").replace(/\/$/, "");
+                return imageCdnBaseCache;
+            })
+            .catch(function () {
+                imageCdnBaseCache = "";
+                return "";
+            });
+    }
+
+    if (typeof global.THEJHON_IMAGE_CDN_BASE === "string" && global.THEJHON_IMAGE_CDN_BASE) {
+        imageCdnBaseCache = String(global.THEJHON_IMAGE_CDN_BASE).replace(/\/$/, "");
+    } else {
+        loadImageCdnBase();
+    }
+
     if (typeof global.THEJHON_API_BASE_URL === "string" && global.THEJHON_API_BASE_URL) {
         config.baseUrl = global.THEJHON_API_BASE_URL;
     }
@@ -154,18 +188,30 @@
         },
         /** 목록 카드 — JPEG 썸네일 URL(img src 병렬 로드) */
         /** 회사소개 페이지 — 장별 JPEG URL (JSON base64 대신 병렬 로드) */
-        companyIntroImageUrl: function (index) {
+        loadImageCdnBase: loadImageCdnBase,
+        getImageCdnBase: getImageCdnBase,
+        companyIntroImageUrl: function (index, staffId) {
             var idx = parseInt(index, 10);
             if (!isFinite(idx) || idx < 0) idx = 0;
+            var cdn = getImageCdnBase();
+            var sid = String(staffId || "").trim();
+            if (cdn && sid) {
+                return cdn + "/staff/" + encodeURIComponent(sid) + "/intro-" + idx + ".jpg";
+            }
             var url = apiUrl("/api/auth/company-intro/" + idx + ".jpg");
             return appendImageAccessToken(url);
         },
         productThumbUrl: function (id, index) {
             var pid = String(id || "").trim();
             if (!pid) return "";
-            var url = apiUrl("/api/products/" + encodeURIComponent(pid) + "/thumb.jpg");
             var idx = parseInt(index, 10);
-            if (isFinite(idx) && idx > 0) {
+            if (!isFinite(idx) || idx < 0) idx = 0;
+            var cdn = getImageCdnBase();
+            if (cdn) {
+                return cdn + "/products/" + encodeURIComponent(pid) + "/thumb-" + idx + ".jpg";
+            }
+            var url = apiUrl("/api/products/" + encodeURIComponent(pid) + "/thumb.jpg");
+            if (idx > 0) {
                 url += (url.indexOf("?") >= 0 ? "&" : "?") + "index=" + idx;
             }
             return appendImageAccessToken(url);
@@ -174,9 +220,14 @@
         productCoverUrl: function (id, index) {
             var pid = String(id || "").trim();
             if (!pid) return "";
-            var url = apiUrl("/api/products/" + encodeURIComponent(pid) + "/cover.jpg");
             var idx = parseInt(index, 10);
-            if (isFinite(idx) && idx > 0) {
+            if (!isFinite(idx) || idx < 0) idx = 0;
+            var cdn = getImageCdnBase();
+            if (cdn) {
+                return cdn + "/products/" + encodeURIComponent(pid) + "/cover-" + idx + ".jpg";
+            }
+            var url = apiUrl("/api/products/" + encodeURIComponent(pid) + "/cover.jpg");
+            if (idx > 0) {
                 url += (url.indexOf("?") >= 0 ? "&" : "?") + "index=" + idx;
             }
             return appendImageAccessToken(url);

@@ -301,6 +301,11 @@ router.get("/:id/thumb.jpg", async function (req, res) {
             return res.type("image/jpeg").send(cached);
         }
 
+        const {
+            readProductR2ThumbKey,
+            serveR2Jpeg,
+            migrateProductDocToR2
+        } = require("../lib/imageR2");
         const doc = await getDb()
             .collection("products")
             .findOne(
@@ -309,6 +314,8 @@ router.get("/:id/thumb.jpg", async function (req, res) {
                     projection: {
                         id: 1,
                         pd_image_thumb: 1,
+                        pd_r2_thumb: 1,
+                        pd_r2_thumbs: 1,
                         [F.image]: 1,
                         [F.images]: 1,
                         pd_image: 1,
@@ -322,6 +329,11 @@ router.get("/:id/thumb.jpg", async function (req, res) {
         }
         if (auth && auth.role === "vendor" && !vendorCanAccessProduct(vendorDoc, doc, auth)) {
             return res.status(404).end();
+        }
+
+        const r2Key = readProductR2ThumbKey(doc, imgIdx);
+        if (r2Key) {
+            return serveR2Jpeg(res, r2Key, null);
         }
 
         const {
@@ -354,6 +366,7 @@ router.get("/:id/thumb.jpg", async function (req, res) {
         if (!buf) {
             return res.status(404).end();
         }
+        migrateProductDocToR2(doc).catch(function () {});
         rememberImageBuf(thumbBufCache, pid, imgIdx, buf);
         res.set("Cache-Control", "public, max-age=604800, immutable");
         res.type("image/jpeg").send(buf);
@@ -384,6 +397,11 @@ router.get("/:id/cover.jpg", async function (req, res) {
             return res.type("image/jpeg").send(cached);
         }
 
+        const {
+            readProductR2CoverKey,
+            serveR2Jpeg,
+            migrateProductDocToR2
+        } = require("../lib/imageR2");
         const doc = await getDb()
             .collection("products")
             .findOne(
@@ -391,6 +409,8 @@ router.get("/:id/cover.jpg", async function (req, res) {
                 {
                     projection: {
                         id: 1,
+                        pd_r2_covers: 1,
+                        pd_image_thumb: 1,
                         [F.image]: 1,
                         [F.images]: 1,
                         pd_image: 1,
@@ -406,13 +426,20 @@ router.get("/:id/cover.jpg", async function (req, res) {
             return res.status(404).end();
         }
 
-        const { fullCoverJpegBufferFromDataUrl } = require("../lib/image540");
+        const r2Key = readProductR2CoverKey(doc, imgIdx);
+        if (r2Key) {
+            return serveR2Jpeg(res, r2Key, null);
+        }
+
+        const { fullCoverJpegBufferFromDataUrl, jpegBufferFromThumbDataUrl } = require("../lib/image540");
         const images = readImagesFromDoc(doc);
         const main = images[imgIdx] || "";
-        const buf = main ? await fullCoverJpegBufferFromDataUrl(main) : null;
+        const quick = main ? jpegBufferFromThumbDataUrl(main) : null;
+        const buf = quick || (main ? await fullCoverJpegBufferFromDataUrl(main) : null);
         if (!buf) {
             return res.status(404).end();
         }
+        migrateProductDocToR2(doc).catch(function () {});
         rememberImageBuf(coverBufCache, pid, imgIdx, buf);
         res.set("Cache-Control", "public, max-age=604800, immutable");
         res.type("image/jpeg").send(buf);
@@ -676,8 +703,9 @@ router.get("/:id", async (req, res) => {
 
 router.post("/", requireRole("supervisor", "admin"), async (req, res) => {
     try {
+        const newProductId = newId();
         const built = buildFromBody(req.body, null);
-        await finalizeProductBuilt(built);
+        await finalizeProductBuilt(built, newProductId);
         const err = validateBuilt(built, true);
         if (err) return res.status(400).json({ ok: false, error: err });
 
@@ -707,7 +735,7 @@ router.post("/", requireRole("supervisor", "admin"), async (req, res) => {
             }
         }
 
-        let doc = toDbDoc(newId(), built, null);
+        let doc = toDbDoc(newProductId, built, null);
         doc = await stampNewProductRegistration(doc, req.auth);
         await getDb().collection("products").insertOne(doc);
         console.log("[products] inserted:", doc.id, doc[F.name], "by", doc[F.registeredBy]);
@@ -731,7 +759,7 @@ router.put("/:id", requireRole("supervisor", "admin"), async (req, res) => {
         }
 
         const built = buildFromBody(req.body, existing);
-        await finalizeProductBuilt(built);
+        await finalizeProductBuilt(built, id);
         const err = validateBuilt(built, false);
         if (err) return res.status(400).json({ ok: false, error: err });
 

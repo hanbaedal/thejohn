@@ -231,6 +231,22 @@ async function runStartupMigrations(database) {
     } catch (thumbErr) {
         console.warn("[thejohn] thumb backfill:", thumbErr.message);
     }
+    try {
+        const { isR2Enabled } = require("./lib/r2Storage");
+        if (isR2Enabled()) {
+            const { backfillImagesToR2 } = require("./lib/imageR2");
+            const r2Report = await backfillImagesToR2(database, {
+                productBatch: 15,
+                staffBatch: 3,
+                maxRounds: 8
+            });
+            if (r2Report.products || r2Report.staff) {
+                console.log("[r2] backfill:", r2Report.products, "products,", r2Report.staff, "staff intro");
+            }
+        }
+    } catch (r2Err) {
+        console.warn("[thejohn] r2 backfill:", r2Err.message);
+    }
     if (process.env.RUN_IMAGE540_MIGRATE === "1") {
         try {
             const { migrateStoredImagesTo540 } = require("./lib/image540");

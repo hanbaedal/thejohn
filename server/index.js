@@ -143,11 +143,19 @@ app.get("/api/health", function (req, res) {
     if (!isDbReady() && hasMongoConfig()) {
         connectDb().catch(function () {});
     }
+    let imageCdnBase = "";
+    try {
+        const { imageCdnBaseUrl } = require("./lib/imageR2");
+        imageCdnBase = imageCdnBaseUrl();
+    } catch (cdnErr) {
+        /* R2 미설정 */
+    }
     res.status(200).json({
         ok: true,
         service: "thejhon-homepage",
         db: isDbReady(),
-        dbError: isDbReady() ? "" : getLastDbError()
+        dbError: isDbReady() ? "" : getLastDbError(),
+        imageCdnBase: imageCdnBase
     });
 });
 
@@ -196,7 +204,12 @@ app.get("/api/env-check", (req, res) => {
             SMTP_PASS: !!envTrim("SMTP_PASS"),
             MAIL_FROM: !!envTrim("MAIL_FROM"),
             ALLOWED_ORIGINS: !!process.env.ALLOWED_ORIGINS,
-            PORT_set: !!process.env.PORT
+            PORT_set: !!process.env.PORT,
+            R2_ACCOUNT_ID: !!envTrim("R2_ACCOUNT_ID"),
+            R2_ACCESS_KEY_ID: !!envTrim("R2_ACCESS_KEY_ID"),
+            R2_SECRET_ACCESS_KEY: !!envTrim("R2_SECRET_ACCESS_KEY"),
+            R2_BUCKET_NAME: envTrim("R2_BUCKET_NAME") || "thejohn",
+            R2_PUBLIC_BASE_URL: !!envTrim("R2_PUBLIC_BASE_URL")
         },
         db: isDbReady(),
         dbError: isDbReady() ? "" : getLastDbError()

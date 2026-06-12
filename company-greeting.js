@@ -64,8 +64,9 @@
     var count = introImageCountFromStaff(st);
     if (!count) return [];
     var urls = [];
+    var staffId = String((st && (st.id || st.staffId)) || "").trim();
     for (var i = 0; i < count; i++) {
-      var url = Api.companyIntroImageUrl(i);
+      var url = Api.companyIntroImageUrl(i, staffId);
       if (url) urls.push(url);
     }
     return urls;

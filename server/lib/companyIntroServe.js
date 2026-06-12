@@ -120,10 +120,40 @@ async function serveCompanyIntroJpeg(req, res) {
         return res.type("image/jpeg").send(cached);
     }
 
+    const { serveR2Jpeg, readStaffIntroR2Key, migrateStaffIntroToR2 } = require("./imageR2");
+    const introProjection = {
+        projection: { st_company_intro_r2: { $slice: [imgIdx, 1] }, id: 1 }
+    };
+    const col = getDb().collection("staff");
+    const active = { active: { $ne: false } };
+    let introDoc = await col.findOne({ id: staffId, ...active }, introProjection);
+    if (!introDoc && staffId !== staffLoginId) {
+        introDoc = await col.findOne({ id: staffLoginId, ...active }, introProjection);
+    }
+    if (!introDoc) introDoc = await col.findOne({ loginId: staffLoginId, ...active }, introProjection);
+    if (!introDoc) {
+        const lf = loginLookupFilter(staffLoginId);
+        introDoc = await col.findOne({ ...active, ...lf }, introProjection);
+    }
+    const r2Key =
+        introDoc && Array.isArray(introDoc.st_company_intro_r2)
+            ? String(introDoc.st_company_intro_r2[0] || "")
+            : readStaffIntroR2Key(introDoc, imgIdx);
+    if (r2Key) {
+        return serveR2Jpeg(res, r2Key, null);
+    }
+
     const dataUrl = await loadCompanyIntroImageDataUrl(staffLoginId, imgIdx);
     if (!dataUrl) {
         return res.status(404).end();
     }
+    getDb()
+        .collection("staff")
+        .findOne({ id: staffId }, { projection: { id: 1, st_company_intro_images: 1 } })
+        .then(function (fullDoc) {
+            if (fullDoc) migrateStaffIntroToR2(fullDoc).catch(function () {});
+        })
+        .catch(function () {});
     const buf = await companyIntroJpegBufferFromDataUrl(dataUrl);
     if (!buf) {
         return res.status(404).end();

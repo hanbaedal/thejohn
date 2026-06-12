@@ -236,7 +236,18 @@ async function createStaffAccount(body, creatorRole) {
     };
     copyIfDefined(buildBody, picked, ["st_zip", "st_addr", "st_addr_detail", "st_address", "st_seal"]);
     const built = buildFromBody(buildBody, null, loginId, password);
-    const doc = toDbDoc(newStaffId(), built, null);
+    const newId = newStaffId();
+    if (
+        Array.isArray(built.st_company_intro_images) &&
+        built.st_company_intro_images.length
+    ) {
+        const { uploadStaffIntroToR2 } = require("./imageR2");
+        built.st_company_intro_r2 = await uploadStaffIntroToR2(
+            newId,
+            built.st_company_intro_images
+        );
+    }
+    const doc = toDbDoc(newId, built, null);
     await staffCol.insertOne(doc);
     return toPublic(doc);
 }
@@ -320,6 +331,17 @@ async function applyStaffAccountUpdate(staffKey, body) {
         "st_company_intro_images"
     ]);
     const built = buildFromBody(buildBody, existing, nextLoginId, password);
+    if (
+        picked.st_company_intro_images !== undefined &&
+        Array.isArray(built.st_company_intro_images) &&
+        built.st_company_intro_images.length
+    ) {
+        const { uploadStaffIntroToR2 } = require("./imageR2");
+        built.st_company_intro_r2 = await uploadStaffIntroToR2(
+            staffId,
+            built.st_company_intro_images
+        );
+    }
     const doc = toDbDoc(existing.id, built, existing);
     if (loginChanged) {
         doc.previousLoginIds = appendPreviousLoginIds(existing, existing.loginId);
