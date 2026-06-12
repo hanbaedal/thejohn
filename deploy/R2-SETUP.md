@@ -55,15 +55,24 @@ Render 대시보드 → 서비스 → **Environment**:
 
 ---
 
-## 5. 기존 이미지 일괄 이전
+## 5. 기존 이미지 일괄 이전 (속도 — **권장**)
+
+R2에 이미지가 없으면 Render·MongoDB 경유로 **느립니다**. 아래를 한 번 실행하면 `img.thejohn.co.kr`에서 바로 로드됩니다.
+
+**Render Shell** (대시보드 → thejohn → Shell):
+
+```bash
+cd server && npm run migrate-images-to-r2
+```
+
+완료까지 수 분~수십 분(상품 수에 따라). 로그에 `products: N` 이 0이 될 때까지 반복 실행해도 됩니다.
+
+로컬:
 
 ```bash
 cd server
 npm run migrate-images-to-r2
 ```
-
-환경 변수 없으면 즉시 종료됩니다.  
-대량 데이터는 여러 번 실행하거나 서버 기동 시 자동 백필(배치)에 맡길 수 있습니다.
 
 ---
 

@@ -83,6 +83,16 @@
     }
 
     function thumbHtml(it) {
+        var cdn = String((it && it.pd_image_cdn) || "").trim();
+        if (cdn) {
+            return (
+                '<div class="pl-admin-thumb">' +
+                '<img alt="" loading="lazy" decoding="async" src="' +
+                escapeHtml(cdn) +
+                '">' +
+                "</div>"
+            );
+        }
         var thumb = String((it && it.pd_thumb) || "").trim();
         if (thumb) {
             var cache = window.THEJHON_PRODUCT_COVER;

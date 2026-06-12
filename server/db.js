@@ -236,13 +236,15 @@ async function runStartupMigrations(database) {
         if (isR2Enabled()) {
             const { backfillImagesToR2 } = require("./lib/imageR2");
             const r2Report = await backfillImagesToR2(database, {
-                productBatch: 15,
-                staffBatch: 3,
-                maxRounds: 8
+                productBatch: 40,
+                staffBatch: 5,
+                maxRounds: 20
             });
             if (r2Report.products || r2Report.staff) {
                 console.log("[r2] backfill:", r2Report.products, "products,", r2Report.staff, "staff intro");
             }
+            const { scheduleBackgroundR2Backfill } = require("./lib/imageR2");
+            scheduleBackgroundR2Backfill(database);
         }
     } catch (r2Err) {
         console.warn("[thejohn] r2 backfill:", r2Err.message);

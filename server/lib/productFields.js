@@ -205,9 +205,21 @@ function toPublicListItem(doc, opts) {
             row.pd_image = cover;
         }
     }
-    const thumb = str(d.pd_image_thumb);
-    if (thumb && thumb.length <= 32000) {
-        row.pd_thumb = thumb;
+    try {
+        const { readProductR2ThumbKey, publicImageUrl } = require("./imageR2");
+        const r2Key = readProductR2ThumbKey(d, 0);
+        if (r2Key) {
+            const cdn = publicImageUrl(r2Key);
+            if (cdn) row.pd_image_cdn = cdn;
+        }
+    } catch (r2Err) {
+        /* R2 미설정 */
+    }
+    if (opts.includeThumb) {
+        const thumb = str(d.pd_image_thumb);
+        if (thumb && thumb.length <= 32000) {
+            row.pd_thumb = thumb;
+        }
     }
     return row;
 }
@@ -508,6 +520,7 @@ async function findProductsForList(db, query, opts) {
         projectExclude.content = 0;
     }
     if (!opts.includeCover) {
+        projectExclude.pd_image_thumb = 0;
         pipeline.push({ $project: projectExclude });
     }
     return db.collection("products").aggregate(pipeline).toArray();

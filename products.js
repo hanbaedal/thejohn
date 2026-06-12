@@ -106,31 +106,26 @@
 
     function cardPhotoHtml(it, index) {
         var attrs = cardImgAttrs(index);
+        var src = "";
+        if (it && it.pd_image_cdn) {
+            src = String(it.pd_image_cdn).trim();
+        } else if (it && it.pd_has_image && api && api.productThumbUrl) {
+            src = api.productThumbUrl(it.id);
+        }
+        if (src) {
+            return (
+                '<div class="ps-card-photo-wrap">' +
+                '<img class="ps-card-photo" alt=""' +
+                attrs +
+                ' src="' +
+                escapeHtml(src) +
+                '">' +
+                "</div>"
+            );
+        }
         var thumb = String((it && it.pd_thumb) || "").trim();
         if (!thumb && it && it.id && lastItemsById[it.id]) {
             thumb = String(lastItemsById[it.id].pd_thumb || "").trim();
-        }
-        if (thumb && /^data:image\//i.test(thumb)) {
-            return (
-                '<div class="ps-card-photo-wrap">' +
-                '<img class="ps-card-photo" alt=""' +
-                attrs +
-                ' src="' +
-                escapeHtml(thumb) +
-                '">' +
-                "</div>"
-            );
-        }
-        if (it && it.pd_has_image && api && api.productThumbUrl) {
-            return (
-                '<div class="ps-card-photo-wrap">' +
-                '<img class="ps-card-photo" alt=""' +
-                attrs +
-                ' src="' +
-                escapeHtml(api.productThumbUrl(it.id)) +
-                '">' +
-                "</div>"
-            );
         }
         if (thumb && !/^data:/i.test(thumb)) {
             var inlineSrc = productCoverSrc(it.id, thumb);

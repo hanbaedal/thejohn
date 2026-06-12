@@ -267,6 +267,39 @@ function imageCdnBaseUrl() {
     return c && c.publicBase ? c.publicBase : "";
 }
 
+/** 서버 기동 후 — R2 이전이 끝날 때까지 백그라운드 반복 */
+function scheduleBackgroundR2Backfill(db) {
+    if (!r2.isR2Enabled() || !db) return;
+    let done = false;
+    async function tick() {
+        if (done) return;
+        try {
+            const report = await backfillImagesToR2(db, {
+                productBatch: 40,
+                staffBatch: 5,
+                maxRounds: 20
+            });
+            if (report.products || report.staff) {
+                console.log(
+                    "[r2] background:",
+                    report.products,
+                    "products,",
+                    report.staff,
+                    "staff intro"
+                );
+            } else {
+                done = true;
+                console.log("[r2] background backfill complete");
+                return;
+            }
+        } catch (e) {
+            console.warn("[r2] background:", e.message);
+        }
+        setTimeout(tick, 45000);
+    }
+    setTimeout(tick, 8000);
+}
+
 module.exports = {
     productCoverKey,
     productThumbKey,
@@ -282,6 +315,7 @@ module.exports = {
     migrateProductsBatchToR2,
     migrateStaffIntroBatchToR2,
     backfillImagesToR2,
+    scheduleBackgroundR2Backfill,
     imageCdnBaseUrl,
     publicImageUrl: r2.publicUrl
 };
