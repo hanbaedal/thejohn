@@ -11,6 +11,34 @@
     var lastOrderCardMode = null;
     var metaPhaseToken = 0;
     var deptItemsCache = Object.create(null);
+    var SESSION_DEPT_PREFIX = "thejhon_catalog_dept_v1_";
+    var SESSION_DEPT_TTL_MS = 30 * 60 * 1000;
+
+    function readSessionDeptItems(deptId) {
+        try {
+            var raw = sessionStorage.getItem(SESSION_DEPT_PREFIX + deptId);
+            if (!raw) return null;
+            var pack = JSON.parse(raw);
+            if (!pack || typeof pack.at !== "number" || Date.now() - pack.at > SESSION_DEPT_TTL_MS) {
+                sessionStorage.removeItem(SESSION_DEPT_PREFIX + deptId);
+                return null;
+            }
+            return Array.isArray(pack.items) ? pack.items : null;
+        } catch (ignore) {
+            return null;
+        }
+    }
+
+    function writeSessionDeptItems(deptId, items) {
+        try {
+            sessionStorage.setItem(
+                SESSION_DEPT_PREFIX + deptId,
+                JSON.stringify({ at: Date.now(), items: items || [] })
+            );
+        } catch (ignore) {
+            /* sessionStorage quota */
+        }
+    }
 
     function coverCache() {
         return window.THEJHON_PRODUCT_COVER;
@@ -257,6 +285,7 @@
             var patch = {};
             if (prev.pd_thumb && !it.pd_thumb) patch.pd_thumb = prev.pd_thumb;
             if (prev.pd_image && !it.pd_image) patch.pd_image = prev.pd_image;
+            if (prev.pd_image_cdn && !it.pd_image_cdn) patch.pd_image_cdn = prev.pd_image_cdn;
             return Object.keys(patch).length ? Object.assign({}, it, patch) : it;
         });
         lastItemsById = {};
@@ -389,6 +418,7 @@
                 if (token !== loadToken) return;
                 items = Array.isArray(items) ? items : [];
                 deptItemsCache[activeDept] = items;
+                writeSessionDeptItems(activeDept, items);
                 root.classList.remove("ps-root--refreshing");
                 showList(items);
             })
@@ -415,7 +445,13 @@
         syncDeptActive();
         syncUrl();
         if (!showCachedDeptIfAny(activeDept)) {
-            root.innerHTML = skeletonListHtml();
+            var sessionItems = readSessionDeptItems(activeDept);
+            if (sessionItems !== null) {
+                deptItemsCache[activeDept] = sessionItems;
+                showList(sessionItems);
+            } else {
+                root.innerHTML = skeletonListHtml();
+            }
         }
         loadDeptProducts(0);
     }
@@ -432,9 +468,24 @@
     syncDeptActive();
     syncUrl();
     if (!showCachedDeptIfAny(activeDept)) {
-        root.innerHTML = skeletonListHtml();
+        var sessionItems = readSessionDeptItems(activeDept);
+        if (sessionItems !== null) {
+            deptItemsCache[activeDept] = sessionItems;
+            showList(sessionItems);
+        } else {
+            root.innerHTML = skeletonListHtml();
+        }
     }
     loadDeptProducts(0);
+
+    window.addEventListener("pageshow", function (e) {
+        if (!e.persisted || lastItems.length) return;
+        var cached = readSessionDeptItems(activeDept);
+        if (cached !== null) {
+            deptItemsCache[activeDept] = cached;
+            showList(cached);
+        }
+    });
 
     window.addEventListener("thejhon-auth-permissions-updated", refreshAfterAuth);
 })();
