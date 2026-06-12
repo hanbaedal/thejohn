@@ -650,5 +650,6 @@ module.exports = {
     findProductsForList,
     fromLegacyDoc,
     readPricesFromDoc,
-    applyStaffContactFallback
+    applyStaffContactFallback,
+    attachProductCdnField
 };
