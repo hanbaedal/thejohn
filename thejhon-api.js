@@ -9,7 +9,7 @@
         baseUrl: ""
     };
 
-    /** R2/CDN 공개 베이스 — /api/health imageCdnBase (설정 시 API 우회 직링크) */
+    /** R2/CDN 공개 베이스 — /api/health (서버 302 리다이렉트용, img src 직링크는 R2 이전 전 404) */
     var imageCdnBaseCache = null;
 
     function getImageCdnBase() {
@@ -190,44 +190,29 @@
         /** 회사소개 페이지 — 장별 JPEG URL (JSON base64 대신 병렬 로드) */
         loadImageCdnBase: loadImageCdnBase,
         getImageCdnBase: getImageCdnBase,
-        companyIntroImageUrl: function (index, staffId) {
+        companyIntroImageUrl: function (index) {
             var idx = parseInt(index, 10);
             if (!isFinite(idx) || idx < 0) idx = 0;
-            var cdn = getImageCdnBase();
-            var sid = String(staffId || "").trim();
-            if (cdn && sid) {
-                return cdn + "/staff/" + encodeURIComponent(sid) + "/intro-" + idx + ".jpg";
-            }
             var url = apiUrl("/api/auth/company-intro/" + idx + ".jpg");
             return appendImageAccessToken(url);
         },
         productThumbUrl: function (id, index) {
             var pid = String(id || "").trim();
             if (!pid) return "";
-            var idx = parseInt(index, 10);
-            if (!isFinite(idx) || idx < 0) idx = 0;
-            var cdn = getImageCdnBase();
-            if (cdn) {
-                return cdn + "/products/" + encodeURIComponent(pid) + "/thumb-" + idx + ".jpg";
-            }
             var url = apiUrl("/api/products/" + encodeURIComponent(pid) + "/thumb.jpg");
-            if (idx > 0) {
+            var idx = parseInt(index, 10);
+            if (isFinite(idx) && idx > 0) {
                 url += (url.indexOf("?") >= 0 ? "&" : "?") + "index=" + idx;
             }
             return appendImageAccessToken(url);
         },
-        /** 상세보기 — 540px JPEG 원본 URL */
+        /** 상세보기 — 540px JPEG 원본 URL (R2 이전 완료 시 서버가 CDN으로 302) */
         productCoverUrl: function (id, index) {
             var pid = String(id || "").trim();
             if (!pid) return "";
-            var idx = parseInt(index, 10);
-            if (!isFinite(idx) || idx < 0) idx = 0;
-            var cdn = getImageCdnBase();
-            if (cdn) {
-                return cdn + "/products/" + encodeURIComponent(pid) + "/cover-" + idx + ".jpg";
-            }
             var url = apiUrl("/api/products/" + encodeURIComponent(pid) + "/cover.jpg");
-            if (idx > 0) {
+            var idx = parseInt(index, 10);
+            if (isFinite(idx) && idx > 0) {
                 url += (url.indexOf("?") >= 0 ? "&" : "?") + "index=" + idx;
             }
             return appendImageAccessToken(url);
