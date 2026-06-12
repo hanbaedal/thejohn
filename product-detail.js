@@ -191,6 +191,13 @@
     function heroThumbSrc(it, index) {
         if (!it || !productHasPhoto(it)) return "";
         var idx = index || 0;
+        if (it.pd_image_cdn && idx === 0) {
+            return String(it.pd_image_cdn).trim();
+        }
+        if (api && api.productImageCdnUrl) {
+            var cdnThumb = api.productImageCdnUrl(it.id, "thumb", idx);
+            if (cdnThumb) return cdnThumb;
+        }
         if (api && api.productThumbUrl) {
             return api.productThumbUrl(it.id, idx);
         }
@@ -207,6 +214,10 @@
     function heroCoverUrl(it, index) {
         if (!it || !productHasPhoto(it)) return "";
         var idx = index || 0;
+        if (api && api.productImageCdnUrl) {
+            var cdnCover = api.productImageCdnUrl(it.id, "cover", idx);
+            if (cdnCover) return cdnCover;
+        }
         if (api && api.productCoverUrl) {
             return api.productCoverUrl(it.id, idx);
         }
@@ -552,22 +563,22 @@
         var dept = String(focus.pd_dept || "").trim();
         var focusItem = normalizeItem(focus);
 
-        renderFeed([focusItem], focus.id, listHref);
-
         if (!dept || !api) {
+            renderFeed([focusItem], focus.id, listHref);
             return Promise.resolve();
         }
 
         return api
-            .listProducts({ dept: dept, fullExplain: true })
+            .listProducts({ dept: dept })
             .then(function (items) {
                 items = (items || []).filter(isCatalogProduct).map(normalizeItem);
                 items = mergeFocusIntoList(items, focusItem);
                 if (!items.length) items = [focusItem];
-                if (items.length === 1 && items[0].id === focus.id) return;
                 renderFeed(items, focus.id, listHref);
             })
-            .catch(function () {});
+            .catch(function () {
+                renderFeed([focusItem], focus.id, listHref);
+            });
     }
 
     function render() {

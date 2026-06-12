@@ -208,6 +208,34 @@ function fromLegacyDoc(doc) {
     return d;
 }
 
+function buildCompanyIntroCdnUrls(doc) {
+    const d = fromLegacyDoc(doc);
+    if (!d) return [];
+    const count = companyIntroImageCountFromDoc(d);
+    if (!count) return [];
+    try {
+        const { readStaffIntroR2Key, publicImageUrl } = require("./imageR2");
+        const urls = [];
+        for (let i = 0; i < count; i++) {
+            const key = readStaffIntroR2Key(d, i);
+            const pub = key ? publicImageUrl(key) : "";
+            if (pub) urls.push(pub);
+        }
+        if (urls.length) return urls;
+        const { imageCdnBaseUrl } = require("./imageR2");
+        const base = imageCdnBaseUrl();
+        const sid = str(d.id);
+        if (!base || !sid) return [];
+        const out = [];
+        for (let j = 0; j < count; j++) {
+            out.push(base + "/staff/" + encodeURIComponent(sid) + "/intro-" + j + ".jpg");
+        }
+        return out;
+    } catch (e) {
+        return [];
+    }
+}
+
 function companyIntroImageCountFromDoc(doc) {
     const d = fromLegacyDoc(doc);
     if (!d) return 0;
@@ -254,6 +282,7 @@ function toPublic(doc, options) {
               ? d[F.companyIntroImages].slice()
               : [],
         st_company_intro_image_count: companyIntroImageCountFromDoc(d),
+        st_company_intro_cdn: buildCompanyIntroCdnUrls(d),
         role: d.role || "admin",
         active: d.active !== false,
         loginEnabled: d.loginEnabled !== false,

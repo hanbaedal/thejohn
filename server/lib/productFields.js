@@ -206,12 +206,7 @@ function toPublicListItem(doc, opts) {
         }
     }
     try {
-        const { readProductR2ThumbKey, publicImageUrl } = require("./imageR2");
-        const r2Key = readProductR2ThumbKey(d, 0);
-        if (r2Key) {
-            const cdn = publicImageUrl(r2Key);
-            if (cdn) row.pd_image_cdn = cdn;
-        }
+        attachProductCdnField(row, d);
     } catch (r2Err) {
         /* R2 미설정 */
     }
@@ -464,6 +459,24 @@ function ensureProductId(doc) {
     if (doc.id && str(doc.id)) return str(doc.id);
     if (doc._id) return "pr_" + String(doc._id);
     return "pr_" + Date.now().toString(36) + "_" + Math.random().toString(36).slice(2, 8);
+}
+
+/** 목록·상세 — R2 CDN thumb URL (관리자 JWT 없이 img.thejohn.co.kr 직링크) */
+function attachProductCdnField(item, doc) {
+    if (!item || !doc) return item;
+    const { readProductR2ThumbKey, publicImageUrl, imageCdnBaseUrl } = require("./imageR2");
+    const r2Key = readProductR2ThumbKey(doc, 0);
+    if (r2Key) {
+        const cdn = publicImageUrl(r2Key);
+        if (cdn) item.pd_image_cdn = cdn;
+        return item;
+    }
+    const base = imageCdnBaseUrl();
+    const pid = str(doc.id);
+    if (base && pid && item.pd_has_image !== false) {
+        item.pd_image_cdn = base + "/products/" + encodeURIComponent(pid) + "/thumb-0.jpg";
+    }
+    return item;
 }
 
 /** 목록 API — 사진·설명 본문 제외(대용량 base64 $strLenCP 방지) */

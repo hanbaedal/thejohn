@@ -61,11 +61,17 @@
   function introImageUrlsFromStaff(st) {
     var Api = global.THEJHON_API;
     if (!Api || !Api.companyIntroImageUrl) return [];
+    if (st && Array.isArray(st.st_company_intro_cdn) && st.st_company_intro_cdn.length) {
+      return st.st_company_intro_cdn.filter(function (u) {
+        return String(u || "").trim();
+      });
+    }
     var count = introImageCountFromStaff(st);
     if (!count) return [];
+    var staffId = String((st && st.id) || "").trim();
     var urls = [];
     for (var i = 0; i < count; i++) {
-      var url = Api.companyIntroImageUrl(i);
+      var url = Api.companyIntroImageUrl(i, staffId);
       if (url) urls.push(url);
     }
     return urls;

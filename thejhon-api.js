@@ -134,9 +134,41 @@
         });
     }
 
+    function isPublicImageUrl(url) {
+        var u = String(url || "");
+        if (/^https?:\/\/img\.thejohn\.co\.kr\//i.test(u)) return true;
+        var cdn = getImageCdnBase();
+        if (cdn && u.indexOf(cdn + "/") === 0) return true;
+        if (/\/api\/products\/[^/?#]+\/(thumb|cover)\.jpg/i.test(u)) return true;
+        if (/\/api\/auth\/company-intro\/\d+\.jpg/i.test(u)) return true;
+        return false;
+    }
+
+    function productImageCdnUrl(productId, kind, index) {
+        var pid = String(productId || "").trim();
+        if (!pid) return "";
+        var cdn = getImageCdnBase();
+        if (!cdn) return "";
+        var idx = parseInt(index, 10);
+        if (!isFinite(idx) || idx < 0) idx = 0;
+        var file = kind === "cover" ? "cover-" + idx + ".jpg" : "thumb-" + idx + ".jpg";
+        return cdn + "/products/" + encodeURIComponent(pid) + "/" + file;
+    }
+
+    function staffIntroCdnUrl(staffId, index) {
+        var sid = String(staffId || "").trim();
+        if (!sid) return "";
+        var cdn = getImageCdnBase();
+        if (!cdn) return "";
+        var idx = parseInt(index, 10);
+        if (!isFinite(idx) || idx < 0) idx = 0;
+        return cdn + "/staff/" + encodeURIComponent(sid) + "/intro-" + idx + ".jpg";
+    }
+
     function appendImageAccessToken(url) {
         var token = getToken();
         if (!token) return url;
+        if (isPublicImageUrl(url)) return url;
         return url + (url.indexOf("?") >= 0 ? "&" : "?") + "access=" + encodeURIComponent(token);
     }
 
@@ -190,33 +222,43 @@
         /** 회사소개 페이지 — 장별 JPEG URL (JSON base64 대신 병렬 로드) */
         loadImageCdnBase: loadImageCdnBase,
         getImageCdnBase: getImageCdnBase,
-        companyIntroImageUrl: function (index) {
+        companyIntroImageUrl: function (index, staffId) {
             var idx = parseInt(index, 10);
             if (!isFinite(idx) || idx < 0) idx = 0;
+            var cdn = staffIntroCdnUrl(staffId, idx);
+            if (cdn) return cdn;
             var url = apiUrl("/api/auth/company-intro/" + idx + ".jpg");
             return appendImageAccessToken(url);
         },
         productThumbUrl: function (id, index) {
             var pid = String(id || "").trim();
             if (!pid) return "";
-            var url = apiUrl("/api/products/" + encodeURIComponent(pid) + "/thumb.jpg");
             var idx = parseInt(index, 10);
-            if (isFinite(idx) && idx > 0) {
+            if (!isFinite(idx) || idx < 0) idx = 0;
+            var cdn = productImageCdnUrl(pid, "thumb", idx);
+            if (cdn) return cdn;
+            var url = apiUrl("/api/products/" + encodeURIComponent(pid) + "/thumb.jpg");
+            if (idx > 0) {
                 url += (url.indexOf("?") >= 0 ? "&" : "?") + "index=" + idx;
             }
             return appendImageAccessToken(url);
         },
-        /** 상세보기 — 540px JPEG 원본 URL (R2 이전 완료 시 서버가 CDN으로 302) */
+        /** 상세보기 — 540px JPEG 원본 URL (R2 이전 완료 시 CDN 직링크) */
         productCoverUrl: function (id, index) {
             var pid = String(id || "").trim();
             if (!pid) return "";
-            var url = apiUrl("/api/products/" + encodeURIComponent(pid) + "/cover.jpg");
             var idx = parseInt(index, 10);
-            if (isFinite(idx) && idx > 0) {
+            if (!isFinite(idx) || idx < 0) idx = 0;
+            var cdn = productImageCdnUrl(pid, "cover", idx);
+            if (cdn) return cdn;
+            var url = apiUrl("/api/products/" + encodeURIComponent(pid) + "/cover.jpg");
+            if (idx > 0) {
                 url += (url.indexOf("?") >= 0 ? "&" : "?") + "index=" + idx;
             }
             return appendImageAccessToken(url);
         },
+        productImageCdnUrl: productImageCdnUrl,
+        staffIntroCdnUrl: staffIntroCdnUrl,
         getProduct: function (id) {
             return request("GET", "/api/products/" + encodeURIComponent(id)).then(function (d) {
                 return d.item;

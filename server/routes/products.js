@@ -11,6 +11,7 @@ const {
     findDuplicateProductByName,
     findDuplicateProductByCode,
     applyStaffContactFallback,
+    attachProductCdnField,
     findProductsForList,
     readImagesFromDoc,
     MAX_PRODUCT_IMAGES,
@@ -687,6 +688,7 @@ router.get("/:id", async (req, res) => {
         if (thumbStored && thumbStored.length <= 32000) {
             item.pd_thumb = thumbStored;
         }
+        attachProductCdnField(item, doc);
         if (contactNeedsStaffFallback(item)) {
             const staff = await findStaffByLoginId(String(item.pd_registered_by || "").trim());
             item = applyStaffContactFallback(item, staff);
