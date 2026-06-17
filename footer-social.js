@@ -292,9 +292,46 @@
         return copy;
     }
 
-    /** SNS → 관리자 정보 → 저작권 순서 고정 */
+    /** 게스트 푸터: 저작권 → SNS → 관리자 정보 */
+    function ensureGuestFooterLayout(inner) {
+        if (!inner) return;
+        var head = inner.querySelector(".site-footer-head");
+        var grid =
+            inner.querySelector(".site-footer-grid") ||
+            document.getElementById("siteFooterCompanyGrid");
+        var msg = inner.querySelector(".site-footer-company-msg");
+        var copy = ensureFooterCopy(inner);
+        var social = inner.querySelector(".site-footer-social");
+
+        if (!head) {
+            head = document.createElement("div");
+            head.className = "site-footer-head";
+        }
+        if (copy.parentNode !== head) {
+            head.insertBefore(copy, head.firstChild);
+        }
+        if (social) {
+            if (social.parentNode !== head) {
+                head.appendChild(social);
+            } else if (copy.parentNode === head && copy.nextSibling !== social) {
+                head.appendChild(social);
+            }
+        }
+
+        var ordered = [head, grid, msg];
+        for (var i = 0; i < ordered.length; i++) {
+            if (ordered[i]) inner.appendChild(ordered[i]);
+        }
+    }
+
+    /** 일반 푸터: SNS → 관리자 정보 → 저작권 */
     function ensureFooterLayout(inner) {
         if (!inner) return;
+        if (isGuestFooterRole()) {
+            ensureGuestFooterLayout(inner);
+            return;
+        }
+
         var head = inner.querySelector(".site-footer-head");
         var grid =
             inner.querySelector(".site-footer-grid") ||
@@ -314,8 +351,8 @@
         if (strayCopy) strayCopy.remove();
 
         var ordered = [head, grid, msg, copy];
-        for (var i = 0; i < ordered.length; i++) {
-            if (ordered[i]) inner.appendChild(ordered[i]);
+        for (var j = 0; j < ordered.length; j++) {
+            if (ordered[j]) inner.appendChild(ordered[j]);
         }
     }
 
@@ -331,7 +368,9 @@
 
         return Api.getPublicFooterStaff()
             .then(function (st) {
-                if (FC && FC.renderStaffGrid) {
+                if (FC && FC.renderGuestStaffGrid) {
+                    grid.innerHTML = FC.renderGuestStaffGrid(st);
+                } else if (FC && FC.renderStaffGrid) {
                     grid.innerHTML = FC.renderStaffGrid(st);
                 }
                 if (msgEl) {
@@ -350,7 +389,7 @@
             });
     }
 
-    /** 게스트: SNS 먼저 표시 → 그 아래 thejohn 관리자 정보(모든 페이지 동일) */
+    /** 게스트: 저작권 → SNS → thejohn 관리자 정보(모든 페이지·화면 동일) */
     function syncGuestFooter() {
         var inner = document.querySelector(".site-footer-inner");
         if (!inner) return Promise.resolve();
@@ -426,7 +465,11 @@
             head.appendChild(social);
         }
 
-        ensureFooterLayout(inner);
+        if (isGuestFooterRole()) {
+            ensureGuestFooterLayout(inner);
+        } else {
+            ensureFooterLayout(inner);
+        }
     }
 
     global.THEJHON_FOOTER_SOCIAL = {
@@ -435,6 +478,7 @@
         syncSocialLinks: syncSocialLinks,
         syncGuestFooter: syncGuestFooter,
         ensureFooterLayout: ensureFooterLayout,
+        ensureGuestFooterLayout: ensureGuestFooterLayout,
         socialFromStaff: socialFromStaff,
         fetchThejohnFooterStaff: fetchThejohnFooterStaff
     };

@@ -70,6 +70,54 @@
         );
     }
 
+    function renderGuestStaffGrid(staff) {
+        var s = staff || {};
+        var company = escapeHtml(String(s.st_company || "").trim() || "—");
+        var ceo = escapeHtml(String(s.st_ceo || "").trim() || "—");
+        var addr = escapeHtml(
+            (AF && AF.formatFullAddress
+                ? AF.formatFullAddress(s.st_zip, s.st_addr, s.st_addr_detail)
+                : "") ||
+                String(s.st_address || "").trim() ||
+                "—"
+        );
+
+        var emailRaw = String(s.st_email || "").trim();
+        var emailDd = emailRaw
+            ? '<a href="mailto:' + escapeHtml(emailRaw) + '">' + escapeHtml(emailRaw) + "</a>"
+            : "—";
+
+        function telCell(raw) {
+            var phoneRaw = String(raw || "").trim();
+            var phoneDisp = formatPhoneDisplay(phoneRaw) || phoneRaw || "—";
+            var href = telHref(phoneRaw);
+            if (href && phoneRaw) {
+                return (
+                    '<a class="footer-tel" href="' +
+                    escapeHtml(href) +
+                    '">' +
+                    escapeHtml(phoneDisp) +
+                    "</a>"
+                );
+            }
+            return escapeHtml(phoneDisp === "—" ? "—" : phoneDisp);
+        }
+
+        var fax = escapeHtml(String(s.st_fax || "").trim() || "—");
+        var biz = escapeHtml(String(s.st_biz_no || "").trim() || "—");
+
+        var parts = [];
+        parts.push(row("상호", company));
+        parts.push(row("대표", ceo));
+        parts.push(row("휴대폰", telCell(s.st_ceo_tel)));
+        parts.push(row("이메일", emailDd));
+        parts.push(row("전화", telCell(s.st_phone)));
+        parts.push(row("팩스", fax));
+        parts.push(row("사업자등록번호", biz));
+        parts.push(rowFull("주소", addr));
+        return parts.join("");
+    }
+
     function renderStaffGrid(staff) {
         var s = staff || {};
         var company = escapeHtml(String(s.st_company || "").trim() || "—");
@@ -191,5 +239,9 @@
             });
     }
 
-    global.THEJHON_FOOTER_COMPANY = { mount: mount, renderStaffGrid: renderStaffGrid };
+    global.THEJHON_FOOTER_COMPANY = {
+        mount: mount,
+        renderStaffGrid: renderStaffGrid,
+        renderGuestStaffGrid: renderGuestStaffGrid
+    };
 })(typeof window !== "undefined" ? window : this);

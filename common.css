@@ -169,26 +169,48 @@ a.site-footer-social__btn:hover {
     color: var(--header-footer-muted);
 }
 
-/* 게스트 로그인 — 모든 페이지·모바일/PC 동일(thejohn 관리자 SNS + 전체 기업 정보) */
+/* 게스트 — 모든 화면(PC·노트북·스마트폰) 동일: 저작권 → SNS → 관리자 정보 */
 html.is-guest .site-footer-head {
     display: block !important;
+    text-align: center;
+    margin: 0 0 0.5rem;
+    padding-bottom: 0.55rem;
+    border-bottom: 1px solid var(--header-footer-border);
+}
+html.is-guest .site-footer-head .site-footer-copy {
+    margin: 0 0 0.55rem;
+    padding: 0;
+    border: none;
+}
+html.is-guest .site-footer-inner > .site-footer-copy {
+    display: none !important;
+}
+html.is-guest .site-footer-social {
+    justify-content: center;
+    flex-wrap: nowrap;
+    gap: 0.65rem;
+}
+html.is-guest .site-footer-grid {
+    display: grid !important;
+    grid-template-columns: 1fr !important;
+    gap: 0.14rem 0 !important;
+    max-width: 28rem;
+    width: 100%;
+    margin: 0.45rem auto 0;
 }
 html.is-guest .site-footer-grid .site-footer-item,
 html.is-guest .site-footer-grid .site-footer-item--full {
     display: grid !important;
+    grid-template-columns: 6.75rem minmax(0, 1fr) !important;
+    gap: 0.15rem 0.45rem !important;
+    grid-column: 1 !important;
+    align-items: baseline;
 }
-@media (max-width: 720px) {
-    html.is-guest .site-footer-grid {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-        gap: 0.18rem 1.5rem;
-    }
-    html.is-guest .site-footer-item {
-        grid-template-columns: 7.5rem minmax(0, 1fr);
-        gap: 0.2rem 0.5rem;
-    }
-    html.is-guest .site-footer-item--full {
-        grid-column: 1 / -1;
-    }
+html.is-guest body.page-home .site-footer-grid .site-footer-item:nth-child(n + 3) {
+    display: grid !important;
+}
+html.is-guest body.page-home .site-footer-item {
+    grid-template-columns: 6.75rem minmax(0, 1fr) !important;
 }
 
 @media (hover: none) and (pointer: coarse) {
