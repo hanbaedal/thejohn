@@ -116,7 +116,7 @@
             body.page-home .home-bgm-wrap {
                 bottom: max(0.4rem, env(safe-area-inset-bottom, 0));
             }
-            body.page-home .site-footer-head {
+            body.page-home:not(.is-logged-in) .site-footer-head {
                 display: none;
             }
             body.page-home .site-footer {
@@ -248,6 +248,7 @@
             function syncAuthUi() {
                 var loggedIn = window.THEJHON_AUTH && THEJHON_AUTH.isLoggedIn();
                 if (logoutBtn) logoutBtn.hidden = !loggedIn;
+                document.body.classList.toggle("is-logged-in", !!loggedIn);
             }
             function syncHomeHeroTitle() {
                 var el = document.getElementById("homeHeroTitle");

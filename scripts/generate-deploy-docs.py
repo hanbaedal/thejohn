@@ -43,6 +43,11 @@ DEPLOY_GUIDES = [
         "thejohn-deploy-vendor-registration.docx",
         "더존(thejohn) 업체 등록",
     ),
+    (
+        "CLOUDFLARE-CDN.md",
+        "thejohn-deploy-cloudflare-cdn.docx",
+        "더존(thejohn) Cloudflare CDN 적용",
+    ),
 ]
 
 

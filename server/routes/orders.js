@@ -272,6 +272,12 @@ router.delete("/:id", requireRole("admin", "vendor"), async function (req, res) 
             return res.status(403).json({ ok: false, error: "권한이 없습니다." });
         }
         await col.deleteOne({ id: id });
+        try {
+            const { deleteSalesForSource } = require("../lib/salesRecords");
+            await deleteSalesForSource(getDb(), "order", id);
+        } catch (syncErr) {
+            console.error("sales_records delete order", syncErr.message);
+        }
         return res.json({ ok: true });
     } catch (e) {
         console.error("DELETE /api/orders/:id", e);
@@ -333,6 +339,13 @@ router.post("/", requireRole("vendor"), async function (req, res) {
         });
 
         await db.collection("orders").insertOne(order);
+
+        try {
+            const { syncFromOrder } = require("../lib/salesRecords");
+            await syncFromOrder(db, order);
+        } catch (syncErr) {
+            console.error("sales_records sync order", syncErr.message);
+        }
 
         let pdfBuffer = null;
         try {

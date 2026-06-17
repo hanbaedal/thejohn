@@ -19,7 +19,9 @@
             transactionPdf: document.getElementById("omh-link-transaction-pdf"),
             transactionList: document.getElementById("omh-link-transaction-list"),
             transactionManual: document.getElementById("omh-link-transaction-manual"),
-            transactionManualList: document.getElementById("omh-link-transaction-manual-list")
+            transactionManualList: document.getElementById("omh-link-transaction-manual-list"),
+            salesByProduct: document.getElementById("omh-link-sales-by-product"),
+            salesByVendor: document.getElementById("omh-link-sales-by-vendor")
         };
         if (map.list && links.list) map.list.setAttribute("href", links.list);
         if (map.orderPdf && links.orderPdf) map.orderPdf.setAttribute("href", links.orderPdf);
@@ -53,6 +55,22 @@
                 map.transactionManualList.hidden = false;
             } else {
                 map.transactionManualList.hidden = true;
+            }
+        }
+        if (map.salesByProduct) {
+            if (links.salesByProduct) {
+                map.salesByProduct.setAttribute("href", links.salesByProduct);
+                map.salesByProduct.hidden = false;
+            } else {
+                map.salesByProduct.hidden = true;
+            }
+        }
+        if (map.salesByVendor) {
+            if (links.salesByVendor) {
+                map.salesByVendor.setAttribute("href", links.salesByVendor);
+                map.salesByVendor.hidden = false;
+            } else {
+                map.salesByVendor.hidden = true;
             }
         }
     }

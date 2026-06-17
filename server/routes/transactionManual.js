@@ -149,6 +149,12 @@ router.post("/", async function (req, res) {
             built
         );
         await getDb().collection(COL).insertOne(doc);
+        try {
+            const { syncFromManualTransaction } = require("../lib/salesRecords");
+            await syncFromManualTransaction(getDb(), doc);
+        } catch (syncErr) {
+            console.error("sales_records sync manual", syncErr.message);
+        }
         res.status(201).json({ ok: true, item: toPublic(doc) });
     } catch (e) {
         console.error("POST /api/transaction-manual", e);
@@ -172,6 +178,12 @@ router.put("/:id", async function (req, res) {
 
         const next = Object.assign({}, existing, built, { updatedAt: Date.now() });
         await col.replaceOne({ id: existing.id }, next);
+        try {
+            const { syncFromManualTransaction } = require("../lib/salesRecords");
+            await syncFromManualTransaction(getDb(), next);
+        } catch (syncErr) {
+            console.error("sales_records sync manual update", syncErr.message);
+        }
         res.json({ ok: true, item: toPublic(next) });
     } catch (e) {
         console.error("PUT /api/transaction-manual/:id", e);
@@ -189,6 +201,12 @@ router.delete("/:id", async function (req, res) {
             return res.status(403).json({ ok: false, error: "권한이 없습니다." });
         }
         await col.deleteOne({ id: existing.id });
+        try {
+            const { deleteSalesForSource } = require("../lib/salesRecords");
+            await deleteSalesForSource(getDb(), "manual", existing.id);
+        } catch (syncErr) {
+            console.error("sales_records delete manual", syncErr.message);
+        }
         res.json({ ok: true });
     } catch (e) {
         console.error("DELETE /api/transaction-manual/:id", e);

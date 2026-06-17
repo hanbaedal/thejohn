@@ -2448,7 +2448,9 @@
                 transactionPdf: "supervisor-transaction-pdf.html",
                 transactionList: "supervisor-transaction-list.html",
                 transactionManual: "transaction-manual-register.html",
-                transactionManualList: "transaction-manual-list.html"
+                transactionManualList: "transaction-manual-list.html",
+                salesByProduct: "sales-by-product.html",
+                salesByVendor: "sales-by-vendor.html"
             };
         }
         if (canShowOrderManageMenu()) {
@@ -2458,7 +2460,9 @@
                 transactionPdf: "supervisor-transaction-pdf.html",
                 transactionList: "supervisor-transaction-list.html",
                 transactionManual: "transaction-manual-register.html",
-                transactionManualList: "transaction-manual-list.html"
+                transactionManualList: "transaction-manual-list.html",
+                salesByProduct: "sales-by-product.html",
+                salesByVendor: "sales-by-vendor.html"
             };
         }
         return {
@@ -2466,7 +2470,9 @@
             orderPdf: ORDER_MANAGE_HUB_PAGE,
             transactionPdf: "",
             transactionManual: "",
-            transactionManualList: ""
+            transactionManualList: "",
+            salesByProduct: "",
+            salesByVendor: ""
         };
     }
 

@@ -665,6 +665,47 @@
         deleteTransactionManual: function (id) {
             return request("DELETE", "/api/transaction-manual/" + encodeURIComponent(id));
         },
+        getSalesReportByProduct: function (opts) {
+            opts = opts || {};
+            var parts = [];
+            if (opts.dept) parts.push("dept=" + encodeURIComponent(String(opts.dept)));
+            if (opts.productId) parts.push("productId=" + encodeURIComponent(String(opts.productId)));
+            if (opts.dateFrom) parts.push("dateFrom=" + encodeURIComponent(String(opts.dateFrom)));
+            if (opts.dateTo) parts.push("dateTo=" + encodeURIComponent(String(opts.dateTo)));
+            if (opts.adminStaffId) parts.push("adminStaffId=" + encodeURIComponent(String(opts.adminStaffId)));
+            var q = parts.length ? "?" + parts.join("&") : "";
+            return request("GET", "/api/sales-reports/by-product" + q);
+        },
+        getSalesReportByVendor: function (opts) {
+            opts = opts || {};
+            var parts = [];
+            if (opts.vendorCompany) parts.push("vendorCompany=" + encodeURIComponent(String(opts.vendorCompany)));
+            if (opts.dateFrom) parts.push("dateFrom=" + encodeURIComponent(String(opts.dateFrom)));
+            if (opts.dateTo) parts.push("dateTo=" + encodeURIComponent(String(opts.dateTo)));
+            if (opts.adminStaffId) parts.push("adminStaffId=" + encodeURIComponent(String(opts.adminStaffId)));
+            var q = parts.length ? "?" + parts.join("&") : "";
+            return request("GET", "/api/sales-reports/by-vendor" + q);
+        },
+        fetchSalesReportPdf: function (body) {
+            var url = apiUrl("/api/sales-reports/pdf");
+            return fetch(url, {
+                method: "POST",
+                headers: headers(),
+                body: JSON.stringify(body || {})
+            }).then(function (res) {
+                if (!res.ok) {
+                    return res.text().then(function (text) {
+                        var msg = "매출 집계 PDF를 만들지 못했습니다.";
+                        try {
+                            var data = JSON.parse(text);
+                            if (data && data.error) msg = data.error;
+                        } catch (e) {}
+                        throw new Error(msg);
+                    });
+                }
+                return pdfBlobFromResponse(res);
+            });
+        },
         fetchTransactionManualPreviewPdf: function (body) {
             var url = apiUrl("/api/transaction-manual/pdf");
             return fetch(url, {

@@ -243,6 +243,7 @@ app.use("/api/vendor-prospects", requireDb, vendorProspectRoutes);
 app.use("/api/vendor-new", requireDb, vendorNewRoutes);
 app.use("/api/orders", requireDb, orderRoutes);
 app.use("/api/transaction-manual", requireDb, require("./routes/transactionManual"));
+app.use("/api/sales-reports", requireDb, require("./routes/salesReports"));
 app.use("/api/vendor-email", requireDb, vendorEmailRoutes);
 app.use("/api/supervisor", requireDb, supervisorRoutes);
 app.use("/api/access", requireDb, accessRoutes);
@@ -279,6 +280,10 @@ function startMongoConnect() {
     connectDb()
         .then(function () {
             console.log("[thejohn] MongoDB connected");
+            const { backfillSalesRecords } = require("./lib/salesRecords");
+            backfillSalesRecords(getDb()).catch(function (err) {
+                console.error("[sales_records] backfill", err.message);
+            });
         })
         .catch(function (err) {
             console.error("[thejohn] MongoDB 연결 실패:", err.message);

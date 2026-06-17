@@ -1,0 +1,165 @@
+/* 매출 집계 — 공통 */
+.srp-page .ol-query-filters {
+    max-width: 36rem;
+    margin: 0 auto 1rem;
+}
+.srp-toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.45rem;
+    justify-content: center;
+    max-width: 36rem;
+    margin: 0 auto 1rem;
+    padding: 0 0.75rem;
+}
+.srp-toolbar .btn {
+    min-width: 5.5rem;
+}
+.srp-summary {
+    max-width: 36rem;
+    margin: 0 auto 0.75rem;
+    padding: 0.65rem 0.95rem;
+    background: #f4f8fc;
+    border: 1px solid #d8e4f0;
+    border-radius: 8px;
+    font-size: 0.92rem;
+    color: #334;
+    text-align: center;
+}
+.srp-results-wrap {
+    max-width: 52rem;
+    margin: 0 auto;
+    padding: 0 0.75rem 2rem;
+}
+.srp-table-wrap {
+    overflow-x: auto;
+    border: 1px solid #e0e6ed;
+    border-radius: 8px;
+    background: #fff;
+}
+.srp-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.86rem;
+}
+.srp-table th,
+.srp-table td {
+    padding: 0.55rem 0.65rem;
+    border-bottom: 1px solid #eef2f6;
+    text-align: left;
+    white-space: nowrap;
+}
+.srp-table th {
+    background: #f7fafc;
+    font-weight: 700;
+    color: #052a4d;
+}
+.srp-table td.num {
+    text-align: right;
+}
+.srp-pick-row {
+    display: flex;
+    gap: 0.45rem;
+    align-items: center;
+}
+.srp-pick-row input[readonly] {
+    flex: 1;
+    cursor: pointer;
+    background: #fff;
+}
+.srp-modal-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.45);
+    z-index: 9000;
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    padding: 0;
+}
+.srp-modal-backdrop[hidden] {
+    display: none !important;
+}
+.srp-modal {
+    width: 100%;
+    max-width: 32rem;
+    max-height: 85vh;
+    background: #fff;
+    border-radius: 12px 12px 0 0;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 -4px 24px rgba(0, 0, 0, 0.15);
+}
+@media (min-width: 640px) {
+    .srp-modal-backdrop {
+        align-items: center;
+        padding: 1rem;
+    }
+    .srp-modal {
+        border-radius: 12px;
+        max-height: 80vh;
+    }
+}
+.srp-modal-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.85rem 1rem;
+    border-bottom: 1px solid #e8edf2;
+}
+.srp-modal-head h2 {
+    margin: 0;
+    font-size: 1.05rem;
+}
+.srp-modal-search {
+    padding: 0.65rem 1rem;
+    border-bottom: 1px solid #eef2f6;
+}
+.srp-modal-search input {
+    width: 100%;
+    box-sizing: border-box;
+}
+.srp-modal-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    overflow-y: auto;
+    flex: 1;
+}
+.srp-modal-list li button {
+    display: block;
+    width: 100%;
+    text-align: left;
+    padding: 0.75rem 1rem;
+    border: none;
+    border-bottom: 1px solid #f0f3f7;
+    background: #fff;
+    cursor: pointer;
+    font: inherit;
+}
+.srp-modal-list li button:hover,
+.srp-modal-list li button:focus {
+    background: #f4f8fc;
+}
+.srp-modal-list .srp-modal-meta {
+    display: block;
+    font-size: 0.8rem;
+    color: #6a7d8e;
+    margin-top: 0.15rem;
+}
+@media print {
+    .site-header,
+    .site-footer,
+    .shub-subnav,
+    .srp-toolbar,
+    .ol-query-filters,
+    .shub-status {
+        display: none !important;
+    }
+    .page-main {
+        padding: 0 !important;
+    }
+    .srp-results-wrap {
+        max-width: none;
+    }
+}
