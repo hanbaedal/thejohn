@@ -1,15 +1,15 @@
 /**
  * 푸터 — 저작권 문구 + 소셜 아이콘(페이스북·인스타·네이버카페·유튜브·카카오)
- * - 페이스북·인스타·네이버카페·유튜브: 로그인 시 staff-profile, 비로그인 시 공용 URL
- * - 카카오톡 채널 채팅: 항상 (주)더존 고정 URL (staff st_kakao 무시)
+ * - 게스트: thejohn 관리자 SNS
+ * - 관리자·슈퍼바이저·업체: 본인(또는 담당 관리자) SNS, 비어 있으면 thejohn SNS로 대체
+ * - 카카오톡 채널: (주)더존 고정 URL
  */
 (function (global) {
     var KAKAO_CHAT_URL = "https://pf.kakao.com/_xavxlxjX/chat";
-    /** 비로그인 방문자용 공용 SNS (카카오와 동일하게 코드에 고정) */
-    var PUBLIC_FACEBOOK_URL = "";
-    var PUBLIC_INSTAGRAM_URL = "";
-    var PUBLIC_NAVER_CAFE_URL = "";
-    var PUBLIC_YOUTUBE_URL = "";
+    var CACHE_THEJOHN = "thejhon_footer_sns_thejohn_v1";
+    var CACHE_SESSION_PREFIX = "thejhon_footer_sns_session_v1:";
+    var CACHE_TTL_MS = 30 * 60 * 1000;
+    var thejohnFetchPromise = null;
 
     function iconFacebook() {
         return (
@@ -128,45 +128,155 @@
         replaceSocialBtn(nav, "kakao", KAKAO_CHAT_URL, "카카오톡 채널 채팅");
     }
 
-    function getPublicUrls() {
+    function pickStaffSocialField(staff, key) {
+        return staff ? String(staff[key] || "").trim() : "";
+    }
+
+    /** primary 우선, 비어 있으면 fallback(thejohn) */
+    function socialFromStaff(primary, fallback) {
+        function pick(key) {
+            var v = pickStaffSocialField(primary, key);
+            if (v) return v;
+            return pickStaffSocialField(fallback, key);
+        }
         return {
-            facebook: PUBLIC_FACEBOOK_URL,
-            instagram: PUBLIC_INSTAGRAM_URL,
-            naverCafe: PUBLIC_NAVER_CAFE_URL,
-            youtube: PUBLIC_YOUTUBE_URL,
+            facebook: pick("st_facebook"),
+            instagram: pick("st_instagram"),
+            naverCafe: pick("st_naver_cafe"),
+            youtube: pick("st_youtube"),
             kakao: KAKAO_CHAT_URL
         };
     }
 
-    function socialFromStaff(st) {
-        if (!st) return getPublicUrls();
+    function emptySocialUrls() {
         return {
-            facebook: st.st_facebook || "",
-            instagram: st.st_instagram || "",
-            naverCafe: st.st_naver_cafe || "",
-            youtube: st.st_youtube || "",
+            facebook: "",
+            instagram: "",
+            naverCafe: "",
+            youtube: "",
             kakao: KAKAO_CHAT_URL
         };
+    }
+
+    function readUrlCache(key) {
+        if (!key) return null;
+        try {
+            var raw = sessionStorage.getItem(key);
+            if (!raw) return null;
+            var pack = JSON.parse(raw);
+            if (!pack || typeof pack.at !== "number" || Date.now() - pack.at > CACHE_TTL_MS) {
+                sessionStorage.removeItem(key);
+                return null;
+            }
+            return pack.urls || null;
+        } catch (ignore) {
+            return null;
+        }
+    }
+
+    function writeUrlCache(key, urls) {
+        if (!key || !urls) return;
+        try {
+            sessionStorage.setItem(key, JSON.stringify({ at: Date.now(), urls: urls }));
+        } catch (ignore) {
+            /* quota */
+        }
+    }
+
+    function sessionCacheKey() {
+        var Auth = global.THEJHON_AUTH;
+        if (!Auth || !Auth.isLoggedIn || !Auth.isLoggedIn()) return "";
+        var role = Auth.getRole ? String(Auth.getRole() || "").trim() : "";
+        if (role === "guest" || !role) return "";
+        var uid = Auth.getUserId ? String(Auth.getUserId() || "").trim() : "";
+        if (!uid) return "";
+        return CACHE_SESSION_PREFIX + role + ":" + uid;
+    }
+
+    function initialSocialUrls() {
+        var sessionKey = sessionCacheKey();
+        var cached = (sessionKey && readUrlCache(sessionKey)) || readUrlCache(CACHE_THEJOHN);
+        if (cached) {
+            var out = {
+                facebook: String(cached.facebook || "").trim(),
+                instagram: String(cached.instagram || "").trim(),
+                naverCafe: String(cached.naverCafe || "").trim(),
+                youtube: String(cached.youtube || "").trim(),
+                kakao: KAKAO_CHAT_URL
+            };
+            return out;
+        }
+        return emptySocialUrls();
+    }
+
+    function applyCachedLinksFirst() {
+        var urls = initialSocialUrls();
+        if (
+            urls.facebook ||
+            urls.instagram ||
+            urls.naverCafe ||
+            urls.youtube ||
+            urls.kakao
+        ) {
+            applyLinks(urls);
+        }
+    }
+
+    function fetchThejohnFooterStaff() {
+        var Api = global.THEJHON_API;
+        if (!Api || !Api.getPublicFooterStaff) {
+            return Promise.resolve(null);
+        }
+        if (thejohnFetchPromise) return thejohnFetchPromise;
+        thejohnFetchPromise = Api.getPublicFooterStaff()
+            .then(function (st) {
+                if (st) {
+                    writeUrlCache(CACHE_THEJOHN, socialFromStaff(st));
+                }
+                return st;
+            })
+            .catch(function () {
+                thejohnFetchPromise = null;
+                return null;
+            });
+        return thejohnFetchPromise;
+    }
+
+    function prefetchThejohnSocial() {
+        if (readUrlCache(CACHE_THEJOHN)) return;
+        fetchThejohnFooterStaff();
     }
 
     function syncSocialLinks() {
         mount();
+        applyCachedLinksFirst();
+
         var Auth = global.THEJHON_AUTH;
         var Api = global.THEJHON_API;
-        if (Auth && Auth.isLoggedIn && Auth.isLoggedIn() && Api && Api.getStaffProfile) {
-            var role = Auth.getRole ? Auth.getRole() : "";
-            if (role === "admin" || role === "supervisor" || role === "vendor") {
-                return Api.getStaffProfile()
-                    .then(function (st) {
-                        applyLinks(socialFromStaff(st));
-                    })
-                    .catch(function () {
-                        applyLinks(getPublicUrls());
-                    });
-            }
+        var role = Auth && Auth.getRole ? String(Auth.getRole() || "").trim() : "";
+        var loggedIn = Auth && Auth.isLoggedIn && Auth.isLoggedIn();
+        var sessionKey = sessionCacheKey();
+
+        if (loggedIn && (role === "admin" || role === "supervisor" || role === "vendor")) {
+            var profilePromise =
+                Api && Api.getStaffProfile
+                    ? Api.getStaffProfile().catch(function () {
+                          return null;
+                      })
+                    : Promise.resolve(null);
+            return Promise.all([fetchThejohnFooterStaff(), profilePromise]).then(function (res) {
+                var thejohn = res[0];
+                var st = res[1];
+                var urls = socialFromStaff(st, thejohn);
+                applyLinks(urls);
+                if (sessionKey) writeUrlCache(sessionKey, urls);
+            });
         }
-        applyLinks(getPublicUrls());
-        return Promise.resolve();
+
+        return fetchThejohnFooterStaff().then(function (thejohn) {
+            var urls = thejohn ? socialFromStaff(thejohn) : emptySocialUrls();
+            applyLinks(urls);
+        });
     }
 
     function mount() {
@@ -187,18 +297,18 @@
         nav.className = "site-footer-social";
         nav.setAttribute("aria-label", "소셜 미디어");
 
-        var pub = getPublicUrls();
+        var initial = initialSocialUrls();
         nav.appendChild(
-            btnLink("facebook", pub.facebook, "페이스북", "페이스북", iconFacebook())
+            btnLink("facebook", initial.facebook, "페이스북", "페이스북", iconFacebook())
         );
         nav.appendChild(
-            btnLink("instagram", pub.instagram, "인스타그램", "인스타그램", iconInstagram())
+            btnLink("instagram", initial.instagram, "인스타그램", "인스타그램", iconInstagram())
         );
         nav.appendChild(
-            btnLink("navercafe", pub.naverCafe, "네이버 카페", "네이버 카페", iconNaverCafe())
+            btnLink("navercafe", initial.naverCafe, "네이버 카페", "네이버 카페", iconNaverCafe())
         );
-        nav.appendChild(btnLink("youtube", pub.youtube, "유튜브", "유튜브", iconYoutube()));
-        nav.appendChild(btnKakao(pub.kakao));
+        nav.appendChild(btnLink("youtube", initial.youtube, "유튜브", "유튜브", iconYoutube()));
+        nav.appendChild(btnKakao(initial.kakao));
 
         wrap.appendChild(copy);
         wrap.appendChild(nav);
@@ -209,11 +319,13 @@
         mount: mount,
         applyLinks: applyLinks,
         syncSocialLinks: syncSocialLinks,
-        getPublicUrls: getPublicUrls
+        socialFromStaff: socialFromStaff,
+        fetchThejohnFooterStaff: fetchThejohnFooterStaff
     };
     global.__thejhonRefreshFooterSocial = syncSocialLinks;
 
     function boot() {
+        prefetchThejohnSocial();
         mount();
         syncSocialLinks();
     }
