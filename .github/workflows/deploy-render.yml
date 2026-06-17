@@ -1,4 +1,6 @@
-name: CI
+# main 푸시 → 빌드 검증 → (설정 시) Render Deploy Hook 호출
+# Render 대시보드 Auto-Deploy와 병행 가능합니다.
+name: Deploy to Render
 
 on:
   push:
@@ -13,4 +15,24 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: "20"
-      - run: cd server && npm ci
+          cache: npm
+          cache-dependency-path: server/package-lock.json
+      - name: Build (Render와 동일)
+        run: cd server && npm ci && npm run build
+
+  deploy:
+    needs: verify
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger Render deploy hook
+        env:
+          DEPLOY_HOOK_URL: ${{ secrets.RENDER_DEPLOY_HOOK_URL }}
+        run: |
+          if [ -z "$DEPLOY_HOOK_URL" ]; then
+            echo "::warning::RENDER_DEPLOY_HOOK_URL 미설정 — Render GitHub Auto-Deploy에만 의존합니다."
+            echo "Render → thejohn → Settings → Build & Deploy → Deploy Hook URL을"
+            echo "GitHub repo Secrets → RENDER_DEPLOY_HOOK_URL 에 등록하면 push마다 배포가 보장됩니다."
+            exit 0
+          fi
+          curl -fsS -X POST "$DEPLOY_HOOK_URL"
+          echo "Render deploy hook triggered."

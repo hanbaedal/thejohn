@@ -63,17 +63,21 @@
          * 홈(index) 전용 반응형 3구간
          * PC(노트북): 1024px 이상 | 태블릿: 721~1023px | 모바일: 720px 이하
          */
-        html:not(.is-logged-in) body.page-home .site-footer {
+        html:not(.is-logged-in):not(.is-guest) body.page-home .site-footer {
             display: none;
+        }
+        html.is-guest body.page-home .site-footer,
+        html.is-logged-in body.page-home .site-footer {
+            display: block !important;
         }
         html.is-logged-in body.page-home .site-footer-head,
         html.is-guest body.page-home .site-footer-head {
             display: block !important;
         }
-        html.is-logged-in body.page-home .site-footer-inner > .site-footer-social,
         html.is-guest body.page-home .site-footer-head .site-footer-copy {
             display: block !important;
         }
+        html.is-logged-in body.page-home .site-footer-inner > .site-footer-social,
         html.is-guest body.page-home .site-footer-inner > .site-footer-social {
             display: flex !important;
             justify-content: center;

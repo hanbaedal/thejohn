@@ -55,6 +55,49 @@ MONGODB_URI 따옴표 없이 한 줄 — [MONGODB-FIX.md](MONGODB-FIX.md)
 [thejohn] MongoDB connected
 ```
 
+## GitHub push 후 Render 자동 배포가 안 될 때
+
+### 1) GitHub Actions ≠ Render 배포 (흔한 오해)
+
+| 경로 | 역할 |
+|------|------|
+| **Render 대시보드** → Settings → **Auto-Deploy** | `main` 푸시 시 Render가 직접 빌드·배포 (기본) |
+| **`.github/workflows/deploy-render.yml`** | 빌드 검증 + (선택) **Deploy Hook** 호출 |
+
+워크플로 이름이 `deploy-render`여도, **Render Deploy Hook Secret이 없으면** GitHub만 CI를 돌리고 Render 배포는 **Render 쪽 Auto-Deploy**에 맡깁니다.
+
+### 2) Render Auto-Deploy 확인
+
+Render → **thejohn** 서비스 → **Settings** → **Build & Deploy**
+
+| 항목 | 권장값 |
+|------|--------|
+| **Auto-Deploy** | **Yes** |
+| **Branch** | `main` |
+| **Root Directory** | `server` |
+| **Build Command** | `npm ci && npm run build` |
+| **Start Command** | `npm start` |
+
+GitHub 연결이 끊겼으면 **Settings → Connect** 에서 `hanbaedal/thejohn` 재연결.
+
+### 3) Deploy Hook으로 push마다 배포 보장 (권장)
+
+1. Render → thejohn → **Settings** → **Deploy Hook** → URL 복사  
+2. GitHub → `hanbaedal/thejohn` → **Settings** → **Secrets and variables** → **Actions**  
+3. **New repository secret**  
+   - Name: `RENDER_DEPLOY_HOOK_URL`  
+   - Value: Deploy Hook URL  
+4. `main`에 push → Actions **Deploy to Render** → `Trigger Render deploy hook` 성공 확인
+
+### 4) 배포됐는지 확인
+
+- https://thejohn.onrender.com/products-dept-nav.css 에 `720px` 모바일 주석이 있으면 최신 정적 파일 반영됨  
+- https://thejohn.co.kr 는 **Cloudflare CDN** 캐시로 예전 JS/CSS가 보일 수 있음 → 시크릿 창 또는 Cloudflare **Purge Cache**
+
+### 5) 수동 배포 (당장 반영)
+
+Render → thejohn → **Manual Deploy** → **Deploy latest commit**
+
 ## 확인 URL
 
 - https://thejohn.onrender.com/api/health
