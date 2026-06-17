@@ -133,6 +133,14 @@
         );
     }
 
+    function applyLoggedInDocumentClass() {
+        var on = isLoggedInEarly();
+        try {
+            document.documentElement.classList.toggle("is-logged-in", on);
+            if (document.body) document.body.classList.toggle("is-logged-in", on);
+        } catch (e) {}
+    }
+
     global.THEJHON_AUTH_STORAGE = {
         isPwaStandalone: isPwaStandalone,
         get: get,
@@ -140,8 +148,13 @@
         remove: remove,
         clearLocalKeys: clearLocalKeys,
         hydrateSessionFromLocal: hydrateSessionFromLocal,
-        enforceSiteLoginEarly: enforceSiteLoginEarly
+        enforceSiteLoginEarly: enforceSiteLoginEarly,
+        applyLoggedInDocumentClass: applyLoggedInDocumentClass
     };
 
     enforceSiteLoginEarly();
+    applyLoggedInDocumentClass();
+    if (document.readyState === "loading") {
+        document.addEventListener("DOMContentLoaded", applyLoggedInDocumentClass);
+    }
 })(typeof window !== "undefined" ? window : this);

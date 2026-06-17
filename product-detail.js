@@ -581,6 +581,13 @@
             });
     }
 
+    function initDeptNavForProduct(it) {
+        if (!window.THEJHON_PRODUCTS_DEPT_NAV) return;
+        if (it && it.pd_dept && THEJHON_PRODUCTS_DEPT_NAV.setActive) {
+            THEJHON_PRODUCTS_DEPT_NAV.setActive(it.pd_dept);
+        }
+    }
+
     function render() {
         if (!root) return;
         var id = getIdFromQuery();
@@ -601,6 +608,7 @@
                     return;
                 }
                 normalizeItem(it);
+                initDeptNavForProduct(it);
                 return renderDeptFeed(it);
             })
             .catch(function (err) {
@@ -610,6 +618,15 @@
 
     if (window.THEJHON_PRODUCT_INFO && THEJHON_PRODUCT_INFO.ensureModal) {
         THEJHON_PRODUCT_INFO.ensureModal();
+    }
+
+    if (window.THEJHON_PRODUCTS_DEPT_NAV && THEJHON_PRODUCTS_DEPT_NAV.init) {
+        THEJHON_PRODUCTS_DEPT_NAV.init({
+            onSelect: function (dept) {
+                window.location.href =
+                    "products.html?dept=" + encodeURIComponent(dept);
+            }
+        });
     }
 
     render();

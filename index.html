@@ -116,8 +116,11 @@
             body.page-home .home-bgm-wrap {
                 bottom: max(0.4rem, env(safe-area-inset-bottom, 0));
             }
-            body.page-home:not(.is-logged-in) .site-footer-head {
+            html:not(.is-logged-in) body.page-home .site-footer-head {
                 display: none;
+            }
+            html.is-logged-in body.page-home .site-footer-head {
+                display: block;
             }
             body.page-home .site-footer {
                 flex: 0 0 auto;
@@ -248,6 +251,7 @@
             function syncAuthUi() {
                 var loggedIn = window.THEJHON_AUTH && THEJHON_AUTH.isLoggedIn();
                 if (logoutBtn) logoutBtn.hidden = !loggedIn;
+                document.documentElement.classList.toggle("is-logged-in", !!loggedIn);
                 document.body.classList.toggle("is-logged-in", !!loggedIn);
             }
             function syncHomeHeroTitle() {
@@ -278,6 +282,7 @@
             }
             syncHomeHeroTitle();
             syncAuthUi();
+            window.addEventListener("pageshow", syncAuthUi);
 
             function syncHomeHeaderLogo() {
                 var Auth = window.THEJHON_AUTH;

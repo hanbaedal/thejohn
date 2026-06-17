@@ -12,53 +12,11 @@
     <meta name="apple-mobile-web-app-title" content="더존">
     <title>사업부문 — 더존</title>
     <link rel="stylesheet" href="common.css">
+    <link rel="stylesheet" href="products-dept-nav.css">
     <style>
         .ps-page { max-width: 1100px; margin: 0 auto; }
         .ps-empty { margin: 0; color: #3d5166; line-height: 1.55; }
         .ps-empty a { color: var(--dz-blue); font-weight: 600; }
-        .ps-icons {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 0.65rem;
-            margin: 0 0 1.25rem;
-            padding: 0;
-            list-style: none;
-        }
-        @media (min-width: 640px) {
-            .ps-icons { grid-template-columns: repeat(6, 1fr); gap: 0.75rem; }
-        }
-        .ps-icon-btn {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 0.35rem;
-            width: 100%;
-            padding: 0.65rem 0.35rem;
-            border: 2px solid #e0e6ed;
-            border-radius: 12px;
-            background: #fff;
-            cursor: pointer;
-            font-family: inherit;
-            color: #3d5166;
-            -webkit-tap-highlight-color: transparent;
-            transition: border-color 0.15s, background 0.15s;
-        }
-        .ps-icon-btn:hover { border-color: #b8c8dc; background: #f8fafc; }
-        .ps-icon-btn.is-active {
-            border-color: var(--dz-blue);
-            background: #eef4fc;
-            color: var(--dz-blue);
-        }
-        .ps-icon-btn.is-active .ps-icon-label { font-weight: 700; }
-        .ps-icon {
-            font-size: 1.75rem;
-            line-height: 1;
-        }
-        .ps-icon-label {
-            font-size: clamp(0.72rem, 2.5vw, 0.88rem);
-            font-weight: 600;
-            line-height: 1.2;
-        }
         .ps-grid {
             list-style: none;
             margin: 0;
@@ -273,11 +231,12 @@
     <script src="vendor-order-modal.js"></script>
     <script src="admin-header.js"></script>
     <script src="product-catalog.js"></script>
+    <script src="products-dept-nav.js"></script>
     <script src="product-cover-cache.js"></script>
     <script src="nav.js" defer></script>
     <script src="products.js" defer></script>
 </head>
-<body>
+<body class="page-products">
     <header class="site-header">
         <div class="site-header-start">
             <a href="index.html" class="dz-logo dz-logo--compact" aria-label="더존 홈"><img src="img/logo.png" alt="" width="72" height="72" class="dz-logo-img"></a>
@@ -302,7 +261,7 @@
             <button type="button" class="btn btn-auth-icon btn-logout" id="btnLogout" hidden aria-label="로그아웃" title="로그아웃"></button>
         </nav>
     </header>
-    <main class="page-main page-main--hide-scrollbar ps-page" id="ps-page-main">
+    <div class="ps-catalog-sticky" id="ps-catalog-sticky">
         <ul class="ps-icons" id="ps-dept-nav" role="tablist" aria-label="사업부문">
             <li role="presentation">
                 <button type="button" class="ps-icon-btn is-active" role="tab" aria-selected="true" data-dept="jeongyuk">
@@ -341,6 +300,8 @@
                 </button>
             </li>
         </ul>
+    </div>
+    <main class="page-main page-main--hide-scrollbar ps-page" id="ps-page-main">
         <div id="ps-root" aria-live="polite">
             <p class="ps-empty">상품을 불러오는 중…</p>
         </div>

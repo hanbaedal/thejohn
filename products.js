@@ -114,6 +114,10 @@
     }
 
     function syncDeptActive() {
+        if (window.THEJHON_PRODUCTS_DEPT_NAV && THEJHON_PRODUCTS_DEPT_NAV.setActive) {
+            THEJHON_PRODUCTS_DEPT_NAV.setActive(activeDept);
+            return;
+        }
         if (!deptNav) return;
         var buttons = deptNav.querySelectorAll(".ps-icon-btn[data-dept]");
         for (var i = 0; i < buttons.length; i++) {
@@ -456,7 +460,12 @@
         loadDeptProducts(0);
     }
 
-    if (deptNav) {
+    if (window.THEJHON_PRODUCTS_DEPT_NAV && THEJHON_PRODUCTS_DEPT_NAV.init) {
+        THEJHON_PRODUCTS_DEPT_NAV.init({
+            activeDept: activeDept,
+            onSelect: setDept
+        });
+    } else if (deptNav) {
         deptNav.addEventListener("click", function (e) {
             var btn = e.target.closest(".ps-icon-btn");
             if (!btn || !deptNav.contains(btn)) return;

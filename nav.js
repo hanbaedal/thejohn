@@ -546,7 +546,7 @@
 
     var SITE_FOOTER_INNER_HTML =
         '<div class="site-footer-inner">' +
-        '<dl class="site-footer-grid">' +
+        '<dl class="site-footer-grid" id="siteFooterCompanyGrid" aria-live="polite">' +
         '<div class="site-footer-item"><dt>상호</dt><dd>(주)더존</dd></div>' +
         '<div class="site-footer-item"><dt>대표</dt><dd>이상범</dd></div>' +
         '<div class="site-footer-item"><dt>휴대폰</dt><dd><a class="footer-tel" href="tel:+821029288196">010-2928-8196</a></dd></div>' +
@@ -555,14 +555,29 @@
         '<div class="site-footer-item"><dt>팩스</dt><dd>032-662-5246</dd></div>' +
         '<div class="site-footer-item"><dt>사업자등록번호</dt><dd>130-45-32935</dd></div>' +
         '<div class="site-footer-item site-footer-item--full"><dt>주소</dt><dd>경기도 부천시 원미구 부천로 130번길 5, 삼도빌딩 1층</dd></div>' +
-        "</dl></div>";
+        "</dl>" +
+        '<p class="site-footer-company-msg" id="siteFooterCompanyMsg" hidden></p>' +
+        "</div>";
+
+    function isFooterGridPlaceholder(grid) {
+        if (!grid) return true;
+        var dts = grid.querySelectorAll("dt");
+        if (!dts.length) return true;
+        if (dts.length === 1 && grid.querySelector(".site-footer-loading")) return true;
+        return false;
+    }
 
     function ensureUnifiedSiteFooter() {
         var footer = document.querySelector("footer.site-footer");
         if (!footer) return;
         var grid = footer.querySelector(".site-footer-grid");
-        if (!grid || grid.querySelectorAll("dt").length < 8) {
-            footer.innerHTML = SITE_FOOTER_INNER_HTML;
+        if (!isFooterGridPlaceholder(grid)) return;
+
+        var head = footer.querySelector(".site-footer-head");
+        footer.innerHTML = SITE_FOOTER_INNER_HTML;
+        if (head) {
+            var inner = footer.querySelector(".site-footer-inner");
+            if (inner) inner.insertBefore(head, inner.firstChild);
         }
     }
 
@@ -697,6 +712,16 @@
                 applyDefaultBrandedLogo("");
                 if (global.__thejhonRefreshCompanyGreeting) {
                     global.__thejhonRefreshCompanyGreeting();
+                }
+                if (Api.getPublicFooterStaff && global.THEJHON_FOOTER_COMPANY) {
+                    Api.getPublicFooterStaff()
+                        .then(function (st) {
+                            var grid = document.getElementById("siteFooterCompanyGrid");
+                            if (grid && THEJHON_FOOTER_COMPANY.renderStaffGrid) {
+                                grid.innerHTML = THEJHON_FOOTER_COMPANY.renderStaffGrid(st);
+                            }
+                        })
+                        .catch(function () {});
                 }
                 return;
             }

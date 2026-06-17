@@ -12,6 +12,7 @@
     <meta name="apple-mobile-web-app-title" content="더존">
     <title>상품 상세 — 더존</title>
     <link rel="stylesheet" href="common.css">
+    <link rel="stylesheet" href="products-dept-nav.css">
     <style>
         .page-main--product-detail {
             max-width: 56rem;
@@ -24,13 +25,9 @@
             margin: 0 auto;
         }
         .pd-feed-toolbar {
-            position: sticky;
-            top: 0;
-            z-index: 5;
             padding: 0.35rem 0.5rem 0.5rem;
             margin-bottom: 0.5rem;
-            background: rgba(245, 247, 250, 0.96);
-            backdrop-filter: blur(6px);
+            background: transparent;
         }
         .pd-feed-hint {
             margin: 0.45rem 0 0;
@@ -53,7 +50,7 @@
             border-radius: 12px;
             overflow: hidden;
             box-shadow: 0 2px 14px rgba(10, 77, 156, 0.08);
-            scroll-margin-top: 4.5rem;
+            scroll-margin-top: calc(var(--ps-catalog-chrome-h, 9rem) + 0.5rem);
         }
         .pd-article.is-current {
             border-color: var(--dz-blue);
@@ -461,6 +458,8 @@
     <link rel="stylesheet" href="vendor-order-modal.css">
     <script src="vendor-order-modal.js"></script>
     <script src="admin-header.js"></script>
+    <script src="product-catalog.js"></script>
+    <script src="products-dept-nav.js"></script>
     <script src="nav.js" defer></script>
     <link rel="stylesheet" href="product-info-modal.css">
     <script src="product-info-modal.js"></script>
@@ -492,6 +491,46 @@
             <button type="button" class="btn btn-auth-icon btn-logout" id="btnLogout" hidden aria-label="로그아웃" title="로그아웃"></button>
         </nav>
     </header>
+    <div class="ps-catalog-sticky" id="ps-catalog-sticky">
+        <ul class="ps-icons" id="ps-dept-nav" role="tablist" aria-label="사업부문">
+            <li role="presentation">
+                <button type="button" class="ps-icon-btn" role="tab" aria-selected="false" data-dept="jeongyuk">
+                    <span class="ps-icon" aria-hidden="true">🥩</span>
+                    <span class="ps-icon-label">정육</span>
+                </button>
+            </li>
+            <li role="presentation">
+                <button type="button" class="ps-icon-btn" role="tab" aria-selected="false" data-dept="driedfish">
+                    <span class="ps-icon" aria-hidden="true">🐟</span>
+                    <span class="ps-icon-label">건어물</span>
+                </button>
+            </li>
+            <li role="presentation">
+                <button type="button" class="ps-icon-btn" role="tab" aria-selected="false" data-dept="frozen">
+                    <span class="ps-icon" aria-hidden="true">🧊</span>
+                    <span class="ps-icon-label">냉동식품</span>
+                </button>
+            </li>
+            <li role="presentation">
+                <button type="button" class="ps-icon-btn" role="tab" aria-selected="false" data-dept="seafood">
+                    <span class="ps-icon" aria-hidden="true">🦐</span>
+                    <span class="ps-icon-label">냉동수산물</span>
+                </button>
+            </li>
+            <li role="presentation">
+                <button type="button" class="ps-icon-btn" role="tab" aria-selected="false" data-dept="grocery">
+                    <span class="ps-icon" aria-hidden="true">🛒</span>
+                    <span class="ps-icon-label">공산품</span>
+                </button>
+            </li>
+            <li role="presentation">
+                <button type="button" class="ps-icon-btn" role="tab" aria-selected="false" data-dept="drink">
+                    <span class="ps-icon" aria-hidden="true">🥤</span>
+                    <span class="ps-icon-label">음료수</span>
+                </button>
+            </li>
+        </ul>
+    </div>
     <main class="page-main page-main--product-detail">
         <div id="pd-root" aria-live="polite"></div>
     </main>

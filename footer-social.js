@@ -276,6 +276,9 @@
         return fetchThejohnFooterStaff().then(function (thejohn) {
             var urls = thejohn ? socialFromStaff(thejohn) : emptySocialUrls();
             applyLinks(urls);
+            if (loggedIn && role === "guest") {
+                writeUrlCache(CACHE_THEJOHN, urls);
+            }
         });
     }
 
@@ -336,4 +339,5 @@
         boot();
     }
     global.addEventListener("pageshow", syncSocialLinks);
+    global.addEventListener("thejhon-auth-permissions-updated", syncSocialLinks);
 })(typeof window !== "undefined" ? window : this);

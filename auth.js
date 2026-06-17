@@ -175,6 +175,9 @@
         clearLocalAuthPersist();
         clearVendorCartIfAny();
         revokeApiTokenAsync(token);
+        if (global.THEJHON_AUTH_STORAGE && global.THEJHON_AUTH_STORAGE.applyLoggedInDocumentClass) {
+            global.THEJHON_AUTH_STORAGE.applyLoggedInDocumentClass();
+        }
     }
 
     function clearSessionAsync() {
@@ -554,6 +557,9 @@
         } else {
             clearStaffLogoCache();
         }
+        if (global.THEJHON_AUTH_STORAGE && global.THEJHON_AUTH_STORAGE.applyLoggedInDocumentClass) {
+            global.THEJHON_AUTH_STORAGE.applyLoggedInDocumentClass();
+        }
         if (typeof global.__thejhonRefreshFooterCompany === "function") {
             try {
                 global.__thejhonRefreshFooterCompany();
@@ -784,6 +790,24 @@
                 global.__thejhonRefreshHeaderCompany();
             } catch (eHdr) {}
         }
+        try {
+            if (global.THEJHON_AUTH_STORAGE && global.THEJHON_AUTH_STORAGE.applyLoggedInDocumentClass) {
+                global.THEJHON_AUTH_STORAGE.applyLoggedInDocumentClass();
+            } else {
+                document.documentElement.classList.add("is-logged-in");
+                if (document.body) document.body.classList.add("is-logged-in");
+            }
+        } catch (eCls) {}
+        if (typeof global.__thejhonRefreshFooterCompany === "function") {
+            try {
+                global.__thejhonRefreshFooterCompany();
+            } catch (eFoot) {}
+        }
+        if (typeof global.__thejhonRefreshFooterSocial === "function") {
+            try {
+                global.__thejhonRefreshFooterSocial();
+            } catch (eSoc) {}
+        }
         return guestId;
     }
 
@@ -971,6 +995,11 @@
         if (file === WORK_HUB_PAGE) return "hub";
         if (STAFF_NAV_PRODUCT_PAGES[file]) return "product";
         if (STAFF_NAV_VENDOR_PAGES[file]) return "vendor-manage";
+        if (file === "support-inquiry.html") {
+            var inquiryStored = staffNavGet();
+            if (inquiryStored === "manage-home") return "manage-home";
+            return "public";
+        }
         if (STAFF_NAV_MANAGE_HOME_PAGES[file]) return "manage-home";
         if (STAFF_NAV_ORDER_PAGES[file]) return "order";
         if (STAFF_NAV_WORK_PAGES[file]) return "work";

@@ -1,0 +1,104 @@
+/* 사업부문 목록·상세 — 헤더 + 6개 부문 버튼 상단 고정(스크롤 안 됨) */
+body.page-products,
+body.page-product-detail {
+    --ps-catalog-chrome-h: 9rem;
+}
+
+.ps-catalog-chrome {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 300;
+    background: #f4f6f9;
+    padding-left: env(safe-area-inset-left, 0);
+    padding-right: env(safe-area-inset-right, 0);
+    padding-top: env(safe-area-inset-top, 0);
+    box-shadow: 0 1px 0 #e0e4e8;
+}
+
+body.page-products .ps-catalog-chrome .site-header,
+body.page-product-detail .ps-catalog-chrome .site-header {
+    position: relative !important;
+    top: auto !important;
+    z-index: auto;
+}
+
+.ps-catalog-chrome .ps-catalog-sticky {
+    position: relative;
+    top: auto;
+    z-index: auto;
+    width: 100%;
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 0.35rem max(0.75rem, env(safe-area-inset-left, 0)) 0.5rem
+        max(0.75rem, env(safe-area-inset-right, 0));
+    box-sizing: border-box;
+    background: #f4f6f9;
+    border-bottom: 1px solid #e8edf2;
+}
+
+body.page-products main.page-main.ps-page,
+body.page-product-detail main.page-main--product-detail {
+    padding-top: calc(var(--ps-catalog-chrome-h, 9rem) + 0.35rem);
+    box-sizing: border-box;
+}
+
+.ps-icons {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.65rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+@media (min-width: 640px) {
+    .ps-icons {
+        grid-template-columns: repeat(6, 1fr);
+        gap: 0.75rem;
+    }
+}
+
+.ps-icon-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.35rem;
+    width: 100%;
+    padding: 0.65rem 0.35rem;
+    border: 2px solid #e0e6ed;
+    border-radius: 12px;
+    background: #fff;
+    cursor: pointer;
+    font-family: inherit;
+    color: #3d5166;
+    -webkit-tap-highlight-color: transparent;
+    transition: border-color 0.15s, background 0.15s;
+}
+
+.ps-icon-btn:hover {
+    border-color: #b8c8dc;
+    background: #f8fafc;
+}
+
+.ps-icon-btn.is-active {
+    border-color: var(--dz-blue);
+    background: #eef4fc;
+    color: var(--dz-blue);
+}
+
+.ps-icon-btn.is-active .ps-icon-label {
+    font-weight: 700;
+}
+
+.ps-icon {
+    font-size: 1.75rem;
+    line-height: 1;
+}
+
+.ps-icon-label {
+    font-size: clamp(0.72rem, 2.5vw, 0.88rem);
+    font-weight: 600;
+    line-height: 1.2;
+}
