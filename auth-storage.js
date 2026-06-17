@@ -135,9 +135,15 @@
 
     function applyLoggedInDocumentClass() {
         var on = isLoggedInEarly();
+        var role = String(get(ROLE_KEY) || "").trim();
+        var isGuest = on && role === "guest";
         try {
             document.documentElement.classList.toggle("is-logged-in", on);
-            if (document.body) document.body.classList.toggle("is-logged-in", on);
+            document.documentElement.classList.toggle("is-guest", isGuest);
+            if (document.body) {
+                document.body.classList.toggle("is-logged-in", on);
+                document.body.classList.toggle("is-guest", isGuest);
+            }
         } catch (e) {}
     }
 

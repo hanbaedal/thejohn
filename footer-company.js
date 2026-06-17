@@ -145,6 +145,20 @@
     }
 
     function mount() {
+        var Auth = global.THEJHON_AUTH;
+        if (
+            Auth &&
+            Auth.isLoggedIn &&
+            Auth.isLoggedIn() &&
+            Auth.getRole &&
+            Auth.getRole() === "guest"
+        ) {
+            if (global.THEJHON_FOOTER_SOCIAL && THEJHON_FOOTER_SOCIAL.syncGuestFooter) {
+                THEJHON_FOOTER_SOCIAL.syncGuestFooter();
+            }
+            return;
+        }
+
         var grid = document.getElementById("siteFooterCompanyGrid");
         if (!grid) return;
 

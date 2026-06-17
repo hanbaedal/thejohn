@@ -1,6 +1,6 @@
 /**
- * 푸터 — 저작권 문구 + 소셜 아이콘(페이스북·인스타·네이버카페·유튜브·카카오)
- * - 게스트: thejohn 관리자 SNS
+ * 푸터 — 소셜 아이콘 + 기업 정보
+ * - 게스트: SNS 먼저 → thejohn 관리자 정보 → 저작권
  * - 관리자·슈퍼바이저·업체: 본인(또는 담당 관리자) SNS, 비어 있으면 thejohn SNS로 대체
  * - 카카오톡 채널: (주)더존 고정 URL
  */
@@ -247,7 +247,133 @@
         fetchThejohnFooterStaff();
     }
 
+    function isGuestFooterRole() {
+        var Auth = global.THEJHON_AUTH;
+        return !!(
+            Auth &&
+            Auth.isLoggedIn &&
+            Auth.isLoggedIn() &&
+            Auth.getRole &&
+            Auth.getRole() === "guest"
+        );
+    }
+
+    function buildSocialNav(urls) {
+        var nav = document.createElement("nav");
+        nav.className = "site-footer-social";
+        nav.setAttribute("aria-label", "소셜 미디어");
+        var initial = urls || initialSocialUrls();
+        nav.appendChild(
+            btnLink("facebook", initial.facebook, "페이스북", "페이스북", iconFacebook())
+        );
+        nav.appendChild(
+            btnLink("instagram", initial.instagram, "인스타그램", "인스타그램", iconInstagram())
+        );
+        nav.appendChild(
+            btnLink("navercafe", initial.naverCafe, "네이버 카페", "네이버 카페", iconNaverCafe())
+        );
+        nav.appendChild(btnLink("youtube", initial.youtube, "유튜브", "유튜브", iconYoutube()));
+        nav.appendChild(btnKakao(initial.kakao));
+        return nav;
+    }
+
+    function ensureFooterCopy(inner) {
+        if (!inner) return null;
+        var copy = inner.querySelector(":scope > .site-footer-copy");
+        if (!copy) {
+            copy = document.createElement("p");
+            copy.className = "site-footer-copy";
+            copy.textContent = "COPYRIGHT HaeSoo ALL RIGHTS RESERVED.";
+        }
+        var copyInHead = inner.querySelector(".site-footer-head .site-footer-copy");
+        if (copyInHead && copyInHead !== copy) {
+            copyInHead.remove();
+        }
+        return copy;
+    }
+
+    /** SNS → 관리자 정보 → 저작권 순서 고정 */
+    function ensureFooterLayout(inner) {
+        if (!inner) return;
+        var head = inner.querySelector(".site-footer-head");
+        var grid =
+            inner.querySelector(".site-footer-grid") ||
+            document.getElementById("siteFooterCompanyGrid");
+        var msg = inner.querySelector(".site-footer-company-msg");
+        var copy = ensureFooterCopy(inner);
+        var social = inner.querySelector(".site-footer-social");
+
+        if (!head) {
+            head = document.createElement("div");
+            head.className = "site-footer-head";
+        }
+        if (social && social.parentNode !== head) {
+            head.appendChild(social);
+        }
+        var strayCopy = head.querySelector(".site-footer-copy");
+        if (strayCopy) strayCopy.remove();
+
+        var ordered = [head, grid, msg, copy];
+        for (var i = 0; i < ordered.length; i++) {
+            if (ordered[i]) inner.appendChild(ordered[i]);
+        }
+    }
+
+    function loadGuestFooterCompany() {
+        var Api = global.THEJHON_API;
+        var FC = global.THEJHON_FOOTER_COMPANY;
+        var grid = document.getElementById("siteFooterCompanyGrid");
+        var msgEl = document.getElementById("siteFooterCompanyMsg");
+        if (!grid || !Api || !Api.getPublicFooterStaff) return Promise.resolve();
+
+        grid.innerHTML =
+            '<div class="site-footer-item site-footer-item--full"><dt></dt><dd class="site-footer-loading">기업 정보를 불러오는 중…</dd></div>';
+
+        return Api.getPublicFooterStaff()
+            .then(function (st) {
+                if (FC && FC.renderStaffGrid) {
+                    grid.innerHTML = FC.renderStaffGrid(st);
+                }
+                if (msgEl) {
+                    msgEl.hidden = true;
+                    msgEl.textContent = "";
+                }
+                var footer = document.querySelector("footer.site-footer");
+                if (footer) footer.classList.add("site-footer--guest-ready");
+            })
+            .catch(function () {
+                grid.innerHTML = "";
+                if (msgEl) {
+                    msgEl.hidden = false;
+                    msgEl.textContent = "기업 정보를 불러오지 못했습니다.";
+                }
+            });
+    }
+
+    /** 게스트: SNS 먼저 표시 → 그 아래 thejohn 관리자 정보(모든 페이지 동일) */
+    function syncGuestFooter() {
+        var inner = document.querySelector(".site-footer-inner");
+        if (!inner) return Promise.resolve();
+
+        mount();
+        applyCachedLinksFirst();
+
+        return fetchThejohnFooterStaff()
+            .then(function (thejohn) {
+                var urls = thejohn ? socialFromStaff(thejohn) : emptySocialUrls();
+                applyLinks(urls);
+                writeUrlCache(CACHE_THEJOHN, urls);
+            })
+            .then(function () {
+                return loadGuestFooterCompany();
+            });
+    }
+
     function syncSocialLinks() {
+        if (isGuestFooterRole()) {
+            return syncGuestFooter();
+        }
+
         mount();
         applyCachedLinksFirst();
 
@@ -276,52 +402,39 @@
         return fetchThejohnFooterStaff().then(function (thejohn) {
             var urls = thejohn ? socialFromStaff(thejohn) : emptySocialUrls();
             applyLinks(urls);
-            if (loggedIn && role === "guest") {
-                writeUrlCache(CACHE_THEJOHN, urls);
-            }
         });
     }
 
     function mount() {
         var inner = document.querySelector(".site-footer-inner");
         if (!inner) return;
-        if (inner.querySelector(".site-footer-head")) return;
+
         var legacySocial = inner.querySelector(":scope > .site-footer-social");
         if (legacySocial) legacySocial.remove();
 
-        var wrap = document.createElement("div");
-        wrap.className = "site-footer-head";
+        var head = inner.querySelector(".site-footer-head");
+        var social = head ? head.querySelector(".site-footer-social") : null;
+        if (!social) {
+            social = buildSocialNav(initialSocialUrls());
+        }
 
-        var copy = document.createElement("p");
-        copy.className = "site-footer-copy";
-        copy.textContent = "COPYRIGHT HaeSoo ALL RIGHTS RESERVED.";
+        if (!head) {
+            head = document.createElement("div");
+            head.className = "site-footer-head";
+            head.appendChild(social);
+        } else if (social.parentNode !== head) {
+            head.appendChild(social);
+        }
 
-        var nav = document.createElement("nav");
-        nav.className = "site-footer-social";
-        nav.setAttribute("aria-label", "소셜 미디어");
-
-        var initial = initialSocialUrls();
-        nav.appendChild(
-            btnLink("facebook", initial.facebook, "페이스북", "페이스북", iconFacebook())
-        );
-        nav.appendChild(
-            btnLink("instagram", initial.instagram, "인스타그램", "인스타그램", iconInstagram())
-        );
-        nav.appendChild(
-            btnLink("navercafe", initial.naverCafe, "네이버 카페", "네이버 카페", iconNaverCafe())
-        );
-        nav.appendChild(btnLink("youtube", initial.youtube, "유튜브", "유튜브", iconYoutube()));
-        nav.appendChild(btnKakao(initial.kakao));
-
-        wrap.appendChild(copy);
-        wrap.appendChild(nav);
-        inner.insertBefore(wrap, inner.firstChild);
+        ensureFooterLayout(inner);
     }
 
     global.THEJHON_FOOTER_SOCIAL = {
         mount: mount,
         applyLinks: applyLinks,
         syncSocialLinks: syncSocialLinks,
+        syncGuestFooter: syncGuestFooter,
+        ensureFooterLayout: ensureFooterLayout,
         socialFromStaff: socialFromStaff,
         fetchThejohnFooterStaff: fetchThejohnFooterStaff
     };
@@ -329,6 +442,10 @@
 
     function boot() {
         prefetchThejohnSocial();
+        if (isGuestFooterRole()) {
+            syncGuestFooter();
+            return;
+        }
         mount();
         syncSocialLinks();
     }
@@ -338,6 +455,12 @@
     } else {
         boot();
     }
-    global.addEventListener("pageshow", syncSocialLinks);
-    global.addEventListener("thejhon-auth-permissions-updated", syncSocialLinks);
+    global.addEventListener("pageshow", function () {
+        if (isGuestFooterRole()) syncGuestFooter();
+        else syncSocialLinks();
+    });
+    global.addEventListener("thejhon-auth-permissions-updated", function () {
+        if (isGuestFooterRole()) syncGuestFooter();
+        else syncSocialLinks();
+    });
 })(typeof window !== "undefined" ? window : this);

@@ -724,15 +724,8 @@
                 if (global.__thejhonRefreshCompanyGreeting) {
                     global.__thejhonRefreshCompanyGreeting();
                 }
-                if (Api.getPublicFooterStaff && global.THEJHON_FOOTER_COMPANY) {
-                    Api.getPublicFooterStaff()
-                        .then(function (st) {
-                            var grid = document.getElementById("siteFooterCompanyGrid");
-                            if (grid && THEJHON_FOOTER_COMPANY.renderStaffGrid) {
-                                grid.innerHTML = THEJHON_FOOTER_COMPANY.renderStaffGrid(st);
-                            }
-                        })
-                        .catch(function () {});
+                if (window.THEJHON_FOOTER_SOCIAL && THEJHON_FOOTER_SOCIAL.syncGuestFooter) {
+                    THEJHON_FOOTER_SOCIAL.syncGuestFooter();
                 }
                 return;
             }
@@ -773,6 +766,21 @@
         function bootFooter() {
             ensureUnifiedSiteFooter();
             run();
+            var Auth = window.THEJHON_AUTH;
+            var isGuest =
+                Auth &&
+                Auth.isLoggedIn &&
+                Auth.isLoggedIn() &&
+                Auth.getRole &&
+                Auth.getRole() === "guest";
+            if (isGuest) {
+                if (window.THEJHON_FOOTER_SOCIAL && THEJHON_FOOTER_SOCIAL.syncGuestFooter) {
+                    THEJHON_FOOTER_SOCIAL.syncGuestFooter();
+                } else if (window.__thejhonRefreshFooterSocial) {
+                    window.__thejhonRefreshFooterSocial();
+                }
+                return;
+            }
             if (window.THEJHON_FOOTER_SOCIAL && window.THEJHON_FOOTER_SOCIAL.syncSocialLinks) {
                 window.THEJHON_FOOTER_SOCIAL.syncSocialLinks();
             } else if (window.__thejhonRefreshFooterSocial) {
@@ -1054,22 +1062,30 @@
 
     (function loadFooterSocial() {
         if (!document.querySelector(".site-footer-inner")) return;
-        if (document.getElementById("script-footer-social")) {
-            if (window.THEJHON_FOOTER_SOCIAL) {
-                THEJHON_FOOTER_SOCIAL.mount();
-                if (THEJHON_FOOTER_SOCIAL.syncSocialLinks) THEJHON_FOOTER_SOCIAL.syncSocialLinks();
+        function syncFooterSocial() {
+            var Auth = window.THEJHON_AUTH;
+            var isGuest =
+                Auth &&
+                Auth.isLoggedIn &&
+                Auth.isLoggedIn() &&
+                Auth.getRole &&
+                Auth.getRole() === "guest";
+            if (!window.THEJHON_FOOTER_SOCIAL) return;
+            THEJHON_FOOTER_SOCIAL.mount();
+            if (isGuest && THEJHON_FOOTER_SOCIAL.syncGuestFooter) {
+                THEJHON_FOOTER_SOCIAL.syncGuestFooter();
+            } else if (THEJHON_FOOTER_SOCIAL.syncSocialLinks) {
+                THEJHON_FOOTER_SOCIAL.syncSocialLinks();
             }
+        }
+        if (document.getElementById("script-footer-social")) {
+            syncFooterSocial();
             return;
         }
         var s = document.createElement("script");
         s.id = "script-footer-social";
         s.src = "footer-social.js";
-        s.onload = function () {
-            if (window.THEJHON_FOOTER_SOCIAL) {
-                THEJHON_FOOTER_SOCIAL.mount();
-                if (THEJHON_FOOTER_SOCIAL.syncSocialLinks) THEJHON_FOOTER_SOCIAL.syncSocialLinks();
-            }
-        };
+        s.onload = syncFooterSocial;
         document.body.appendChild(s);
     })();
 

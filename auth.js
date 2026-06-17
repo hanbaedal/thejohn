@@ -798,16 +798,26 @@
                 if (document.body) document.body.classList.add("is-logged-in");
             }
         } catch (eCls) {}
-        if (typeof global.__thejhonRefreshFooterCompany === "function") {
+        if (typeof global.THEJHON_FOOTER_SOCIAL === "object" && THEJHON_FOOTER_SOCIAL.syncGuestFooter) {
             try {
-                global.__thejhonRefreshFooterCompany();
-            } catch (eFoot) {}
-        }
-        if (typeof global.__thejhonRefreshFooterSocial === "function") {
+                THEJHON_FOOTER_SOCIAL.syncGuestFooter();
+            } catch (eSocGuest) {}
+        } else if (typeof global.__thejhonRefreshFooterSocial === "function") {
             try {
                 global.__thejhonRefreshFooterSocial();
             } catch (eSoc) {}
         }
+        if (
+            !(global.THEJHON_FOOTER_SOCIAL && THEJHON_FOOTER_SOCIAL.syncGuestFooter) &&
+            typeof global.__thejhonRefreshFooterCompany === "function"
+        ) {
+            try {
+                global.__thejhonRefreshFooterCompany();
+            } catch (eFoot) {}
+        }
+        try {
+            global.dispatchEvent(new CustomEvent("thejhon-auth-permissions-updated"));
+        } catch (eEv) {}
         return guestId;
     }
 

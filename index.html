@@ -131,7 +131,7 @@
             body.page-home .site-footer-grid {
                 gap: 0.08rem 0;
             }
-            body.page-home .site-footer-grid .site-footer-item:nth-child(n + 3) {
+            html:not(.is-guest) body.page-home .site-footer-grid .site-footer-item:nth-child(n + 3) {
                 display: none;
             }
             body.page-home .site-footer-item {
@@ -251,8 +251,25 @@
             function syncAuthUi() {
                 var loggedIn = window.THEJHON_AUTH && THEJHON_AUTH.isLoggedIn();
                 if (logoutBtn) logoutBtn.hidden = !loggedIn;
-                document.documentElement.classList.toggle("is-logged-in", !!loggedIn);
-                document.body.classList.toggle("is-logged-in", !!loggedIn);
+                if (
+                    window.THEJHON_AUTH_STORAGE &&
+                    THEJHON_AUTH_STORAGE.applyLoggedInDocumentClass
+                ) {
+                    THEJHON_AUTH_STORAGE.applyLoggedInDocumentClass();
+                } else {
+                    document.documentElement.classList.toggle("is-logged-in", !!loggedIn);
+                    document.body.classList.toggle("is-logged-in", !!loggedIn);
+                }
+                if (
+                    loggedIn &&
+                    window.THEJHON_AUTH &&
+                    THEJHON_AUTH.getRole &&
+                    THEJHON_AUTH.getRole() === "guest" &&
+                    window.THEJHON_FOOTER_SOCIAL &&
+                    THEJHON_FOOTER_SOCIAL.syncGuestFooter
+                ) {
+                    THEJHON_FOOTER_SOCIAL.syncGuestFooter();
+                }
             }
             function syncHomeHeroTitle() {
                 var el = document.getElementById("homeHeroTitle");
