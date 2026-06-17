@@ -169,7 +169,10 @@ a.site-footer-social__btn:hover {
     color: var(--header-footer-muted);
 }
 
-/* 게스트 — 모든 화면: 저작권 → SNS → 구분선 → 관리자 정보 */
+/* 게스트 — 로그인 시 푸터 항상 표시 */
+html.is-guest footer.site-footer {
+    display: block;
+}
 html.is-guest .site-footer-head {
     display: block !important;
     text-align: center;

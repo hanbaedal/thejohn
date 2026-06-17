@@ -375,17 +375,31 @@
         var FC = global.THEJHON_FOOTER_COMPANY;
         var grid = document.getElementById("siteFooterCompanyGrid");
         var msgEl = document.getElementById("siteFooterCompanyMsg");
-        if (!grid || !Api || !Api.getPublicFooterStaff) return Promise.resolve();
+        if (!grid) return Promise.resolve();
+        if (!Api || !Api.getPublicFooterStaff) {
+            if (global.__thejhonGuestFooterCompanyFallback && !grid.querySelector("dt")) {
+                grid.innerHTML = global.__thejhonGuestFooterCompanyFallback;
+            }
+            return Promise.resolve();
+        }
 
-        grid.innerHTML =
-            '<div class="site-footer-item site-footer-item--full"><dt></dt><dd class="site-footer-loading">기업 정보를 불러오는 중…</dd></div>';
+        if (!grid.querySelector("dt")) {
+            grid.innerHTML =
+                '<div class="site-footer-item site-footer-item--full"><dt></dt><dd class="site-footer-loading">기업 정보를 불러오는 중…</dd></div>';
+        }
 
         return Api.getPublicFooterStaff()
             .then(function (st) {
-                if (FC && FC.renderGuestStaffGrid) {
-                    grid.innerHTML = FC.renderGuestStaffGrid(st);
-                } else if (FC && FC.renderStaffGrid) {
-                    grid.innerHTML = FC.renderStaffGrid(st);
+                try {
+                    if (FC && FC.renderGuestStaffGrid) {
+                        grid.innerHTML = FC.renderGuestStaffGrid(st);
+                    } else if (FC && FC.renderStaffGrid) {
+                        grid.innerHTML = FC.renderStaffGrid(st);
+                    }
+                } catch (renderErr) {
+                    if (global.__thejhonGuestFooterCompanyFallback) {
+                        grid.innerHTML = global.__thejhonGuestFooterCompanyFallback;
+                    }
                 }
                 if (msgEl) {
                     msgEl.hidden = true;
@@ -395,10 +409,12 @@
                 if (footer) footer.classList.add("site-footer--guest-ready");
             })
             .catch(function () {
-                grid.innerHTML = "";
+                if (global.__thejhonGuestFooterCompanyFallback) {
+                    grid.innerHTML = global.__thejhonGuestFooterCompanyFallback;
+                }
                 if (msgEl) {
-                    msgEl.hidden = false;
-                    msgEl.textContent = "기업 정보를 불러오지 못했습니다.";
+                    msgEl.hidden = true;
+                    msgEl.textContent = "";
                 }
             });
     }
@@ -408,6 +424,9 @@
         var inner = document.querySelector(".site-footer-inner");
         if (!inner) return Promise.resolve();
 
+        if (typeof global.__thejhonEnsureGuestFooterShell === "function") {
+            global.__thejhonEnsureGuestFooterShell();
+        }
         mount();
         applyCachedLinksFirst();
 
@@ -504,6 +523,9 @@
     function boot() {
         prefetchThejohnSocial();
         if (isGuestFooterRole()) {
+            if (typeof global.__thejhonEnsureGuestFooterShell === "function") {
+                global.__thejhonEnsureGuestFooterShell();
+            }
             syncGuestFooter();
             return;
         }

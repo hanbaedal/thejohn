@@ -63,15 +63,14 @@
          * 홈(index) 전용 반응형 3구간
          * PC(노트북): 1024px 이상 | 태블릿: 721~1023px | 모바일: 720px 이하
          */
-        html:not(.is-logged-in) body.page-home .site-footer-head {
+        html:not(.is-logged-in) body.page-home .site-footer {
             display: none;
         }
-        html.is-logged-in body.page-home .site-footer-head {
-            display: block !important;
-        }
+        html.is-logged-in body.page-home .site-footer-head,
         html.is-guest body.page-home .site-footer-head {
             display: block !important;
         }
+        html.is-logged-in body.page-home .site-footer-inner > .site-footer-social,
         html.is-guest body.page-home .site-footer-head .site-footer-copy {
             display: block !important;
         }
@@ -343,6 +342,11 @@
             function syncAuthUi() {
                 var loggedIn = window.THEJHON_AUTH && THEJHON_AUTH.isLoggedIn();
                 if (logoutBtn) logoutBtn.hidden = !loggedIn;
+                var role =
+                    window.THEJHON_AUTH && THEJHON_AUTH.getRole
+                        ? THEJHON_AUTH.getRole()
+                        : "";
+                var isGuest = !!(loggedIn && role === "guest");
                 if (
                     window.THEJHON_AUTH_STORAGE &&
                     THEJHON_AUTH_STORAGE.applyLoggedInDocumentClass
@@ -351,15 +355,16 @@
                 } else {
                     document.documentElement.classList.toggle("is-logged-in", !!loggedIn);
                     document.body.classList.toggle("is-logged-in", !!loggedIn);
+                    document.documentElement.classList.toggle("is-guest", isGuest);
+                    document.body.classList.toggle("is-guest", isGuest);
+                }
+                if (isGuest && window.__thejhonEnsureGuestFooterShell) {
+                    window.__thejhonEnsureGuestFooterShell();
                 }
                 if (
                     loggedIn &&
                     window.THEJHON_FOOTER_SOCIAL
                 ) {
-                    var role =
-                        window.THEJHON_AUTH && THEJHON_AUTH.getRole
-                            ? THEJHON_AUTH.getRole()
-                            : "";
                     if (role === "guest" && THEJHON_FOOTER_SOCIAL.syncGuestFooter) {
                         THEJHON_FOOTER_SOCIAL.syncGuestFooter();
                     } else if (THEJHON_FOOTER_SOCIAL.syncSocialLinks) {

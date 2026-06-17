@@ -555,6 +555,70 @@
         });
     })();
 
+    var GUEST_FOOTER_COMPANY_FALLBACK =
+        '<div class="site-footer-item"><dt>상호</dt><dd>(주)더존</dd></div>' +
+        '<div class="site-footer-item"><dt>대표</dt><dd>이상범</dd></div>' +
+        '<div class="site-footer-item"><dt>휴대폰</dt><dd><a class="footer-tel" href="tel:+821029288196">010-2928-8196</a></dd></div>' +
+        '<div class="site-footer-item"><dt>이메일</dt><dd><a href="mailto:leesb0129@daum.net">leesb0129@daum.net</a></dd></div>' +
+        '<div class="site-footer-item"><dt>전화</dt><dd><a class="footer-tel" href="tel:+82326665255">032-666-5255</a></dd></div>' +
+        '<div class="site-footer-item"><dt>팩스</dt><dd>032-662-5246</dd></div>' +
+        '<div class="site-footer-item"><dt>사업자등록번호</dt><dd>130-45-32935</dd></div>' +
+        '<div class="site-footer-item site-footer-item--full"><dt>주소</dt><dd>경기도 부천시 원미구 부천로 130번길 5, 삼도빌딩 1층</dd></div>';
+    window.__thejhonGuestFooterCompanyFallback = GUEST_FOOTER_COMPANY_FALLBACK;
+
+    var GUEST_FOOTER_SHELL_HTML =
+        '<div class="site-footer-head site-footer-head--guest">' +
+        '<p class="site-footer-copy">COPYRIGHT HaeSoo ALL RIGHTS RESERVED.</p></div>' +
+        '<nav class="site-footer-social" aria-label="소셜 미디어">' +
+        '<span class="site-footer-social__btn site-footer-social__btn--facebook is-soon" title="페이스북 (준비 중)" aria-label="페이스북 (준비 중)">' +
+        '<svg class="site-footer-social__icon" width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M13.5 8.5H16V5h-2.5C11.57 5 10 6.79 10 9.25V11H7v3h3v7h3v-7h2.6l.4-3H13v-1.75c0-.97.4-1.25 1.5-1.25z"/></svg></span>' +
+        '<span class="site-footer-social__btn site-footer-social__btn--instagram is-soon" title="인스타그램 (준비 중)" aria-label="인스타그램 (준비 중)">' +
+        '<svg class="site-footer-social__icon" width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M7 3h10a4 4 0 0 1 4 4v10a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4V7a4 4 0 0 1 4-4zm5 4.5A5.5 5.5 0 1 0 17.5 13 5.51 5.51 0 0 0 12 7.5zm6.25-2.75a1.25 1.25 0 1 0-1.25 1.25 1.25 1.25 0 0 0 1.25-1.25z"/></svg></span>' +
+        '<span class="site-footer-social__btn site-footer-social__btn--navercafe is-soon" title="네이버 카페 (준비 중)" aria-label="네이버 카페 (준비 중)">' +
+        '<svg class="site-footer-social__icon" width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M5 17h14v2H5v-2zm1-11h11l1 3v6H6V9l1-3zm8 11a2 2 0 1 0 4 0h-4z"/></svg></span>' +
+        '<span class="site-footer-social__btn site-footer-social__btn--youtube is-soon" title="유튜브 (준비 중)" aria-label="유튜브 (준비 중)">' +
+        '<svg class="site-footer-social__icon" width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M21.6 7.2c-.2-.8-.8-1.4-1.6-1.6C18 5 12 5 12 5s-6 0-8 .6c-.8.2-1.4.8-1.6 1.6C2 9.2 2 12 2 12s0 2.8.4 4.8c.2.8.8 1.4 1.6 1.6 2 .6 8 .6 8 .6s6 0 8-.6c.8-.2 1.4-.8 1.6-1.6.4-2 .4-4.8.4-4.8s0-2.8-.4-4.8zm-11.9 8V9.9l6.4 3.25-6.4 3.05z"/></svg></span>' +
+        '<a class="site-footer-social__btn site-footer-social__btn--kakao" href="https://pf.kakao.com/_xavxlxjX/chat" target="_blank" rel="noopener noreferrer" title="카카오톡 채널 채팅" aria-label="카카오톡 채널 채팅">' +
+        '<svg class="site-footer-social__icon" width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 3C6.48 3 2 6.58 2 11c0 2.84 1.52 5.35 3.86 6.84L5 21l3.45-1.9C9.55 19.36 10.74 19.5 12 19.5c5.52 0 10-3.58 10-8s-4.48-8-10-8z"/></svg></a>' +
+        "</nav>" +
+        '<div class="site-footer-company-sep" aria-hidden="true"></div>';
+
+    function isGuestSession() {
+        var Auth = window.THEJHON_AUTH;
+        return !!(
+            Auth &&
+            Auth.isLoggedIn &&
+            Auth.isLoggedIn() &&
+            Auth.getRole &&
+            Auth.getRole() === "guest"
+        );
+    }
+
+    /** 게스트 — JS 로드 전에도 SNS·저작권·구분선이 보이도록 HTML 삽입 */
+    function ensureGuestFooterShell() {
+        if (!isGuestSession()) return;
+        var footer = document.querySelector("footer.site-footer");
+        if (!footer) return;
+        var inner = footer.querySelector(".site-footer-inner");
+        if (!inner) return;
+        var grid =
+            inner.querySelector(".site-footer-grid") ||
+            document.getElementById("siteFooterCompanyGrid");
+        if (!inner.querySelector(".site-footer-social")) {
+            var shell = document.createElement("div");
+            shell.innerHTML = GUEST_FOOTER_SHELL_HTML;
+            while (shell.firstChild) {
+                inner.insertBefore(shell.firstChild, grid || inner.firstChild);
+            }
+        }
+        if (grid && !grid.querySelector("dt")) {
+            grid.innerHTML = GUEST_FOOTER_COMPANY_FALLBACK;
+        }
+        if (window.THEJHON_AUTH_STORAGE && THEJHON_AUTH_STORAGE.applyLoggedInDocumentClass) {
+            THEJHON_AUTH_STORAGE.applyLoggedInDocumentClass();
+        }
+    }
+
     var SITE_FOOTER_INNER_HTML =
         '<div class="site-footer-inner">' +
         '<dl class="site-footer-grid" id="siteFooterCompanyGrid" aria-live="polite">' +
@@ -780,15 +844,11 @@
         }
 
         function bootFooter() {
+            ensureGuestFooterShell();
             ensureUnifiedSiteFooter();
             run();
             var Auth = window.THEJHON_AUTH;
-            var isGuest =
-                Auth &&
-                Auth.isLoggedIn &&
-                Auth.isLoggedIn() &&
-                Auth.getRole &&
-                Auth.getRole() === "guest";
+            var isGuest = isGuestSession();
             if (isGuest) {
                 if (window.THEJHON_FOOTER_SOCIAL && THEJHON_FOOTER_SOCIAL.syncGuestFooter) {
                     THEJHON_FOOTER_SOCIAL.syncGuestFooter();
@@ -1076,8 +1136,14 @@
         }
     })();
 
+    window.__thejhonEnsureGuestFooterShell = ensureGuestFooterShell;
+    ensureGuestFooterShell();
+    window.addEventListener("thejhon-auth-permissions-updated", ensureGuestFooterShell);
+    window.addEventListener("pageshow", ensureGuestFooterShell);
+
     (function loadFooterSocial() {
         if (!document.querySelector(".site-footer-inner")) return;
+        ensureGuestFooterShell();
         function syncFooterSocial() {
             var Auth = window.THEJHON_AUTH;
             var isGuest =

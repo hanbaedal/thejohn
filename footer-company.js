@@ -4,6 +4,8 @@
  * 로그인: GET /api/auth/staff-profile (관리자=본인, 업체=vn_registered_by 담당 관리자)
  */
 (function (global) {
+    var AF = global.THEJHON_ADDRESS_FIELDS;
+
     function escapeHtml(s) {
         return String(s)
             .replace(/&/g, "&amp;")
