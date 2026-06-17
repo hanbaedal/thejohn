@@ -58,8 +58,101 @@
             opacity: 1;
             visibility: visible;
         }
-        /* Galaxy S25 (약 360×780) — 인삿말·대표명 한 화면 */
-        @media (max-width: 430px) {
+
+        /*
+         * 홈(index) 전용 반응형 3구간
+         * PC(노트북): 1024px 이상 | 태블릿: 721~1023px | 모바일: 720px 이하
+         */
+        html:not(.is-logged-in) body.page-home .site-footer-head {
+            display: none;
+        }
+        html.is-logged-in body.page-home .site-footer-head {
+            display: block !important;
+        }
+        html.is-guest body.page-home .site-footer-head {
+            display: block !important;
+        }
+        html.is-guest body.page-home .site-footer-head .site-footer-copy {
+            display: block !important;
+        }
+        html.is-guest body.page-home .site-footer-social {
+            display: flex !important;
+            justify-content: center;
+            flex-wrap: nowrap;
+            gap: 0.65rem;
+        }
+        html.is-guest body.page-home .site-footer-grid {
+            display: grid !important;
+            grid-template-columns: 1fr !important;
+            max-width: 28rem;
+            width: 100%;
+            margin: 0.45rem auto 0;
+        }
+        html.is-guest body.page-home .site-footer-grid .site-footer-item,
+        html.is-guest body.page-home .site-footer-grid .site-footer-item--full {
+            display: grid !important;
+            grid-template-columns: 6.75rem minmax(0, 1fr) !important;
+            grid-column: 1 !important;
+        }
+        html.is-guest body.page-home .site-footer-inner > .site-footer-copy {
+            display: none !important;
+        }
+
+        /* PC — 노트북(1024px~) */
+        @media (min-width: 1024px) {
+            body.page-home .home-intro {
+                min-height: min(72vh, calc(100dvh - 11rem));
+            }
+            body.page-home .home-intro-copy {
+                padding: 1.5rem 1rem 2rem;
+            }
+            body.page-home .site-header-brand .dz-logo,
+            body.page-home .site-header-start .dz-logo {
+                width: 4.5rem;
+                height: 4.5rem;
+            }
+            body.page-home .site-footer {
+                font-size: 0.8125rem;
+            }
+        }
+
+        /* 태블릿 — 721~1023px */
+        @media (min-width: 721px) and (max-width: 1023px) {
+            body.page-home .home-intro {
+                min-height: min(68vh, calc(100dvh - 10rem));
+            }
+            body.page-home .home-intro-copy {
+                padding: 1.1rem 1rem 1.4rem;
+            }
+            body.page-home .home-intro-copy .company-hero {
+                font-size: clamp(1.45rem, 3.5vw + 0.5rem, 1.85rem);
+            }
+            body.page-home .site-header-brand .dz-logo,
+            body.page-home .site-header-start .dz-logo {
+                width: 2.75rem;
+                height: 2.75rem;
+            }
+            body.page-home .site-header-menu-scroll {
+                overflow-x: auto;
+                -webkit-overflow-scrolling: touch;
+                scrollbar-width: none;
+            }
+            body.page-home .site-header-menu-scroll::-webkit-scrollbar {
+                display: none;
+            }
+            body.page-home .site-header-nav .header-nav-link {
+                flex-shrink: 0;
+                white-space: nowrap;
+            }
+            body.page-home .site-footer {
+                font-size: 0.78rem;
+                padding-left: 0.85rem;
+                padding-right: 0.85rem;
+            }
+        }
+
+        /* 모바일 — 720px 이하 */
+        @media (max-width: 720px) {
             html:has(body.page-home),
             body.page-home {
                 height: 100svh;
@@ -77,9 +170,22 @@
                 --header-pad-y: 0.55rem;
                 gap: 0.15rem 0.35rem;
             }
-            body.page-home .site-header-brand .dz-logo {
+            body.page-home .site-header-brand .dz-logo,
+            body.page-home .site-header-start .dz-logo {
                 width: 2.25rem;
                 height: 2.25rem;
+            }
+            body.page-home .site-header-menu-scroll {
+                overflow-x: auto;
+                -webkit-overflow-scrolling: touch;
+                scrollbar-width: none;
+            }
+            body.page-home .site-header-menu-scroll::-webkit-scrollbar {
+                display: none;
+            }
+            body.page-home .site-header-nav .header-nav-link {
+                flex-shrink: 0;
+                white-space: nowrap;
             }
             body.page-home .company-main--home {
                 flex: 1 1 auto;
@@ -99,7 +205,7 @@
                 gap: 0.65rem;
             }
             body.page-home .home-intro-copy .company-hero {
-                font-size: clamp(1.4rem, 4.2vw + 0.55rem, 1.75rem);
+                font-size: clamp(1.35rem, 4vw + 0.5rem, 1.75rem);
                 line-height: 1.06;
             }
             body.page-home .home-intro-copy .company-taglines {
@@ -116,12 +222,6 @@
             body.page-home .home-bgm-wrap {
                 bottom: max(0.4rem, env(safe-area-inset-bottom, 0));
             }
-            html:not(.is-logged-in) body.page-home .site-footer-head {
-                display: none;
-            }
-            html.is-logged-in body.page-home .site-footer-head {
-                display: block;
-            }
             body.page-home .site-footer {
                 flex: 0 0 auto;
                 font-size: 0.72rem;
@@ -131,34 +231,12 @@
             body.page-home .site-footer-grid {
                 gap: 0.08rem 0;
             }
-            html:not(.is-guest) body.page-home .site-footer-grid .site-footer-item:nth-child(n + 3) {
+            html:not(.is-guest).is-logged-in body.page-home .site-footer-grid .site-footer-item:nth-child(n + 3) {
                 display: none;
             }
-            body.page-home .site-footer-item {
+            html:not(.is-guest) body.page-home .site-footer-item {
                 grid-template-columns: 4.5rem minmax(0, 1fr);
                 gap: 0.06rem 0.35rem;
-            }
-        }
-        @media (max-width: 430px) and (max-height: 760px) {
-            body.page-home .home-intro-copy {
-                padding: 0.5rem 0.7rem 0.6rem;
-            }
-            body.page-home .home-intro-copy .company-hero-stack {
-                gap: 0.52rem;
-            }
-            body.page-home .home-intro-copy .company-hero {
-                font-size: clamp(1.32rem, 3.8vw + 0.5rem, 1.62rem);
-                line-height: 1.04;
-            }
-            body.page-home .home-intro-copy .company-taglines p {
-                font-size: clamp(0.72rem, 0.9vw + 0.42rem, 0.82rem);
-                line-height: 1.28;
-                margin: 0 0 0.2rem;
-            }
-            body.page-home .site-footer {
-                font-size: 0.68rem;
-                padding-top: 0.28rem;
-                padding-bottom: max(0.28rem, env(safe-area-inset-bottom, 0));
             }
         }
     </style>
@@ -262,13 +340,17 @@
                 }
                 if (
                     loggedIn &&
-                    window.THEJHON_AUTH &&
-                    THEJHON_AUTH.getRole &&
-                    THEJHON_AUTH.getRole() === "guest" &&
-                    window.THEJHON_FOOTER_SOCIAL &&
-                    THEJHON_FOOTER_SOCIAL.syncGuestFooter
+                    window.THEJHON_FOOTER_SOCIAL
                 ) {
-                    THEJHON_FOOTER_SOCIAL.syncGuestFooter();
+                    var role =
+                        window.THEJHON_AUTH && THEJHON_AUTH.getRole
+                            ? THEJHON_AUTH.getRole()
+                            : "";
+                    if (role === "guest" && THEJHON_FOOTER_SOCIAL.syncGuestFooter) {
+                        THEJHON_FOOTER_SOCIAL.syncGuestFooter();
+                    } else if (THEJHON_FOOTER_SOCIAL.syncSocialLinks) {
+                        THEJHON_FOOTER_SOCIAL.syncSocialLinks();
+                    }
                 }
             }
             function syncHomeHeroTitle() {
