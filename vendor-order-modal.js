@@ -286,6 +286,11 @@
                 '<p class="cart-empty">업체 계정으로 <a href="login.html">로그인</a> 후 이용해 주세요.</p>';
             return;
         }
+        if (Auth.isGuest && Auth.isGuest()) {
+            bodyEl.innerHTML =
+                '<p class="cart-empty">게스트는 주문·장바구니를 이용할 수 없습니다. <a href="products.html">사업부문</a>에서 상품만 열람할 수 있습니다.</p>';
+            return;
+        }
         if (!Auth.canPlaceVendorOrders || !Auth.canPlaceVendorOrders()) {
             bodyEl.innerHTML =
                 '<p class="cart-empty">이 계정은 주문할 수 없습니다. 주문 권한이 있는 관리자에게 등록된 업체만 주문할 수 있습니다.</p>';

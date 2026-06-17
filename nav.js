@@ -579,17 +579,33 @@
     }
 
     function ensureUnifiedSiteFooter() {
+        var Auth = window.THEJHON_AUTH;
+        if (
+            Auth &&
+            Auth.isLoggedIn &&
+            Auth.isLoggedIn() &&
+            Auth.getRole &&
+            Auth.getRole() === "guest"
+        ) {
+            return;
+        }
         var footer = document.querySelector("footer.site-footer");
         if (!footer) return;
         var grid = footer.querySelector(".site-footer-grid");
         if (!isFooterGridPlaceholder(grid)) return;
 
         var head = footer.querySelector(".site-footer-head");
+        var social = footer.querySelector(".site-footer-social");
+        var sep = footer.querySelector(".site-footer-company-sep");
         footer.innerHTML = SITE_FOOTER_INNER_HTML;
-        if (head) {
-            var inner = footer.querySelector(".site-footer-inner");
-            if (inner) inner.insertBefore(head, inner.firstChild);
-        }
+        var inner = footer.querySelector(".site-footer-inner");
+        if (!inner) return;
+        var gridEl = inner.querySelector(".site-footer-grid");
+        if (head) inner.insertBefore(head, inner.firstChild);
+        if (social && gridEl) inner.insertBefore(social, gridEl);
+        else if (social) inner.appendChild(social);
+        if (sep && gridEl) inner.insertBefore(sep, gridEl);
+        else if (sep) inner.appendChild(sep);
     }
 
     (function syncFooterCompanyFromDb() {
@@ -996,8 +1012,8 @@
         if (legacyOrderBtn) legacyOrderBtn.remove();
         var show =
             window.THEJHON_AUTH &&
-            THEJHON_AUTH.canPlaceVendorOrders &&
-            THEJHON_AUTH.canPlaceVendorOrders();
+            THEJHON_AUTH.getVendorCartAccess &&
+            THEJHON_AUTH.getVendorCartAccess().allowed;
         if (!show) {
             if (manageLink) manageLink.remove();
             return;

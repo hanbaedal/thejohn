@@ -1,6 +1,6 @@
 /**
  * 푸터 — 소셜 아이콘 + 기업 정보
- * - 게스트: SNS 먼저 → thejohn 관리자 정보 → 저작권
+ * - 게스트: 저작권 → SNS(독립) → 구분선 → thejohn 관리자 정보
  * - 관리자·슈퍼바이저·업체: 본인(또는 담당 관리자) SNS, 비어 있으면 thejohn SNS로 대체
  * - 카카오톡 채널: (주)더존 고정 URL
  */
@@ -292,7 +292,18 @@
         return copy;
     }
 
-    /** 게스트 푸터: 저작권 → SNS → 관리자 정보 */
+    function ensureGuestCompanySep(inner) {
+        if (!inner) return null;
+        var sep = inner.querySelector(".site-footer-company-sep");
+        if (!sep) {
+            sep = document.createElement("div");
+            sep.className = "site-footer-company-sep";
+            sep.setAttribute("aria-hidden", "true");
+        }
+        return sep;
+    }
+
+    /** 게스트 푸터: 저작권 → SNS(독립) → 구분선 → 관리자 정보 */
     function ensureGuestFooterLayout(inner) {
         if (!inner) return;
         var head = inner.querySelector(".site-footer-head");
@@ -302,23 +313,26 @@
         var msg = inner.querySelector(".site-footer-company-msg");
         var copy = ensureFooterCopy(inner);
         var social = inner.querySelector(".site-footer-social");
+        var sep = ensureGuestCompanySep(inner);
 
         if (!head) {
             head = document.createElement("div");
-            head.className = "site-footer-head";
+            head.className = "site-footer-head site-footer-head--guest";
         }
+        head.classList.add("site-footer-head--guest");
         if (copy.parentNode !== head) {
             head.insertBefore(copy, head.firstChild);
         }
-        if (social) {
-            if (social.parentNode !== head) {
-                head.appendChild(social);
-            } else if (copy.parentNode === head && copy.nextSibling !== social) {
-                head.appendChild(social);
-            }
+        var straySocial = head.querySelector(".site-footer-social");
+        if (straySocial) straySocial.remove();
+        if (!social) {
+            social = buildSocialNav(initialSocialUrls());
+        }
+        if (social.parentNode === head) {
+            head.removeChild(social);
         }
 
-        var ordered = [head, grid, msg];
+        var ordered = [head, social, sep, grid, msg];
         for (var i = 0; i < ordered.length; i++) {
             if (ordered[i]) inner.appendChild(ordered[i]);
         }
@@ -389,7 +403,7 @@
             });
     }
 
-    /** 게스트: 저작권 → SNS → thejohn 관리자 정보(모든 페이지·화면 동일) */
+    /** 게스트: 저작권 → SNS(독립) → 구분선 → thejohn 관리자 정보(모든 페이지·화면 동일) */
     function syncGuestFooter() {
         var inner = document.querySelector(".site-footer-inner");
         if (!inner) return Promise.resolve();
@@ -448,14 +462,21 @@
         var inner = document.querySelector(".site-footer-inner");
         if (!inner) return;
 
-        var legacySocial = inner.querySelector(":scope > .site-footer-social");
-        if (legacySocial) legacySocial.remove();
-
         var head = inner.querySelector(".site-footer-head");
-        var social = head ? head.querySelector(".site-footer-social") : null;
+        var social =
+            inner.querySelector(":scope > .site-footer-social") ||
+            (head ? head.querySelector(".site-footer-social") : null);
         if (!social) {
             social = buildSocialNav(initialSocialUrls());
         }
+
+        if (isGuestFooterRole()) {
+            ensureGuestFooterLayout(inner);
+            return;
+        }
+
+        var legacySocial = inner.querySelector(":scope > .site-footer-social");
+        if (legacySocial && legacySocial !== social) legacySocial.remove();
 
         if (!head) {
             head = document.createElement("div");
@@ -465,11 +486,7 @@
             head.appendChild(social);
         }
 
-        if (isGuestFooterRole()) {
-            ensureGuestFooterLayout(inner);
-        } else {
-            ensureFooterLayout(inner);
-        }
+        ensureFooterLayout(inner);
     }
 
     global.THEJHON_FOOTER_SOCIAL = {

@@ -38,12 +38,20 @@
     }
 
     function canUseCart() {
+        if (
+            !global.THEJHON_AUTH ||
+            !global.THEJHON_AUTH.isLoggedIn ||
+            !global.THEJHON_AUTH.isLoggedIn()
+        ) {
+            return false;
+        }
+        if (global.THEJHON_AUTH.isGuest && global.THEJHON_AUTH.isGuest()) return false;
+        if (global.THEJHON_AUTH.getVendorCartAccess) {
+            return !!global.THEJHON_AUTH.getVendorCartAccess().allowed;
+        }
         return (
-            global.THEJHON_AUTH &&
-            THEJHON_AUTH.isLoggedIn &&
-            THEJHON_AUTH.isLoggedIn() &&
-            THEJHON_AUTH.getRole &&
-            THEJHON_AUTH.getRole() === "vendor"
+            global.THEJHON_AUTH.getRole &&
+            global.THEJHON_AUTH.getRole() === "vendor"
         );
     }
 

@@ -169,26 +169,38 @@ a.site-footer-social__btn:hover {
     color: var(--header-footer-muted);
 }
 
-/* 게스트 — 모든 화면(PC·노트북·스마트폰) 동일: 저작권 → SNS → 관리자 정보 */
+/* 게스트 — 모든 화면: 저작권 → SNS → 구분선 → 관리자 정보 */
 html.is-guest .site-footer-head {
     display: block !important;
     text-align: center;
-    margin: 0 0 0.5rem;
-    padding-bottom: 0.55rem;
-    border-bottom: 1px solid var(--header-footer-border);
+    margin: 0;
+    padding: 0;
+    border-bottom: none;
+}
+html.is-guest .site-footer-head--guest {
+    margin: 0 0 0.2rem;
 }
 html.is-guest .site-footer-head .site-footer-copy {
-    margin: 0 0 0.55rem;
+    margin: 0 0 0.35rem;
     padding: 0;
     border: none;
 }
 html.is-guest .site-footer-inner > .site-footer-copy {
     display: none !important;
 }
-html.is-guest .site-footer-social {
+html.is-guest .site-footer-inner > .site-footer-social {
+    display: flex !important;
     justify-content: center;
-    flex-wrap: nowrap;
+    flex-wrap: wrap;
     gap: 0.65rem;
+    margin: 0.15rem auto 0;
+    padding: 0;
+}
+html.is-guest .site-footer-company-sep {
+    width: 100%;
+    max-width: 28rem;
+    margin: 0.5rem auto 0;
+    border-top: 1px solid var(--header-footer-border);
 }
 html.is-guest .site-footer-grid {
     display: grid !important;

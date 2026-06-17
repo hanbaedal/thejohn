@@ -2334,7 +2334,7 @@
 
     /** 주문·장바구니 — 담당 관리자가 등록한 상품만 */
     function vendorProductCanOrder(it) {
-        if (!it || getRole() !== "vendor") return false;
+        if (!it || isGuest() || getRole() !== "vendor") return false;
         if (!isVendorOrderEnabled()) return false;
         var mine = getVendorRegisteredBy();
         var owner = String(it.pd_registered_by || "").trim();
@@ -2418,11 +2418,39 @@
     function canPlaceVendorOrders() {
         return (
             isLoggedIn() &&
+            !isGuest() &&
             getRole() === "vendor" &&
             vendorPermsSynced &&
             isVendorOrderEnabled() &&
             !!(global.THEJHON_API && THEJHON_API.getToken && THEJHON_API.getToken())
         );
+    }
+
+    /** 업체 주문·장바구니·주문서 보기 — 관리자 등록 업체(vendor) 전용 */
+    function getVendorCartAccess() {
+        normalizeLegacySession();
+        if (!isLoggedIn()) {
+            return { allowed: false, reason: "로그인이 필요합니다." };
+        }
+        if (isGuest()) {
+            return {
+                allowed: false,
+                reason: "게스트는 주문·장바구니를 이용할 수 없습니다. 상품 열람만 가능합니다."
+            };
+        }
+        if (getRole() !== "vendor") {
+            return {
+                allowed: false,
+                reason: "관리자가 등록한 업체 계정만 주문·장바구니를 이용할 수 있습니다."
+            };
+        }
+        if (!canPlaceVendorOrders()) {
+            return {
+                allowed: false,
+                reason: "주문 권한이 있는 관리자에게 등록된 업체만 주문할 수 있습니다."
+            };
+        }
+        return { allowed: true, reason: "" };
     }
 
     /** 업체관리 — 주문서관리 메뉴·화면 (주문 권한 관리자만) */
@@ -2896,6 +2924,12 @@
             }
             return;
         }
+        if (page === "cart.html") {
+            if (!getVendorCartAccess().allowed) {
+                redirectFromProtectedPage(isLoggedIn());
+            }
+            return;
+        }
         if (ADMIN_REGISTER_PAGES.indexOf(page) < 0) return;
         if (!isLoggedIn()) {
             redirectFromProtectedPage(false);
@@ -3037,6 +3071,14 @@
                     orderLinks[o].remove();
                 }
             }
+            var vendorCartLinks = nav.querySelectorAll(
+                '[data-nav-order-manage], a[href="cart.html"]'
+            );
+            var showVendorCart = getVendorCartAccess().allowed;
+            for (var vc = 0; vc < vendorCartLinks.length; vc++) {
+                if (showVendorCart) continue;
+                vendorCartLinks[vc].remove();
+            }
             var staffManage = nav.querySelector(
                 'a[href="staff-manage-hub.html"], a[href="staff-manage.html"]'
             );
@@ -3118,6 +3160,7 @@
         buildProductPriceHtml: buildProductPriceHtml,
         buildCatalogListPriceHtml: buildCatalogListPriceHtml,
         canPlaceVendorOrders: canPlaceVendorOrders,
+        getVendorCartAccess: getVendorCartAccess,
         canShowOrderManageMenu: canShowOrderManageMenu,
         getOrderManageAccess: getOrderManageAccess,
         getOrderManageHubAccess: getOrderManageHubAccess,

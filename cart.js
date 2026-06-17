@@ -57,6 +57,13 @@
     }
 
     function requireVendor() {
+        if (Auth && Auth.isGuest && Auth.isGuest()) {
+            showAccessMsg(
+                '<p class="cart-empty">게스트는 주문·장바구니를 이용할 수 없습니다. ' +
+                    '<a href="products.html">사업부문</a>에서 상품만 열람할 수 있습니다.</p>'
+            );
+            return false;
+        }
         if (!Auth || !Auth.isLoggedIn || !Auth.isLoggedIn() || Auth.getRole() !== "vendor") {
             showAccessMsg(
                 '<p class="cart-empty">업체 계정으로 로그인한 후 이용할 수 있습니다. <a href="login.html?next=' +

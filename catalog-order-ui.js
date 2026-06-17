@@ -7,8 +7,9 @@
 
     function canShowCatalogOrder() {
         if (!global.THEJHON_AUTH) return false;
-        if (!global.THEJHON_AUTH.canPlaceVendorOrders) return false;
-        return !!global.THEJHON_AUTH.canPlaceVendorOrders();
+        if (global.THEJHON_AUTH.isGuest && global.THEJHON_AUTH.isGuest()) return false;
+        if (!global.THEJHON_AUTH.getVendorCartAccess) return false;
+        return !!global.THEJHON_AUTH.getVendorCartAccess().allowed;
     }
 
     function canOrderProduct(it) {

@@ -58,12 +58,6 @@ body.page-product-detail #pd-root {
     list-style: none;
 }
 
-@media (min-width: 640px) {
-    .ps-icons {
-        gap: 0.75rem;
-    }
-}
-
 .ps-icon-btn {
     display: flex;
     flex-direction: column;
@@ -83,15 +77,43 @@ body.page-product-detail #pd-root {
     transition: border-color 0.15s, background 0.15s;
 }
 
-@media (max-width: 720px) {
-    body.page-products,
-    body.page-product-detail {
-        /* JS 측정 전 — 2줄 모바일 헤더 + 1줄 부문 nav 높이 추정 */
-        --ps-catalog-chrome-h: max(10.75rem, 172px);
+.ps-icon {
+    font-size: 1.75rem;
+    line-height: 1;
+}
+
+.ps-icon-label {
+    font-size: clamp(0.72rem, 2.5vw, 0.88rem);
+    font-weight: 600;
+    line-height: 1.2;
+    text-align: center;
+    max-width: 100%;
+    word-break: keep-all;
+}
+
+.ps-icon-btn:hover {
+    border-color: #b8c8dc;
+    background: #f8fafc;
+}
+
+.ps-icon-btn.is-active {
+    border-color: var(--dz-blue);
+    background: #eef4fc;
+    color: var(--dz-blue);
+}
+
+.ps-icon-btn.is-active .ps-icon-label {
+    font-weight: 700;
+}
+
+@media (min-width: 640px) {
+    .ps-icons {
+        gap: 0.75rem;
     }
 }
 
-@media (max-width: 639px) {
+/* 모바일 — 홈(index)과 동일 720px 구간, 6개 부문 한 줄·작은 버튼 */
+@media (max-width: 720px) {
     body.page-products,
     body.page-product-detail {
         --ps-catalog-chrome-h: max(10.5rem, 168px);
@@ -122,9 +144,6 @@ body.page-product-detail #pd-root {
         font-size: clamp(0.44rem, 2.15vw, 0.52rem);
         font-weight: 600;
         line-height: 1.05;
-        text-align: center;
-        max-width: 100%;
-        word-break: keep-all;
         overflow: hidden;
         display: -webkit-box;
         -webkit-line-clamp: 2;
@@ -136,30 +155,4 @@ body.page-product-detail #pd-root {
         padding-left: max(0.65rem, env(safe-area-inset-left, 0));
         padding-right: max(0.65rem, env(safe-area-inset-right, 0));
     }
-}
-
-.ps-icon-btn:hover {
-    border-color: #b8c8dc;
-    background: #f8fafc;
-}
-
-.ps-icon-btn.is-active {
-    border-color: var(--dz-blue);
-    background: #eef4fc;
-    color: var(--dz-blue);
-}
-
-.ps-icon-btn.is-active .ps-icon-label {
-    font-weight: 700;
-}
-
-.ps-icon {
-    font-size: 1.75rem;
-    line-height: 1;
-}
-
-.ps-icon-label {
-    font-size: clamp(0.72rem, 2.5vw, 0.88rem);
-    font-weight: 600;
-    line-height: 1.2;
 }
