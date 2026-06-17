@@ -89,6 +89,17 @@
         }
 
         header.dataset.headerShell = "2";
+        if (
+            document.body &&
+            (document.body.classList.contains("page-products") ||
+                document.body.classList.contains("page-product-detail")) &&
+            window.THEJHON_PRODUCTS_DEPT_NAV &&
+            THEJHON_PRODUCTS_DEPT_NAV.refreshLayout
+        ) {
+            requestAnimationFrame(function () {
+                THEJHON_PRODUCTS_DEPT_NAV.refreshLayout();
+            });
+        }
     })();
 
     var DEFAULT_SITE_LOGO = "img/logo.png";

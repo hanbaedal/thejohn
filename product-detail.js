@@ -85,6 +85,27 @@
         }
     }
 
+    var currentDept = "";
+
+    function normalizeDept(deptId) {
+        if (window.THEJHON_PRODUCTS_DEPT_NAV && THEJHON_PRODUCTS_DEPT_NAV.normalizeDept) {
+            return THEJHON_PRODUCTS_DEPT_NAV.normalizeDept(deptId) || "";
+        }
+        return String(deptId || "").trim();
+    }
+
+    function setDetailUrl(id, replace) {
+        if (!id) return;
+        try {
+            var url = new URL(window.location.href);
+            url.searchParams.set("id", id);
+            var next = url.pathname + url.search;
+            var state = { productId: id };
+            if (replace) history.replaceState(state, "", next);
+            else history.pushState(state, "", next);
+        } catch (e) {}
+    }
+
     function showMissing(msg) {
         document.title = "상품 상세 — 더존";
         root.innerHTML =
@@ -583,9 +604,70 @@
 
     function initDeptNavForProduct(it) {
         if (!window.THEJHON_PRODUCTS_DEPT_NAV) return;
-        if (it && it.pd_dept && THEJHON_PRODUCTS_DEPT_NAV.setActive) {
-            THEJHON_PRODUCTS_DEPT_NAV.setActive(it.pd_dept);
+        if (it && it.pd_dept) {
+            currentDept = normalizeDept(it.pd_dept);
+            if (THEJHON_PRODUCTS_DEPT_NAV.setActive) {
+                THEJHON_PRODUCTS_DEPT_NAV.setActive(currentDept);
+            }
         }
+    }
+
+    function switchToDept(dept) {
+        if (!api || !root) return;
+        dept = normalizeDept(dept);
+        if (!dept) return;
+
+        if (dept === currentDept) {
+            var firstArticle = root.querySelector(".pd-article[data-product-id]");
+            if (firstArticle) {
+                var firstId = firstArticle.getAttribute("data-product-id");
+                if (firstId) {
+                    setDetailUrl(firstId, true);
+                    scrollToProduct(firstId);
+                    if (THEJHON_PRODUCTS_DEPT_NAV && THEJHON_PRODUCTS_DEPT_NAV.setActive) {
+                        THEJHON_PRODUCTS_DEPT_NAV.setActive(dept);
+                    }
+                    return;
+                }
+            }
+        }
+
+        root.innerHTML = '<p class="pd-missing">불러오는 중…</p>';
+        api.listProducts({ dept: dept })
+            .then(function (items) {
+                items = (items || []).filter(isCatalogProduct).map(normalizeItem);
+                if (!items.length) {
+                    window.location.href =
+                        "products.html?dept=" + encodeURIComponent(dept);
+                    return;
+                }
+                var focusId = items[0].id;
+                currentDept = dept;
+                setDetailUrl(focusId, false);
+                return api.getProduct(focusId).then(function (it) {
+                    if (!it || !it.id) {
+                        initDeptNavForProduct(items[0]);
+                        return renderDeptFeed(items[0]);
+                    }
+                    normalizeItem(it);
+                    initDeptNavForProduct(it);
+                    return renderDeptFeed(it);
+                });
+            })
+            .catch(function (err) {
+                root.innerHTML =
+                    '<p class="pd-missing">' +
+                    escapeHtml((err && err.message) || "상품 목록을 불러오지 못했습니다.") +
+                    "</p>";
+            })
+            .then(function () {
+                if (
+                    window.THEJHON_PRODUCTS_DEPT_NAV &&
+                    THEJHON_PRODUCTS_DEPT_NAV.refreshLayout
+                ) {
+                    THEJHON_PRODUCTS_DEPT_NAV.refreshLayout();
+                }
+            });
     }
 
     function render() {
@@ -622,12 +704,13 @@
 
     if (window.THEJHON_PRODUCTS_DEPT_NAV && THEJHON_PRODUCTS_DEPT_NAV.init) {
         THEJHON_PRODUCTS_DEPT_NAV.init({
-            onSelect: function (dept) {
-                window.location.href =
-                    "products.html?dept=" + encodeURIComponent(dept);
-            }
+            onSelect: switchToDept
         });
     }
+
+    window.addEventListener("popstate", function () {
+        render();
+    });
 
     render();
 })();

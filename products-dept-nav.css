@@ -1,7 +1,7 @@
 /* 사업부문 목록·상세 — 헤더 + 6개 부문 버튼 상단 고정(스크롤 안 됨) */
 body.page-products,
 body.page-product-detail {
-    --ps-catalog-chrome-h: 9rem;
+    --ps-catalog-chrome-h: max(12rem, 192px);
 }
 
 .ps-catalog-chrome {
@@ -40,14 +40,19 @@ body.page-product-detail .ps-catalog-chrome .site-header {
 
 body.page-products main.page-main.ps-page,
 body.page-product-detail main.page-main--product-detail {
-    padding-top: calc(var(--ps-catalog-chrome-h, 9rem) + 0.35rem);
+    padding-top: calc(var(--ps-catalog-chrome-h, 12rem) + 0.75rem) !important;
     box-sizing: border-box;
+}
+
+body.page-products #ps-root,
+body.page-product-detail #pd-root {
+    scroll-margin-top: calc(var(--ps-catalog-chrome-h, 12rem) + 0.75rem);
 }
 
 .ps-icons {
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 0.65rem;
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+    gap: 0.35rem;
     margin: 0;
     padding: 0;
     list-style: none;
@@ -55,7 +60,6 @@ body.page-product-detail main.page-main--product-detail {
 
 @media (min-width: 640px) {
     .ps-icons {
-        grid-template-columns: repeat(6, 1fr);
         gap: 0.75rem;
     }
 }
@@ -64,8 +68,10 @@ body.page-product-detail main.page-main--product-detail {
     display: flex;
     flex-direction: column;
     align-items: center;
+    justify-content: center;
     gap: 0.35rem;
     width: 100%;
+    min-width: 0;
     padding: 0.65rem 0.35rem;
     border: 2px solid #e0e6ed;
     border-radius: 12px;
@@ -75,6 +81,61 @@ body.page-product-detail main.page-main--product-detail {
     color: #3d5166;
     -webkit-tap-highlight-color: transparent;
     transition: border-color 0.15s, background 0.15s;
+}
+
+@media (max-width: 720px) {
+    body.page-products,
+    body.page-product-detail {
+        /* JS 측정 전 — 2줄 모바일 헤더 + 1줄 부문 nav 높이 추정 */
+        --ps-catalog-chrome-h: max(10.75rem, 172px);
+    }
+}
+
+@media (max-width: 639px) {
+    body.page-products,
+    body.page-product-detail {
+        --ps-catalog-chrome-h: max(10.5rem, 168px);
+    }
+
+    .ps-catalog-chrome .ps-catalog-sticky {
+        padding: 0.2rem max(0.35rem, env(safe-area-inset-left, 0)) 0.3rem
+            max(0.35rem, env(safe-area-inset-right, 0));
+    }
+
+    .ps-icons {
+        gap: 0.2rem;
+    }
+
+    .ps-icon-btn {
+        padding: 0.28rem 0.08rem 0.32rem;
+        border-width: 1px;
+        border-radius: 7px;
+        gap: 0.1rem;
+    }
+
+    .ps-icon {
+        font-size: 0.95rem;
+        line-height: 1;
+    }
+
+    .ps-icon-label {
+        font-size: clamp(0.44rem, 2.15vw, 0.52rem);
+        font-weight: 600;
+        line-height: 1.05;
+        text-align: center;
+        max-width: 100%;
+        word-break: keep-all;
+        overflow: hidden;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+    }
+
+    body.page-products main.page-main.ps-page,
+    body.page-product-detail main.page-main--product-detail {
+        padding-left: max(0.65rem, env(safe-area-inset-left, 0));
+        padding-right: max(0.65rem, env(safe-area-inset-right, 0));
+    }
 }
 
 .ps-icon-btn:hover {

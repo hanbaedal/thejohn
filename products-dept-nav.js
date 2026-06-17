@@ -61,13 +61,36 @@
         return chrome;
     }
 
+    function measureChromeHeight(chrome) {
+        if (!chrome) return 0;
+        var h = chrome.offsetHeight;
+        if (!h) {
+            h = Math.ceil(chrome.getBoundingClientRect().height);
+        }
+        return h;
+    }
+
     function updateChromeHeight() {
         var chrome = ensureChromeWrap();
         if (!chrome) return;
-        var h = Math.ceil(chrome.getBoundingClientRect().height);
+        var h = measureChromeHeight(chrome);
         if (h > 0) {
-            document.documentElement.style.setProperty("--ps-catalog-chrome-h", h + "px");
+            /* 그림자·서브픽셀·폰트 로드 여유 */
+            document.documentElement.style.setProperty(
+                "--ps-catalog-chrome-h",
+                h + 8 + "px"
+            );
         }
+    }
+
+    function observeChromeResize(chrome, refresh) {
+        if (!chrome || typeof ResizeObserver === "undefined") return;
+        var ro = new ResizeObserver(refresh);
+        ro.observe(chrome);
+        var header = chrome.querySelector(".site-header");
+        var sticky = chrome.querySelector(".ps-catalog-sticky");
+        if (header) ro.observe(header);
+        if (sticky) ro.observe(sticky);
     }
 
     function bindCatalogChromeLayout() {
@@ -85,9 +108,10 @@
         refresh();
 
         var chrome = document.getElementById("ps-catalog-chrome");
-        if (chrome && typeof ResizeObserver !== "undefined") {
-            var ro = new ResizeObserver(refresh);
-            ro.observe(chrome);
+        observeChromeResize(chrome, refresh);
+
+        if (global.document.fonts && global.document.fonts.ready) {
+            global.document.fonts.ready.then(refresh).catch(function () {});
         }
 
         global.addEventListener("resize", refresh);
@@ -96,6 +120,11 @@
         });
         global.addEventListener("pageshow", refresh);
         global.addEventListener("thejhon-auth-permissions-updated", refresh);
+        global.addEventListener("load", function () {
+            setTimeout(refresh, 0);
+            setTimeout(refresh, 150);
+            setTimeout(refresh, 400);
+        });
     }
 
     function init(opts) {

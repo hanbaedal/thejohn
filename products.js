@@ -316,6 +316,14 @@
             root.innerHTML = renderProductListPhase1(items || []);
             lastOrderCardMode = useOrderCardMode();
             scheduleListMetaPhase(phaseToken);
+            if (
+                window.THEJHON_PRODUCTS_DEPT_NAV &&
+                THEJHON_PRODUCTS_DEPT_NAV.refreshLayout
+            ) {
+                requestAnimationFrame(function () {
+                    THEJHON_PRODUCTS_DEPT_NAV.refreshLayout();
+                });
+            }
         } catch (e) {
             root.innerHTML =
                 '<p class="ps-empty">목록을 표시하는 중 오류가 났습니다. 새로고침해 주세요.</p>';
