@@ -124,8 +124,19 @@
         nav.replaceChild(neu, old);
     }
 
+    function findFooterSocialNav() {
+        var inner = document.querySelector(".site-footer-inner");
+        if (inner) {
+            var direct = inner.querySelector(":scope > .site-footer-social");
+            if (direct) return direct;
+            var inInner = inner.querySelector(".site-footer-social");
+            if (inInner) return inInner;
+        }
+        return document.querySelector("footer.site-footer .site-footer-social");
+    }
+
     function applyLinks(urls) {
-        var nav = document.querySelector(".site-footer-social");
+        var nav = findFooterSocialNav();
         if (!nav) return;
         var u = urls || {};
         replaceSocialBtn(nav, "facebook", u.facebook, "페이스북");
@@ -449,6 +460,7 @@
             global.__thejhonEnsureGuestFooterShell();
         }
         mount();
+        applyLinks(thejohnDefaultSocialUrls());
         applyCachedLinksFirst();
 
         return fetchThejohnFooterStaff()

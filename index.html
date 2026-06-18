@@ -243,7 +243,9 @@
             }
             /* 로그인(게스트·관리자) — 푸터 회사정보·SNS 전체가 보이도록 스크롤 허용 */
             html.is-logged-in:has(body.page-home),
-            html.is-logged-in body.page-home {
+            html.is-guest:has(body.page-home),
+            html.is-logged-in body.page-home,
+            html.is-guest body.page-home {
                 height: auto;
                 min-height: 100dvh;
                 max-height: none;
@@ -251,9 +253,20 @@
                 overflow-y: auto;
                 -webkit-overflow-scrolling: touch;
             }
-            html.is-logged-in body.page-home .company-main--home {
+            html.is-logged-in body.page-home .company-main--home,
+            html.is-guest body.page-home .company-main--home {
                 flex: 1 1 auto;
                 min-height: min(52vh, 26rem);
+            }
+            html.is-guest body.page-home .site-footer,
+            html.is-logged-in body.page-home .site-footer {
+                position: relative;
+                z-index: 10;
+            }
+            html.is-guest body.page-home .site-footer-social a.site-footer-social__btn,
+            html.is-logged-in body.page-home .site-footer-social a.site-footer-social__btn {
+                pointer-events: auto;
+                touch-action: manipulation;
             }
         }
     </style>

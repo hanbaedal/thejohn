@@ -649,6 +649,32 @@
         );
     }
 
+    function refreshGuestFooterSocialNav() {
+        var inner = document.querySelector(".site-footer-inner");
+        if (!inner) return;
+        var socialEl =
+            inner.querySelector(":scope > .site-footer-social") ||
+            inner.querySelector(".site-footer-social");
+        var linked = buildGuestFooterSocialNavHtml();
+        if (!socialEl) {
+            var shell = document.createElement("div");
+            shell.innerHTML = GUEST_FOOTER_SHELL_HTML;
+            var grid =
+                inner.querySelector(".site-footer-grid") ||
+                document.getElementById("siteFooterCompanyGrid");
+            while (shell.firstChild) {
+                inner.insertBefore(shell.firstChild, grid || inner.firstChild);
+            }
+            return;
+        }
+        var needsLinks =
+            socialEl.querySelector(".is-soon") ||
+            !socialEl.querySelector("a.site-footer-social__btn--facebook[href]");
+        if (needsLinks) {
+            socialEl.outerHTML = linked;
+        }
+    }
+
     /** 게스트 — JS 로드 전에도 SNS·저작권·구분선이 보이도록 HTML 삽입 */
     function ensureGuestFooterShell() {
         if (!isGuestSession()) return;
@@ -659,18 +685,23 @@
         var grid =
             inner.querySelector(".site-footer-grid") ||
             document.getElementById("siteFooterCompanyGrid");
-        if (!inner.querySelector(".site-footer-social")) {
-            var shell = document.createElement("div");
-            shell.innerHTML = GUEST_FOOTER_SHELL_HTML;
-            while (shell.firstChild) {
-                inner.insertBefore(shell.firstChild, grid || inner.firstChild);
-            }
-        } else {
-            var socialEl = inner.querySelector(".site-footer-social");
-            if (socialEl && socialEl.querySelector(".is-soon")) {
-                socialEl.outerHTML = buildGuestFooterSocialNavHtml();
-            }
+        if (!inner.querySelector(".site-footer-head")) {
+            var headShell = document.createElement("div");
+            headShell.innerHTML =
+                '<div class="site-footer-head site-footer-head--guest">' +
+                '<p class="site-footer-copy">COPYRIGHT HaeSoo ALL RIGHTS RESERVED.</p></div>';
+            inner.insertBefore(headShell.firstChild, inner.firstChild);
         }
+        if (!inner.querySelector(".site-footer-company-sep")) {
+            var sep = document.createElement("div");
+            sep.className = "site-footer-company-sep";
+            sep.setAttribute("aria-hidden", "true");
+            var gridRef =
+                inner.querySelector(".site-footer-grid") ||
+                document.getElementById("siteFooterCompanyGrid");
+            inner.insertBefore(sep, gridRef || null);
+        }
+        refreshGuestFooterSocialNav();
         if (grid && !grid.querySelector("dt")) {
             grid.innerHTML = GUEST_FOOTER_COMPANY_FALLBACK;
         }
@@ -1226,7 +1257,7 @@
         }
         var s = document.createElement("script");
         s.id = "script-footer-social";
-        s.src = "footer-social.js";
+        s.src = "footer-social.js?v=20260617-guest-sns";
         s.onload = syncFooterSocial;
         document.body.appendChild(s);
     })();
