@@ -2,13 +2,14 @@
  * 세션 + /api/auth/login (MongoDB staff · vendors)
  *
  * 로그인·권한 정책
+ * - 미로그인: 공개 페이지(홈·회사소개·사업부문·고객센터) 자유 열람 · thejohn 푸터 SNS
+ * - 헤더 로그인: 슈퍼바이저·관리자·등록업체만
  * - 로그아웃 → login.html
- * - 미로그인 방문 → login.html
- * - 로그인 후 기본 이동: 게스트·업체 → index, 슈퍼바이저·관리자 → work-hub (login.js)
+ * - 로그인 후 기본 이동: 업체 → index, 슈퍼바이저·관리자 → work-hub (login.js)
  * - 슈퍼바이저: 관리자(staff) 생성 · 전체 기능
  * - 관리자: 업체(vendors) 생성 · 주문 권한(st_order_enabled)은 슈퍼바이저 부여
  * - 업체: 담당 관리자 상품 등급가, 타 관리자 상품은 가격1 · 주문은 담당 관리자+주문권한 있을 때
- * - 게스트 로그인: 상품 열람(가격 없음) · 외부 접속 통계(guest_login·page_view)
+ * - 미로그인 방문: 상품 가격 숨김 · 공개 페이지 방문 횟수(page_view)만 기록
  */
 (function (global) {
     var AUTH_KEY = "thejhon_logged_in";
@@ -26,10 +27,6 @@
     var STAFF_LOGO_KEY = "thejhon_staff_logo";
     var BRAND_COMPANY_KEY = "thejhon_brand_company_name";
     var LOGIN_ID_HINT_KEY = "thejhon_login_id_hint";
-    var GUEST_ID_KEY = "thejhon_guest_id";
-    /** 헤더·홈 히어로 등 로그인 표시명 (버튼 문구 '게스트'와 별도) */
-    var GUEST_DISPLAY_NAME = "더존 그룹";
-
     var store = global.THEJHON_AUTH_STORAGE;
 
     /** setFormSession·로그아웃마다 증가 — 늦게 도착한 checkSession 응답 무시 */
@@ -53,8 +50,7 @@
         VENDOR_MGR_EMAIL_KEY,
         STAFF_ORDER_ENABLED_KEY,
         STAFF_LOGO_KEY,
-        BRAND_COMPANY_KEY,
-        GUEST_ID_KEY
+        BRAND_COMPANY_KEY
     ];
 
     function authGet(key) {
@@ -155,7 +151,7 @@
         return THEJHON_API.logoutAsync(token).catch(function () {});
     }
 
-    /** 로컬 로그인 표시는 있는데 JWT가 없을 때(로그아웃·탭 전환 직후 등) — 게스트는 제외 */
+    /** 로컬 로그인 표시는 있는데 JWT가 없을 때(로그아웃·탭 전환 직후 등) */
     function repairInconsistentAuthState() {
         if (authGet(AUTH_KEY) === "1" && !authGet(ROLE_KEY)) {
             clearSession();
@@ -163,7 +159,11 @@
         }
         if (authGet(AUTH_KEY) !== "1" || !authGet(ROLE_KEY)) return false;
         var role = authGet(ROLE_KEY);
-        if (role === "guest" || role === "oauth") return false;
+        if (role === "guest") {
+            clearSession();
+            return true;
+        }
+        if (role === "oauth") return false;
         if (captureApiToken()) return false;
         clearSession();
         return true;
@@ -237,18 +237,11 @@
         if (authGet(AUTH_KEY) === "1" && !authGet(ROLE_KEY)) {
             clearSession();
         }
-        var role = authGet(ROLE_KEY);
-        if (role === "guest") {
-            var gid = String(authGet(GUEST_ID_KEY) || authGet(USER_ID_KEY) || "").trim();
-            if (gid) {
-                if (!authGet(GUEST_ID_KEY)) authSet(GUEST_ID_KEY, gid);
-                if (!authGet(USER_ID_KEY)) authSet(USER_ID_KEY, gid);
-            }
-            if (!authGet(DISPLAY_KEY) || authGet(DISPLAY_KEY) === "게스트") {
-                authSet(DISPLAY_KEY, GUEST_DISPLAY_NAME);
-            }
+        if (authGet(ROLE_KEY) === "guest") {
+            clearSession();
             return;
         }
+        var role = authGet(ROLE_KEY);
         if (role === "vendor") {
             var vendorCo = String(authGet(COMPANY_KEY) || "").trim();
             if (vendorCo) authSet(DISPLAY_KEY, vendorCo);
@@ -748,118 +741,27 @@
     }
 
     function isGuest() {
-        return getRole() === "guest";
+        return false;
     }
 
     function getGuestId() {
-        if (!isGuest()) return "";
-        return String(authGet(GUEST_ID_KEY) || authGet(USER_ID_KEY) || "").trim();
+        return "";
     }
 
-    function newGuestId() {
-        return (
-            "guest_" +
-            Date.now().toString(36) +
-            "_" +
-            Math.random().toString(36).slice(2, 8)
-        );
-    }
-
-    /** 게스트 로그인 세션 — 접속 통계용 (가격·관리 메뉴 없음) */
-    function setGuestSession() {
-        bumpAuthSessionEpoch();
-        clearAuthStorageLocal();
-        clearVendorCartIfAny();
-        var guestId = newGuestId();
-        authSet(GUEST_ID_KEY, guestId);
-        authSet(AUTH_KEY, "1");
-        authSet(ROLE_KEY, "guest");
-        authSet(USER_ID_KEY, guestId);
-        authSet("thejhon_auth_provider", "guest");
-        authSet(DISPLAY_KEY, GUEST_DISPLAY_NAME);
-        clearStaffLogoCache();
-        authRemove(BRAND_COMPANY_KEY);
-        authRemove(COMPANY_KEY);
-        if (typeof global.__thejhonApplyDefaultBrandedLogo === "function") {
-            try {
-                global.__thejhonApplyDefaultBrandedLogo("");
-            } catch (e) {}
-        } else if (typeof global.__thejhonApplySiteLogo === "function") {
-            try {
-                global.__thejhonApplySiteLogo("", "");
-            } catch (eLogo) {}
-        }
-        if (typeof global.__thejhonRefreshHeaderCompany === "function") {
-            try {
-                global.__thejhonRefreshHeaderCompany();
-            } catch (eHdr) {}
-        }
-        try {
-            if (global.THEJHON_AUTH_STORAGE && global.THEJHON_AUTH_STORAGE.applyLoggedInDocumentClass) {
-                global.THEJHON_AUTH_STORAGE.applyLoggedInDocumentClass();
-            } else {
-                document.documentElement.classList.add("is-logged-in");
-                if (document.body) document.body.classList.add("is-logged-in");
-            }
-        } catch (eCls) {}
-        if (typeof global.THEJHON_FOOTER_SOCIAL === "object" && THEJHON_FOOTER_SOCIAL.syncGuestFooter) {
-            try {
-                THEJHON_FOOTER_SOCIAL.syncGuestFooter();
-            } catch (eSocGuest) {}
-        } else if (typeof global.__thejhonRefreshFooterSocial === "function") {
-            try {
-                global.__thejhonRefreshFooterSocial();
-            } catch (eSoc) {}
-        }
-        if (
-            !(global.THEJHON_FOOTER_SOCIAL && THEJHON_FOOTER_SOCIAL.syncGuestFooter) &&
-            typeof global.__thejhonRefreshFooterCompany === "function"
-        ) {
-            try {
-                global.__thejhonRefreshFooterCompany();
-            } catch (eFoot) {}
-        }
-        try {
-            global.dispatchEvent(new CustomEvent("thejhon-auth-permissions-updated"));
-        } catch (eEv) {}
-        return guestId;
-    }
-
-    function enterGuestSessionAsync() {
-        var oldToken = captureApiToken();
-        function finish() {
-            var guestId = setGuestSession();
-            if (!global.THEJHON_API || !THEJHON_API.logGuestLogin) {
-                return Promise.resolve(guestId);
-            }
-            return THEJHON_API.logGuestLogin(guestId)
-                .catch(function () {
-                    return null;
-                })
-                .then(function () {
-                    return guestId;
-                });
-        }
-        if (oldToken) {
-            revokeApiTokenAsync(oldToken);
-        }
-        return finish();
-    }
-
-    function isLoggedIn() {
-        return authGet(AUTH_KEY) === "1" && !!authGet(ROLE_KEY);
-    }
-
-    /** 아이디 로그인(관리자·슈퍼바이저·업체) + 유효 JWT — 게스트·미로그인 제외 */
+    /** 아이디 로그인(관리자·슈퍼바이저·업체) + 유효 JWT */
     function hasAccountSession() {
         normalizeLegacySession();
-        if (!isLoggedIn()) return false;
+        if (authGet(AUTH_KEY) !== "1" || !authGet(ROLE_KEY)) return false;
         var role = String(getRole() || "")
             .trim()
             .toLowerCase();
         if (role === "guest" || role === "oauth") return false;
         if (role !== "admin" && role !== "supervisor" && role !== "vendor") return false;
         return !!(global.THEJHON_API && THEJHON_API.getToken && THEJHON_API.getToken());
+    }
+
+    function isLoggedIn() {
+        return hasAccountSession();
     }
 
     function getRole() {
@@ -935,6 +837,13 @@
         "support-qna.html": true,
         "support-inquiry.html": true
     };
+
+    function isSitePublicPage(file) {
+        if (!file) file = currentPageFile();
+        if (file === "login.html") return true;
+        return !!STAFF_NAV_PUBLIC_PAGES[file];
+    }
+
     var STAFF_NAV_MANAGE_HOME_PAGES = {
         "homepage-manage-hub.html": true,
         "support-news-admin.html": true,
@@ -2271,6 +2180,7 @@
         if (typeof document === "undefined") return;
         function run() {
             enforceSiteLogin();
+            trackPageViewIfNeeded();
         }
         run();
         if (document.readyState === "loading") {
@@ -2338,7 +2248,7 @@
 
     /** 주문·장바구니 — 담당 관리자가 등록한 상품만 */
     function vendorProductCanOrder(it) {
-        if (!it || isGuest() || getRole() !== "vendor") return false;
+        if (!it || getRole() !== "vendor") return false;
         if (!isVendorOrderEnabled()) return false;
         var mine = getVendorRegisteredBy();
         var owner = String(it.pd_registered_by || "").trim();
@@ -2422,7 +2332,6 @@
     function canPlaceVendorOrders() {
         return (
             isLoggedIn() &&
-            !isGuest() &&
             getRole() === "vendor" &&
             vendorPermsSynced &&
             isVendorOrderEnabled() &&
@@ -2435,12 +2344,6 @@
         normalizeLegacySession();
         if (!isLoggedIn()) {
             return { allowed: false, reason: "로그인이 필요합니다." };
-        }
-        if (isGuest()) {
-            return {
-                allowed: false,
-                reason: "게스트는 주문·장바구니를 이용할 수 없습니다. 상품 열람만 가능합니다."
-            };
         }
         if (getRole() !== "vendor") {
             return {
@@ -2626,8 +2529,7 @@
     }
 
     function isPublicHomeLandingRole(role) {
-        var r = normalizeLoginRole(role);
-        return r === "guest" || r === "vendor";
+        return normalizeLoginRole(role) === "vendor";
     }
 
     /** next가 홈(index)·루트·빈 경로인지 */
@@ -2644,8 +2546,8 @@
     }
 
     /**
-     * 로그인·게스트 완료 후 이동 경로
-     * - 게스트·등록 업체 → index (홈)
+     * 로그인 완료 후 이동 경로
+     * - 등록 업체 → index (홈)
      * - 슈퍼바이저·관리자 → work-hub (단, next가 홈이면 허브로 보정)
      */
     function getPostLoginLandingPath(role, nextRaw) {
@@ -2805,14 +2707,6 @@
     function getLoggedInCompanyDisplayName() {
         if (!isLoggedIn()) return "";
         var role = getRole();
-        if (role === "guest") {
-            var guestDisp = String(authGet(DISPLAY_KEY) || "").trim();
-            if (!guestDisp || guestDisp === "게스트") {
-                authSet(DISPLAY_KEY, GUEST_DISPLAY_NAME);
-                return GUEST_DISPLAY_NAME;
-            }
-            return guestDisp;
-        }
         if (role === "vendor") {
             var co = getVendorCompanyName();
             if (co) return co;
@@ -2864,9 +2758,9 @@
     function trackPageViewIfNeeded() {
         try {
             if (!global.THEJHON_API || !THEJHON_API.trackPageView) return;
-            if (!isLoggedIn()) return;
             var page = currentPageFile();
             if (!page || page === "login.html") return;
+            if (!isSitePublicPage(page) && !isLoggedIn()) return;
             THEJHON_API.trackPageView(page).catch(function () {});
         } catch (e) {}
     }
@@ -2875,6 +2769,7 @@
         normalizeLegacySession();
         var page = currentPageFile();
         if (page === "login.html") return;
+        if (isSitePublicPage(page)) return;
         if (isLoggedIn()) return;
         var next = window.location.pathname + window.location.search + window.location.hash;
         if (!next || next === "/") next = "/index.html";
@@ -3233,9 +3128,9 @@
         trackPageViewIfNeeded: trackPageViewIfNeeded,
         applyNavRegisterVisibility: applyNavRegisterVisibility,
         safeNextPath: safeNextPath,
+        hasAccountSession: hasAccountSession,
+        isSitePublicPage: isSitePublicPage,
         isGuest: isGuest,
-        getGuestId: getGuestId,
-        setGuestSession: setGuestSession,
-        enterGuestSessionAsync: enterGuestSessionAsync
+        getGuestId: getGuestId
     };
 })(typeof window !== "undefined" ? window : this);

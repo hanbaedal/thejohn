@@ -63,44 +63,42 @@
          * 홈(index) 전용 반응형 3구간
          * PC(노트북): 1024px 이상 | 태블릿: 721~1023px | 모바일: 720px 이하
          */
-        html:not(.is-logged-in):not(.is-guest) body.page-home .site-footer {
-            display: none;
-        }
-        html.is-guest body.page-home .site-footer,
+        /* index — 미로그인(공개)·로그인 시 푸터 표시 */
+        html.is-public body.page-home .site-footer,
         html.is-logged-in body.page-home .site-footer {
             display: block !important;
         }
         html.is-logged-in body.page-home .site-footer-head,
-        html.is-guest body.page-home .site-footer-head {
+        html.is-public body.page-home .site-footer-head {
             display: block !important;
         }
-        html.is-guest body.page-home .site-footer-head .site-footer-copy {
+        html.is-public body.page-home .site-footer-head .site-footer-copy {
             display: block !important;
         }
         html.is-logged-in body.page-home .site-footer-inner > .site-footer-social,
-        html.is-guest body.page-home .site-footer-inner > .site-footer-social {
+        html.is-public body.page-home .site-footer-inner > .site-footer-social {
             display: flex !important;
             justify-content: center;
             flex-wrap: wrap;
             gap: 0.65rem;
         }
-        html.is-guest body.page-home .site-footer-company-sep {
+        html.is-public body.page-home .site-footer-company-sep {
             display: block !important;
         }
-        html.is-guest body.page-home .site-footer-grid {
+        html.is-public body.page-home .site-footer-grid {
             display: grid !important;
             grid-template-columns: 1fr !important;
             max-width: 28rem;
             width: 100%;
             margin: 0.45rem auto 0;
         }
-        html.is-guest body.page-home .site-footer-grid .site-footer-item,
-        html.is-guest body.page-home .site-footer-grid .site-footer-item--full {
+        html.is-public body.page-home .site-footer-grid .site-footer-item,
+        html.is-public body.page-home .site-footer-grid .site-footer-item--full {
             display: grid !important;
             grid-template-columns: 6.75rem minmax(0, 1fr) !important;
             grid-column: 1 !important;
         }
-        html.is-guest body.page-home .site-footer-inner > .site-footer-copy {
+        html.is-public body.page-home .site-footer-inner > .site-footer-copy {
             display: none !important;
         }
 
@@ -241,11 +239,11 @@
                 grid-template-columns: 4.5rem minmax(0, 1fr);
                 gap: 0.06rem 0.35rem;
             }
-            /* 로그인(게스트·관리자) — 푸터 회사정보·SNS 전체가 보이도록 스크롤 허용 */
+            /* 로그인(공개·관리자) — 푸터 회사정보·SNS 전체가 보이도록 스크롤 허용 */
             html.is-logged-in:has(body.page-home),
-            html.is-guest:has(body.page-home),
+            html.is-public:has(body.page-home),
             html.is-logged-in body.page-home,
-            html.is-guest body.page-home {
+            html.is-public body.page-home {
                 height: auto;
                 min-height: 100dvh;
                 max-height: none;
@@ -254,16 +252,16 @@
                 -webkit-overflow-scrolling: touch;
             }
             html.is-logged-in body.page-home .company-main--home,
-            html.is-guest body.page-home .company-main--home {
+            html.is-public body.page-home .company-main--home {
                 flex: 1 1 auto;
                 min-height: min(52vh, 26rem);
             }
-            html.is-guest body.page-home .site-footer,
+            html.is-public body.page-home .site-footer,
             html.is-logged-in body.page-home .site-footer {
                 position: relative;
                 z-index: 10;
             }
-            html.is-guest body.page-home .site-footer-social a.site-footer-social__btn,
+            html.is-public body.page-home .site-footer-social a.site-footer-social__btn,
             html.is-logged-in body.page-home .site-footer-social a.site-footer-social__btn {
                 pointer-events: auto;
                 touch-action: manipulation;
@@ -274,7 +272,7 @@
     <script src="thejhon-api.js"></script>
     <script src="auth.js"></script>
     <script src="admin-header.js"></script>
-    <script src="nav.js" defer></script>
+    <script src="nav.js?v=20260618-public-site" defer></script>
 </head>
 <body class="page-home">
     <header class="site-header">
@@ -357,13 +355,11 @@
             }
             var logoutBtn = document.getElementById("btnLogout");
             function syncAuthUi() {
-                var loggedIn = window.THEJHON_AUTH && THEJHON_AUTH.isLoggedIn();
+                var loggedIn =
+                    window.THEJHON_AUTH &&
+                    THEJHON_AUTH.hasAccountSession &&
+                    THEJHON_AUTH.hasAccountSession();
                 if (logoutBtn) logoutBtn.hidden = !loggedIn;
-                var role =
-                    window.THEJHON_AUTH && THEJHON_AUTH.getRole
-                        ? THEJHON_AUTH.getRole()
-                        : "";
-                var isGuest = !!(loggedIn && role === "guest");
                 if (
                     window.THEJHON_AUTH_STORAGE &&
                     THEJHON_AUTH_STORAGE.applyLoggedInDocumentClass
@@ -372,19 +368,16 @@
                 } else {
                     document.documentElement.classList.toggle("is-logged-in", !!loggedIn);
                     document.body.classList.toggle("is-logged-in", !!loggedIn);
-                    document.documentElement.classList.toggle("is-guest", isGuest);
-                    document.body.classList.toggle("is-guest", isGuest);
+                    document.documentElement.classList.toggle("is-public", !loggedIn);
+                    document.body.classList.toggle("is-public", !loggedIn);
                 }
-                if (isGuest && window.__thejhonEnsureGuestFooterShell) {
-                    window.__thejhonEnsureGuestFooterShell();
+                if (!loggedIn && window.__thejhonEnsurePublicFooterShell) {
+                    window.__thejhonEnsurePublicFooterShell();
                 }
-                if (
-                    loggedIn &&
-                    window.THEJHON_FOOTER_SOCIAL
-                ) {
-                    if (role === "guest" && THEJHON_FOOTER_SOCIAL.syncGuestFooter) {
-                        THEJHON_FOOTER_SOCIAL.syncGuestFooter();
-                    } else if (THEJHON_FOOTER_SOCIAL.syncSocialLinks) {
+                if (window.THEJHON_FOOTER_SOCIAL) {
+                    if (!loggedIn && THEJHON_FOOTER_SOCIAL.syncPublicFooter) {
+                        THEJHON_FOOTER_SOCIAL.syncPublicFooter();
+                    } else if (loggedIn && THEJHON_FOOTER_SOCIAL.syncSocialLinks) {
                         THEJHON_FOOTER_SOCIAL.syncSocialLinks();
                     }
                 }
@@ -427,7 +420,12 @@
 
             function syncHomeHeaderLogo() {
                 var Auth = window.THEJHON_AUTH;
-                if (!Auth || !Auth.isLoggedIn || !Auth.isLoggedIn()) return;
+                if (!Auth || !Auth.hasAccountSession || !Auth.hasAccountSession()) {
+                    if (window.__thejhonApplyDefaultBrandedLogo) {
+                        window.__thejhonApplyDefaultBrandedLogo("");
+                    }
+                    return;
+                }
                 if (Auth.usesStaffLogoRole && Auth.usesStaffLogoRole()) {
                     var logo = Auth.getCachedStaffLogo ? Auth.getCachedStaffLogo() : "";
                     var brand =

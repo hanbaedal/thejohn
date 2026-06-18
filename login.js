@@ -1,5 +1,5 @@
 /**
- * login.html — 아이디·비밀번호 로그인 / 게스트 로그인(접속 통계)
+ * login.html — 슈퍼바이저·관리자·등록업체 로그인
  */
 (function (global) {
     var params = new URLSearchParams(global.location.search);
@@ -90,28 +90,6 @@
         }
 
         poll();
-    }
-
-    function initGuest() {
-        var guestBtn = document.querySelector(".login-guest");
-        if (!guestBtn) return;
-        guestBtn.addEventListener("click", function (e) {
-            e.preventDefault();
-            var Auth = global.THEJHON_AUTH;
-            if (!Auth || !Auth.enterGuestSessionAsync) {
-                goNext("guest");
-                return;
-            }
-            guestBtn.setAttribute("aria-busy", "true");
-            guestBtn.classList.add("login-guest--busy");
-            Auth.enterGuestSessionAsync()
-                .then(function () {
-                    goNext("guest");
-                })
-                .catch(function () {
-                    goNext("guest");
-                });
-        });
     }
 
     function showBusyModal(message) {
@@ -228,12 +206,8 @@
             .trim()
             .toLowerCase();
         if (
-            Auth.isLoggedIn &&
-            Auth.isLoggedIn() &&
-            (roleNorm === "guest" ||
-                roleNorm === "vendor" ||
-                roleNorm === "admin" ||
-                roleNorm === "supervisor")
+            Auth.hasAccountSession &&
+            Auth.hasAccountSession()
         ) {
             var dest =
                 Auth.getPostLoginLandingPath
@@ -321,7 +295,6 @@
 
     function boot() {
         warmLoginServer();
-        initGuest();
         initPasswordToggle();
         initLoginForm();
     }

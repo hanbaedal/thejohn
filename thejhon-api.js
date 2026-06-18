@@ -574,16 +574,7 @@
             return request("POST", "/api/supervisor/regenerate-docs");
         },
         trackPageView: function (page) {
-            var body = { page: page };
-            var Auth = global.THEJHON_AUTH;
-            if (Auth && Auth.getRole && Auth.getRole() === "guest" && Auth.getGuestId) {
-                var gid = Auth.getGuestId();
-                if (gid) body.guestId = gid;
-            }
-            return request("POST", "/api/access/page-view", body);
-        },
-        logGuestLogin: function (guestId) {
-            return request("POST", "/api/access/guest-login", { guestId: guestId });
+            return request("POST", "/api/access/page-view", { page: page });
         },
         getOrder: function (orderId) {
             return request("GET", "/api/orders/" + encodeURIComponent(orderId)).then(function (d) {

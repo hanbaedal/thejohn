@@ -140,6 +140,7 @@ function categorizeLog(doc) {
     }
     if (kind === "page_view") {
         var role = String(doc.role || "");
+        if (role === "public") return "public";
         if (role === "admin" || role === "supervisor") return "staff";
         if (role === "vendor") return "vendor";
         return "guest";
@@ -290,14 +291,14 @@ async function queryAccessStats(db, dateFrom, dateTo) {
         .limit(2000)
         .toArray();
 
-    var summary = { staff: 0, vendor: 0, guest: 0 };
+    var summary = { staff: 0, vendor: 0, guest: 0, public: 0 };
     var byDayMap = {};
 
     items.forEach(function (doc) {
         var pub = formatLogPublic(doc);
         summary[pub.category] = (summary[pub.category] || 0) + 1;
         if (!byDayMap[pub.date]) {
-            byDayMap[pub.date] = { date: pub.date, staff: 0, vendor: 0, guest: 0 };
+            byDayMap[pub.date] = { date: pub.date, staff: 0, vendor: 0, guest: 0, public: 0 };
         }
         byDayMap[pub.date][pub.category] = (byDayMap[pub.date][pub.category] || 0) + 1;
     });

@@ -10,9 +10,9 @@
 }
 
 /* 게스트 — 주문·장바구니 UI 숨김 (업체 전용) */
-html.is-guest .ps-order,
-html.is-guest [data-ps-order],
-html.is-guest a[data-nav-order-manage],
-html.is-guest a[href="cart.html"].header-nav-link {
+html.is-public .ps-order,
+html.is-public [data-ps-order],
+html.is-public a[data-nav-order-manage],
+html.is-public a[href="cart.html"].header-nav-link {
     display: none !important;
 }

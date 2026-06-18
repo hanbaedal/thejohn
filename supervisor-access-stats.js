@@ -28,6 +28,7 @@
     function catLabel(c) {
         if (c === "staff") return "관리자";
         if (c === "vendor") return "업체";
+        if (c === "public") return "방문";
         return "게스트";
     }
     function catClass(c) {
@@ -75,17 +76,24 @@
                         escapeHtml(String(sum.vendor || 0)) +
                         "건</span>" +
                         '<span class="' +
-                        catClass("guest") +
-                        '"><strong>게스트</strong> ' +
-                        escapeHtml(String(sum.guest || 0)) +
-                        "건</span>";
+                        catClass("public") +
+                        '"><strong>방문</strong> ' +
+                        escapeHtml(String(sum.public || 0)) +
+                        "건</span>" +
+                        (sum.guest
+                            ? '<span class="' +
+                              catClass("guest") +
+                              '"><strong>게스트(이전)</strong> ' +
+                              escapeHtml(String(sum.guest || 0)) +
+                              "건</span>"
+                            : "");
                 }
                 var byDay = data.byDay || [];
                 if (!byDay.length) {
                     byDayEl.innerHTML = '<p class="am-list-empty">해당 기간 기록이 없습니다.</p>';
                 } else {
                     byDayEl.innerHTML =
-                        '<table class="shub-table"><thead><tr><th>날짜</th><th>관리자</th><th>업체</th><th>게스트</th></tr></thead><tbody>' +
+                        '<table class="shub-table"><thead><tr><th>날짜</th><th>관리자</th><th>업체</th><th>방문</th></tr></thead><tbody>' +
                         byDay
                             .map(function (row) {
                                 return (
@@ -96,7 +104,7 @@
                                     "</td><td>" +
                                     escapeHtml(String(row.vendor || 0)) +
                                     "</td><td>" +
-                                    escapeHtml(String(row.guest || 0)) +
+                                    escapeHtml(String(row.public || 0)) +
                                     "</td></tr>"
                                 );
                             })

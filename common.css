@@ -169,29 +169,29 @@ a.site-footer-social__btn:hover {
     color: var(--header-footer-muted);
 }
 
-/* 게스트 — 로그인 시 푸터 항상 표시 */
-html.is-guest footer.site-footer {
+/* 미로그인(공개) — 푸터 항상 표시 */
+html.is-public footer.site-footer {
     display: block;
 }
-html.is-guest .site-footer-head {
+html.is-public .site-footer-head {
     display: block !important;
     text-align: center;
     margin: 0;
     padding: 0;
     border-bottom: none;
 }
-html.is-guest .site-footer-head--guest {
+html.is-public .site-footer-head--guest {
     margin: 0 0 0.2rem;
 }
-html.is-guest .site-footer-head .site-footer-copy {
+html.is-public .site-footer-head .site-footer-copy {
     margin: 0 0 0.35rem;
     padding: 0;
     border: none;
 }
-html.is-guest .site-footer-inner > .site-footer-copy {
+html.is-public .site-footer-inner > .site-footer-copy {
     display: none !important;
 }
-html.is-guest .site-footer-inner > .site-footer-social {
+html.is-public .site-footer-inner > .site-footer-social {
     display: flex !important;
     justify-content: center;
     flex-wrap: wrap;
@@ -201,17 +201,17 @@ html.is-guest .site-footer-inner > .site-footer-social {
     position: relative;
     z-index: 2;
 }
-html.is-guest .site-footer-social a.site-footer-social__btn {
+html.is-public .site-footer-social a.site-footer-social__btn {
     pointer-events: auto;
     touch-action: manipulation;
 }
-html.is-guest .site-footer-company-sep {
+html.is-public .site-footer-company-sep {
     width: 100%;
     max-width: 28rem;
     margin: 0.5rem auto 0;
     border-top: 1px solid var(--header-footer-border);
 }
-html.is-guest .site-footer-grid {
+html.is-public .site-footer-grid {
     display: grid !important;
     grid-template-columns: 1fr !important;
     gap: 0.14rem 0 !important;
@@ -219,18 +219,18 @@ html.is-guest .site-footer-grid {
     width: 100%;
     margin: 0.45rem auto 0;
 }
-html.is-guest .site-footer-grid .site-footer-item,
-html.is-guest .site-footer-grid .site-footer-item--full {
+html.is-public .site-footer-grid .site-footer-item,
+html.is-public .site-footer-grid .site-footer-item--full {
     display: grid !important;
     grid-template-columns: 6.75rem minmax(0, 1fr) !important;
     gap: 0.15rem 0.45rem !important;
     grid-column: 1 !important;
     align-items: baseline;
 }
-html.is-guest body.page-home .site-footer-grid .site-footer-item:nth-child(n + 3) {
+html.is-public body.page-home .site-footer-grid .site-footer-item:nth-child(n + 3) {
     display: grid !important;
 }
-html.is-guest body.page-home .site-footer-item {
+html.is-public body.page-home .site-footer-item {
     grid-template-columns: 6.75rem minmax(0, 1fr) !important;
 }
 
@@ -1432,11 +1432,11 @@ a.company-org-node:focus-visible {
     .site-footer-item--full {
         grid-column: 1;
     }
-    html.is-guest footer.site-footer {
+    html.is-public footer.site-footer {
         position: relative;
         z-index: 10;
     }
-    html.is-guest .site-footer-social a.site-footer-social__btn {
+    html.is-public .site-footer-social a.site-footer-social__btn {
         pointer-events: auto;
         touch-action: manipulation;
         min-width: 2.75rem;

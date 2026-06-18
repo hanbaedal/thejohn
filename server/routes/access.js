@@ -43,9 +43,8 @@ router.post("/page-view", async function (req, res) {
             return res.status(400).json({ ok: false, error: "페이지 정보가 없습니다." });
         }
         var auth = optionalAuth(req);
-        if (!auth) auth = guestAuthFromBody(req.body);
         if (!auth) {
-            return res.json({ ok: true, skipped: true });
+            auth = { role: "public", userId: "" };
         }
         await logPageView(getDb(), auth, page);
         return res.json({ ok: true });

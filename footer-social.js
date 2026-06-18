@@ -1,6 +1,6 @@
 /**
  * 푸터 — 소셜 아이콘 + 기업 정보
- * - 게스트: 저작권 → SNS(독립) → 구분선 → thejohn 관리자 정보
+ * - 미로그인(공개): 저작권 → SNS(독립) → 구분선 → thejohn 관리자 정보
  * - 관리자·슈퍼바이저·업체: 본인(또는 담당 관리자) SNS, 비어 있으면 thejohn SNS로 대체
  * - 카카오톡 채널: (주)더존 고정 URL
  */
@@ -135,10 +135,23 @@
         return document.querySelector("footer.site-footer .site-footer-social");
     }
 
+    /** API·캐시가 빈 값을 줄 때도 thejohn 기본 SNS로 채움 (게스트 푸터) */
+    function mergeSocialWithDefaults(urls) {
+        var base = thejohnDefaultSocialUrls();
+        var u = urls || {};
+        return {
+            facebook: String(u.facebook || base.facebook).trim(),
+            instagram: String(u.instagram || base.instagram).trim(),
+            naverCafe: String(u.naverCafe || base.naverCafe).trim(),
+            youtube: String(u.youtube || base.youtube).trim(),
+            kakao: String(u.kakao || base.kakao || KAKAO_CHAT_URL).trim()
+        };
+    }
+
     function applyLinks(urls) {
         var nav = findFooterSocialNav();
         if (!nav) return;
-        var u = urls || {};
+        var u = isPublicSiteFooterMode() ? mergeSocialWithDefaults(urls) : urls || {};
         replaceSocialBtn(nav, "facebook", u.facebook, "페이스북");
         replaceSocialBtn(nav, "instagram", u.instagram, "인스타그램");
         replaceSocialBtn(nav, "navercafe", u.naverCafe, "네이버 카페");
@@ -263,7 +276,7 @@
         thejohnFetchPromise = Api.getPublicFooterStaff()
             .then(function (st) {
                 if (st) {
-                    writeUrlCache(CACHE_THEJOHN, socialFromStaff(st));
+                    writeUrlCache(CACHE_THEJOHN, mergeSocialWithDefaults(socialFromStaff(st)));
                 }
                 return st;
             })
@@ -279,16 +292,15 @@
         fetchThejohnFooterStaff();
     }
 
-    function isGuestFooterRole() {
+    function isPublicSiteFooterMode() {
         var Auth = global.THEJHON_AUTH;
-        return !!(
-            Auth &&
-            Auth.isLoggedIn &&
-            Auth.isLoggedIn() &&
-            Auth.getRole &&
-            Auth.getRole() === "guest"
-        );
+        if (Auth && Auth.hasAccountSession) {
+            return !Auth.hasAccountSession();
+        }
+        return !(Auth && Auth.isLoggedIn && Auth.isLoggedIn());
     }
+
+    var isGuestFooterRole = isPublicSiteFooterMode;
 
     function buildSocialNav(urls) {
         var nav = document.createElement("nav");
@@ -456,7 +468,9 @@
         var inner = document.querySelector(".site-footer-inner");
         if (!inner) return Promise.resolve();
 
-        if (typeof global.__thejhonEnsureGuestFooterShell === "function") {
+        if (typeof global.__thejhonEnsurePublicFooterShell === "function") {
+            global.__thejhonEnsurePublicFooterShell();
+        } else if (typeof global.__thejhonEnsureGuestFooterShell === "function") {
             global.__thejhonEnsureGuestFooterShell();
         }
         mount();
@@ -465,7 +479,9 @@
 
         return fetchThejohnFooterStaff()
             .then(function (thejohn) {
-                var urls = thejohn ? socialFromStaff(thejohn) : thejohnDefaultSocialUrls();
+                var urls = mergeSocialWithDefaults(
+                    thejohn ? socialFromStaff(thejohn) : thejohnDefaultSocialUrls()
+                );
                 applyLinks(urls);
                 writeUrlCache(CACHE_THEJOHN, urls);
             })
@@ -477,9 +493,11 @@
             });
     }
 
+    var syncPublicFooter = syncGuestFooter;
+
     function syncSocialLinks() {
-        if (isGuestFooterRole()) {
-            return syncGuestFooter();
+        if (isPublicSiteFooterMode()) {
+            return syncPublicFooter();
         }
 
         mount();
@@ -548,6 +566,7 @@
         mount: mount,
         applyLinks: applyLinks,
         syncSocialLinks: syncSocialLinks,
+        syncPublicFooter: syncPublicFooter,
         syncGuestFooter: syncGuestFooter,
         ensureFooterLayout: ensureFooterLayout,
         ensureGuestFooterLayout: ensureGuestFooterLayout,
@@ -558,11 +577,13 @@
 
     function boot() {
         prefetchThejohnSocial();
-        if (isGuestFooterRole()) {
-            if (typeof global.__thejhonEnsureGuestFooterShell === "function") {
+        if (isPublicSiteFooterMode()) {
+            if (typeof global.__thejhonEnsurePublicFooterShell === "function") {
+                global.__thejhonEnsurePublicFooterShell();
+            } else if (typeof global.__thejhonEnsureGuestFooterShell === "function") {
                 global.__thejhonEnsureGuestFooterShell();
             }
-            syncGuestFooter();
+            syncPublicFooter();
             return;
         }
         mount();
@@ -575,11 +596,11 @@
         boot();
     }
     global.addEventListener("pageshow", function () {
-        if (isGuestFooterRole()) syncGuestFooter();
+        if (isPublicSiteFooterMode()) syncPublicFooter();
         else syncSocialLinks();
     });
     global.addEventListener("thejhon-auth-permissions-updated", function () {
-        if (isGuestFooterRole()) syncGuestFooter();
+        if (isPublicSiteFooterMode()) syncPublicFooter();
         else syncSocialLinks();
     });
 })(typeof window !== "undefined" ? window : this);

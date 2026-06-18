@@ -100,14 +100,41 @@
     var TOKEN_KEY = "thejhon_api_token";
     var AUTH_GATE_KEYS = [AUTH_KEY, ROLE_KEY, TOKEN_KEY, "thejhon_user_id"];
 
-    function isLoginPageEarly() {
+    var SITE_PUBLIC_PAGES = {
+        "index.html": true,
+        "login.html": true,
+        "company.html": true,
+        "company-jeongyuk.html": true,
+        "company-driedfish.html": true,
+        "company-frozen.html": true,
+        "company-seafood.html": true,
+        "company-grocery.html": true,
+        "company-drink.html": true,
+        "products.html": true,
+        "product-detail.html": true,
+        "support.html": true,
+        "support-partners.html": true,
+        "support-library.html": true,
+        "support-qna.html": true,
+        "support-inquiry.html": true
+    };
+
+    function currentPageFileEarly() {
         var path = String(global.location.pathname || "")
             .replace(/\\/g, "/")
             .toLowerCase();
-        return path === "/login.html" || path.endsWith("/login.html");
+        return (path.split("/").pop() || "index.html").split("?")[0];
     }
 
-    /** auth.js isLoggedIn·repairInconsistentAuthState 와 동일 기준 */
+    function isLoginPageEarly() {
+        return currentPageFileEarly() === "login.html";
+    }
+
+    function isSitePublicPageEarly() {
+        return !!SITE_PUBLIC_PAGES[currentPageFileEarly()];
+    }
+
+    /** auth.js hasAccountSession·repairInconsistentAuthState 와 동일 기준 */
     function isLoggedInEarly() {
         if (isPwaStandalone()) {
             hydrateSessionFromLocal(AUTH_GATE_KEYS);
@@ -116,14 +143,15 @@
         var role = String(get(ROLE_KEY) || "")
             .trim()
             .toLowerCase();
-        if (role === "guest" || role === "oauth") return true;
+        if (role === "guest" || role === "oauth") return false;
         return !!get(TOKEN_KEY);
     }
 
-    /** head 최상단 — 본문 렌더 전 미로그인 시 login.html로 즉시 이동 */
+    /** head 최상단 — 비공개 페이지만 login.html로 이동 */
     function enforceSiteLoginEarly() {
         if (typeof global.location === "undefined") return;
         if (isLoginPageEarly()) return;
+        if (isSitePublicPageEarly()) return;
         if (isLoggedInEarly()) return;
         var next =
             global.location.pathname + global.location.search + global.location.hash;
@@ -135,14 +163,13 @@
 
     function applyLoggedInDocumentClass() {
         var on = isLoggedInEarly();
-        var role = String(get(ROLE_KEY) || "").trim();
-        var isGuest = on && role === "guest";
+        var isPublic = !on;
         try {
             document.documentElement.classList.toggle("is-logged-in", on);
-            document.documentElement.classList.toggle("is-guest", isGuest);
+            document.documentElement.classList.toggle("is-public", isPublic);
             if (document.body) {
                 document.body.classList.toggle("is-logged-in", on);
-                document.body.classList.toggle("is-guest", isGuest);
+                document.body.classList.toggle("is-public", isPublic);
             }
         } catch (e) {}
     }

@@ -640,15 +640,17 @@
         buildGuestFooterSocialNavHtml() +
         '<div class="site-footer-company-sep" aria-hidden="true"></div>';
 
-    function isGuestSession() {
+    function hasAccountSession() {
         var Auth = window.THEJHON_AUTH;
-        return !!(
-            Auth &&
-            Auth.isLoggedIn &&
-            Auth.isLoggedIn() &&
-            Auth.getRole &&
-            Auth.getRole() === "guest"
-        );
+        return !!(Auth && Auth.hasAccountSession && Auth.hasAccountSession());
+    }
+
+    function isPublicSiteVisitor() {
+        return !hasAccountSession();
+    }
+
+    function isGuestSession() {
+        return isPublicSiteVisitor();
     }
 
     function refreshGuestFooterSocialNav() {
@@ -677,9 +679,9 @@
         }
     }
 
-    /** 게스트 — JS 로드 전에도 SNS·저작권·구분선이 보이도록 HTML 삽입 */
-    function ensureGuestFooterShell() {
-        if (!isGuestSession()) return;
+    /** 미로그인 공개 방문 — JS 로드 전에도 SNS·저작권·구분선이 보이도록 HTML 삽입 */
+    function ensurePublicFooterShell() {
+        if (!isPublicSiteVisitor()) return;
         var footer = document.querySelector("footer.site-footer");
         if (!footer) return;
         var inner = footer.querySelector(".site-footer-inner");
@@ -735,15 +737,10 @@
         return false;
     }
 
+    var ensureGuestFooterShell = ensurePublicFooterShell;
+
     function ensureUnifiedSiteFooter() {
-        var Auth = window.THEJHON_AUTH;
-        if (
-            Auth &&
-            Auth.isLoggedIn &&
-            Auth.isLoggedIn() &&
-            Auth.getRole &&
-            Auth.getRole() === "guest"
-        ) {
+        if (!hasAccountSession()) {
             return;
         }
         var footer = document.querySelector("footer.site-footer");
@@ -887,25 +884,18 @@
             ensureUnifiedSiteFooter();
             var Auth = window.THEJHON_AUTH;
             var Api = window.THEJHON_API;
-            if (!Auth || !Api || !Auth.isLoggedIn || !Auth.isLoggedIn()) {
+            if (!Auth || !Auth.hasAccountSession || !Auth.hasAccountSession()) {
                 applySiteBrandDefaults();
+                ensurePublicFooterShell();
+                if (
+                    window.THEJHON_FOOTER_SOCIAL &&
+                    THEJHON_FOOTER_SOCIAL.syncPublicFooter
+                ) {
+                    THEJHON_FOOTER_SOCIAL.syncPublicFooter();
+                }
                 return;
             }
             var role = Auth.getRole ? Auth.getRole() : "";
-            if (role === "guest") {
-                var guestLabel =
-                    Auth.getLoggedInCompanyDisplayName && Auth.getLoggedInCompanyDisplayName();
-                guestLabel = String(guestLabel || "").trim();
-                applyDefaultBrandedLogo(guestLabel);
-                applyHomeHeroCompany(guestLabel);
-                if (global.__thejhonRefreshCompanyGreeting) {
-                    global.__thejhonRefreshCompanyGreeting();
-                }
-                if (window.THEJHON_FOOTER_SOCIAL && THEJHON_FOOTER_SOCIAL.syncGuestFooter) {
-                    THEJHON_FOOTER_SOCIAL.syncGuestFooter();
-                }
-                return;
-            }
             if (role !== "admin" && role !== "supervisor" && role !== "vendor") {
                 applySiteBrandDefaults();
                 return;
@@ -941,14 +931,15 @@
         }
 
         function bootFooter() {
-            ensureGuestFooterShell();
+            ensurePublicFooterShell();
             ensureUnifiedSiteFooter();
             run();
-            var Auth = window.THEJHON_AUTH;
-            var isGuest = isGuestSession();
-            if (isGuest) {
-                if (window.THEJHON_FOOTER_SOCIAL && THEJHON_FOOTER_SOCIAL.syncGuestFooter) {
-                    THEJHON_FOOTER_SOCIAL.syncGuestFooter();
+            if (isPublicSiteVisitor()) {
+                if (
+                    window.THEJHON_FOOTER_SOCIAL &&
+                    THEJHON_FOOTER_SOCIAL.syncPublicFooter
+                ) {
+                    THEJHON_FOOTER_SOCIAL.syncPublicFooter();
                 } else if (window.__thejhonRefreshFooterSocial) {
                     window.__thejhonRefreshFooterSocial();
                 }
@@ -1233,26 +1224,20 @@
         }
     })();
 
-    window.__thejhonEnsureGuestFooterShell = ensureGuestFooterShell;
-    ensureGuestFooterShell();
-    window.addEventListener("thejhon-auth-permissions-updated", ensureGuestFooterShell);
-    window.addEventListener("pageshow", ensureGuestFooterShell);
+    window.__thejhonEnsurePublicFooterShell = ensurePublicFooterShell;
+    window.__thejhonEnsureGuestFooterShell = ensurePublicFooterShell;
+    ensurePublicFooterShell();
+    window.addEventListener("thejhon-auth-permissions-updated", ensurePublicFooterShell);
+    window.addEventListener("pageshow", ensurePublicFooterShell);
 
     (function loadFooterSocial() {
         if (!document.querySelector(".site-footer-inner")) return;
-        ensureGuestFooterShell();
+        ensurePublicFooterShell();
         function syncFooterSocial() {
-            var Auth = window.THEJHON_AUTH;
-            var isGuest =
-                Auth &&
-                Auth.isLoggedIn &&
-                Auth.isLoggedIn() &&
-                Auth.getRole &&
-                Auth.getRole() === "guest";
             if (!window.THEJHON_FOOTER_SOCIAL) return;
             THEJHON_FOOTER_SOCIAL.mount();
-            if (isGuest && THEJHON_FOOTER_SOCIAL.syncGuestFooter) {
-                THEJHON_FOOTER_SOCIAL.syncGuestFooter();
+            if (isPublicSiteVisitor() && THEJHON_FOOTER_SOCIAL.syncPublicFooter) {
+                THEJHON_FOOTER_SOCIAL.syncPublicFooter();
             } else if (THEJHON_FOOTER_SOCIAL.syncSocialLinks) {
                 THEJHON_FOOTER_SOCIAL.syncSocialLinks();
             }
@@ -1263,7 +1248,7 @@
         }
         var s = document.createElement("script");
         s.id = "script-footer-social";
-        s.src = "footer-social.js?v=20260617-guest-sns";
+        s.src = "footer-social.js?v=20260618-public-site";
         s.onload = syncFooterSocial;
         document.body.appendChild(s);
     })();

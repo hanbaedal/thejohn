@@ -196,14 +196,13 @@
 
     function mount() {
         var Auth = global.THEJHON_AUTH;
-        if (
-            Auth &&
-            Auth.isLoggedIn &&
-            Auth.isLoggedIn() &&
-            Auth.getRole &&
-            Auth.getRole() === "guest"
-        ) {
-            if (global.THEJHON_FOOTER_SOCIAL && THEJHON_FOOTER_SOCIAL.syncGuestFooter) {
+        if (!Auth || !Auth.hasAccountSession || !Auth.hasAccountSession()) {
+            if (global.THEJHON_FOOTER_SOCIAL && THEJHON_FOOTER_SOCIAL.syncPublicFooter) {
+                THEJHON_FOOTER_SOCIAL.syncPublicFooter();
+            } else if (
+                global.THEJHON_FOOTER_SOCIAL &&
+                THEJHON_FOOTER_SOCIAL.syncGuestFooter
+            ) {
                 THEJHON_FOOTER_SOCIAL.syncGuestFooter();
             }
             return;
