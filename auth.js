@@ -740,14 +740,6 @@
         authRemove(VENDOR_MGR_EMAIL_KEY);
     }
 
-    function isGuest() {
-        return false;
-    }
-
-    function getGuestId() {
-        return "";
-    }
-
     /** 아이디 로그인(관리자·슈퍼바이저·업체) + 유효 JWT */
     function hasAccountSession() {
         normalizeLegacySession();
@@ -820,28 +812,17 @@
         { href: "vendor-register.html", label: "업체등록" },
         { href: "vendor-list-admin.html", label: "업체 리스트" }
     ];
-    var STAFF_NAV_PUBLIC_PAGES = {
-        "index.html": true,
-        "company.html": true,
-        "company-jeongyuk.html": true,
-        "company-driedfish.html": true,
-        "company-frozen.html": true,
-        "company-seafood.html": true,
-        "company-grocery.html": true,
-        "company-drink.html": true,
-        "products.html": true,
-        "product-detail.html": true,
-        "support.html": true,
-        "support-partners.html": true,
-        "support-library.html": true,
-        "support-qna.html": true,
-        "support-inquiry.html": true
-    };
-
     function isSitePublicPage(file) {
+        var PS = global.THEJHON_PUBLIC_SITE;
+        if (PS && PS.isPublicPage) return PS.isPublicPage(file);
         if (!file) file = currentPageFile();
-        if (file === "login.html" || file === "index.html") return true;
-        return !!STAFF_NAV_PUBLIC_PAGES[file];
+        return file === "login.html" || file === "index.html";
+    }
+
+    function isStaffNavPublicPage(file) {
+        if (!file) file = currentPageFile();
+        if (file === "login.html") return false;
+        return isSitePublicPage(file);
     }
 
     var STAFF_NAV_MANAGE_HOME_PAGES = {
@@ -926,7 +907,7 @@
         if (STAFF_NAV_MANAGE_HOME_PAGES[file]) return "manage-home";
         if (STAFF_NAV_ORDER_PAGES[file]) return "order";
         if (STAFF_NAV_WORK_PAGES[file]) return "work";
-        if (STAFF_NAV_PUBLIC_PAGES[file]) return "public";
+        if (isStaffNavPublicPage(file)) return "public";
         return "";
     }
 
@@ -1011,7 +992,7 @@
         if (STAFF_NAV_VENDOR_PAGES[file]) return "vendor-manage";
         if (STAFF_NAV_WORK_PAGES[file]) return "work";
         if (STAFF_NAV_MANAGE_HOME_PAGES[file]) return "manage-home";
-        if (STAFF_NAV_PUBLIC_PAGES[file]) return "public";
+        if (isStaffNavPublicPage(file)) return "public";
         if (file === "work-hub.html") return "hub";
         return "";
     }
@@ -3131,7 +3112,6 @@
         safeNextPath: safeNextPath,
         hasAccountSession: hasAccountSession,
         isSitePublicPage: isSitePublicPage,
-        isGuest: isGuest,
-        getGuestId: getGuestId
+        isStaffNavPublicPage: isStaffNavPublicPage
     };
 })(typeof window !== "undefined" ? window : this);

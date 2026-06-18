@@ -135,7 +135,7 @@
         return document.querySelector("footer.site-footer .site-footer-social");
     }
 
-    /** API·캐시가 빈 값을 줄 때도 thejohn 기본 SNS로 채움 (게스트 푸터) */
+    /** API·캐시가 빈 값을 줄 때도 thejohn 기본 SNS로 채움 (공개 푸터) */
     function mergeSocialWithDefaults(urls) {
         var base = thejohnDefaultSocialUrls();
         var u = urls || {};
@@ -300,8 +300,6 @@
         return !(Auth && Auth.isLoggedIn && Auth.isLoggedIn());
     }
 
-    var isGuestFooterRole = isPublicSiteFooterMode;
-
     function buildSocialNav(urls) {
         var nav = document.createElement("nav");
         nav.className = "site-footer-social";
@@ -336,7 +334,7 @@
         return copy;
     }
 
-    function ensureGuestCompanySep(inner) {
+    function ensurePublicCompanySep(inner) {
         if (!inner) return null;
         var sep = inner.querySelector(".site-footer-company-sep");
         if (!sep) {
@@ -347,8 +345,8 @@
         return sep;
     }
 
-    /** 게스트 푸터: 저작권 → SNS(독립) → 구분선 → 관리자 정보 */
-    function ensureGuestFooterLayout(inner) {
+    /** 공개 푸터: 저작권 → SNS(독립) → 구분선 → 관리자 정보 */
+    function ensurePublicFooterLayout(inner) {
         if (!inner) return;
         var head = inner.querySelector(".site-footer-head");
         var grid =
@@ -357,13 +355,13 @@
         var msg = inner.querySelector(".site-footer-company-msg");
         var copy = ensureFooterCopy(inner);
         var social = inner.querySelector(".site-footer-social");
-        var sep = ensureGuestCompanySep(inner);
+        var sep = ensurePublicCompanySep(inner);
 
         if (!head) {
             head = document.createElement("div");
-            head.className = "site-footer-head site-footer-head--guest";
+            head.className = "site-footer-head site-footer-head--public";
         }
-        head.classList.add("site-footer-head--guest");
+        head.classList.add("site-footer-head--public");
         if (copy.parentNode !== head) {
             head.insertBefore(copy, head.firstChild);
         }
@@ -385,8 +383,8 @@
     /** 일반 푸터: SNS → 관리자 정보 → 저작권 */
     function ensureFooterLayout(inner) {
         if (!inner) return;
-        if (isGuestFooterRole()) {
-            ensureGuestFooterLayout(inner);
+        if (isPublicSiteFooterMode()) {
+            ensurePublicFooterLayout(inner);
             return;
         }
 
@@ -414,15 +412,15 @@
         }
     }
 
-    function loadGuestFooterCompany() {
+    function loadPublicFooterCompany() {
         var Api = global.THEJHON_API;
         var FC = global.THEJHON_FOOTER_COMPANY;
         var grid = document.getElementById("siteFooterCompanyGrid");
         var msgEl = document.getElementById("siteFooterCompanyMsg");
         if (!grid) return Promise.resolve();
         if (!Api || !Api.getPublicFooterStaff) {
-            if (global.__thejhonGuestFooterCompanyFallback && !grid.querySelector("dt")) {
-                grid.innerHTML = global.__thejhonGuestFooterCompanyFallback;
+            if (global.__thejhonPublicFooterCompanyFallback && !grid.querySelector("dt")) {
+                grid.innerHTML = global.__thejhonPublicFooterCompanyFallback;
             }
             return Promise.resolve();
         }
@@ -435,14 +433,14 @@
         return Api.getPublicFooterStaff()
             .then(function (st) {
                 try {
-                    if (FC && FC.renderGuestStaffGrid) {
-                        grid.innerHTML = FC.renderGuestStaffGrid(st);
+                    if (FC && FC.renderPublicStaffGrid) {
+                        grid.innerHTML = FC.renderPublicStaffGrid(st);
                     } else if (FC && FC.renderStaffGrid) {
                         grid.innerHTML = FC.renderStaffGrid(st);
                     }
                 } catch (renderErr) {
-                    if (global.__thejhonGuestFooterCompanyFallback) {
-                        grid.innerHTML = global.__thejhonGuestFooterCompanyFallback;
+                    if (global.__thejhonPublicFooterCompanyFallback) {
+                        grid.innerHTML = global.__thejhonPublicFooterCompanyFallback;
                     }
                 }
                 if (msgEl) {
@@ -450,11 +448,11 @@
                     msgEl.textContent = "";
                 }
                 var footer = document.querySelector("footer.site-footer");
-                if (footer) footer.classList.add("site-footer--guest-ready");
+                if (footer) footer.classList.add("site-footer--public-ready");
             })
             .catch(function () {
-                if (global.__thejhonGuestFooterCompanyFallback) {
-                    grid.innerHTML = global.__thejhonGuestFooterCompanyFallback;
+                if (global.__thejhonPublicFooterCompanyFallback) {
+                    grid.innerHTML = global.__thejhonPublicFooterCompanyFallback;
                 }
                 if (msgEl) {
                     msgEl.hidden = true;
@@ -463,15 +461,13 @@
             });
     }
 
-    /** 게스트: 저작권 → SNS(독립) → 구분선 → thejohn 관리자 정보(모든 페이지·화면 동일) */
-    function syncGuestFooter() {
+    /** 공개: 저작권 → SNS(독립) → 구분선 → thejohn 관리자 정보(모든 페이지·화면 동일) */
+    function syncPublicFooter() {
         var inner = document.querySelector(".site-footer-inner");
         if (!inner) return Promise.resolve();
 
         if (typeof global.__thejhonEnsurePublicFooterShell === "function") {
             global.__thejhonEnsurePublicFooterShell();
-        } else if (typeof global.__thejhonEnsureGuestFooterShell === "function") {
-            global.__thejhonEnsureGuestFooterShell();
         }
         mount();
         applyLinks(thejohnDefaultSocialUrls());
@@ -489,11 +485,9 @@
                 applyLinks(thejohnDefaultSocialUrls());
             })
             .then(function () {
-                return loadGuestFooterCompany();
+                return loadPublicFooterCompany();
             });
     }
-
-    var syncPublicFooter = syncGuestFooter;
 
     function syncSocialLinks() {
         if (isPublicSiteFooterMode()) {
@@ -543,8 +537,8 @@
             social = buildSocialNav(initialSocialUrls());
         }
 
-        if (isGuestFooterRole()) {
-            ensureGuestFooterLayout(inner);
+        if (isPublicSiteFooterMode()) {
+            ensurePublicFooterLayout(inner);
             return;
         }
 
@@ -567,9 +561,8 @@
         applyLinks: applyLinks,
         syncSocialLinks: syncSocialLinks,
         syncPublicFooter: syncPublicFooter,
-        syncGuestFooter: syncGuestFooter,
         ensureFooterLayout: ensureFooterLayout,
-        ensureGuestFooterLayout: ensureGuestFooterLayout,
+        ensurePublicFooterLayout: ensurePublicFooterLayout,
         socialFromStaff: socialFromStaff,
         fetchThejohnFooterStaff: fetchThejohnFooterStaff
     };
@@ -580,8 +573,6 @@
         if (isPublicSiteFooterMode()) {
             if (typeof global.__thejhonEnsurePublicFooterShell === "function") {
                 global.__thejhonEnsurePublicFooterShell();
-            } else if (typeof global.__thejhonEnsureGuestFooterShell === "function") {
-                global.__thejhonEnsureGuestFooterShell();
             }
             syncPublicFooter();
             return;

@@ -72,7 +72,7 @@
         );
     }
 
-    function renderGuestStaffGrid(staff) {
+    function renderPublicStaffGrid(staff) {
         var s = staff || {};
         var company = escapeHtml(String(s.st_company || "").trim() || "—");
         var ceo = escapeHtml(String(s.st_ceo || "").trim() || "—");
@@ -201,9 +201,9 @@
                 THEJHON_FOOTER_SOCIAL.syncPublicFooter();
             } else if (
                 global.THEJHON_FOOTER_SOCIAL &&
-                THEJHON_FOOTER_SOCIAL.syncGuestFooter
+                THEJHON_FOOTER_SOCIAL.syncPublicFooter
             ) {
-                THEJHON_FOOTER_SOCIAL.syncGuestFooter();
+                THEJHON_FOOTER_SOCIAL.syncPublicFooter();
             }
             return;
         }
@@ -243,6 +243,6 @@
     global.THEJHON_FOOTER_COMPANY = {
         mount: mount,
         renderStaffGrid: renderStaffGrid,
-        renderGuestStaffGrid: renderGuestStaffGrid
+        renderPublicStaffGrid: renderPublicStaffGrid
     };
 })(typeof window !== "undefined" ? window : this);

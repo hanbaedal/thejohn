@@ -552,7 +552,7 @@
         });
     })();
 
-    var GUEST_FOOTER_COMPANY_FALLBACK =
+    var PUBLIC_FOOTER_COMPANY_FALLBACK =
         '<div class="site-footer-item"><dt>상호</dt><dd>(주)더존</dd></div>' +
         '<div class="site-footer-item"><dt>대표</dt><dd>이상범</dd></div>' +
         '<div class="site-footer-item"><dt>휴대폰</dt><dd><a class="footer-tel" href="tel:+821029288196">010-2928-8196</a></dd></div>' +
@@ -561,19 +561,22 @@
         '<div class="site-footer-item"><dt>팩스</dt><dd>032-662-5246</dd></div>' +
         '<div class="site-footer-item"><dt>사업자등록번호</dt><dd>130-45-32935</dd></div>' +
         '<div class="site-footer-item site-footer-item--full"><dt>주소</dt><dd>경기도 부천시 원미구 부천로 130번길 5, 삼도빌딩 1층</dd></div>';
-    window.__thejhonGuestFooterCompanyFallback = GUEST_FOOTER_COMPANY_FALLBACK;
+    window.__thejhonPublicFooterCompanyFallback = PUBLIC_FOOTER_COMPANY_FALLBACK;
 
-    /** thejohn 관리자 DB와 동일 — 게스트 푸터 SNS 즉시 링크용 */
-    var THEJHON_SNS_DEFAULTS = {
-        facebook: "https://www.facebook.com/profile.php?id=61590794526953&mibextid=ZbWKwL",
-        instagram: "https://www.instagram.com/p/DZrcIivPFK7/?igsh=cHhvZTBhaHBweXZp",
-        naverCafe: "https://m.cafe.naver.com/thejohnmg",
-        youtube: "https://youtube.com/channel/UCRhPDfMExmqSbwjBlIXrWdw?si=F60UU2qsdfb8_0PH",
-        kakao: "https://pf.kakao.com/_xavxlxjX/chat"
-    };
-    window.__thejhonSnsDefaults = THEJHON_SNS_DEFAULTS;
+    function publicSnsDefaults() {
+        var PS = window.THEJHON_PUBLIC_SITE;
+        if (PS && PS.THEJHON_SNS) return PS.THEJHON_SNS;
+        return {
+            facebook: "https://www.facebook.com/profile.php?id=61590794526953&mibextid=ZbWKwL",
+            instagram: "https://www.instagram.com/p/DZrcIivPFK7/?igsh=cHhvZTBhaHBweXZp",
+            naverCafe: "https://m.cafe.naver.com/thejohnmg",
+            youtube: "https://youtube.com/channel/UCRhPDfMExmqSbwjBlIXrWdw?si=F60UU2qsdfb8_0PH",
+            kakao: "https://pf.kakao.com/_xavxlxjX/chat"
+        };
+    }
+    window.__thejhonSnsDefaults = publicSnsDefaults();
 
-    function guestFooterSocialLinkHtml(classMod, url, title, iconPath) {
+    function publicFooterSocialLinkHtml(classMod, url, title, iconPath) {
         return (
             '<a class="site-footer-social__btn site-footer-social__btn--' +
             classMod +
@@ -591,35 +594,35 @@
         );
     }
 
-    function buildGuestFooterSocialNavHtml() {
-        var u = THEJHON_SNS_DEFAULTS;
+    function buildPublicFooterSocialNavHtml() {
+        var u = publicSnsDefaults();
         return (
             '<nav class="site-footer-social" aria-label="소셜 미디어">' +
-            guestFooterSocialLinkHtml(
+            publicFooterSocialLinkHtml(
                 "facebook",
                 u.facebook,
                 "페이스북",
                 "M13.5 8.5H16V5h-2.5C11.57 5 10 6.79 10 9.25V11H7v3h3v7h3v-7h2.6l.4-3H13v-1.75c0-.97.4-1.25 1.5-1.25z"
             ) +
-            guestFooterSocialLinkHtml(
+            publicFooterSocialLinkHtml(
                 "instagram",
                 u.instagram,
                 "인스타그램",
                 "M7 3h10a4 4 0 0 1 4 4v10a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4V7a4 4 0 0 1 4-4zm5 4.5A5.5 5.5 0 1 0 17.5 13 5.51 5.51 0 0 0 12 7.5zm6.25-2.75a1.25 1.25 0 1 0-1.25 1.25 1.25 1.25 0 0 0 1.25-1.25z"
             ) +
-            guestFooterSocialLinkHtml(
+            publicFooterSocialLinkHtml(
                 "navercafe",
                 u.naverCafe,
                 "네이버 카페",
                 "M5 17h14v2H5v-2zm1-11h11l1 3v6H6V9l1-3zm8 11a2 2 0 1 0 4 0h-4z"
             ) +
-            guestFooterSocialLinkHtml(
+            publicFooterSocialLinkHtml(
                 "youtube",
                 u.youtube,
                 "유튜브",
                 "M21.6 7.2c-.2-.8-.8-1.4-1.6-1.6C18 5 12 5 12 5s-6 0-8 .6c-.8.2-1.4.8-1.6 1.6C2 9.2 2 12 2 12s0 2.8.4 4.8c.2.8.8 1.4 1.6 1.6 2 .6 8 .6 8 .6s6 0 8-.6c.8-.2 1.4-.8 1.6-1.6.4-2 .4-4.8.4-4.8s0-2.8-.4-4.8zm-11.9 8V9.9l6.4 3.25-6.4 3.05z"
             ) +
-            guestFooterSocialLinkHtml(
+            publicFooterSocialLinkHtml(
                 "kakao",
                 u.kakao,
                 "카카오톡 채널 채팅",
@@ -629,10 +632,10 @@
         );
     }
 
-    var GUEST_FOOTER_SHELL_HTML =
-        '<div class="site-footer-head site-footer-head--guest">' +
+    var PUBLIC_FOOTER_SHELL_HTML =
+        '<div class="site-footer-head site-footer-head--public">' +
         '<p class="site-footer-copy">COPYRIGHT HaeSoo ALL RIGHTS RESERVED.</p></div>' +
-        buildGuestFooterSocialNavHtml() +
+        buildPublicFooterSocialNavHtml() +
         '<div class="site-footer-company-sep" aria-hidden="true"></div>';
 
     function hasAccountSession() {
@@ -644,20 +647,16 @@
         return !hasAccountSession();
     }
 
-    function isGuestSession() {
-        return isPublicSiteVisitor();
-    }
-
-    function refreshGuestFooterSocialNav() {
+    function refreshPublicFooterSocialNav() {
         var inner = document.querySelector(".site-footer-inner");
         if (!inner) return;
         var socialEl =
             inner.querySelector(":scope > .site-footer-social") ||
             inner.querySelector(".site-footer-social");
-        var linked = buildGuestFooterSocialNavHtml();
+        var linked = buildPublicFooterSocialNavHtml();
         if (!socialEl) {
             var shell = document.createElement("div");
-            shell.innerHTML = GUEST_FOOTER_SHELL_HTML;
+            shell.innerHTML = PUBLIC_FOOTER_SHELL_HTML;
             var grid =
                 inner.querySelector(".site-footer-grid") ||
                 document.getElementById("siteFooterCompanyGrid");
@@ -687,7 +686,7 @@
         if (!inner.querySelector(".site-footer-head")) {
             var headShell = document.createElement("div");
             headShell.innerHTML =
-                '<div class="site-footer-head site-footer-head--guest">' +
+                '<div class="site-footer-head site-footer-head--public">' +
                 '<p class="site-footer-copy">COPYRIGHT HaeSoo ALL RIGHTS RESERVED.</p></div>';
             inner.insertBefore(headShell.firstChild, inner.firstChild);
         }
@@ -700,9 +699,9 @@
                 document.getElementById("siteFooterCompanyGrid");
             inner.insertBefore(sep, gridRef || null);
         }
-        refreshGuestFooterSocialNav();
+        refreshPublicFooterSocialNav();
         if (grid && !grid.querySelector("dt")) {
-            grid.innerHTML = GUEST_FOOTER_COMPANY_FALLBACK;
+            grid.innerHTML = PUBLIC_FOOTER_COMPANY_FALLBACK;
         }
         if (window.THEJHON_AUTH_STORAGE && THEJHON_AUTH_STORAGE.applyLoggedInDocumentClass) {
             THEJHON_AUTH_STORAGE.applyLoggedInDocumentClass();
@@ -731,8 +730,6 @@
         if (dts.length === 1 && grid.querySelector(".site-footer-loading")) return true;
         return false;
     }
-
-    var ensureGuestFooterShell = ensurePublicFooterShell;
 
     function ensureUnifiedSiteFooter() {
         if (!hasAccountSession()) {
@@ -1220,7 +1217,6 @@
     })();
 
     window.__thejhonEnsurePublicFooterShell = ensurePublicFooterShell;
-    window.__thejhonEnsureGuestFooterShell = ensurePublicFooterShell;
     ensurePublicFooterShell();
     window.addEventListener("thejhon-auth-permissions-updated", ensurePublicFooterShell);
     window.addEventListener("pageshow", ensurePublicFooterShell);
@@ -1243,7 +1239,7 @@
         }
         var s = document.createElement("script");
         s.id = "script-footer-social";
-        s.src = "footer-social.js?v=20260618-public-site";
+        s.src = "footer-social.js?v=20260620-public";
         s.onload = syncFooterSocial;
         document.body.appendChild(s);
     })();

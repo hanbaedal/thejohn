@@ -7,7 +7,13 @@
 
     function canShowCatalogOrder() {
         if (!global.THEJHON_AUTH) return false;
-        if (global.THEJHON_AUTH.isGuest && global.THEJHON_AUTH.isGuest()) return false;
+        if (
+            global.THEJHON_AUTH &&
+            global.THEJHON_AUTH.hasAccountSession &&
+            !THEJHON_AUTH.hasAccountSession()
+        ) {
+            return false;
+        }
         if (!global.THEJHON_AUTH.getVendorCartAccess) return false;
         return !!global.THEJHON_AUTH.getVendorCartAccess().allowed;
     }

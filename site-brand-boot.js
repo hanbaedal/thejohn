@@ -163,24 +163,13 @@
         return branded ? String(authRead(LOGO_KEY) || "").trim() : "";
     }
 
-    function readGuestDisplayName() {
-        try {
-            if (authRead(AUTH_KEY) !== "1" || authRead(ROLE_KEY) !== "guest") return "";
-            var disp = String(authRead("thejhon_display_name") || "").trim();
-            if (!disp || disp === "게스트") return "더존 그룹";
-            return disp;
-        } catch (e) {
-            return "";
-        }
-    }
-
     function readBrandCompany() {
         if (branded) {
             return String(
                 authRead("thejhon_brand_company_name") || authRead("thejhon_company_name") || ""
             ).trim();
         }
-        return readGuestDisplayName();
+        return "더존 그룹";
     }
 
     function faviconHrefForSession(logoSrc) {

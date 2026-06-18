@@ -180,7 +180,7 @@ html.is-public .site-footer-head {
     padding: 0;
     border-bottom: none;
 }
-html.is-public .site-footer-head--guest {
+html.is-public .site-footer-head--public {
     margin: 0 0 0.2rem;
 }
 html.is-public .site-footer-head .site-footer-copy {

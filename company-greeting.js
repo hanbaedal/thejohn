@@ -9,7 +9,7 @@
    * 인사문 상단 회사 표기 — (은/는) 조사: 더존→은, …상사→는, 우일푸드→는
    */
   var COMPANY_GREETING_SUBJECT = "(주)더존";
-  var guestIntroLoadPending = false;
+  var publicIntroLoadPending = false;
   var staffIntroLoadPending = false;
   var lastGreetingKey = "";
   var lastIntroImagesKey = "";
@@ -352,20 +352,18 @@
       });
   }
 
-  var applyForGuestStaff = applyForPublicStaff;
-
   function loadPublicCompanyIntroFromDb() {
     var Api = global.THEJHON_API;
     if (!Api || !Api.getPublicFooterStaff) return;
-    if (guestIntroLoadPending) return;
-    guestIntroLoadPending = true;
+    if (publicIntroLoadPending) return;
+    publicIntroLoadPending = true;
     Api.getPublicFooterStaff()
       .then(function (st) {
-        guestIntroLoadPending = false;
-        applyForGuestStaff(st);
+        publicIntroLoadPending = false;
+        applyForPublicStaff(st);
       })
       .catch(function () {
-        guestIntroLoadPending = false;
+        publicIntroLoadPending = false;
         applyDefaultGreeting(COMPANY_GREETING_SUBJECT);
       });
   }
@@ -399,7 +397,6 @@
   global.THEJHON_COMPANY_GREETING = {
     applyForStaff: applyForStaff,
     applyForPublicStaff: applyForPublicStaff,
-    applyForGuestStaff: applyForGuestStaff,
     loadPublicCompanyIntroFromDb: loadPublicCompanyIntroFromDb,
     loadStaffCompanyIntroFromDb: loadStaffCompanyIntroFromDb,
     refreshCompanyIntro: refreshCompanyIntro,

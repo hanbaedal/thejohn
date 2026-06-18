@@ -255,6 +255,7 @@ function setNoCacheGateHeaders(res, filePath) {
     var base = path.basename(String(filePath || "")).toLowerCase();
     if (
         base === "index.html" ||
+        base === "public-site-config.js" ||
         base === "auth-storage.js" ||
         base === "auth.js" ||
         base === "manifest.json"
