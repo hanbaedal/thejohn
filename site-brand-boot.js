@@ -69,7 +69,7 @@
             short_name: shortName,
             description: name,
             id: "/",
-            start_url: "/login.html",
+            start_url: "/index.html",
             scope: "/",
             display: "standalone",
             background_color: "#f4f6f9",
@@ -241,15 +241,15 @@
                 " site-brand-active site-brand-has-logo site-brand-video-ready";
             if (brandCompany) document.documentElement.className += " site-brand-hero-ready";
         }
-    } else if (isLoggedInSession()) {
-        /* 게스트 등 로그인 세션 — 기본 로고 표시 */
+    } else {
+        /* 미로그인(공개) — 기본 더존 로고 즉시 표시 */
         try {
             document.documentElement.classList.add(
                 "site-brand-active",
                 "site-brand-has-logo",
                 "site-brand-video-ready"
             );
-        } catch (eGuest) {
+        } catch (ePub) {
             document.documentElement.className +=
                 " site-brand-active site-brand-has-logo site-brand-video-ready";
         }
@@ -368,8 +368,7 @@
     function applyEarlyHeaderLogo() {
         stripDeozonVideoPoster();
         var src = customLogo;
-        if (!src && (branded || isLoggedInSession())) src = DEFAULT_SITE_LOGO;
-        if (!src) return;
+        if (!src) src = DEFAULT_SITE_LOGO;
         var imgs = document.querySelectorAll(".dz-logo-img");
         for (var i = 0; i < imgs.length; i++) {
             imgs[i].src = src;
@@ -379,7 +378,6 @@
     }
 
     function syncBrandFromSession() {
-        if (!branded && !isLoggedInSession()) return;
         customLogo = readCachedLogo();
         brandCompany = readBrandCompany();
         faviconHref = faviconHrefForSession(customLogo);
@@ -404,11 +402,11 @@
 
     if (document.readyState === "loading") {
         document.addEventListener("DOMContentLoaded", function () {
-            if (branded || isLoggedInSession()) stripDeozonVideoPoster();
+            stripDeozonVideoPoster();
             syncBrandFromSession();
         });
     } else {
-        if (branded || isLoggedInSession()) stripDeozonVideoPoster();
+        stripDeozonVideoPoster();
         syncBrandFromSession();
     }
     window.addEventListener("pageshow", function () {

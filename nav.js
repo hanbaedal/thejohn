@@ -157,12 +157,7 @@
             links[j].setAttribute("aria-label", "더존 홈");
         }
         clearSiteBrandPending();
-        document.documentElement.classList.remove(
-            "site-brand-active",
-            "site-brand-has-logo",
-            "site-brand-hero-ready",
-            "site-brand-video-ready"
-        );
+        markSiteBrandLogoReady();
         applyHomeHeroCompany("");
     }
 
@@ -340,7 +335,7 @@
             return;
         }
 
-        applySiteBrandDefaults();
+        applyDefaultBrandedLogo("");
     }
 
     window.__thejhonApplySiteLogo = applySiteLogo;

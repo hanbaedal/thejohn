@@ -1,7 +1,7 @@
 (function (global) {
   /**
-   * 회사소개 인사말 — 반드시 로그인 후 이용 (게스트·업체·관리자·슈퍼바이저)
-   * - 게스트: 더존(thejohn) staff DB — GET /api/auth/public-footer-staff (소스 하드코딩 없음)
+   * 회사소개 인사말
+   * - 미로그인(공개): 더존(thejohn) staff DB — GET /api/auth/public-footer-staff
    * - 관리자·슈퍼바이저: 본인 staff DB (st_company_greeting)
    * - 업체: 등록 담당 관리자 staff DB (nav.js → GET /api/auth/staff-profile)
    * - 회사소개 이미지: staff DB (st_company_intro_images) — 회사 소개 관리에서 수기 등록
@@ -299,8 +299,13 @@
 
   function getGreetingRole() {
     var Auth = global.THEJHON_AUTH;
-    if (!Auth || !Auth.isLoggedIn || !Auth.isLoggedIn()) return "";
+    if (!Auth || !Auth.hasAccountSession || !Auth.hasAccountSession()) return "";
     return String(Auth.getRole ? Auth.getRole() : "").trim();
+  }
+
+  function isPublicVisitor() {
+    var Auth = global.THEJHON_AUTH;
+    return !(Auth && Auth.hasAccountSession && Auth.hasAccountSession());
   }
 
   /** 관리자·슈퍼바이저·업체 — staff DB 인사말 (게스트 제외) */
@@ -308,8 +313,8 @@
     return role === "admin" || role === "supervisor" || role === "vendor";
   }
 
-  /** 게스트 — 더존(thejohn) staff DB, 비어 있으면 회사명 기준 기본 인사말 */
-  function applyForGuestStaff(st) {
+  /** 미로그인(공개) — 더존(thejohn) staff DB, 비어 있으면 회사명 기준 기본 인사말 */
+  function applyForPublicStaff(st) {
     if (!st) return false;
     applyGreetingForStaffRecord(st);
     var introImages = introImagesFromStaff(st);
@@ -343,11 +348,13 @@
       })
       .catch(function () {
         staffIntroLoadPending = false;
-        loadGuestCompanyIntroFromDb();
+        loadPublicCompanyIntroFromDb();
       });
   }
 
-  function loadGuestCompanyIntroFromDb() {
+  var applyForGuestStaff = applyForPublicStaff;
+
+  function loadPublicCompanyIntroFromDb() {
     var Api = global.THEJHON_API;
     if (!Api || !Api.getPublicFooterStaff) return;
     if (guestIntroLoadPending) return;
@@ -359,6 +366,7 @@
       })
       .catch(function () {
         guestIntroLoadPending = false;
+        applyDefaultGreeting(COMPANY_GREETING_SUBJECT);
       });
   }
 
@@ -368,12 +376,12 @@
       if (usesStaffDbGreeting(role)) {
         applyForStaff(st);
       } else {
-        applyForGuestStaff(st);
+        applyForPublicStaff(st);
       }
       return;
     }
-    var Auth = global.THEJHON_AUTH;
-    if (Auth && Auth.isLoggedIn && !Auth.isLoggedIn()) {
+    if (isPublicVisitor()) {
+      loadPublicCompanyIntroFromDb();
       return;
     }
     var role = getGreetingRole();
@@ -381,7 +389,7 @@
       loadStaffCompanyIntroFromDb();
       return;
     }
-    loadGuestCompanyIntroFromDb();
+    loadPublicCompanyIntroFromDb();
   }
 
   function run() {
@@ -390,7 +398,9 @@
 
   global.THEJHON_COMPANY_GREETING = {
     applyForStaff: applyForStaff,
+    applyForPublicStaff: applyForPublicStaff,
     applyForGuestStaff: applyForGuestStaff,
+    loadPublicCompanyIntroFromDb: loadPublicCompanyIntroFromDb,
     loadStaffCompanyIntroFromDb: loadStaffCompanyIntroFromDb,
     refreshCompanyIntro: refreshCompanyIntro,
     applyDefaultGreeting: applyDefaultGreeting,
