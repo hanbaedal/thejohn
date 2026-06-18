@@ -150,6 +150,10 @@
     /** head 최상단 — 비공개 페이지만 login.html로 이동 */
     function enforceSiteLoginEarly() {
         if (typeof global.location === "undefined") return;
+        var path = String(global.location.pathname || "")
+            .replace(/\\/g, "/")
+            .toLowerCase();
+        if (path === "/" || path === "" || path.endsWith("/index.html")) return;
         if (isLoginPageEarly()) return;
         if (isSitePublicPageEarly()) return;
         if (isLoggedInEarly()) return;

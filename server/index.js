@@ -251,7 +251,26 @@ app.use("/api/support-news", requireDb, supportNewsRoutes);
 app.use("/api/support-board", requireDb, supportBoardRoutes);
 app.use("/api/support-inquiry", requireDb, supportInquiryRoutes);
 
-app.use(express.static(staticRoot, { index: "index.html", extensions: ["html"] }));
+function setNoCacheGateHeaders(res, filePath) {
+    var base = path.basename(String(filePath || "")).toLowerCase();
+    if (
+        base === "index.html" ||
+        base === "auth-storage.js" ||
+        base === "auth.js" ||
+        base === "manifest.json"
+    ) {
+        res.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
+        res.setHeader("Pragma", "no-cache");
+    }
+}
+
+app.use(
+    express.static(staticRoot, {
+        index: "index.html",
+        extensions: ["html"],
+        setHeaders: setNoCacheGateHeaders
+    })
+);
 
 app.use((req, res, next) => {
     if (req.method !== "GET" || req.path.startsWith("/api")) return next();
