@@ -6,6 +6,13 @@
  */
 (function (global) {
     var KAKAO_CHAT_URL = "https://pf.kakao.com/_xavxlxjX/chat";
+    var THEJHON_SNS_DEFAULTS = {
+        facebook: "https://www.facebook.com/profile.php?id=61590794526953&mibextid=ZbWKwL",
+        instagram: "https://www.instagram.com/p/DZrcIivPFK7/?igsh=cHhvZTBhaHBweXZp",
+        naverCafe: "https://m.cafe.naver.com/thejohnmg",
+        youtube: "https://youtube.com/channel/UCRhPDfMExmqSbwjBlIXrWdw?si=F60UU2qsdfb8_0PH",
+        kakao: KAKAO_CHAT_URL
+    };
     var CACHE_THEJOHN = "thejhon_footer_sns_thejohn_v1";
     var CACHE_SESSION_PREFIX = "thejhon_footer_sns_session_v1:";
     var CACHE_TTL_MS = 30 * 60 * 1000;
@@ -125,7 +132,7 @@
         replaceSocialBtn(nav, "instagram", u.instagram, "인스타그램");
         replaceSocialBtn(nav, "navercafe", u.naverCafe, "네이버 카페");
         replaceSocialBtn(nav, "youtube", u.youtube, "유튜브");
-        replaceSocialBtn(nav, "kakao", KAKAO_CHAT_URL, "카카오톡 채널 채팅");
+        replaceSocialBtn(nav, "kakao", u.kakao || KAKAO_CHAT_URL, "카카오톡 채널 채팅");
     }
 
     function pickStaffSocialField(staff, key) {
@@ -144,18 +151,32 @@
             instagram: pick("st_instagram"),
             naverCafe: pick("st_naver_cafe"),
             youtube: pick("st_youtube"),
-            kakao: KAKAO_CHAT_URL
+            kakao: pick("st_kakao") || KAKAO_CHAT_URL
+        };
+    }
+
+    function thejohnDefaultSocialUrls() {
+        var fromNav = global.__thejhonSnsDefaults;
+        if (fromNav && typeof fromNav === "object") {
+            return {
+                facebook: String(fromNav.facebook || THEJHON_SNS_DEFAULTS.facebook).trim(),
+                instagram: String(fromNav.instagram || THEJHON_SNS_DEFAULTS.instagram).trim(),
+                naverCafe: String(fromNav.naverCafe || THEJHON_SNS_DEFAULTS.naverCafe).trim(),
+                youtube: String(fromNav.youtube || THEJHON_SNS_DEFAULTS.youtube).trim(),
+                kakao: String(fromNav.kakao || THEJHON_SNS_DEFAULTS.kakao).trim()
+            };
+        }
+        return {
+            facebook: THEJHON_SNS_DEFAULTS.facebook,
+            instagram: THEJHON_SNS_DEFAULTS.instagram,
+            naverCafe: THEJHON_SNS_DEFAULTS.naverCafe,
+            youtube: THEJHON_SNS_DEFAULTS.youtube,
+            kakao: THEJHON_SNS_DEFAULTS.kakao
         };
     }
 
     function emptySocialUrls() {
-        return {
-            facebook: "",
-            instagram: "",
-            naverCafe: "",
-            youtube: "",
-            kakao: KAKAO_CHAT_URL
-        };
+        return thejohnDefaultSocialUrls();
     }
 
     function readUrlCache(key) {
@@ -194,19 +215,19 @@
     }
 
     function initialSocialUrls() {
+        var base = thejohnDefaultSocialUrls();
         var sessionKey = sessionCacheKey();
         var cached = (sessionKey && readUrlCache(sessionKey)) || readUrlCache(CACHE_THEJOHN);
         if (cached) {
-            var out = {
-                facebook: String(cached.facebook || "").trim(),
-                instagram: String(cached.instagram || "").trim(),
-                naverCafe: String(cached.naverCafe || "").trim(),
-                youtube: String(cached.youtube || "").trim(),
-                kakao: KAKAO_CHAT_URL
+            return {
+                facebook: String(cached.facebook || base.facebook || "").trim(),
+                instagram: String(cached.instagram || base.instagram || "").trim(),
+                naverCafe: String(cached.naverCafe || base.naverCafe || "").trim(),
+                youtube: String(cached.youtube || base.youtube || "").trim(),
+                kakao: String(cached.kakao || base.kakao || KAKAO_CHAT_URL).trim()
             };
-            return out;
         }
-        return emptySocialUrls();
+        return base;
     }
 
     function applyCachedLinksFirst() {
@@ -432,9 +453,12 @@
 
         return fetchThejohnFooterStaff()
             .then(function (thejohn) {
-                var urls = thejohn ? socialFromStaff(thejohn) : emptySocialUrls();
+                var urls = thejohn ? socialFromStaff(thejohn) : thejohnDefaultSocialUrls();
                 applyLinks(urls);
                 writeUrlCache(CACHE_THEJOHN, urls);
+            })
+            .catch(function () {
+                applyLinks(thejohnDefaultSocialUrls());
             })
             .then(function () {
                 return loadGuestFooterCompany();

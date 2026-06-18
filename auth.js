@@ -27,6 +27,8 @@
     var BRAND_COMPANY_KEY = "thejhon_brand_company_name";
     var LOGIN_ID_HINT_KEY = "thejhon_login_id_hint";
     var GUEST_ID_KEY = "thejhon_guest_id";
+    /** 헤더·홈 히어로 등 로그인 표시명 (버튼 문구 '게스트'와 별도) */
+    var GUEST_DISPLAY_NAME = "더존 그룹";
 
     var store = global.THEJHON_AUTH_STORAGE;
 
@@ -242,7 +244,9 @@
                 if (!authGet(GUEST_ID_KEY)) authSet(GUEST_ID_KEY, gid);
                 if (!authGet(USER_ID_KEY)) authSet(USER_ID_KEY, gid);
             }
-            if (!authGet(DISPLAY_KEY)) authSet(DISPLAY_KEY, "게스트");
+            if (!authGet(DISPLAY_KEY) || authGet(DISPLAY_KEY) === "게스트") {
+                authSet(DISPLAY_KEY, GUEST_DISPLAY_NAME);
+            }
             return;
         }
         if (role === "vendor") {
@@ -772,7 +776,7 @@
         authSet(ROLE_KEY, "guest");
         authSet(USER_ID_KEY, guestId);
         authSet("thejhon_auth_provider", "guest");
-        authSet(DISPLAY_KEY, "게스트");
+        authSet(DISPLAY_KEY, GUEST_DISPLAY_NAME);
         clearStaffLogoCache();
         authRemove(BRAND_COMPANY_KEY);
         authRemove(COMPANY_KEY);
@@ -2802,7 +2806,7 @@
         if (!isLoggedIn()) return "";
         var role = getRole();
         if (role === "guest") {
-            return String(authGet(DISPLAY_KEY) || "").trim() || "게스트";
+            return String(authGet(DISPLAY_KEY) || "").trim() || GUEST_DISPLAY_NAME;
         }
         if (role === "vendor") {
             var co = getVendorCompanyName();
