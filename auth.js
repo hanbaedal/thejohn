@@ -2806,7 +2806,12 @@
         if (!isLoggedIn()) return "";
         var role = getRole();
         if (role === "guest") {
-            return String(authGet(DISPLAY_KEY) || "").trim() || GUEST_DISPLAY_NAME;
+            var guestDisp = String(authGet(DISPLAY_KEY) || "").trim();
+            if (!guestDisp || guestDisp === "게스트") {
+                authSet(DISPLAY_KEY, GUEST_DISPLAY_NAME);
+                return GUEST_DISPLAY_NAME;
+            }
+            return guestDisp;
         }
         if (role === "vendor") {
             var co = getVendorCompanyName();

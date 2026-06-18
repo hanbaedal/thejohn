@@ -388,6 +388,10 @@
                         THEJHON_FOOTER_SOCIAL.syncSocialLinks();
                     }
                 }
+                syncHomeHeroTitle();
+                if (window.__thejhonRefreshHeaderCompany) {
+                    window.__thejhonRefreshHeaderCompany();
+                }
             }
             function syncHomeHeroTitle() {
                 var el = document.getElementById("homeHeroTitle");
@@ -402,6 +406,7 @@
                         name = String(THEJHON_AUTH.getLoggedInCompanyDisplayName() || "").trim();
                     }
                 }
+                if (name === "게스트") name = "더존 그룹";
                 el.textContent = name
                     ? el.dataset.heroDefault.replace(/더존/g, name)
                     : el.dataset.heroDefault;
@@ -418,6 +423,7 @@
             syncHomeHeroTitle();
             syncAuthUi();
             window.addEventListener("pageshow", syncAuthUi);
+            window.addEventListener("thejhon-auth-permissions-updated", syncAuthUi);
 
             function syncHomeHeaderLogo() {
                 var Auth = window.THEJHON_AUTH;

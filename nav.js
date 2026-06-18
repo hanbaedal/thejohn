@@ -175,6 +175,7 @@
         }
         var defaultText = el.dataset.heroDefault;
         var name = String(companyName || "").trim();
+        if (name === "게스트") name = "더존 그룹";
         el.textContent = name ? defaultText.replace(/더존/g, name) : defaultText;
         if (name) document.documentElement.classList.add("site-brand-hero-ready");
         scheduleFitHomeHeroTitle();
@@ -469,6 +470,7 @@
             ) {
                 text = String(THEJHON_AUTH.getLoggedInCompanyDisplayName() || "").trim();
             }
+            if (text === "게스트") text = "더존 그룹";
             if (
                 loggedIn &&
                 !text &&
@@ -891,7 +893,11 @@
             }
             var role = Auth.getRole ? Auth.getRole() : "";
             if (role === "guest") {
-                applyDefaultBrandedLogo("");
+                var guestLabel =
+                    Auth.getLoggedInCompanyDisplayName && Auth.getLoggedInCompanyDisplayName();
+                guestLabel = String(guestLabel || "").trim();
+                applyDefaultBrandedLogo(guestLabel);
+                applyHomeHeroCompany(guestLabel);
                 if (global.__thejhonRefreshCompanyGreeting) {
                     global.__thejhonRefreshCompanyGreeting();
                 }
