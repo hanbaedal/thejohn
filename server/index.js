@@ -251,10 +251,6 @@ app.use("/api/support-news", requireDb, supportNewsRoutes);
 app.use("/api/support-board", requireDb, supportBoardRoutes);
 app.use("/api/support-inquiry", requireDb, supportInquiryRoutes);
 
-app.get("/", function (req, res) {
-    res.redirect(302, "/login.html");
-});
-
 app.use(express.static(staticRoot, { index: "index.html", extensions: ["html"] }));
 
 app.use((req, res, next) => {

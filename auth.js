@@ -840,7 +840,7 @@
 
     function isSitePublicPage(file) {
         if (!file) file = currentPageFile();
-        if (file === "login.html") return true;
+        if (file === "login.html" || file === "index.html") return true;
         return !!STAFF_NAV_PUBLIC_PAGES[file];
     }
 
@@ -2733,7 +2733,8 @@
 
     function currentPageFile() {
         var path = (window.location.pathname || "").replace(/\\/g, "/");
-        return (path.split("/").pop() || "").split("?")[0].toLowerCase();
+        var seg = (path.split("/").pop() || "").split("?")[0].toLowerCase();
+        return seg || "index.html";
     }
 
     function safeNextPath(next) {
