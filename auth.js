@@ -8,7 +8,7 @@
  * - 로그인 후 기본 이동: 업체 → index, 슈퍼바이저·관리자 → work-hub (login.js)
  * - 슈퍼바이저: 관리자(staff) 생성 · 전체 기능
  * - 관리자: 업체(vendors) 생성 · 모든 관리자 주문서관리 이용
- * - 업체: 담당 관리자 상품 등급가, 타 관리자 상품은 가격1 · 주문은 담당 관리자+주문권한 있을 때
+ * - 업체: 관리자별 등록·등급(vendorProfiles) · 상품 등록 관리자에게 등록된 상품만 주문·등급가
  * - 미로그인 방문: 상품 가격 숨김 · 공개 페이지 방문 횟수(page_view)만 기록
  */
 (function (global) {
@@ -2388,7 +2388,7 @@
         return { allowed: true, role: getRole() };
     }
 
-    /** 그룹 마케팅 — 발주서 관리 허브 (슈퍼바이저·주문권한 관리자) */
+    /** 그룹 마케팅 — 발주서 관리 허브 (슈퍼바이저·관리자) */
     function getOrderManageHubAccess() {
         normalizeLegacySession();
         if (!global.THEJHON_API || !THEJHON_API.getToken || !THEJHON_API.getToken()) {

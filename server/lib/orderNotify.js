@@ -1,5 +1,5 @@
 const { findStaffByRegisteredBy } = require("./staffRegisteredBy");
-const { phoneFromOrderEnabledStaff } = require("./staffOrderEnabled");
+const { phoneFromAnyAdminStaff } = require("./staffOrderEnabled");
 const { F } = require("./vendorFields");
 const { isLegacyRegisteredBy } = require("./staffLoginId");
 const { isSolapiConfigured, sendSolapiSms } = require("./solapiSms");
@@ -60,8 +60,8 @@ async function getAdminNotifyPhone(db, order) {
         if (byEnv) return byEnv;
     }
 
-    var fromOrderEnabled = await phoneFromOrderEnabledStaff();
-    if (fromOrderEnabled) return normalizePhoneE164(fromOrderEnabled);
+    var fromAnyAdmin = await phoneFromAnyAdminStaff();
+    if (fromAnyAdmin) return normalizePhoneE164(fromAnyAdmin);
 
     return "";
 }

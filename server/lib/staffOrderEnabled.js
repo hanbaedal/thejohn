@@ -1,25 +1,31 @@
 const { getDb } = require("../db");
-const { F, staffOrderEnabledFromDoc } = require("./staffFields");
+const { F } = require("./staffFields");
 const { findStaffByLoginId } = require("./loginResolve");
-/** MongoDB — st_order_enabled=true 인 관리자(admin)만 */
-function orderEnabledStaffFilter() {
+
+/** 활성 관리자(admin) — st_order_enabled 폐지 후 전원 대상 */
+function activeAdminStaffFilter() {
     return {
         role: "admin",
-        active: { $ne: false },
-        $or: [{ [F.orderEnabled]: true }, { st_order_enabled: true }]
+        active: { $ne: false }
     };
 }
 
-async function listOrderEnabledStaff() {
-    const docs = await getDb()
-        .collection("staff")
-        .find(orderEnabledStaffFilter())
-        .toArray();
-    return docs.filter(staffOrderEnabledFromDoc);
+/** @deprecated — activeAdminStaffFilter 와 동일 (구 st_order_enabled 필터 제거) */
+function orderEnabledStaffFilter() {
+    return activeAdminStaffFilter();
 }
 
-async function getOrderEnabledStaffLoginIds() {
-    const docs = await listOrderEnabledStaff();
+async function listActiveAdminStaff() {
+    return getDb().collection("staff").find(activeAdminStaffFilter()).toArray();
+}
+
+/** @deprecated — listActiveAdminStaff */
+async function listOrderEnabledStaff() {
+    return listActiveAdminStaff();
+}
+
+async function getAdminStaffLoginIds() {
+    const docs = await listActiveAdminStaff();
     const ids = [];
     for (let i = 0; i < docs.length; i++) {
         const loginId = String(docs[i].loginId || "").trim();
@@ -28,15 +34,22 @@ async function getOrderEnabledStaffLoginIds() {
     return ids;
 }
 
+/** @deprecated — getAdminStaffLoginIds */
+async function getOrderEnabledStaffLoginIds() {
+    return getAdminStaffLoginIds();
+}
+
 async function isLoginIdOrderEnabled(loginId) {
     const key = String(loginId || "").trim();
     if (!key) return false;
     const staff = await findStaffByLoginId(key);
-    return staffOrderEnabledFromDoc(staff);
+    if (!staff || staff.role !== "admin" || staff.active === false) return false;
+    return true;
 }
-/** 주문 SMS — 담당자를 특정할 수 없을 때 st_order_enabled 관리자 연락처 순회 */
-async function phoneFromOrderEnabledStaff() {
-    const docs = await listOrderEnabledStaff();
+
+/** 주문 SMS — 담당자 번호 없을 때 활성 관리자 대표 연락처 순회 */
+async function phoneFromAnyAdminStaff() {
+    const docs = await listActiveAdminStaff();
     for (let i = 0; i < docs.length; i++) {
         const raw = String(docs[i].st_ceo_tel || docs[i][F.ceoTel] || "").trim();
         if (raw) return raw;
@@ -44,10 +57,19 @@ async function phoneFromOrderEnabledStaff() {
     return "";
 }
 
+/** @deprecated — phoneFromAnyAdminStaff */
+async function phoneFromOrderEnabledStaff() {
+    return phoneFromAnyAdminStaff();
+}
+
 module.exports = {
+    activeAdminStaffFilter,
     orderEnabledStaffFilter,
+    listActiveAdminStaff,
     listOrderEnabledStaff,
+    getAdminStaffLoginIds,
     getOrderEnabledStaffLoginIds,
     isLoginIdOrderEnabled,
+    phoneFromAnyAdminStaff,
     phoneFromOrderEnabledStaff
 };

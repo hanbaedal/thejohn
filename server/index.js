@@ -170,12 +170,13 @@ app.get("/api/health/detail", async function (req, res) {
     if (isDbReady()) {
         try {
             const { DEFAULT_STAFF_IDS, findExpectedStaffInDb, staffSeedAccountsOk } = require("./lib/staffFields");
-            const { getOrderEnabledStaffLoginIds } = require("./lib/staffOrderEnabled");
+            const { getAdminStaffLoginIds } = require("./lib/staffOrderEnabled");
             const docs = await findExpectedStaffInDb(getDb());
             payload.staffInDb = docs;
             payload.staffExpected = DEFAULT_STAFF_IDS;
             payload.staffOk = staffSeedAccountsOk(docs);
-            payload.orderEnabledStaffLoginIds = await getOrderEnabledStaffLoginIds();
+            payload.adminStaffLoginIds = await getAdminStaffLoginIds();
+            payload.orderEnabledStaffLoginIds = payload.adminStaffLoginIds;
             payload.vendorCount = await getDb().collection("vendors").countDocuments();
         } catch (detailErr) {
             payload.healthDetailError = detailErr.message || String(detailErr);

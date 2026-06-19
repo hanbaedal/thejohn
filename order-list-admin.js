@@ -217,7 +217,7 @@
             ? Auth.getOrderManageAccess()
             : { allowed: false };
     if (!access.allowed) {
-        setStatus(access.reason || "주문 권한이 있는 관리자 로그인이 필요합니다.", true);
+        setStatus(access.reason || "관리자 로그인이 필요합니다.", true);
         return;
     }
 
