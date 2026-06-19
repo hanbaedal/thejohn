@@ -158,10 +158,10 @@ async function safeCreateIndex(collection, spec, options) {
     }
 }
 
-/** 예전 배포: loginIdNorm·password 유니크 인덱스 → 업체 여러 건 등록 시 E11000 */
+/** 예전 배포: loginId 단독 unique 등 → 동일 loginId·관리자별 등록(vn_registered_by) 불가 */
 async function dropObsoleteVendorIndexes(database) {
     const col = database.collection("vendors");
-    const obsolete = ["loginIdNorm_1", "password_1"];
+    const obsolete = ["loginIdNorm_1", "password_1", "loginId_1"];
     for (var i = 0; i < obsolete.length; i++) {
         const name = obsolete[i];
         try {
@@ -193,7 +193,16 @@ async function runStartupMigrations(database) {
     await migrateProductsCollection(database);
     await safeCreateIndex(database.collection("vendors"), { id: 1 }, { unique: true });
     await dropObsoleteVendorIndexes(database);
-    await safeCreateIndex(database.collection("vendors"), { loginId: 1 }, { unique: true });
+    await safeCreateIndex(
+        database.collection("vendors"),
+        { loginId: 1 },
+        { name: "vendors_loginId" }
+    );
+    await safeCreateIndex(
+        database.collection("vendors"),
+        { loginId: 1, vn_registered_by: 1 },
+        { unique: true, name: "vendors_loginId_registered_by" }
+    );
     await safeCreateIndex(
         database.collection("vendors"),
         { vn_registered_by: 1, updatedAt: -1 },

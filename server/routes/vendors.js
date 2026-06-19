@@ -44,6 +44,9 @@ function isReservedAdminLoginId(loginId) {
 function vendorWriteErrorMessage(e) {
     if (e && e.code === 11000) {
         const key = e.keyPattern || {};
+        if (key.loginId && key.vn_registered_by) {
+            return "이 담당 관리자에게 이미 등록된 아이디입니다.";
+        }
         if (key.loginId) return "이미 사용 중인 아이디입니다.";
         if (key.loginIdNorm) {
             return "DB 인덱스 충돌(loginIdNorm)입니다. 서버를 재배포한 뒤 다시 시도해 주세요.";
@@ -186,7 +189,7 @@ router.post("/", requireRole("supervisor", "admin"), async (req, res) => {
         }
 
         const vendors = getDb().collection("vendors");
-        const registrar = trimStaffLoginId(doc[F.registeredBy] || req.auth.userId);
+        const registrar = trimStaffLoginId(req.auth.userId);
         const dup = await findDuplicateVendor(vendors, loginId, registrar);
         if (dup) {
             return res.status(409).json({
