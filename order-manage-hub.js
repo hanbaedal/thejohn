@@ -20,6 +20,8 @@
             transactionList: document.getElementById("omh-link-transaction-list"),
             transactionManual: document.getElementById("omh-link-transaction-manual"),
             transactionManualList: document.getElementById("omh-link-transaction-manual-list"),
+            salesLedgerList: document.getElementById("omh-link-sales-ledger-list"),
+            salesLedgerRegister: document.getElementById("omh-link-sales-ledger-register"),
             salesByProduct: document.getElementById("omh-link-sales-by-product"),
             salesByVendor: document.getElementById("omh-link-sales-by-vendor")
         };
@@ -73,6 +75,17 @@
                 map.salesByVendor.hidden = true;
             }
         }
+        ["salesLedgerList", "salesLedgerRegister"].forEach(function (key) {
+            var elKey = key === "salesLedgerList" ? "salesLedgerList" : "salesLedgerRegister";
+            var el = map[elKey];
+            if (!el) return;
+            if (links[key]) {
+                el.setAttribute("href", links[key]);
+                el.hidden = false;
+            } else {
+                el.hidden = true;
+            }
+        });
     }
 
     if (!Auth || !Auth.getOrderManageHubAccess) {

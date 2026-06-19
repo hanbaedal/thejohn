@@ -1,4 +1,6 @@
 const { loginLookupFilter } = require("./loginAccount");
+const { F: VF } = require("./vendorFields");
+const { trimStaffLoginId, registeredByInFilter } = require("./staffLoginId");
 
 const F_COMPANY_NORM = "vn_company_norm";
 
@@ -61,11 +63,28 @@ async function findDuplicateCompanyInCollection(db, collectionName, companyName,
     return null;
 }
 
-/** 로그인 아이디 — vendors · vendor_new · vendor_prospects */
-async function findAnyVendorLoginConflict(db, loginId, exclude) {
+async function findDuplicateVendorByRegistrar(vendorsCol, loginId, registeredBy, excludeId) {
+    const idFilter = loginLookupFilter(loginId);
+    if (!idFilter) return null;
+    const reg = trimStaffLoginId(registeredBy);
+    const clauses = [idFilter];
+    if (reg) {
+        clauses.push({ [VF.registeredBy]: registeredByInFilter(reg) });
+    }
+    if (excludeId) clauses.push({ id: { $ne: excludeId } });
+    return vendorsCol.findOne({ $and: clauses });
+}
+
+/** 로그인 아이디 — vendors(동일 담당만) · vendor_new · vendor_prospects */
+async function findAnyVendorLoginConflict(db, loginId, registeredBy, exclude) {
     const ex = exclude || {};
-    const dupVendor = await findVendorByLoginId(db, loginId, ex.vendorId);
-    if (dupVendor) return { dup: dupVendor, where: "기존 업체" };
+    const dupVendor = await findDuplicateVendorByRegistrar(
+        db.collection("vendors"),
+        loginId,
+        registeredBy,
+        ex.vendorId
+    );
+    if (dupVendor) return { dup: dupVendor, where: "기존 업체(동일 담당)" };
     const dupNew = await findLoginInCollection(db, "vendor_new", loginId, ex.newId);
     if (dupNew) return { dup: dupNew, where: "신규업체" };
     const dupProspect = await findLoginInCollection(db, "vendor_prospects", loginId, ex.prospectId);
@@ -87,6 +106,7 @@ module.exports = {
     findVendorByLoginId,
     findLoginInCollection,
     findDuplicateCompanyInCollection,
+    findDuplicateVendorByRegistrar,
     findAnyVendorLoginConflict,
     collectionNameForVendorDoc
 };

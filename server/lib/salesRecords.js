@@ -78,13 +78,18 @@ async function replaceSalesForSource(db, source, sourceId, lines) {
 
 async function syncFromOrder(db, order) {
     if (!order || !order.id) return 0;
+    if (order.orderKind === "vendor") return 0;
     await ensureIndexes(db);
+    const issuerLogin =
+        trimStaffLoginId(order.orderStaffLoginId) ||
+        trimStaffLoginId(order.vendorRegisteredBy);
     const base = {
         source: "order",
         sourceId: order.id,
         sourceLabel: "주문",
         orderNo: str(order.orderNo),
-        issuerStaffLoginId: trimStaffLoginId(order.vendorRegisteredBy),
+        parentOrderId: str(order.parentOrderId),
+        issuerStaffLoginId: issuerLogin,
         issuerStaffName: str(order.vendorRegisteredByName),
         issueDate: Number(order.createdAt) || Date.now(),
         vendorCompany: str(order.vendorCompany),
@@ -96,7 +101,14 @@ async function syncFromOrder(db, order) {
     for (let i = 0; i < items.length; i++) {
         const it = items[i] || {};
         const meta = await lookupProductMeta(db, it);
-        lines.push(lineFromItem(base, it, i, meta));
+        const lineBase = Object.assign({}, base, {
+            issuerStaffLoginId:
+                trimStaffLoginId(it.productRegisteredBy) || issuerLogin
+        });
+        if (it.productRegisteredByName) {
+            lineBase.issuerStaffName = str(it.productRegisteredByName);
+        }
+        lines.push(lineFromItem(lineBase, it, i, meta));
     }
     return replaceSalesForSource(db, "order", order.id, lines);
 }

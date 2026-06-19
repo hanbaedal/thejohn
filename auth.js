@@ -7,7 +7,7 @@
  * - 로그아웃 → login.html
  * - 로그인 후 기본 이동: 업체 → index, 슈퍼바이저·관리자 → work-hub (login.js)
  * - 슈퍼바이저: 관리자(staff) 생성 · 전체 기능
- * - 관리자: 업체(vendors) 생성 · 주문 권한(st_order_enabled)은 슈퍼바이저 부여
+ * - 관리자: 업체(vendors) 생성 · 모든 관리자 주문서관리 이용
  * - 업체: 담당 관리자 상품 등급가, 타 관리자 상품은 가격1 · 주문은 담당 관리자+주문권한 있을 때
  * - 미로그인 방문: 상품 가격 숨김 · 공개 페이지 방문 횟수(page_view)만 기록
  */
@@ -19,10 +19,11 @@
     var DISPLAY_KEY = "thejhon_display_name";
     var VENDOR_GRADE_KEY = "thejhon_vendor_grade";
     var VENDOR_REGISTERED_BY_KEY = "thejhon_vendor_registered_by";
-    var VENDOR_ORDER_ENABLED_KEY = "thejhon_vendor_order_enabled";
+    var VENDOR_PROFILES_KEY = "thejhon_vendor_profiles";
     var VENDOR_MGR_NAME_KEY = "thejhon_vendor_mgr_name";
     var VENDOR_MGR_TEL_KEY = "thejhon_vendor_mgr_tel";
     var VENDOR_MGR_EMAIL_KEY = "thejhon_vendor_mgr_email";
+    var VENDOR_ORDER_ENABLED_KEY = "thejhon_vendor_order_enabled";
     var STAFF_ORDER_ENABLED_KEY = "thejhon_staff_order_enabled";
     var STAFF_LOGO_KEY = "thejhon_staff_logo";
     var BRAND_COMPANY_KEY = "thejhon_brand_company_name";
@@ -44,6 +45,7 @@
         "thejhon_auth_provider",
         VENDOR_GRADE_KEY,
         VENDOR_REGISTERED_BY_KEY,
+        VENDOR_PROFILES_KEY,
         VENDOR_ORDER_ENABLED_KEY,
         VENDOR_MGR_NAME_KEY,
         VENDOR_MGR_TEL_KEY,
@@ -495,7 +497,7 @@
             authRemove(VENDOR_MGR_TEL_KEY);
             authRemove(VENDOR_MGR_EMAIL_KEY);
         }
-        if (roleNorm === "admin" && staffOrderEnabled) {
+        if (roleNorm === "admin") {
             authSet(STAFF_ORDER_ENABLED_KEY, "1");
         } else {
             authRemove(STAFF_ORDER_ENABLED_KEY);
@@ -794,8 +796,11 @@
         "supervisor-order-list.html",
         "supervisor-order-pdf.html",
         "supervisor-transaction-pdf.html",
+        "supervisor-transaction-list.html",
         "transaction-manual-register.html",
-        "transaction-manual-list.html"
+        "transaction-manual-list.html",
+        "sales-ledger-list.html",
+        "sales-ledger-register.html"
     ];
     var WORK_HUB_PAGE = "work-hub.html";
     var WORK_HUB_LABEL = "그룹 마케팅 관리";
@@ -839,7 +844,9 @@
         "supervisor-transaction-pdf.html": true,
         "supervisor-transaction-list.html": true,
         "transaction-manual-register.html": true,
-        "transaction-manual-list.html": true
+        "transaction-manual-list.html": true,
+        "sales-ledger-list.html": true,
+        "sales-ledger-register.html": true
     };
     var STAFF_NAV_PRODUCT_PAGES = {};
     var STAFF_NAV_VENDOR_PAGES = {};
@@ -1993,7 +2000,10 @@
                     String(sess.vendorRegisteredBy).trim()
                 );
             }
-            if (sess.vendorOrderEnabled) {
+            if (Array.isArray(sess.vendorProfiles) && sess.vendorProfiles.length) {
+                writeVendorProfiles(sess.vendorProfiles);
+                authSet(VENDOR_ORDER_ENABLED_KEY, "1");
+            } else if (sess.vendorOrderEnabled) {
                 authSet(VENDOR_ORDER_ENABLED_KEY, "1");
             } else {
                 authRemove(VENDOR_ORDER_ENABLED_KEY);
@@ -2012,7 +2022,7 @@
         }
     }
 
-    /** 관리자 리스트 「주문」/「비주문」 — 세션 API → 허브·발주 메뉴 */
+    /** 관리자 — 세션 API → 주문서관리 메뉴 */
     function syncStaffOrderEnabledFromSession(sess) {
         if (!sess || !sess.loggedIn) return;
         var r = normalizeLoginRole(sess.role);
@@ -2020,37 +2030,19 @@
             authRemove(STAFF_ORDER_ENABLED_KEY);
             return;
         }
-        if (r !== "admin") return;
-        if (sess.staffOrderEnabled) {
+        if (r === "admin") {
             authSet(STAFF_ORDER_ENABLED_KEY, "1");
-        } else {
-            authRemove(STAFF_ORDER_ENABLED_KEY);
+            return;
         }
+        authRemove(STAFF_ORDER_ENABLED_KEY);
     }
 
     function refreshStaffOrderEnabledFromProfileAsync() {
         if (normalizeLoginRole(getRole()) !== "admin") {
             return Promise.resolve(null);
         }
-        if (!global.THEJHON_API || !THEJHON_API.getStaffProfile) {
-            return Promise.resolve(null);
-        }
-        if (!THEJHON_API.getToken || !THEJHON_API.getToken()) {
-            return Promise.resolve(null);
-        }
-        return THEJHON_API.getStaffProfile()
-            .then(function (item) {
-                if (!item || normalizeLoginRole(getRole()) !== "admin") return item;
-                if (item.orderEnabled === true) {
-                    authSet(STAFF_ORDER_ENABLED_KEY, "1");
-                } else {
-                    authRemove(STAFF_ORDER_ENABLED_KEY);
-                }
-                return item;
-            })
-            .catch(function () {
-                return null;
-            });
+        authSet(STAFF_ORDER_ENABLED_KEY, "1");
+        return Promise.resolve(null);
     }
 
     function refreshSessionPermissionsAsync() {
@@ -2197,10 +2189,43 @@
     })();
 
     function isStaffOrderEnabled() {
-        return authGet(STAFF_ORDER_ENABLED_KEY) === "1";
+        return isAdminStaff();
+    }
+
+    function readVendorProfiles() {
+        try {
+            var raw = authGet(VENDOR_PROFILES_KEY);
+            if (!raw) return [];
+            var parsed = JSON.parse(raw);
+            return Array.isArray(parsed) ? parsed : [];
+        } catch (e) {
+            return [];
+        }
+    }
+
+    function writeVendorProfiles(list) {
+        try {
+            authSet(VENDOR_PROFILES_KEY, JSON.stringify(list || []));
+        } catch (e2) {
+            authRemove(VENDOR_PROFILES_KEY);
+        }
+    }
+
+    function findVendorProfileForOwner(productOwner) {
+        var owner = String(productOwner || "").trim();
+        if (!owner || owner.toLowerCase() === "legacy") return null;
+        var profiles = readVendorProfiles();
+        for (var i = 0; i < profiles.length; i++) {
+            var p = profiles[i] || {};
+            if (staffLoginIdsEqualClient(p.registeredBy, owner)) return p;
+        }
+        return null;
     }
 
     function isVendorOrderEnabled() {
+        if (getRole() !== "vendor") return false;
+        if (!vendorPermsSynced) return false;
+        if (readVendorProfiles().length > 0) return true;
         return authGet(VENDOR_ORDER_ENABLED_KEY) === "1";
     }
 
@@ -2216,27 +2241,20 @@
         return String(authGet(VENDOR_REGISTERED_BY_KEY) || "").trim();
     }
 
-    /** 업체 거래처(등록 담당)와 상품 등록 담당이 같을 때만 등급가 적용 */
+    /** 상품 등록 관리자에게 업체 등록·등급이 있으면 등급가 */
     function vendorProductUsesGradePrice(it) {
         if (!it || getRole() !== "vendor") return false;
-        var mine = getVendorRegisteredBy();
         var productOwner = String(it.pd_registered_by || "").trim();
-        if (!mine || mine.toLowerCase() === "legacy" || !productOwner || productOwner.toLowerCase() === "legacy") {
-            return false;
-        }
-        return staffLoginIdsEqualClient(mine, productOwner);
+        return !!findVendorProfileForOwner(productOwner);
     }
 
-    /** 주문·장바구니 — 담당 관리자가 등록한 상품만 */
+    /** 주문·장바구니 — 상품 등록 관리자에게 업체가 등록되어 있으면 가능 */
     function vendorProductCanOrder(it) {
         if (!it || getRole() !== "vendor") return false;
         if (!isVendorOrderEnabled()) return false;
-        var mine = getVendorRegisteredBy();
         var owner = String(it.pd_registered_by || "").trim();
-        if (!mine || !owner || owner.toLowerCase() === "legacy" || mine.toLowerCase() === "legacy") {
-            return false;
-        }
-        return staffLoginIdsEqualClient(mine, owner);
+        if (!owner || owner.toLowerCase() === "legacy") return false;
+        return !!findVendorProfileForOwner(owner);
     }
 
     /**
@@ -2335,18 +2353,17 @@
         if (!canPlaceVendorOrders()) {
             return {
                 allowed: false,
-                reason: "주문 권한이 있는 관리자에게 등록된 업체만 주문할 수 있습니다."
+                reason: "등록된 업체 계정으로 로그인한 뒤 주문할 수 있습니다."
             };
         }
         return { allowed: true, reason: "" };
     }
 
-    /** 업체관리 — 주문서관리 메뉴·화면 (주문 권한 관리자만) */
+    /** 업체관리 — 주문서관리 메뉴·화면 (모든 관리자) */
     function canShowOrderManageMenu() {
         return (
             isLoggedIn() &&
             isAdminStaff() &&
-            isStaffOrderEnabled() &&
             !!(global.THEJHON_API && THEJHON_API.getToken && THEJHON_API.getToken())
         );
     }
@@ -2365,7 +2382,7 @@
         if (!canShowOrderManageMenu()) {
             return {
                 allowed: false,
-                reason: "주문서관리 권한이 있는 관리자만 이용할 수 있습니다."
+                reason: "관리자만 이용할 수 있습니다."
             };
         }
         return { allowed: true, role: getRole() };
@@ -2391,7 +2408,7 @@
         }
         return {
             allowed: false,
-            reason: "발주서 관리 권한이 있는 관리자·슈퍼바이저만 이용할 수 있습니다."
+            reason: "발주서 관리는 관리자·슈퍼바이저만 이용할 수 있습니다."
         };
     }
 
@@ -2404,6 +2421,8 @@
                 transactionList: "supervisor-transaction-list.html",
                 transactionManual: "transaction-manual-register.html",
                 transactionManualList: "transaction-manual-list.html",
+                salesLedgerList: "sales-ledger-list.html",
+                salesLedgerRegister: "sales-ledger-register.html",
                 salesByProduct: "sales-by-product.html",
                 salesByVendor: "sales-by-vendor.html"
             };
@@ -2416,6 +2435,8 @@
                 transactionList: "supervisor-transaction-list.html",
                 transactionManual: "transaction-manual-register.html",
                 transactionManualList: "transaction-manual-list.html",
+                salesLedgerList: "sales-ledger-list.html",
+                salesLedgerRegister: "sales-ledger-register.html",
                 salesByProduct: "sales-by-product.html",
                 salesByVendor: "sales-by-vendor.html"
             };
@@ -2460,8 +2481,8 @@
     ];
 
     /**
-     * work-hub 메뉴 id 목록 (페이지 입장 권한과 분리 — 표시만 역할·주문권한)
-     * 슈퍼바이저 6 · 관리자(주문) 5 · 관리자(비주문) 4
+     * work-hub 메뉴 id 목록 (페이지 입장 권한과 분리 — 표시만 역할)
+     * 슈퍼바이저 6 · 관리자 5
      */
     function getWorkHubVisibleMenuKeys() {
         normalizeLegacySession();
@@ -2471,10 +2492,7 @@
             return WORK_HUB_BASE_MENUS.concat(["order-manage", "work-manage"]);
         }
         if (role === "admin") {
-            if (isStaffOrderEnabled()) {
-                return WORK_HUB_BASE_MENUS.concat(["order-manage"]);
-            }
-            return WORK_HUB_BASE_MENUS.slice();
+            return WORK_HUB_BASE_MENUS.concat(["order-manage"]);
         }
         return [];
     }
@@ -2557,11 +2575,15 @@
             if (!isFinite(sp1)) sp1 = 0;
             return { unitPrice: sp1, priceLabel: DETAIL_PRICE_LABEL };
         }
-        if (vendorProductUsesGradePrice(it)) {
-            var grade = getVendorPriceGrade();
+        var profile = findVendorProfileForOwner(it.pd_registered_by);
+        if (profile) {
+            var grade = parseVendorGrade(profile.grade);
             var priceKey = getPriceKeyForGrade(grade);
             var priceVal = Number(it[priceKey]);
-            if (!isFinite(priceVal)) priceVal = 0;
+            if (!isFinite(priceVal) || priceVal <= 0) {
+                priceVal = Number(it.pd_price1);
+                if (!isFinite(priceVal)) priceVal = 0;
+            }
             var label = vendorGradeLabel(grade);
             return { unitPrice: priceVal, priceLabel: label };
         }
@@ -3103,6 +3125,8 @@
         updateBrandFromStaffProfile: updateBrandFromStaffProfile,
         getVendorOrderContact: getVendorOrderContact,
         storeVendorOrderContact: storeVendorOrderContact,
+        writeVendorProfiles: writeVendorProfiles,
+        readVendorProfiles: readVendorProfiles,
         fetchVendorOrderContactAsync: fetchVendorOrderContactAsync,
         isNotebookViewport: isNotebookViewport,
         enforceRegisterPages: enforceRegisterPages,

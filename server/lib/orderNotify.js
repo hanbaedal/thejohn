@@ -19,8 +19,14 @@ function phoneForStaffLoginId(loginId) {
     });
 }
 
-/** 업체 등록 담당 관리자 대표 연락처(st_ceo_tel) 우선 */
+/** 주문 접수 SMS — 상품 등록 관리자(orderStaffLoginId) 또는 공급자 */
 async function getAdminNotifyPhone(db, order) {
+    var staffLogin = String(order.orderStaffLoginId || order.vendorRegisteredBy || "").trim();
+    if (staffLogin) {
+        var byStaff = await phoneForStaffLoginId(staffLogin);
+        if (byStaff) return byStaff;
+    }
+
     var vendorLogin = String(order.vendorUserId || "").trim();
     if (vendorLogin) {
         try {

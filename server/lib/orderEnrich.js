@@ -49,7 +49,13 @@ async function staffSupplierFromLoginId(loginId) {
     };
 }
 
-async function resolveSupplierStaffLoginId(vendorDoc) {
+async function resolveSupplierStaffLoginId(vendorDoc, overrideLoginId) {
+    const forced = trimStaffLoginId(overrideLoginId);
+    if (forced && !isLegacyRegisteredBy(forced)) {
+        const staff = await findStaffByRegisteredBy(forced);
+        if (staff && staff.loginId) return trimStaffLoginId(staff.loginId);
+        return forced;
+    }
     const v = vendorFromLegacy(vendorDoc) || {};
     const reg = trimStaffLoginId(v[VF.registeredBy]);
     if (reg && !isLegacyRegisteredBy(reg)) {
@@ -89,13 +95,16 @@ async function enrichOrderItems(db, rawItems) {
 async function buildEnrichedOrder(db, vendorDoc, items, extras) {
     extras = extras || {};
     const v = vendorFromLegacy(vendorDoc) || {};
-    const supplierLogin = await resolveSupplierStaffLoginId(vendorDoc);
+    const supplierLogin = await resolveSupplierStaffLoginId(vendorDoc, extras.supplierStaffLoginId || extras.orderStaffLoginId);
     const supplier = await staffSupplierFromLoginId(supplierLogin);
     const grade = parseGrade(v[VF.grade]) || "1";
 
     return {
         id: extras.id,
         orderNo: extras.orderNo,
+        orderKind: str(extras.orderKind) || "",
+        parentOrderId: str(extras.parentOrderId),
+        orderStaffLoginId: str(extras.orderStaffLoginId),
         createdAt: extras.createdAt || Date.now(),
         status: extras.status || "submitted",
         note: str(extras.note),
@@ -153,6 +162,7 @@ async function prepareOrderForPdf(db, order) {
     if (!str(o.vendorCeoTel)) o.vendorCeoTel = str(v[VF.ceoTel]);
 
     const supplierLogin =
+        str(o.orderStaffLoginId) ||
         str(o.vendorRegisteredBy) ||
         (vendor ? await resolveSupplierStaffLoginId(vendor) : "");
     o.vendorRegisteredBy = supplierLogin;

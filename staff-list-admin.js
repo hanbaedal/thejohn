@@ -197,10 +197,6 @@
             st_youtube: String(fd.get("st_youtube") || "").trim(),
             st_kakao: String(fd.get("st_kakao") || "").trim()
         };
-        var orderEl = form.querySelector('[name="orderEnabled"]');
-        if (orderEl) {
-            body.orderEnabled = orderEl.checked === true;
-        }
         if (addrPicker) {
             var addrErr = addrPicker.validate();
             if (addrErr) return { error: addrErr };
@@ -234,8 +230,7 @@
             st_kakao: st.st_kakao || "",
             st_logo: st.st_logo || "",
             st_seal: st.st_seal || "",
-            loginEnabled: st.loginEnabled !== false,
-            orderEnabled: st.orderEnabled === true
+            loginEnabled: st.loginEnabled !== false
         };
         if (overrides) {
             Object.keys(overrides).forEach(function (k) {
@@ -347,7 +342,6 @@
                         .join(" · ");
                     var key = staffKey(it);
                     var enabled = it.loginEnabled !== false;
-                    var orderOn = it.orderEnabled === true;
                     var accessHtml =
                         it.role === "admin"
                             ? '<div class="sm-list-access" role="group" aria-label="접속">' +
@@ -362,20 +356,6 @@
                               escapeHtml(key) +
                               '" data-login-enabled="false">비활성</button></div>'
                             : "";
-                    var orderHtml =
-                        it.role === "admin"
-                            ? '<div class="sm-list-access" role="group" aria-label="주문">' +
-                              '<button type="button" class="sm-access-btn sm-access-btn--order-on' +
-                              (orderOn ? " is-active" : "") +
-                              '" data-staff-id="' +
-                              escapeHtml(key) +
-                              '" data-order-enabled="true">주문</button>' +
-                              '<button type="button" class="sm-access-btn sm-access-btn--order-off' +
-                              (!orderOn ? " is-active" : "") +
-                              '" data-staff-id="' +
-                              escapeHtml(key) +
-                              '" data-order-enabled="false">비주문</button></div>'
-                            : "";
                     return (
                         '<li class="sm-list-row"><button type="button" class="sm-list-item" data-staff-id="' +
                         escapeHtml(key) +
@@ -389,15 +369,11 @@
                         (it.role === "admin" && !enabled
                             ? '<span class="sm-role sm-role--disabled">접속비활성</span>'
                             : "") +
-                        (it.role === "admin" && orderOn
-                            ? '<span class="sm-role sm-role--order">주문권한</span>'
-                            : "") +
                         "</span>" +
                         (meta ? '<span class="sm-list-meta">' + escapeHtml(meta) + "</span>" : "") +
                         "</button>" +
                         '<div class="sm-list-controls">' +
                         accessHtml +
-                        orderHtml +
                         "</div></li>"
                     );
                 })
@@ -416,65 +392,6 @@
                 setLoginEnabledFromList(btn);
             });
         });
-        listEl.querySelectorAll(".sm-access-btn[data-order-enabled]").forEach(function (btn) {
-            btn.addEventListener("click", function (e) {
-                e.preventDefault();
-                e.stopPropagation();
-                setOrderEnabledFromList(btn);
-            });
-        });
-    }
-
-    function setOrderEnabledFromList(btn) {
-        if (!btn || !api.updateStaff) return;
-        var key = String(btn.getAttribute("data-staff-id") || "").trim();
-        var wantOrder = btn.getAttribute("data-order-enabled") === "true";
-        var st = staffByKey[key];
-        if (!st || st.role !== "admin") return;
-        var currentOrder = st.orderEnabled === true;
-        if (currentOrder === wantOrder) return;
-        var label = st.loginId || st.st_company || "관리자";
-        if (
-            !window.confirm(
-                label +
-                    " 관리자의 주문 권한을 " +
-                    (wantOrder ? "「주문」" : "「비주문」") +
-                    "으로 변경할까요?" +
-                    (wantOrder
-                        ? "\n\n이 관리자가 등록한 업체는 주문·장바구니를 사용할 수 있습니다."
-                        : "\n\n이 관리자가 등록한 업체는 주문 기능을 사용할 수 없습니다.")
-            )
-        ) {
-            return;
-        }
-        btn.disabled = true;
-        var row = btn.closest(".sm-list-row");
-        if (row) {
-            row.querySelectorAll(".sm-access-btn").forEach(function (b) {
-                b.disabled = true;
-            });
-        }
-        setStatus(wantOrder ? "주문 권한 설정 중…" : "비주문 설정 중…");
-        api
-            .updateStaff(st.id || key, staffToUpdateBody(st, { orderEnabled: wantOrder }))
-            .then(function () {
-                setStatus(
-                    (st.st_company || label) +
-                        " — 주문 권한 " +
-                        (wantOrder ? "「주문」" : "「비주문」") +
-                        "으로 변경했습니다.",
-                    "ok"
-                );
-                loadList();
-            })
-            .catch(function (err) {
-                setStatus((err && err.message) || "주문 권한 변경에 실패했습니다.", "err");
-                if (row) {
-                    row.querySelectorAll(".sm-access-btn").forEach(function (b) {
-                        b.disabled = false;
-                    });
-                }
-            });
     }
 
     function setLoginEnabledFromList(btn) {

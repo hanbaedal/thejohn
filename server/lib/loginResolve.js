@@ -15,6 +15,7 @@ const { verifyStaffPassword, isStaffRole } = require("./staff");
 const { getCompanyName: getVendorCompanyName, parseGrade, F: VF } = require("./vendorFields");
 const { vendorCanPlaceOrders } = require("./orderAccess");
 const { findStaffByRegisteredBy } = require("./staffRegisteredBy");
+const { vendorProfilesFromDocs } = require("./vendorLookup");
 const { getCompanyName: getStaffCompanyName, staffOrderEnabledFromDoc, fromLegacyDoc, F: SF } = require("./staffFields");
 
 function vendorGradeFromDoc(vendor) {
@@ -81,10 +82,17 @@ async function tryVendorLogin(vendor, loginId, password) {
     }
 
     let vendorOrderEnabled = false;
+    let vendorProfiles = [];
     try {
-        vendorOrderEnabled = await vendorCanPlaceOrders(vendor);
+        const { findAllVendorsByLoginId } = require("./vendorLookup");
+        const allVendors = await findAllVendorsByLoginId(loginId);
+        vendorProfiles = vendorProfilesFromDocs(allVendors);
+        vendorOrderEnabled = allVendors.length > 0;
     } catch (orderErr) {
-        console.warn("[login] vendorCanPlaceOrders:", orderErr.message);
+        console.warn("[login] vendor profiles:", orderErr.message);
+        try {
+            vendorOrderEnabled = await vendorCanPlaceOrders(vendor);
+        } catch (e2) {}
     }
 
     return {
@@ -98,6 +106,7 @@ async function tryVendorLogin(vendor, loginId, password) {
         vendorRegisteredByName: brandCompanyName,
         brandCompanyName: brandCompanyName,
         vendorOrderEnabled: vendorOrderEnabled,
+        vendorProfiles: vendorProfiles,
         vendorMgrName: String(vendor[VF.mgrName] || "").trim(),
         vendorMgrTel: String(vendor[VF.mgrTel] || "").trim(),
         vendorMgrEmail: String(vendor[VF.mgrEmail] || "").trim(),

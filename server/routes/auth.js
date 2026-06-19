@@ -77,7 +77,8 @@ router.post("/login", async (req, res) => {
         if (result.vendorGrade) tokenPayload.vendorGrade = result.vendorGrade;
         if (result.vendorRegisteredBy) tokenPayload.vendorRegisteredBy = result.vendorRegisteredBy;
         if (result.vendorOrderEnabled) tokenPayload.vendorOrderEnabled = true;
-        if (result.staffOrderEnabled) tokenPayload.staffOrderEnabled = true;
+        if (result.role === "admin") tokenPayload.staffOrderEnabled = true;
+        else if (result.staffOrderEnabled) tokenPayload.staffOrderEnabled = true;
 
         if (isDbReady()) {
             const sessionGate = await assertCanStartLogin(result.role, result.userId);
@@ -131,7 +132,8 @@ router.post("/login", async (req, res) => {
             vendorRegisteredByName: result.vendorRegisteredByName || result.brandCompanyName || "",
             brandCompanyName: result.brandCompanyName || result.vendorRegisteredByName || "",
             vendorOrderEnabled: !!result.vendorOrderEnabled,
-            staffOrderEnabled: !!result.staffOrderEnabled,
+            staffOrderEnabled: result.role === "admin" || !!result.staffOrderEnabled,
+            vendorProfiles: result.vendorProfiles || [],
             vendorMgrName: result.vendorMgrName || "",
             vendorMgrTel: result.vendorMgrTel || "",
             vendorMgrEmail: result.vendorMgrEmail || "",
@@ -312,7 +314,8 @@ router.get("/session", async function (req, res) {
             }
         }
         var vendorOrderEnabled = !!payload.vendorOrderEnabled;
-        var staffOrderEnabled = !!payload.staffOrderEnabled;
+        var staffOrderEnabled = payload.role === "admin";
+        var vendorProfiles = [];
         var effectiveRole = String(payload.role || "").trim();
         var companyName = "";
         var brandCompanyName = "";
@@ -320,8 +323,11 @@ router.get("/session", async function (req, res) {
         if (isDbReady()) {
             try {
                 if (payload.role === "vendor") {
-                    const vendor = await findVendorByLoginId(payload.userId || "");
-                    vendorOrderEnabled = !!(vendor && (await vendorCanPlaceOrders(vendor)));
+                    const { findAllVendorsByLoginId, vendorProfilesFromDocs } = require("../lib/vendorLookup");
+                    const allVendors = await findAllVendorsByLoginId(payload.userId || "");
+                    vendorOrderEnabled = allVendors.length > 0;
+                    vendorProfiles = vendorProfilesFromDocs(allVendors);
+                    const vendor = allVendors[0] || (await findVendorByLoginId(payload.userId || ""));
                     if (vendor) {
                         companyName = getVendorCompanyName(vendor);
                         brandCompanyName = String(vendor[VF.registeredByName] || "").trim();
@@ -346,7 +352,7 @@ router.get("/session", async function (req, res) {
                         if (dbRole === "admin" || dbRole === "supervisor") {
                             effectiveRole = dbRole;
                         }
-                        staffOrderEnabled = staffOrderEnabledFromDoc(staff);
+                        staffOrderEnabled = effectiveRole === "admin";
                         companyName = getStaffCompanyName(staff);
                         brandCompanyName = companyName;
                         displayName = companyName || payload.userId || "";
@@ -367,6 +373,7 @@ router.get("/session", async function (req, res) {
             vendorRegisteredBy: payload.vendorRegisteredBy || "",
             vendorOrderEnabled: vendorOrderEnabled,
             staffOrderEnabled: staffOrderEnabled,
+            vendorProfiles: vendorProfiles,
             companyName: companyName,
             brandCompanyName: brandCompanyName,
             displayName: displayName

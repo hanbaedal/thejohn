@@ -163,8 +163,6 @@
             st_youtube: String(fd.get("st_youtube") || "").trim(),
             st_kakao: String(fd.get("st_kakao") || "").trim()
         };
-        var orderEl = form.querySelector('[name="orderEnabled"]');
-        body.orderEnabled = !!(orderEl && orderEl.checked);
         if (addrPicker) {
             var addrErr = addrPicker.validate();
             if (addrErr) return { error: addrErr };

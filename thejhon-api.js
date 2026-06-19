@@ -656,6 +656,33 @@
         deleteTransactionManual: function (id) {
             return request("DELETE", "/api/transaction-manual/" + encodeURIComponent(id));
         },
+        listSalesLedgers: function (opts) {
+            var q = "";
+            if (opts && opts.issuerStaffId) {
+                q = "?issuerStaffId=" + encodeURIComponent(String(opts.issuerStaffId));
+            }
+            return request("GET", "/api/sales-ledgers" + q).then(function (d) {
+                return d.items || [];
+            });
+        },
+        getSalesLedger: function (id) {
+            return request("GET", "/api/sales-ledgers/" + encodeURIComponent(id)).then(function (d) {
+                return d.item;
+            });
+        },
+        createSalesLedger: function (body) {
+            return request("POST", "/api/sales-ledgers", body).then(function (d) {
+                return d.item;
+            });
+        },
+        updateSalesLedger: function (id, body) {
+            return request("PUT", "/api/sales-ledgers/" + encodeURIComponent(id), body).then(function (d) {
+                return d.item;
+            });
+        },
+        deleteSalesLedger: function (id) {
+            return request("DELETE", "/api/sales-ledgers/" + encodeURIComponent(id));
+        },
         getSalesReportByProduct: function (opts) {
             opts = opts || {};
             var parts = [];

@@ -1,16 +1,14 @@
-const { prepareManualTransactionForPdf } = require("./orderEnrich");
-const { buildTransactionPdfBuffer } = require("./transactionPdf");
 const { trimStaffLoginId, staffLoginIdsEqual, registeredByInFilter } = require("./staffLoginId");
-const { staffCanAccessOrderManage, supervisorCanAccessAllOrders } = require("./orderAccess");
+const { supervisorCanAccessAllOrders } = require("./orderAccess");
 
-const COL = "transaction_manual";
+const COL = "sales_ledgers";
 
 function str(v) {
     return String(v ?? "").trim();
 }
 
 function newId() {
-    return "txn_m_" + Date.now().toString(36) + "_" + Math.random().toString(36).slice(2, 8);
+    return "sl_" + Date.now().toString(36) + "_" + Math.random().toString(36).slice(2, 8);
 }
 
 function parseIssueDate(v) {
@@ -25,7 +23,7 @@ function normalizeItems(raw) {
     const list = Array.isArray(raw) ? raw : [];
     const out = [];
     let sum = 0;
-    for (let i = 0; i < list.length && i < 10; i++) {
+    for (let i = 0; i < list.length && i < 50; i++) {
         const it = list[i] || {};
         const qty = Number(it.quantity) || 0;
         const unit = Number(it.unitPrice) || 0;
@@ -33,6 +31,7 @@ function normalizeItems(raw) {
         if (!str(it.productName) && !line) continue;
         sum += line;
         out.push({
+            productId: str(it.productId),
             pd_code: str(it.pd_code).slice(0, 16),
             productName: str(it.productName),
             pd_size: str(it.pd_size),
@@ -48,19 +47,18 @@ function buildFromBody(body, auth, existing) {
     const itemsPack = normalizeItems(body.items);
     const issuerStaffLoginId =
         str(body.issuerStaffLoginId) ||
-        str(body.vendorRegisteredBy) ||
         (existing && existing.issuerStaffLoginId) ||
         trimStaffLoginId(auth && auth.userId);
 
     return {
-        title: str(body.title) || str(body.vendorCompany) || "거래명세서",
+        title: str(body.title) || str(body.vendorCompany) || "매출장",
         issueDate: parseIssueDate(body.issueDate != null ? body.issueDate : body.createdAt),
         issuerStaffLoginId: issuerStaffLoginId,
         issuerStaffName: str(body.issuerStaffName),
         vendorCompany: str(body.vendorCompany),
-        vendorCeo: str(body.vendorCeo),
-        vendorAddr: str(body.vendorAddr),
-        vendorPhone: str(body.vendorPhone),
+        vendorUserId: str(body.vendorUserId),
+        sourceType: str(body.sourceType) || str(existing && existing.sourceType) || "manual",
+        sourceId: str(body.sourceId) || str(existing && existing.sourceId),
         items: itemsPack.items,
         totalAmount:
             Number(body.totalAmount) > 0 ? Number(body.totalAmount) : itemsPack.totalAmount,
@@ -79,9 +77,9 @@ function toPublic(doc) {
         issuerStaffLoginId: str(doc.issuerStaffLoginId),
         issuerStaffName: str(doc.issuerStaffName),
         vendorCompany: str(doc.vendorCompany),
-        vendorCeo: str(doc.vendorCeo),
-        vendorAddr: str(doc.vendorAddr),
-        vendorPhone: str(doc.vendorPhone),
+        vendorUserId: str(doc.vendorUserId),
+        sourceType: str(doc.sourceType),
+        sourceId: str(doc.sourceId),
         items: Array.isArray(doc.items) ? doc.items : [],
         totalAmount: Number(doc.totalAmount) || 0,
         note: str(doc.note),
@@ -89,30 +87,15 @@ function toPublic(doc) {
     };
 }
 
-function toPdfOrder(doc) {
-    if (!doc) return null;
-    return {
-        id: doc.id,
-        createdAt: doc.issueDate || doc.createdAt,
-        vendorCompany: doc.vendorCompany,
-        vendorCeo: doc.vendorCeo,
-        vendorAddr: doc.vendorAddr,
-        vendorPhone: doc.vendorPhone,
-        vendorRegisteredBy: doc.issuerStaffLoginId,
-        totalAmount: doc.totalAmount,
-        items: doc.items,
-        note: doc.note
-    };
-}
-
 function listFilter(auth, query) {
     query = query || {};
     if (supervisorCanAccessAllOrders(auth)) {
         const issuer = trimStaffLoginId(query.issuerStaffId || query.adminStaffId || "");
-        if (issuer) {
-            return { issuerStaffLoginId: registeredByInFilter(issuer) };
-        }
+        if (issuer) return { issuerStaffLoginId: registeredByInFilter(issuer) };
         return {};
+    }
+    if (auth.role === "admin") {
+        return { issuerStaffLoginId: registeredByInFilter(auth.userId) };
     }
     return { createdBy: trimStaffLoginId(auth.userId) };
 }
@@ -120,10 +103,13 @@ function listFilter(auth, query) {
 function canAccessDoc(auth, doc) {
     if (!doc) return false;
     if (supervisorCanAccessAllOrders(auth)) return true;
+    if (auth.role === "admin") {
+        return staffLoginIdsEqual(doc.issuerStaffLoginId, auth.userId);
+    }
     return staffLoginIdsEqual(doc.createdBy, auth.userId);
 }
 
-async function assertOrderManageAccess(auth) {
+async function assertSalesLedgerAccess(auth) {
     if (!auth) throw new Error("권한이 없습니다.");
     if (auth.role === "supervisor" || auth.role === "admin") return;
     throw new Error("관리자·슈퍼바이저만 이용할 수 있습니다.");
@@ -131,21 +117,47 @@ async function assertOrderManageAccess(auth) {
 
 function validateBuilt(built) {
     if (!str(built.vendorCompany)) return "거래처(업체명)를 입력해 주세요.";
-    if (!str(built.issuerStaffLoginId)) return "공급자(발행 관리자)를 선택해 주세요.";
+    if (!str(built.issuerStaffLoginId)) return "발행 관리자를 선택해 주세요.";
     if (!built.items.length) return "품목을 1개 이상 입력해 주세요.";
     return "";
-}
-
-async function buildPdfFromDoc(db, doc) {
-    const pdfOrder = await prepareManualTransactionForPdf(db, toPdfOrder(doc));
-    return buildTransactionPdfBuffer(pdfOrder);
 }
 
 async function ensureIndexes(db) {
     const col = db.collection(COL);
     await col.createIndex({ id: 1 }, { unique: true });
+    await col.createIndex({ issuerStaffLoginId: 1, issueDate: -1 });
+    await col.createIndex({ sourceType: 1, sourceId: 1 });
     await col.createIndex({ createdBy: 1, updatedAt: -1 });
-    await col.createIndex({ issuerStaffLoginId: 1, updatedAt: -1 });
+}
+
+async function createFromTransaction(db, txnDoc, auth) {
+    if (!txnDoc || !txnDoc.id) return null;
+    await ensureIndexes(db);
+    const col = db.collection(COL);
+    const existing = await col.findOne({ sourceType: "transaction_manual", sourceId: txnDoc.id });
+    if (existing) return existing;
+
+    const built = {
+        title: str(txnDoc.title) || str(txnDoc.vendorCompany) || "매출장",
+        issueDate: txnDoc.issueDate || txnDoc.createdAt || Date.now(),
+        issuerStaffLoginId: str(txnDoc.issuerStaffLoginId),
+        issuerStaffName: str(txnDoc.issuerStaffName),
+        vendorCompany: str(txnDoc.vendorCompany),
+        sourceType: "transaction_manual",
+        sourceId: txnDoc.id,
+        items: Array.isArray(txnDoc.items) ? txnDoc.items : [],
+        totalAmount: Number(txnDoc.totalAmount) || 0,
+        note: str(txnDoc.note)
+    };
+    const now = Date.now();
+    const doc = Object.assign({}, built, {
+        id: newId(),
+        createdAt: now,
+        updatedAt: now,
+        createdBy: trimStaffLoginId(auth && auth.userId)
+    });
+    await col.insertOne(doc);
+    return doc;
 }
 
 module.exports = {
@@ -153,12 +165,10 @@ module.exports = {
     newId,
     buildFromBody,
     toPublic,
-    toPdfOrder,
     listFilter,
     canAccessDoc,
-    assertOrderManageAccess,
+    assertSalesLedgerAccess,
     validateBuilt,
-    buildPdfFromDoc,
     ensureIndexes,
-    parseIssueDate
+    createFromTransaction
 };

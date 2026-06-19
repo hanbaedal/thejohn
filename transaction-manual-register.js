@@ -429,6 +429,7 @@
         if (!company) return null;
         return {
             id: String(it.id || it.loginId || company).trim(),
+            loginId: String(it.loginId || it.id || "").trim(),
             companyName: company,
             ceo: String(it.vn_ceo || "").trim(),
             phone: String(it.vn_phone || "").trim(),
@@ -496,25 +497,46 @@
         return !!x && x === y;
     }
 
+    function unitPriceFromGrade(product, vendorProfile) {
+        if (!product || !vendorProfile) return Number(product && product.pd_price1) || 0;
+        var g = parseVendorGrade(vendorProfile.grade);
+        var primary =
+            g === "2"
+                ? product.pd_price2
+                : g === "3"
+                  ? product.pd_price3
+                  : product.pd_price1;
+        primary = Number(primary) || 0;
+        if (primary > 0) return primary;
+        return Number(product.pd_price1) || 0;
+    }
+
+    function findVendorProfileForProductOwner(product) {
+        if (!product || !selectedVendorDetail) return null;
+        var pReg = String(product.pd_registered_by || "").trim();
+        if (!pReg || isLegacyRegistrar(pReg)) return null;
+        var loginId = String(
+            selectedVendorDetail.loginId || selectedVendorDetail.id || ""
+        )
+            .trim()
+            .toLowerCase();
+        for (var i = 0; i < allVendors.length; i++) {
+            var v = allVendors[i];
+            if (!v) continue;
+            var vLogin = String(v.loginId || v.id || "")
+                .trim()
+                .toLowerCase();
+            if (loginId && vLogin !== loginId) continue;
+            if (staffIdsEqual(v.registeredBy, pReg)) return v;
+        }
+        return null;
+    }
+
     function resolveProductUnitPrice(product) {
         if (!product) return 0;
-        var v = selectedVendorDetail;
-        var vReg = v ? v.registeredBy : "";
-        var pReg = product.pd_registered_by || "";
-        var issuer = getIssuerLoginId();
-        if (
-            issuer &&
-            staffIdsEqual(pReg, issuer) &&
-            v &&
-            !isLegacyRegistrar(vReg) &&
-            staffIdsEqual(vReg, issuer)
-        ) {
-            var g = parseVendorGrade(v.grade);
-            if (g === "2") return product.pd_price2 || 0;
-            if (g === "3") return product.pd_price3 || 0;
-            return product.pd_price1 || 0;
-        }
-        return product.pd_price1 || 0;
+        var profile = findVendorProfileForProductOwner(product);
+        if (profile) return unitPriceFromGrade(product, profile);
+        return Number(product.pd_price1) || 0;
     }
 
     function applyProductToRow(tr, product) {

@@ -29,13 +29,13 @@
             .toLowerCase();
     }
 
-    function menusFor(role, orderEnabled) {
+    function menusFor(role) {
         var r = normRole(role);
         if (r === "supervisor") {
             return BASE.concat([EXTRA.order, EXTRA.work]);
         }
         if (r === "admin") {
-            return orderEnabled ? BASE.concat([EXTRA.order]) : BASE.slice();
+            return BASE.concat([EXTRA.order]);
         }
         return [];
     }
@@ -90,7 +90,7 @@
         return map;
     }
 
-    function menuGroupsFor(role, orderEnabled) {
+    function menuGroupsFor(role) {
         var groups = [
             { ids: ["view-home", "manage-home"] },
             { ids: ["product-manage", "vendor-manage"] }
@@ -98,17 +98,17 @@
         var r = normRole(role);
         if (r === "supervisor") {
             groups.push({ ids: ["order-manage", "work-manage"] });
-        } else if (r === "admin" && orderEnabled) {
+        } else if (r === "admin") {
             groups.push({ ids: ["order-manage"] });
         }
         return groups;
     }
 
-    function renderMenu(role, orderEnabled) {
+    function renderMenu(role) {
         if (!menuEl) return;
         menuEl.innerHTML = "";
         var map = itemMap();
-        menuGroupsFor(role, orderEnabled).forEach(function (group) {
+        menuGroupsFor(role).forEach(function (group) {
             var wrap = document.createElement("div");
             wrap.className = "wh-group";
             group.ids.forEach(function (id) {
@@ -159,15 +159,11 @@
 
         syncAuthFromSession(sess);
 
-        var orderOn = !!sess.staffOrderEnabled;
-        var items = menusFor(role, orderOn);
-        renderMenu(role, orderOn);
+        var items = menusFor(role);
+        renderMenu(role);
         appendSelfEditLink();
 
         var hint = roleLabel(role) + " · 메뉴 " + items.length + "개";
-        if (role === "admin") {
-            hint += orderOn ? " (주문 권한 있음)" : " (주문 권한 없음)";
-        }
         setStatus(hint, false);
         refreshHeaderChrome();
     }

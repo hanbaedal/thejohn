@@ -2,13 +2,9 @@ const express = require("express");
 const { getDb } = require("../db");
 const { requireRole } = require("../middleware/auth");
 const { buildOrderPdfBuffer } = require("../lib/orderPdf");
-const { notifyOrderAdmin } = require("../lib/orderNotify");
 const { findVendorByLoginId } = require("../lib/loginResolve");
-const { resolveVendorUnitPrice } = require("../lib/vendorPricing");
-const { buildEnrichedOrder, prepareOrderForPdf, prepareOrderForTransactionPdf } = require("../lib/orderEnrich");
+const { prepareOrderForPdf, prepareOrderForTransactionPdf } = require("../lib/orderEnrich");
 const { buildTransactionPdfBuffer } = require("../lib/transactionPdf");
-const { deptLabel } = require("../lib/orderDeptLabels");
-const { F: PF } = require("../lib/productFields");
 const {
     vendorCanPlaceOrders,
     buildOrderListQuery,
@@ -17,9 +13,9 @@ const {
     staffCanReadOrder,
     staffCanAccessOrderManage,
     supervisorCanAccessAllOrders,
-    normalizeStaffLoginId,
-    vendorProductAllowsOrderForVendor
+    normalizeStaffLoginId
 } = require("../lib/orderAccess");
+const { submitVendorOrder, deleteOrderCascade } = require("../lib/orderSubmit");
 
 const router = express.Router();
 
@@ -61,7 +57,6 @@ function sendPdfBuffer(res, buf, fname, opts) {
     res.send(buf);
 }
 
-/** 토큰 링크로 발주서 PDF 공개 (7일, 레거시·수동 링크용) */
 router.get("/notify-pdf/:token", async function (req, res) {
     try {
         var token = String(req.params.token || "").trim();
@@ -92,6 +87,9 @@ function toOrderListItem(order) {
     return {
         id: order.id,
         orderNo: order.orderNo,
+        orderKind: order.orderKind || "",
+        parentOrderId: order.parentOrderId || "",
+        orderStaffLoginId: order.orderStaffLoginId || "",
         vendorCompany: order.vendorCompany,
         vendorUserId: order.vendorUserId,
         vendorRegisteredBy: order.vendorRegisteredBy,
@@ -118,59 +116,6 @@ function toOrderDetail(order) {
         orderContactConfirmedAt: order.orderContactConfirmedAt || 0,
         items: Array.isArray(order.items) ? order.items : []
     });
-}
-
-function newOrderId() {
-    return "ord_" + Date.now().toString(36) + "_" + Math.random().toString(36).slice(2, 8);
-}
-
-function newOrderNo() {
-    var d = new Date();
-    var y = d.getFullYear();
-    var m = String(d.getMonth() + 1).padStart(2, "0");
-    var day = String(d.getDate()).padStart(2, "0");
-    var seq = String(Date.now()).slice(-6);
-    return "DZ" + y + m + day + "-" + seq;
-}
-
-async function buildOrderItemsFromDb(db, clientItems, vendorDoc) {
-    if (!Array.isArray(clientItems) || !clientItems.length) return null;
-    var out = [];
-    for (var i = 0; i < clientItems.length; i++) {
-        var it = clientItems[i] || {};
-        var productId = String(it.productId || "").trim();
-        if (!productId) continue;
-        var qty = parseInt(it.quantity, 10);
-        if (!isFinite(qty) || qty < 1) continue;
-
-        var product = await db.collection("products").findOne({ id: productId });
-        if (!product) continue;
-
-        if (!(await vendorProductAllowsOrderForVendor(product[PF.registeredBy], vendorDoc))) {
-            return {
-                error:
-                    "담당 거래처가 등록한 상품만 주문할 수 있습니다: " +
-                    (product[PF.name] || productId)
-            };
-        }
-
-        var priced = resolveVendorUnitPrice(product, vendorDoc);
-        var unitPrice = priced.unitPrice;
-        var lineTotal = unitPrice * qty;
-        var deptId = String(it.pd_dept || product[PF.dept] || "").trim();
-        out.push({
-            productId: productId,
-            productName: String(it.productName || product[PF.name] || product.pd_name || "").trim(),
-            pd_dept: deptId,
-            pd_dept_label: deptLabel(deptId),
-            pd_size: String(it.pd_size || product[PF.size] || product.pd_size || "").trim(),
-            unitPrice: unitPrice,
-            priceLabel: priced.priceLabel,
-            quantity: qty,
-            lineTotal: lineTotal
-        });
-    }
-    return out.length ? out : null;
 }
 
 router.get("/", requireRole("admin", "vendor", "supervisor"), async function (req, res) {
@@ -207,11 +152,16 @@ router.get("/", requireRole("admin", "vendor", "supervisor"), async function (re
         } else if (supervisorCanAccessAllOrders(req.auth)) {
             var adminStaffId = normalizeStaffLoginId(req.query.adminStaffId || "");
             query = buildSupervisorOrderListQuery(req.auth, adminStaffId);
+            if (!adminStaffId) {
+                query = {
+                    $or: [{ orderKind: "admin" }, { orderKind: "vendor" }, { orderKind: { $exists: false } }]
+                };
+            }
         } else {
             if (!(await staffCanAccessOrderManage(req.auth))) {
                 return res.status(403).json({
                     ok: false,
-                    error: "주문서관리 권한이 있는 관리자만 이용할 수 있습니다."
+                    error: "관리자만 이용할 수 있습니다."
                 });
             }
             query = await buildOrderListQuery(req.auth);
@@ -271,13 +221,7 @@ router.delete("/:id", requireRole("admin", "vendor"), async function (req, res) 
         if (!(await staffCanReadOrder(req.auth, order))) {
             return res.status(403).json({ ok: false, error: "권한이 없습니다." });
         }
-        await col.deleteOne({ id: id });
-        try {
-            const { deleteSalesForSource } = require("../lib/salesRecords");
-            await deleteSalesForSource(getDb(), "order", id);
-        } catch (syncErr) {
-            console.error("sales_records delete order", syncErr.message);
-        }
+        await deleteOrderCascade(getDb(), order);
         return res.json({ ok: true });
     } catch (e) {
         console.error("DELETE /api/orders/:id", e);
@@ -287,19 +231,6 @@ router.delete("/:id", requireRole("admin", "vendor"), async function (req, res) 
 
 router.post("/", requireRole("vendor"), async function (req, res) {
     try {
-        const db = getDb();
-        const vendor = await findVendorByLoginId(req.auth.userId || "");
-        if (!vendor) {
-            return res.status(403).json({ ok: false, error: "업체 정보를 찾을 수 없습니다." });
-        }
-        if (!(await vendorCanPlaceOrders(vendor))) {
-            return res.status(403).json({
-                ok: false,
-                error:
-                    "주문 권한이 없습니다. 주문 권한이 있는 관리자에게 등록된 업체만 주문할 수 있습니다."
-            });
-        }
-
         if (!req.body || req.body.orderContactConfirmed !== true) {
             return res.status(400).json({
                 ok: false,
@@ -307,59 +238,12 @@ router.post("/", requireRole("vendor"), async function (req, res) {
             });
         }
 
-        const builtItems = await buildOrderItemsFromDb(db, req.body && req.body.items, vendor);
-        if (builtItems && builtItems.error) {
-            return res.status(403).json({ ok: false, error: builtItems.error });
-        }
-        const items = builtItems;
-        if (!items || !items.length) {
-            return res.status(400).json({ ok: false, error: "주문할 상품이 없습니다." });
+        const result = await submitVendorOrder(getDb(), req.auth, req.body || {});
+        if (result.error) {
+            return res.status(result.status || 400).json({ ok: false, error: result.error });
         }
 
-        const totalAmount = items.reduce(function (s, it) {
-            return s + it.lineTotal;
-        }, 0);
-
-        const orderId = newOrderId();
-        const orderNo = newOrderNo();
-        const createdAt = Date.now();
-
-        const order = await buildEnrichedOrder(db, vendor, items, {
-            id: orderId,
-            orderNo: orderNo,
-            vendorUserId: req.auth.userId || "",
-            vendorCompany: String((req.body && req.body.vendorCompany) || "").trim(),
-            vendorGrade: String((req.body && req.body.vendorGrade) || "").trim(),
-            note: String((req.body && req.body.note) || "").trim(),
-            totalAmount: totalAmount,
-            createdAt: createdAt,
-            status: "submitted",
-            orderContactConfirmed: true,
-            orderContactConfirmedAt: createdAt
-        });
-
-        await db.collection("orders").insertOne(order);
-
-        try {
-            const { syncFromOrder } = require("../lib/salesRecords");
-            await syncFromOrder(db, order);
-        } catch (syncErr) {
-            console.error("sales_records sync order", syncErr.message);
-        }
-
-        let pdfBuffer = null;
-        try {
-            pdfBuffer = await buildOrderPdfBuffer(order);
-            await db.collection("orders").updateOne(
-                { id: order.id },
-                { $set: { hasPdf: true, pdfGeneratedAt: Date.now() } }
-            );
-        } catch (pdfErr) {
-            console.error("order PDF", pdfErr.message);
-        }
-
-        const notifyResult = await notifyOrderAdmin(db, order);
-
+        const order = result.order;
         return res.json({
             ok: true,
             order: {
@@ -369,9 +253,10 @@ router.post("/", requireRole("vendor"), async function (req, res) {
                 createdAt: order.createdAt
             },
             orderDetail: order,
-            pdfReady: !!pdfBuffer,
+            adminOrders: (result.adminOrders || []).map(toOrderListItem),
+            pdfReady: !!order.hasPdf,
             pdfUrl: "/api/orders/" + encodeURIComponent(order.id) + "/pdf",
-            notify: notifyResult
+            notify: result.notifyResults
         });
     } catch (e) {
         console.error("POST /api/orders", e);

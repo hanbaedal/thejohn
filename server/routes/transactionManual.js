@@ -155,6 +155,12 @@ router.post("/", async function (req, res) {
         } catch (syncErr) {
             console.error("sales_records sync manual", syncErr.message);
         }
+        try {
+            const { createFromTransaction } = require("../lib/salesLedger");
+            await createFromTransaction(getDb(), doc, req.auth);
+        } catch (ledgerErr) {
+            console.error("sales_ledgers from transaction", ledgerErr.message);
+        }
         res.status(201).json({ ok: true, item: toPublic(doc) });
     } catch (e) {
         console.error("POST /api/transaction-manual", e);

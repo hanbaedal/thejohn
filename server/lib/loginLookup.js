@@ -74,7 +74,16 @@ async function findVendorDocsByLoginId(loginId) {
     const out = [];
     const seen = new Set();
 
-    for (const colName of ["vendors", "vendor_new"]) {
+    const vendorDocs = await db.collection("vendors").find(filter).sort({ updatedAt: -1 }).toArray();
+    for (let i = 0; i < vendorDocs.length; i++) {
+        const doc = vendorDocs[i];
+        if (doc && doc.id && !seen.has(doc.id)) {
+            seen.add(doc.id);
+            out.push(doc);
+        }
+    }
+
+    for (const colName of ["vendor_new"]) {
         const doc = await db.collection(colName).findOne(filter);
         if (doc && doc.id && !seen.has(doc.id)) {
             seen.add(doc.id);

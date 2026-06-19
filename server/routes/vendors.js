@@ -20,7 +20,8 @@ const {
     stampNewVendorRegistration,
     applyRegistrationOnUpdate
 } = require("../lib/vendorAccess");
-const { findAnyVendorLoginConflict } = require("../lib/vendorCollections");
+const { findAnyVendorLoginConflict, findDuplicateVendorByRegistrar } = require("../lib/vendorCollections");
+const { trimStaffLoginId } = require("../lib/staffLoginId");
 
 function isNewVendorRecordBody(body) {
     return (
@@ -65,10 +66,8 @@ function optionalAuth(req) {
     }
 }
 
-async function findDuplicateVendor(vendors, loginId, excludeId) {
-    const idFilter = loginLookupFilter(loginId);
-    const filter = excludeId ? { $and: [idFilter, { id: { $ne: excludeId } }] } : idFilter;
-    return vendors.findOne(filter);
+async function findDuplicateVendor(vendors, loginId, registeredBy, excludeId) {
+    return findDuplicateVendorByRegistrar(vendors, loginId, registeredBy, excludeId);
 }
 
 async function findStaffLoginConflict(loginId) {
@@ -120,15 +119,18 @@ router.get("/check-login-id", requireRole("supervisor", "admin"), async (req, re
             });
         }
         const db = getDb();
-        const dup = await findDuplicateVendor(db.collection("vendors"), loginId, excludeId);
+        const registrar = trimStaffLoginId(
+            req.query.registeredBy || (req.auth && req.auth.userId) || ""
+        );
+        const dup = await findDuplicateVendor(db.collection("vendors"), loginId, registrar, excludeId);
         if (dup) {
             return res.json({
                 ok: true,
                 duplicate: true,
-                error: "이미 사용 중인 아이디입니다."
+                error: "이 담당 관리자에게 이미 등록된 아이디입니다."
             });
         }
-        const conflict = await findAnyVendorLoginConflict(db, loginId, {
+        const conflict = await findAnyVendorLoginConflict(db, loginId, registrar, {
             vendorId: excludeId
         });
         res.json({
@@ -184,9 +186,15 @@ router.post("/", requireRole("supervisor", "admin"), async (req, res) => {
         }
 
         const vendors = getDb().collection("vendors");
-        const dup = await findDuplicateVendor(vendors, loginId);
-        if (dup) return res.status(409).json({ ok: false, error: "이미 사용 중인 아이디입니다." });
-        const loginConflict = await findAnyVendorLoginConflict(getDb(), loginId, {});
+        const registrar = trimStaffLoginId(doc[F.registeredBy] || req.auth.userId);
+        const dup = await findDuplicateVendor(vendors, loginId, registrar);
+        if (dup) {
+            return res.status(409).json({
+                ok: false,
+                error: "이 담당 관리자에게 이미 등록된 아이디입니다."
+            });
+        }
+        const loginConflict = await findAnyVendorLoginConflict(getDb(), loginId, registrar, {});
         if (loginConflict) {
             return res.status(409).json({
                 ok: false,
@@ -249,8 +257,14 @@ router.put("/:id", requireRole("supervisor", "admin"), async (req, res) => {
             return res.status(409).json({ ok: false, error: "이미 관리자(staff)에 사용 중인 아이디입니다." });
         }
 
-        const dup = await findDuplicateVendor(vendors, loginId, id);
-        if (dup) return res.status(409).json({ ok: false, error: "이미 사용 중인 아이디입니다." });
+        const registrar = trimStaffLoginId(existing[F.registeredBy] || req.auth.userId);
+        const dup = await findDuplicateVendor(vendors, loginId, registrar, id);
+        if (dup) {
+            return res.status(409).json({
+                ok: false,
+                error: "이 담당 관리자에게 이미 등록된 아이디입니다."
+            });
+        }
 
         let doc = toDbDoc(id, built, existing);
         doc = await applyRegistrationOnUpdate(doc, existing, req.auth, req.body);

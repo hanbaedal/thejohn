@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="public-site-config.js?v=20260620"></script>
+    <script src="auth-storage.js?v=20260620-public"></script>
+    <title>매출장 작성 — 더존</title>
+    <link rel="stylesheet" href="common.css">
+    <link rel="stylesheet" href="staff-hub.css">
+    <link rel="stylesheet" href="order-manage-layout.css">
+    <link rel="stylesheet" href="transaction-manual-register.css">
+    <script src="api-config.js"></script>
+    <script src="thejhon-api.js"></script>
+    <script src="auth.js?v=20260620-order"></script>
+    <script src="admin-header.js"></script>
+    <script src="nav.js?v=20260530-order-nav" defer></script>
+</head>
+<body>
+    <header class="site-header">
+        <div class="site-header-start">
+            <a href="work-hub.html" class="dz-logo dz-logo--compact"><img src="img/logo.png" alt="" width="72" height="72" class="dz-logo-img"></a>
+            <nav class="site-header-nav site-header-nav--order" aria-label="주문서 관리"></nav>
+        </div>
+        <nav class="site-header-actions">
+            <button type="button" class="btn btn-auth-icon btn-logout" id="btnLogout" hidden></button>
+        </nav>
+    </header>
+    <main class="page-main shub-page om-page">
+        <p class="shub-subnav"><a href="sales-ledger-list.html">← 매출장 목록</a></p>
+        <h1>매출장 작성</h1>
+        <p id="slr-status" class="shub-status"></p>
+        <form id="slr-form" class="tmr-panel">
+            <div class="tmr-field">
+                <label for="slr-vendor">거래처</label>
+                <input type="text" id="slr-vendor" required maxlength="200">
+            </div>
+            <div class="tmr-field">
+                <label for="slr-note">메모</label>
+                <input type="text" id="slr-note" maxlength="200">
+            </div>
+            <div class="tmr-field">
+                <label for="slr-product">품명</label>
+                <input type="text" id="slr-product" required maxlength="200">
+            </div>
+            <div class="tmr-field">
+                <label for="slr-qty">수량</label>
+                <input type="number" id="slr-qty" min="1" value="1" required>
+            </div>
+            <div class="tmr-field">
+                <label for="slr-price">단가</label>
+                <input type="number" id="slr-price" min="0" value="0" required>
+            </div>
+            <div class="tmr-actions">
+                <button type="submit" class="btn btn-primary">저장</button>
+            </div>
+        </form>
+    </main>
+    <script src="sales-ledger-register.js"></script>
+</body>
+</html>

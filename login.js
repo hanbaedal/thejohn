@@ -146,6 +146,9 @@
                 ok.stLogo,
                 ok.brandCompanyName || ok.vendorRegisteredByName
             );
+            if (ok.vendorProfiles && THEJHON_AUTH.writeVendorProfiles) {
+                THEJHON_AUTH.writeVendorProfiles(ok.vendorProfiles);
+            }
             return Promise.resolve();
         }
         var args = [
@@ -168,6 +171,9 @@
             return THEJHON_AUTH.setFormSessionAsync.apply(THEJHON_AUTH, args);
         }
         THEJHON_AUTH.setFormSession.apply(THEJHON_AUTH, args);
+        if (ok.vendorProfiles && THEJHON_AUTH.writeVendorProfiles) {
+            THEJHON_AUTH.writeVendorProfiles(ok.vendorProfiles);
+        }
         return Promise.resolve();
     }
 

@@ -1,23 +1,6 @@
 const { F: VF, parseGrade, gradeDisplayLabel } = require("./vendorFields");
 const { F: PF, readPricesFromDoc } = require("./productFields");
-const {
-    trimStaffLoginId,
-    staffLoginIdsEqual,
-    isLegacyRegisteredBy
-} = require("./staffLoginId");
-
-/**
- * 업체 거래처(등록 담당)와 상품 등록 담당이 같을 때만 등급별 가격.
- * 그 외(타 관리자 상품)는 무조건 가격1.
- */
-function vendorOwnsProductPricing(vendorRegisteredBy, productRegisteredBy) {
-    const v = trimStaffLoginId(vendorRegisteredBy);
-    const p = trimStaffLoginId(productRegisteredBy);
-    if (!v || isLegacyRegisteredBy(v) || !p || isLegacyRegisteredBy(p)) {
-        return false;
-    }
-    return staffLoginIdsEqual(v, p);
-}
+const { trimStaffLoginId, isLegacyRegisteredBy } = require("./staffLoginId");
 
 function priceKeyForGrade(grade) {
     const g = parseGrade(grade) || "1";
@@ -30,39 +13,62 @@ function priceLabelForGrade(grade) {
     return gradeDisplayLabel(grade);
 }
 
-function resolveVendorUnitPrice(productDoc, vendorDoc) {
-    const prices = readPricesFromDoc(productDoc);
-    const vendorReg = vendorDoc ? vendorDoc[VF.registeredBy] : "";
-    const productReg = productDoc ? productDoc[PF.registeredBy] : "";
-
-    if (vendorOwnsProductPricing(vendorReg, productReg)) {
-        const grade = parseGrade(vendorDoc[VF.grade]) || "1";
-        const key = priceKeyForGrade(grade);
+/** 등급 칸이 비어 있거나 0이면 가격1 */
+function unitPriceWithGradeFallback(prices, grade) {
+    prices = prices || {};
+    const key = priceKeyForGrade(grade);
+    const primary = Number(prices[key]) || 0;
+    if (primary > 0) {
         return {
-            unitPrice: Number(prices[key]) || 0,
+            unitPrice: primary,
             priceLabel: priceLabelForGrade(grade),
-            pricingMode: "grade"
+            pricingMode: "grade",
+            priceKey: key
         };
     }
-
+    const fallback = Number(prices[PF.price1]) || 0;
     return {
-        unitPrice: Number(prices[PF.price1]) || 0,
-        priceLabel: "가격1",
-        pricingMode: "price1"
+        unitPrice: fallback,
+        priceLabel: priceLabelForGrade(grade) + (key !== PF.price1 ? "→가격1" : ""),
+        pricingMode: fallback > 0 && key !== PF.price1 ? "grade_fallback_price1" : "grade",
+        priceKey: PF.price1
     };
 }
 
-/** @deprecated vendorProductAllowsOrderForVendor(productRegisteredBy, vendorDoc) 사용 */
-function vendorProductAllowsOrder(productRegisteredBy, vendorRegisteredBy) {
-    const p = trimStaffLoginId(productRegisteredBy);
+/**
+ * 상품 + (해당 상품 등록 관리자 기준) 업체 문서 → 단가
+ * vendorDoc는 pd_registered_by 와 vn_registered_by 가 맞는 업체 레코드
+ */
+function resolveVendorUnitPrice(productDoc, vendorDoc) {
+    const prices = readPricesFromDoc(productDoc);
+    if (!vendorDoc) {
+        return {
+            unitPrice: Number(prices[PF.price1]) || 0,
+            priceLabel: "가격1",
+            pricingMode: "price1"
+        };
+    }
+    const grade = parseGrade(vendorDoc[VF.grade] || vendorDoc.vn_grade) || "1";
+    return unitPriceWithGradeFallback(prices, grade);
+}
+
+/** @deprecated */
+function vendorOwnsProductPricing(vendorRegisteredBy, productRegisteredBy) {
     const v = trimStaffLoginId(vendorRegisteredBy);
-    if (!p || !v || isLegacyRegisteredBy(p) || isLegacyRegisteredBy(v)) return false;
-    return staffLoginIdsEqual(p, v);
+    const p = trimStaffLoginId(productRegisteredBy);
+    if (!v || isLegacyRegisteredBy(v) || !p || isLegacyRegisteredBy(p)) return false;
+    return v.toLowerCase() === p.toLowerCase();
+}
+
+function vendorProductAllowsOrder(productRegisteredBy, vendorRegisteredBy) {
+    return vendorOwnsProductPricing(productRegisteredBy, vendorRegisteredBy);
 }
 
 module.exports = {
     vendorOwnsProductPricing,
     resolveVendorUnitPrice,
+    unitPriceWithGradeFallback,
     priceLabelForGrade,
+    priceKeyForGrade,
     vendorProductAllowsOrder
 };
