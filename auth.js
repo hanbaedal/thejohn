@@ -4,7 +4,7 @@
  * 로그인·권한 정책
  * - 미로그인: 공개 페이지(홈·회사소개·사업부문·고객센터) 자유 열람 · thejohn 푸터 SNS
  * - 헤더 로그인: 슈퍼바이저·관리자·등록업체만
- * - 로그아웃 → login.html
+ * - 로그아웃 → index.html (공개 홈)
  * - 로그인 후 기본 이동: 업체 → index, 슈퍼바이저·관리자 → work-hub (login.js)
  * - 슈퍼바이저: 관리자(staff) 생성 · 전체 기능
  * - 관리자: 업체(vendors) 생성 · 모든 관리자 주문서관리 이용
@@ -2847,10 +2847,10 @@
         redirectFromProtectedPage(true);
     }
 
-    /** 로그아웃 — 서버 세션 해제 후 로그인 페이지로 */
+    /** 로그아웃 — 서버 세션 해제 후 공개 홈으로 */
     function logout() {
         clearSessionAsync().finally(function () {
-            window.location.replace("login.html");
+            window.location.replace("index.html");
         });
     }
 

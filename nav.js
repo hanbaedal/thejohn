@@ -389,7 +389,7 @@
                     THEJHON_AUTH.logout();
                 } else if (window.THEJHON_AUTH && THEJHON_AUTH.clearSession) {
                     THEJHON_AUTH.clearSession();
-                    window.location.replace("login.html");
+                    window.location.replace("index.html");
                 }
             });
         }
