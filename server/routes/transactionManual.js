@@ -190,6 +190,12 @@ router.put("/:id", async function (req, res) {
         } catch (syncErr) {
             console.error("sales_records sync manual update", syncErr.message);
         }
+        try {
+            const { updateFromTransaction } = require("../lib/salesLedger");
+            await updateFromTransaction(getDb(), next);
+        } catch (ledgerErr) {
+            console.error("sales_ledgers update from transaction", ledgerErr.message);
+        }
         res.json({ ok: true, item: toPublic(next) });
     } catch (e) {
         console.error("PUT /api/transaction-manual/:id", e);
@@ -212,6 +218,12 @@ router.delete("/:id", async function (req, res) {
             await deleteSalesForSource(getDb(), "manual", existing.id);
         } catch (syncErr) {
             console.error("sales_records delete manual", syncErr.message);
+        }
+        try {
+            const { deleteFromTransaction } = require("../lib/salesLedger");
+            await deleteFromTransaction(getDb(), existing.id);
+        } catch (ledgerErr) {
+            console.error("sales_ledgers delete from transaction", ledgerErr.message);
         }
         res.json({ ok: true });
     } catch (e) {

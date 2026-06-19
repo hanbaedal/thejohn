@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="public-site-config.js?v=20260620"></script>
+    <script src="auth-storage.js?v=20260620-public"></script>
+    <script src="site-brand-boot.js"></script>
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#0a4d9c">
+    <title>매출장 조회 — 더존</title>
+    <link rel="stylesheet" href="common.css">
+    <link rel="stylesheet" href="staff-hub.css">
+    <link rel="stylesheet" href="order-list-filters.css">
+    <link rel="stylesheet" href="order-manage-layout.css">
+    <link rel="stylesheet" href="sales-report.css">
+    <script src="api-config.js"></script>
+    <script src="thejhon-api.js"></script>
+    <script src="product-catalog.js"></script>
+    <script src="order-ui.js"></script>
+    <script src="auth.js?v=20260620-order"></script>
+    <script src="admin-header.js"></script>
+    <script src="nav.js?v=20260530-order-nav" defer></script>
+</head>
+<body>
+    <header class="site-header">
+        <div class="site-header-start">
+            <a href="work-hub.html" class="dz-logo dz-logo--compact" aria-label="그룹 마케팅 관리"><img src="img/logo.png" alt="" width="72" height="72" class="dz-logo-img"></a>
+            <nav class="site-header-nav site-header-nav--order" aria-label="주문서 관리 메뉴"></nav>
+        </div>
+        <nav class="site-header-actions" aria-label="계정">
+            <time class="header-date" id="headerToday" datetime=""></time>
+            <button type="button" class="btn btn-auth-icon btn-logout" id="btnLogout" hidden aria-label="로그아웃" title="로그아웃"></button>
+        </nav>
+    </header>
+    <main class="page-main page-main--hide-scrollbar shub-page om-page srp-page">
+        <p class="shub-subnav"><a href="order-manage-hub.html">← 주문서 관리</a></p>
+        <h1>매출장 조회</h1>
+        <p class="srp-hint">수기 거래명세·발주 매출을 기간별로 조회합니다. 매출 입력은 「거래명세서 수기 작성」에서 합니다.</p>
+        <p id="sli-status" class="shub-status" role="status" aria-live="polite"></p>
+
+        <div class="srp-mode-tabs" role="tablist" aria-label="조회 구분">
+            <button type="button" class="srp-mode-tab is-active" id="sli-tab-vendor" data-mode="vendor" role="tab" aria-selected="true">업체별</button>
+            <button type="button" class="srp-mode-tab" id="sli-tab-product" data-mode="product" role="tab" aria-selected="false">품목별</button>
+        </div>
+
+        <div class="srp-period-tabs" role="group" aria-label="조회 기간">
+            <button type="button" class="btn btn-secondary sli-preset is-active" data-preset="today">1일</button>
+            <button type="button" class="btn btn-secondary sli-preset" data-preset="lastMonth">1개월</button>
+            <button type="button" class="btn btn-secondary sli-preset" data-preset="last3Months">3개월</button>
+            <button type="button" class="btn btn-secondary sli-preset" data-preset="custom">기간설정</button>
+        </div>
+
+        <div class="srp-toolbar" aria-label="집계 작업">
+            <button type="button" class="btn btn-primary" id="sli-btn-search">확인</button>
+            <button type="button" class="btn btn-secondary" id="sli-btn-print" disabled>출력</button>
+        </div>
+
+        <div class="ol-query-filters" aria-label="조회 조건">
+            <section class="ol-query-filters__section">
+                <h2 class="ol-query-filters__heading">조회 조건</h2>
+                <p id="sli-period-label" class="srp-period-label"></p>
+                <div id="sli-custom-range" class="ol-query-filters__row" hidden>
+                    <label for="sli-date-from">시작일</label>
+                    <input type="date" id="sli-date-from">
+                </div>
+                <div id="sli-custom-range-to" class="ol-query-filters__row" hidden>
+                    <label for="sli-date-to">종료일</label>
+                    <input type="date" id="sli-date-to">
+                </div>
+                <div id="sli-vendor-row" class="ol-query-filters__row">
+                    <label for="sli-vendor-display">업체</label>
+                    <div class="srp-pick-row">
+                        <input type="text" id="sli-vendor-display" readonly placeholder="업체 선택" aria-label="선택한 업체">
+                        <button type="button" class="btn btn-secondary" id="sli-btn-vendor-pick">선택</button>
+                    </div>
+                    <input type="hidden" id="sli-vendor-company">
+                </div>
+                <div id="sli-product-section" hidden>
+                    <div class="ol-query-filters__row">
+                        <label for="sli-dept">사업부문</label>
+                        <select id="sli-dept">
+                            <option value="">사업부문 선택</option>
+                        </select>
+                    </div>
+                    <div class="ol-query-filters__row">
+                        <label for="sli-product-display">품목</label>
+                        <div class="srp-pick-row">
+                            <input type="text" id="sli-product-display" readonly placeholder="품목 선택" aria-label="선택한 품목">
+                            <button type="button" class="btn btn-secondary" id="sli-btn-product-pick">선택</button>
+                        </div>
+                        <input type="hidden" id="sli-product-id">
+                    </div>
+                </div>
+            </section>
+        </div>
+
+        <p id="sli-summary" class="srp-summary" hidden></p>
+
+        <div class="srp-results-wrap" id="sli-print-area">
+            <div class="srp-table-wrap">
+                <table class="srp-table" aria-label="매출장 조회 결과">
+                    <thead>
+                        <tr>
+                            <th>일자</th>
+                            <th>구분</th>
+                            <th>발주번호</th>
+                            <th>업체</th>
+                            <th>품목</th>
+                            <th>수량</th>
+                            <th>단가</th>
+                            <th>금액</th>
+                        </tr>
+                    </thead>
+                    <tbody id="sli-tbody"></tbody>
+                </table>
+            </div>
+        </div>
+    </main>
+
+    <div class="srp-modal-backdrop" id="sli-vendor-modal" hidden>
+        <div class="srp-modal" role="dialog" aria-modal="true" aria-labelledby="sli-vendor-modal-title">
+            <div class="srp-modal-head">
+                <h2 id="sli-vendor-modal-title">업체 선택</h2>
+                <button type="button" class="btn btn-secondary" id="sli-vendor-modal-close">닫기</button>
+            </div>
+            <div class="srp-modal-search">
+                <input type="search" id="sli-vendor-search" placeholder="업체명 검색" autocomplete="off">
+            </div>
+            <ul class="srp-modal-list" id="sli-vendor-list"></ul>
+        </div>
+    </div>
+
+    <div class="srp-modal-backdrop" id="sli-product-modal" hidden>
+        <div class="srp-modal" role="dialog" aria-modal="true" aria-labelledby="sli-product-modal-title">
+            <div class="srp-modal-head">
+                <h2 id="sli-product-modal-title">품목 선택</h2>
+                <button type="button" class="btn btn-secondary" id="sli-product-modal-close">닫기</button>
+            </div>
+            <div class="srp-modal-search">
+                <input type="search" id="sli-product-search" placeholder="품명·코드 검색" autocomplete="off">
+            </div>
+            <ul class="srp-modal-list" id="sli-product-list"></ul>
+        </div>
+    </div>
+
+    <script src="sales-report-shared.js"></script>
+    <script src="sales-ledger-inquiry.js"></script>
+</body>
+</html>

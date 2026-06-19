@@ -7,6 +7,7 @@ const {
     queryByProduct,
     queryByVendor
 } = require("../lib/salesRecords");
+const { querySalesLedgerInquiry } = require("../lib/salesLedgerInquiry");
 const { buildSalesReportPdfBuffer, formatYmd } = require("../lib/salesReportPdf");
 
 const router = express.Router();
@@ -20,6 +21,22 @@ function safeFilePart(s) {
 }
 
 router.use(requireRole("supervisor", "admin"));
+
+router.get("/inquiry", async function (req, res) {
+    try {
+        await assertOrderManageAccess(req.auth);
+        const db = getDb();
+        await ensureIndexes(db);
+        const { ensureIndexes: ensureLedgerIndexes } = require("../lib/salesLedger");
+        await ensureLedgerIndexes(db);
+        const result = await querySalesLedgerInquiry(db, req.auth, req.query);
+        if (result.error) return res.status(400).json({ ok: false, error: result.error });
+        res.json(result);
+    } catch (e) {
+        console.error("GET /api/sales-reports/inquiry", e);
+        res.status(500).json({ ok: false, error: e.message || "매출장 조회에 실패했습니다." });
+    }
+});
 
 router.get("/by-product", async function (req, res) {
     try {

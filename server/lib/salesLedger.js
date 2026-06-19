@@ -137,7 +137,20 @@ async function createFromTransaction(db, txnDoc, auth) {
     const existing = await col.findOne({ sourceType: "transaction_manual", sourceId: txnDoc.id });
     if (existing) return existing;
 
-    const built = {
+    const built = ledgerPayloadFromTransaction(txnDoc);
+    const now = Date.now();
+    const doc = Object.assign({}, built, {
+        id: newId(),
+        createdAt: now,
+        updatedAt: now,
+        createdBy: trimStaffLoginId(auth && auth.userId)
+    });
+    await col.insertOne(doc);
+    return doc;
+}
+
+function ledgerPayloadFromTransaction(txnDoc) {
+    return {
         title: str(txnDoc.title) || str(txnDoc.vendorCompany) || "매출장",
         issueDate: txnDoc.issueDate || txnDoc.createdAt || Date.now(),
         issuerStaffLoginId: str(txnDoc.issuerStaffLoginId),
@@ -149,15 +162,36 @@ async function createFromTransaction(db, txnDoc, auth) {
         totalAmount: Number(txnDoc.totalAmount) || 0,
         note: str(txnDoc.note)
     };
-    const now = Date.now();
-    const doc = Object.assign({}, built, {
-        id: newId(),
-        createdAt: now,
-        updatedAt: now,
-        createdBy: trimStaffLoginId(auth && auth.userId)
+}
+
+async function updateFromTransaction(db, txnDoc) {
+    if (!txnDoc || !txnDoc.id) return null;
+    await ensureIndexes(db);
+    const col = db.collection(COL);
+    const existing = await col.findOne({ sourceType: "transaction_manual", sourceId: txnDoc.id });
+    const payload = ledgerPayloadFromTransaction(txnDoc);
+    if (!existing) {
+        const now = Date.now();
+        const doc = Object.assign({}, payload, {
+            id: newId(),
+            createdAt: now,
+            updatedAt: now,
+            createdBy: str(txnDoc.createdBy)
+        });
+        await col.insertOne(doc);
+        return doc;
+    }
+    const updated = Object.assign({}, existing, payload, { updatedAt: Date.now() });
+    await col.updateOne({ id: existing.id }, { $set: updated });
+    return updated;
+}
+
+async function deleteFromTransaction(db, txnId) {
+    if (!txnId) return;
+    await db.collection(COL).deleteMany({
+        sourceType: "transaction_manual",
+        sourceId: String(txnId).trim()
     });
-    await col.insertOne(doc);
-    return doc;
 }
 
 module.exports = {
@@ -170,5 +204,7 @@ module.exports = {
     assertSalesLedgerAccess,
     validateBuilt,
     ensureIndexes,
-    createFromTransaction
+    createFromTransaction,
+    updateFromTransaction,
+    deleteFromTransaction
 };

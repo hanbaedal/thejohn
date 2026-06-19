@@ -20,10 +20,7 @@
             transactionList: document.getElementById("omh-link-transaction-list"),
             transactionManual: document.getElementById("omh-link-transaction-manual"),
             transactionManualList: document.getElementById("omh-link-transaction-manual-list"),
-            salesLedgerList: document.getElementById("omh-link-sales-ledger-list"),
-            salesLedgerRegister: document.getElementById("omh-link-sales-ledger-register"),
-            salesByProduct: document.getElementById("omh-link-sales-by-product"),
-            salesByVendor: document.getElementById("omh-link-sales-by-vendor")
+            salesInquiry: document.getElementById("omh-link-sales-inquiry")
         };
         if (map.list && links.list) map.list.setAttribute("href", links.list);
         if (map.orderPdf && links.orderPdf) map.orderPdf.setAttribute("href", links.orderPdf);
@@ -59,33 +56,14 @@
                 map.transactionManualList.hidden = true;
             }
         }
-        if (map.salesByProduct) {
-            if (links.salesByProduct) {
-                map.salesByProduct.setAttribute("href", links.salesByProduct);
-                map.salesByProduct.hidden = false;
+        if (map.salesInquiry) {
+            if (links.salesLedgerInquiry) {
+                map.salesInquiry.setAttribute("href", links.salesLedgerInquiry);
+                map.salesInquiry.hidden = false;
             } else {
-                map.salesByProduct.hidden = true;
+                map.salesInquiry.hidden = true;
             }
         }
-        if (map.salesByVendor) {
-            if (links.salesByVendor) {
-                map.salesByVendor.setAttribute("href", links.salesByVendor);
-                map.salesByVendor.hidden = false;
-            } else {
-                map.salesByVendor.hidden = true;
-            }
-        }
-        ["salesLedgerList", "salesLedgerRegister"].forEach(function (key) {
-            var elKey = key === "salesLedgerList" ? "salesLedgerList" : "salesLedgerRegister";
-            var el = map[elKey];
-            if (!el) return;
-            if (links[key]) {
-                el.setAttribute("href", links[key]);
-                el.hidden = false;
-            } else {
-                el.hidden = true;
-            }
-        });
     }
 
     if (!Auth || !Auth.getOrderManageHubAccess) {

@@ -57,6 +57,54 @@
 .srp-table td.num {
     text-align: right;
 }
+.srp-table tr.srp-total-row td {
+    background: #f0f6fc;
+    border-top: 2px solid #c5d8eb;
+}
+.srp-hint {
+    max-width: 36rem;
+    margin: 0 auto 0.75rem;
+    padding: 0 0.75rem;
+    font-size: 0.88rem;
+    color: #556;
+    text-align: center;
+}
+.srp-period-label {
+    font-size: 0.9rem;
+    color: #334;
+    margin: 0 0 0.75rem;
+}
+.srp-mode-tabs,
+.srp-period-tabs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+    justify-content: center;
+    max-width: 36rem;
+    margin: 0 auto 0.75rem;
+    padding: 0 0.75rem;
+}
+.srp-mode-tab {
+    flex: 1;
+    min-width: 7rem;
+    padding: 0.55rem 0.75rem;
+    border: 1px solid #c5d4e4;
+    border-radius: 8px;
+    background: #fff;
+    font-weight: 600;
+    color: #334;
+    cursor: pointer;
+}
+.srp-mode-tab.is-active {
+    background: #0a4d9c;
+    border-color: #0a4d9c;
+    color: #fff;
+}
+.srp-period-tabs .btn.is-active {
+    background: #0a4d9c;
+    border-color: #0a4d9c;
+    color: #fff;
+}
 .srp-pick-row {
     display: flex;
     gap: 0.45rem;

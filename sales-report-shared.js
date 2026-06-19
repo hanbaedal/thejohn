@@ -59,7 +59,9 @@
             return;
         }
         var html = "";
+        var totalAmount = 0;
         items.forEach(function (row) {
+            totalAmount += Number(row.lineTotal) || 0;
             html +=
                 "<tr>" +
                 "<td>" +
@@ -88,6 +90,13 @@
                 "</td>" +
                 "</tr>";
         });
+        html +=
+            '<tr class="srp-total-row">' +
+            '<td colspan="7"><strong>합계</strong></td>' +
+            '<td class="num"><strong>' +
+            escapeHtml(formatWon(totalAmount).replace("원", "")) +
+            "</strong></td>" +
+            "</tr>";
         tbody.innerHTML = html;
     }
 

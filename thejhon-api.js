@@ -704,6 +704,20 @@
             var q = parts.length ? "?" + parts.join("&") : "";
             return request("GET", "/api/sales-reports/by-vendor" + q);
         },
+        getSalesLedgerInquiry: function (opts) {
+            opts = opts || {};
+            var parts = [];
+            if (opts.mode) parts.push("mode=" + encodeURIComponent(String(opts.mode)));
+            if (opts.preset) parts.push("preset=" + encodeURIComponent(String(opts.preset)));
+            if (opts.dateFrom) parts.push("dateFrom=" + encodeURIComponent(String(opts.dateFrom)));
+            if (opts.dateTo) parts.push("dateTo=" + encodeURIComponent(String(opts.dateTo)));
+            if (opts.vendorCompany) parts.push("vendorCompany=" + encodeURIComponent(String(opts.vendorCompany)));
+            if (opts.dept) parts.push("dept=" + encodeURIComponent(String(opts.dept)));
+            if (opts.productId) parts.push("productId=" + encodeURIComponent(String(opts.productId)));
+            if (opts.adminStaffId) parts.push("adminStaffId=" + encodeURIComponent(String(opts.adminStaffId)));
+            var q = parts.length ? "?" + parts.join("&") : "";
+            return request("GET", "/api/sales-reports/inquiry" + q);
+        },
         fetchSalesReportPdf: function (body) {
             var url = apiUrl("/api/sales-reports/pdf");
             return fetch(url, {

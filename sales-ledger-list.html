@@ -2,76 +2,9 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <script src="public-site-config.js?v=20260620"></script>
-    <script src="auth-storage.js?v=20260620-public"></script>
-    <script src="site-brand-boot.js"></script>
-    <title>매출장 목록 — 더존</title>
-    <link rel="stylesheet" href="common.css">
-    <link rel="stylesheet" href="staff-hub.css">
-    <link rel="stylesheet" href="order-manage-layout.css">
-    <link rel="stylesheet" href="order-list-filters.css">
-    <link rel="stylesheet" href="transaction-manual-list.css">
-    <script src="api-config.js"></script>
-    <script src="thejhon-api.js"></script>
-    <script src="order-ui.js"></script>
-    <script src="auth.js?v=20260620-order"></script>
-    <script src="admin-header.js"></script>
-    <script src="nav.js?v=20260530-order-nav" defer></script>
+    <meta http-equiv="refresh" content="0;url=transaction-manual-list.html">
+    <title>이동 중…</title>
+    <script>location.replace("transaction-manual-list.html");</script>
 </head>
-<body>
-    <header class="site-header">
-        <div class="site-header-start">
-            <a href="work-hub.html" class="dz-logo dz-logo--compact" aria-label="그룹 마케팅 관리"><img src="img/logo.png" alt="" width="72" height="72" class="dz-logo-img"></a>
-            <nav class="site-header-nav site-header-nav--order" aria-label="주문서 관리 메뉴"></nav>
-        </div>
-        <nav class="site-header-actions" aria-label="계정">
-            <time class="header-date" id="headerToday" datetime=""></time>
-            <button type="button" class="btn btn-auth-icon btn-logout" id="btnLogout" hidden aria-label="로그아웃" title="로그아웃"></button>
-        </nav>
-    </header>
-    <main class="page-main page-main--hide-scrollbar shub-page om-page">
-        <p class="shub-subnav"><a href="order-manage-hub.html">← 주문서 관리</a></p>
-        <h1>매출장</h1>
-        <p id="sll-status" class="shub-status" role="status" aria-live="polite"></p>
-        <div class="tml-toolbar">
-            <a href="sales-ledger-register.html" class="btn btn-primary">새 매출장</a>
-        </div>
-        <div class="ol-query-filters" id="sll-filter-wrap" aria-label="매출장 조회" hidden>
-            <section class="ol-query-filters__section">
-                <h2 class="ol-query-filters__heading">발행 관리자</h2>
-                <div class="ol-query-filters__row ol-query-filters__row--query">
-                    <label for="sll-admin-filter">관리자</label>
-                    <select id="sll-admin-filter"><option value="">전체</option></select>
-                    <button type="button" class="btn btn-primary" id="sll-btn-search">조회</button>
-                </div>
-            </section>
-        </div>
-        <section class="shub-panel">
-            <div class="tml-table-wrap">
-                <table class="tml-table" aria-label="매출장 목록">
-                    <thead>
-                        <tr>
-                            <th>일자</th>
-                            <th>거래처</th>
-                            <th>메모</th>
-                            <th>발행</th>
-                            <th>품목</th>
-                            <th>합계</th>
-                            <th class="tml-col-act">작업</th>
-                        </tr>
-                    </thead>
-                    <tbody id="sll-list-body"></tbody>
-                </table>
-            </div>
-            <p id="sll-empty" class="tml-empty" hidden>매출장이 없습니다.</p>
-        </section>
-    </main>
-    <footer class="site-footer">
-        <div class="site-footer-inner">
-            <dl class="site-footer-grid" id="siteFooterCompanyGrid" aria-live="polite"></dl>
-        </div>
-    </footer>
-    <script src="sales-ledger-list.js"></script>
-</body>
+<body></body>
 </html>

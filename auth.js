@@ -799,8 +799,7 @@
         "supervisor-transaction-list.html",
         "transaction-manual-register.html",
         "transaction-manual-list.html",
-        "sales-ledger-list.html",
-        "sales-ledger-register.html"
+        "sales-ledger-inquiry.html"
     ];
     var WORK_HUB_PAGE = "work-hub.html";
     var WORK_HUB_LABEL = "그룹 마케팅 관리";
@@ -845,8 +844,7 @@
         "supervisor-transaction-list.html": true,
         "transaction-manual-register.html": true,
         "transaction-manual-list.html": true,
-        "sales-ledger-list.html": true,
-        "sales-ledger-register.html": true
+        "sales-ledger-inquiry.html": true
     };
     var STAFF_NAV_PRODUCT_PAGES = {};
     var STAFF_NAV_VENDOR_PAGES = {};
@@ -2421,10 +2419,7 @@
                 transactionList: "supervisor-transaction-list.html",
                 transactionManual: "transaction-manual-register.html",
                 transactionManualList: "transaction-manual-list.html",
-                salesLedgerList: "sales-ledger-list.html",
-                salesLedgerRegister: "sales-ledger-register.html",
-                salesByProduct: "sales-by-product.html",
-                salesByVendor: "sales-by-vendor.html"
+                salesLedgerInquiry: "sales-ledger-inquiry.html"
             };
         }
         if (canShowOrderManageMenu()) {
@@ -2435,10 +2430,7 @@
                 transactionList: "supervisor-transaction-list.html",
                 transactionManual: "transaction-manual-register.html",
                 transactionManualList: "transaction-manual-list.html",
-                salesLedgerList: "sales-ledger-list.html",
-                salesLedgerRegister: "sales-ledger-register.html",
-                salesByProduct: "sales-by-product.html",
-                salesByVendor: "sales-by-vendor.html"
+                salesLedgerInquiry: "sales-ledger-inquiry.html"
             };
         }
         return {
@@ -2447,8 +2439,7 @@
             transactionPdf: "",
             transactionManual: "",
             transactionManualList: "",
-            salesByProduct: "",
-            salesByVendor: ""
+            salesLedgerInquiry: ""
         };
     }
 
