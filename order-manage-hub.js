@@ -13,56 +13,34 @@
     function applyLinks() {
         if (!Auth || !Auth.getOrderManageHubLinks) return;
         var links = Auth.getOrderManageHubLinks();
-        var map = {
-            list: document.getElementById("omh-link-list"),
-            orderPdf: document.getElementById("omh-link-order-pdf"),
-            transactionPdf: document.getElementById("omh-link-transaction-pdf"),
-            transactionList: document.getElementById("omh-link-transaction-list"),
-            transactionManual: document.getElementById("omh-link-transaction-manual"),
-            transactionManualList: document.getElementById("omh-link-transaction-manual-list"),
-            salesInquiry: document.getElementById("omh-link-sales-inquiry")
-        };
-        if (map.list && links.list) map.list.setAttribute("href", links.list);
-        if (map.orderPdf && links.orderPdf) map.orderPdf.setAttribute("href", links.orderPdf);
-        if (map.transactionPdf) {
-            if (links.transactionPdf) {
-                map.transactionPdf.setAttribute("href", links.transactionPdf);
-                map.transactionPdf.hidden = false;
+        var list = document.getElementById("omh-link-list");
+        var transaction = document.getElementById("omh-link-transaction");
+        var sales = document.getElementById("omh-link-sales-inquiry");
+        var tax = document.getElementById("omh-link-tax-invoice");
+        if (list && links.list) list.setAttribute("href", links.list);
+        if (transaction) {
+            var txHref =
+                links.transactionManualList ||
+                links.transactionList ||
+                links.transactionManual ||
+                "";
+            if (txHref) {
+                transaction.setAttribute("href", txHref);
+                transaction.hidden = false;
             } else {
-                map.transactionPdf.hidden = true;
+                transaction.hidden = true;
             }
         }
-        if (map.transactionList) {
-            if (links.transactionList) {
-                map.transactionList.setAttribute("href", links.transactionList);
-                map.transactionList.hidden = false;
-            } else {
-                map.transactionList.hidden = true;
-            }
-        }
-        if (map.transactionManual) {
-            if (links.transactionManual) {
-                map.transactionManual.setAttribute("href", links.transactionManual);
-                map.transactionManual.hidden = false;
-            } else {
-                map.transactionManual.hidden = true;
-            }
-        }
-        if (map.transactionManualList) {
-            if (links.transactionManualList) {
-                map.transactionManualList.setAttribute("href", links.transactionManualList);
-                map.transactionManualList.hidden = false;
-            } else {
-                map.transactionManualList.hidden = true;
-            }
-        }
-        if (map.salesInquiry) {
+        if (sales) {
             if (links.salesLedgerInquiry) {
-                map.salesInquiry.setAttribute("href", links.salesLedgerInquiry);
-                map.salesInquiry.hidden = false;
+                sales.setAttribute("href", links.salesLedgerInquiry);
+                sales.hidden = false;
             } else {
-                map.salesInquiry.hidden = true;
+                sales.hidden = true;
             }
+        }
+        if (tax && links.taxInvoice) {
+            tax.setAttribute("href", links.taxInvoice);
         }
     }
 

@@ -28,7 +28,7 @@
         if (Auth) {
             if (Auth.canShowOrderManageMenu && Auth.canShowOrderManageMenu()) {
                 orderItem =
-                    '<a href="order-list-admin.html" class="nav-dropdown-item" role="menuitem">주문서관리</a>';
+                    '<a href="order-manage-hub.html" class="nav-dropdown-item" role="menuitem">영업관리</a>';
             }
         }
         return (

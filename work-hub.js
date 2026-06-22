@@ -16,7 +16,7 @@
     ];
 
     var EXTRA = {
-        order: { id: "order-manage", label: "주문서 관리", href: "order-manage-hub.html" },
+        order: { id: "order-manage", label: "영업관리", href: "order-manage-hub.html" },
         work: { id: "work-manage", label: "업무관리", href: "staff-manage-hub.html" }
     };
 

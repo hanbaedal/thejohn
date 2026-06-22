@@ -10,12 +10,14 @@ const { vendorProductAllowsOrderForVendor } = require("./orderAccess");
 const { trimStaffLoginId, staffLoginIdsEqual } = require("./staffLoginId");
 const { syncFromOrder, deleteSalesForSource } = require("./salesRecords");
 const { resolveVendorOrderContact } = require("./vendorOrderContact");
+const { allocVendorOrderNo } = require("./orderNo");
 
 function newOrderId() {
     return "ord_" + Date.now().toString(36) + "_" + Math.random().toString(36).slice(2, 8);
 }
 
-function newOrderNo() {
+/** @deprecated 테스트·레거시 — 신규 주문은 allocVendorOrderNo 사용 */
+function newOrderNoLegacy() {
     var d = new Date();
     var y = d.getFullYear();
     var m = String(d.getMonth() + 1).padStart(2, "0");
@@ -129,7 +131,7 @@ async function submitVendorOrder(db, auth, body) {
 
     var createdAt = Date.now();
     var vendorOrderId = newOrderId();
-    var vendorOrderNo = newOrderNo();
+    var vendorOrderNo = await allocVendorOrderNo(db);
     var totalAmount = items.reduce(function (s, it) {
         return s + it.lineTotal;
     }, 0);
@@ -252,5 +254,5 @@ module.exports = {
     submitVendorOrder,
     deleteOrderCascade,
     newOrderId,
-    newOrderNo
+    newOrderNoLegacy
 };

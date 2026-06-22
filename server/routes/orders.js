@@ -120,6 +120,22 @@ function toOrderDetail(order) {
     });
 }
 
+function toAdminSplit(order) {
+    return {
+        id: order.id,
+        orderNo: order.orderNo || "",
+        orderStaffLoginId: order.orderStaffLoginId || "",
+        adminName:
+            order.vendorRegisteredByName ||
+            (order.supplier && order.supplier.name) ||
+            order.orderStaffLoginId ||
+            "",
+        totalAmount: order.totalAmount || 0,
+        itemCount: Array.isArray(order.items) ? order.items.length : 0,
+        items: Array.isArray(order.items) ? order.items : []
+    };
+}
+
 router.get("/", requireRole("admin", "vendor", "supervisor"), async function (req, res) {
     try {
         function parseYmdToMs(s, endOfDay) {
@@ -202,7 +218,18 @@ router.get("/:id", requireRole("admin", "vendor", "supervisor"), async function 
         if (!(await staffCanReadOrder(req.auth, order))) {
             return res.status(403).json({ ok: false, error: "권한이 없습니다." });
         }
-        return res.json({ ok: true, order: toOrderDetail(order) });
+        var detail = toOrderDetail(order);
+        if (req.auth.role === "vendor" && order.orderKind === "vendor") {
+            var splits = await getDb()
+                .collection("orders")
+                .find({ parentOrderId: order.id, orderKind: "admin" })
+                .sort({ orderNo: 1 })
+                .toArray();
+            if (splits.length) {
+                detail.adminSplits = splits.map(toAdminSplit);
+            }
+        }
+        return res.json({ ok: true, order: detail });
     } catch (e) {
         console.error("GET /api/orders/:id", e);
         return res.status(500).json({ ok: false, error: "주문 내용을 불러오지 못했습니다." });

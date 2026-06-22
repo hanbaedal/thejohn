@@ -805,7 +805,8 @@
         "supervisor-transaction-list.html",
         "transaction-manual-register.html",
         "transaction-manual-list.html",
-        "sales-ledger-inquiry.html"
+        "sales-ledger-inquiry.html",
+        "tax-invoice.html"
     ];
     var WORK_HUB_PAGE = "work-hub.html";
     var WORK_HUB_LABEL = "그룹 마케팅 관리";
@@ -850,7 +851,8 @@
         "supervisor-transaction-list.html": true,
         "transaction-manual-register.html": true,
         "transaction-manual-list.html": true,
-        "sales-ledger-inquiry.html": true
+        "sales-ledger-inquiry.html": true,
+        "tax-invoice.html": true
     };
     var STAFF_NAV_PRODUCT_PAGES = {};
     var STAFF_NAV_VENDOR_PAGES = {};
@@ -1143,18 +1145,15 @@
     function getDefaultOrderSubnavItems() {
         if (!getOrderManageHubAccess().allowed) return [];
         var links = getOrderManageHubLinks();
-        var items = [{ href: ORDER_MANAGE_HUB_PAGE, label: "주문서 관리" }];
+        var items = [{ href: ORDER_MANAGE_HUB_PAGE, label: "영업관리" }];
         if (links.list && staffNavHrefFile(links.list) !== ORDER_MANAGE_HUB_PAGE) {
             items.push({
                 href: links.list,
-                label:
-                    staffNavHrefFile(links.list) === "order-list-admin.html"
-                        ? "주문서 리스트"
-                        : "발주서 리스트"
+                label: "주문서"
             });
         }
         if (links.orderPdf && staffNavHrefFile(links.orderPdf) !== ORDER_MANAGE_HUB_PAGE) {
-            items.push({ href: links.orderPdf, label: "발주서 PDF" });
+            items.push({ href: links.orderPdf, label: "주문서 PDF" });
         }
         if (links.transactionPdf) {
             items.push({ href: links.transactionPdf, label: "거래명세서 PDF" });
@@ -1163,10 +1162,16 @@
             items.push({ href: links.transactionList, label: "거래명세서" });
         }
         if (links.transactionManual) {
-            items.push({ href: links.transactionManual, label: "거래명세서 수기" });
+            items.push({ href: links.transactionManual, label: "거래명세서(수기)" });
         }
         if (links.transactionManualList) {
-            items.push({ href: links.transactionManualList, label: "수기 명세 목록" });
+            items.push({ href: links.transactionManualList, label: "거래명세서 목록" });
+        }
+        if (links.salesLedgerInquiry) {
+            items.push({ href: links.salesLedgerInquiry, label: "매출장" });
+        }
+        if (links.taxInvoice) {
+            items.push({ href: links.taxInvoice, label: "세금계산서 발부" });
         }
         return items;
     }
@@ -1175,7 +1180,7 @@
         var file = currentPageFile();
         if (file === ORDER_MANAGE_HUB_PAGE) {
             var fromBody = collectBodyNavCards(document);
-            var items = [{ href: ORDER_MANAGE_HUB_PAGE, label: "주문서 관리" }];
+            var items = [{ href: ORDER_MANAGE_HUB_PAGE, label: "영업관리" }];
             var seen = {};
             seen[ORDER_MANAGE_HUB_PAGE] = true;
             for (var i = 0; i < fromBody.length; i++) {
@@ -1189,7 +1194,7 @@
         }
         var bodyItems = collectBodyNavCards(document);
         if (bodyItems.length) {
-            var merged = [{ href: ORDER_MANAGE_HUB_PAGE, label: "주문서 관리" }];
+            var merged = [{ href: ORDER_MANAGE_HUB_PAGE, label: "영업관리" }];
             var seen2 = {};
             seen2[ORDER_MANAGE_HUB_PAGE] = true;
             for (var j = 0; j < bodyItems.length; j++) {
@@ -2406,7 +2411,7 @@
         return { allowed: true, role: getRole() };
     }
 
-    /** 그룹 마케팅 — 발주서 관리 허브 (슈퍼바이저·관리자) */
+    /** 그룹 마케팅 — 영업관리 허브 (슈퍼바이저·관리자) */
     function getOrderManageHubAccess() {
         normalizeLegacySession();
         if (!global.THEJHON_API || !THEJHON_API.getToken || !THEJHON_API.getToken()) {
@@ -2426,7 +2431,7 @@
         }
         return {
             allowed: false,
-            reason: "발주서 관리는 관리자·슈퍼바이저만 이용할 수 있습니다."
+            reason: "영업관리는 관리자·슈퍼바이저만 이용할 수 있습니다."
         };
     }
 
@@ -2439,7 +2444,8 @@
                 transactionList: "supervisor-transaction-list.html",
                 transactionManual: "transaction-manual-register.html",
                 transactionManualList: "transaction-manual-list.html",
-                salesLedgerInquiry: "sales-ledger-inquiry.html"
+                salesLedgerInquiry: "sales-ledger-inquiry.html",
+                taxInvoice: "tax-invoice.html"
             };
         }
         if (canShowOrderManageMenu()) {
@@ -2450,7 +2456,8 @@
                 transactionList: "supervisor-transaction-list.html",
                 transactionManual: "transaction-manual-register.html",
                 transactionManualList: "transaction-manual-list.html",
-                salesLedgerInquiry: "sales-ledger-inquiry.html"
+                salesLedgerInquiry: "sales-ledger-inquiry.html",
+                taxInvoice: "tax-invoice.html"
             };
         }
         return {
@@ -2459,7 +2466,8 @@
             transactionPdf: "",
             transactionManual: "",
             transactionManualList: "",
-            salesLedgerInquiry: ""
+            salesLedgerInquiry: "",
+            taxInvoice: ""
         };
     }
 

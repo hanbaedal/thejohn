@@ -21,6 +21,53 @@
         return new Date(ts).toLocaleString("ko-KR");
     }
 
+    function formatDateOnly(ts) {
+        if (!ts) return "";
+        var d = new Date(ts);
+        if (!isFinite(d.getTime())) return "";
+        return d.toLocaleDateString("ko-KR", {
+            year: "numeric",
+            month: "2-digit",
+            day: "2-digit"
+        });
+    }
+
+    function buildVendorOrderHeaderMeta(order) {
+        var meta = [];
+        meta.push(
+            "<dt>구매업체</dt><dd>" +
+                escapeHtml(order.vendorCompany || order.vendorUserId || "") +
+                "</dd>"
+        );
+        meta.push(
+            "<dt>주문서 번호</dt><dd>" +
+                escapeHtml(order.orderNo || order.id || "") +
+                "</dd>"
+        );
+        meta.push(
+            "<dt>주문일자</dt><dd>" + escapeHtml(formatDateOnly(order.createdAt)) + "</dd>"
+        );
+        if (order.vendorMgrName) {
+            meta.push("<dt>주문자</dt><dd>" + escapeHtml(order.vendorMgrName) + "</dd>");
+        }
+        if (order.vendorMgrTel) {
+            meta.push("<dt>연락처</dt><dd>" + escapeHtml(order.vendorMgrTel) + "</dd>");
+        }
+        if (order.note) {
+            meta.push("<dt>참고사항</dt><dd>" + escapeHtml(order.note) + "</dd>");
+        }
+        return meta;
+    }
+
+    function renderVendorOrderHeaderMetaHtml(order) {
+        if (!order) return "";
+        return (
+            '<dl class="order-detail-meta order-detail-meta--vendor-sheet">' +
+            buildVendorOrderHeaderMeta(order).join("") +
+            "</dl>"
+        );
+    }
+
     function renderOrderDetailHtml(order, opts) {
         opts = opts || {};
         if (!order) return '<p class="order-detail-empty">주문 정보가 없습니다.</p>';
@@ -62,7 +109,7 @@
                 "<dt>등록 연락처</dt><dd>" + escapeHtml(order.vendorRegisteredMgrTel) + "</dd>"
             );
         }
-        if (order.vendorRegisteredByName) {
+        if (order.vendorRegisteredByName && !opts.hideRegisteredBy) {
             meta.push(
                 "<dt>등록 담당</dt><dd>" + escapeHtml(order.vendorRegisteredByName) + "</dd>"
             );
@@ -80,7 +127,11 @@
 
     function renderOrderDetailItemsHtml(order) {
         if (!order) return "";
-        var rows = (order.items || [])
+        return renderOrderItemsTableHtml(order.items || []);
+    }
+
+    function renderOrderItemsTableHtml(items) {
+        var rows = (items || [])
             .map(function (it, idx) {
                 return (
                     "<tr><td data-label=\"#\">" +
@@ -110,10 +161,114 @@
         );
     }
 
-    function renderOrderDetailTotalHtml(order) {
+    function resolveAdminSplits(order) {
+        if (!order) return [];
+        if (Array.isArray(order.adminSplits) && order.adminSplits.length) {
+            return order.adminSplits;
+        }
+        var groups = {};
+        var keys = [];
+        (order.items || []).forEach(function (it) {
+            var key = String(it.productRegisteredBy || "").trim() || "_unknown";
+            if (!groups[key]) {
+                groups[key] = {
+                    id: "",
+                    orderNo: "",
+                    orderStaffLoginId: key === "_unknown" ? "" : key,
+                    adminName:
+                        String(it.productRegisteredByName || "").trim() ||
+                        (key === "_unknown" ? "담당 미지정" : key),
+                    totalAmount: 0,
+                    items: []
+                };
+                keys.push(key);
+            }
+            groups[key].items.push(it);
+            groups[key].totalAmount += Number(it.lineTotal) || 0;
+        });
+        return keys.map(function (k) {
+            return groups[k];
+        });
+    }
+
+    function renderOrderDetailSplitsHtml(order, opts) {
+        opts = opts || {};
+        if (!order) return "";
+        var splits = resolveAdminSplits(order);
+        if (!splits.length) {
+            return renderOrderDetailItemsHtml(order);
+        }
+        if (splits.length === 1 && !(opts.forceSplitView)) {
+            return renderOrderDetailItemsHtml(order);
+        }
+        return (
+            '<div class="order-admin-splits">' +
+            splits
+                .map(function (split, idx) {
+                    var vendorView = !!opts.vendorView;
+                    var titleLabel = vendorView
+                        ? "매입처: " + escapeHtml(split.adminName || "—")
+                        : escapeHtml(String(idx + 1)) + ". " + escapeHtml(split.adminName || "담당 관리자");
+                    var subNo = String(split.orderNo || "").trim();
+                    var meta = "";
+                    if (!vendorView && subNo) {
+                        meta =
+                            '<p class="order-admin-split__meta">' +
+                            '<span class="order-admin-split__no">발주번호 ' +
+                            escapeHtml(subNo) +
+                            "</span>" +
+                            '<span class="order-admin-split__count">품목 ' +
+                            escapeHtml(String((split.items || []).length)) +
+                            "건</span></p>";
+                    } else if (vendorView) {
+                        meta =
+                            '<p class="order-admin-split__meta">' +
+                            '<span class="order-admin-split__count">품목 ' +
+                            escapeHtml(String((split.items || []).length)) +
+                            "건</span></p>";
+                    }
+                    return (
+                        '<section class="order-admin-split" aria-labelledby="order-admin-split-' +
+                        idx +
+                        '">' +
+                        '<h3 class="order-admin-split__title" id="order-admin-split-' +
+                        idx +
+                        '">' +
+                        titleLabel +
+                        "</h3>" +
+                        meta +
+                        renderOrderItemsTableHtml(split.items || []) +
+                        '<p class="order-admin-split__total">소계: <strong>' +
+                        escapeHtml(formatWon(split.totalAmount)) +
+                        "</strong></p></section>"
+                    );
+                })
+                .join("") +
+            "</div>"
+        );
+    }
+
+    function renderVendorOrderSheetHtml(order, opts) {
+        opts = opts || {};
         if (!order) return "";
         return (
-            '<p class="order-detail-total">합계: <strong>' +
+            renderVendorOrderHeaderMetaHtml(order) +
+            renderOrderDetailSplitsHtml(order, { forceSplitView: true, vendorView: true }) +
+            renderOrderDetailTotalHtml(order, { splitTotal: true, totalLabel: "전체 합계" })
+        );
+    }
+
+    function renderOrderDetailTotalHtml(order, opts) {
+        if (!order) return "";
+        opts = opts || {};
+        var splits = resolveAdminSplits(order);
+        var label =
+            opts.totalLabel ||
+            (splits.length > 1 || opts.splitTotal ? "전체 합계" : "합계");
+        return (
+            '<p class="order-detail-total">' +
+            escapeHtml(label) +
+            ": <strong>" +
             escapeHtml(formatWon(order.totalAmount)) +
             "</strong></p>"
         );
@@ -405,7 +560,12 @@
         formatDate: formatDate,
         renderOrderDetailHtml: renderOrderDetailHtml,
         renderOrderDetailMetaHtml: renderOrderDetailMetaHtml,
+        renderVendorOrderHeaderMetaHtml: renderVendorOrderHeaderMetaHtml,
+        renderVendorOrderSheetHtml: renderVendorOrderSheetHtml,
+        formatDateOnly: formatDateOnly,
         renderOrderDetailItemsHtml: renderOrderDetailItemsHtml,
+        renderOrderDetailSplitsHtml: renderOrderDetailSplitsHtml,
+        resolveAdminSplits: resolveAdminSplits,
         renderOrderDetailTotalHtml: renderOrderDetailTotalHtml,
         // 내부 상태: downloadOrderPdfWithAuth 저장명 생성에 사용
         _lastOrderForPdf: null,

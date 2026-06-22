@@ -11,10 +11,28 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-title" content="더존">
-    <title>주문서 관리 — 더존</title>
+    <title>영업관리 — 더존</title>
     <link rel="stylesheet" href="common.css">
     <link rel="stylesheet" href="staff-hub.css">
     <link rel="stylesheet" href="order-manage-layout.css">
+    <style>
+        .omh-hub-card__desc {
+            margin: 0.35rem 0 0;
+            font-size: 0.88rem;
+            font-weight: 400;
+            color: #5a6d7e;
+            line-height: 1.45;
+        }
+        .omh-hub-card--soon {
+            opacity: 0.92;
+        }
+        .omh-hub-card--soon .company-division-card h2::after {
+            content: " (준비 중)";
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: #7a8d9e;
+        }
+    </style>
     <script src="api-config.js"></script>
     <script src="thejhon-api.js"></script>
     <script src="auth.js?v=20260530-order-nav"></script>
@@ -25,7 +43,7 @@
     <header class="site-header">
         <div class="site-header-start">
             <a href="work-hub.html" class="dz-logo dz-logo--compact" aria-label="그룹 마케팅 관리"><img src="img/logo.png" alt="" width="72" height="72" class="dz-logo-img"></a>
-            <nav class="site-header-nav site-header-nav--order" aria-label="주문서 관리 메뉴"></nav>
+            <nav class="site-header-nav site-header-nav--order" aria-label="영업관리 메뉴"></nav>
         </div>
         <nav class="site-header-actions" aria-label="계정">
             <time class="header-date" id="headerToday" datetime=""></time>
@@ -34,34 +52,27 @@
     </header>
     <main class="page-main page-main--hide-scrollbar company-main company-main--support-hub om-page omh-hub-page">
         <p class="shub-subnav"><a href="work-hub.html">← 그룹 마케팅 관리</a></p>
-        <h1>주문서 관리</h1>
+        <h1>영업관리</h1>
         <p id="omh-status" class="shub-status" role="status" aria-live="polite"></p>
         <div class="company-divisions omh-hub-rows" id="omh-menus">
             <div class="omh-group">
-                <a href="supervisor-order-list.html" class="company-division-card" id="omh-link-list" data-omh-link="list">
-                    <h2>발주서 리스트</h2>
+                <a href="supervisor-order-list.html" class="company-division-card omh-hub-card" id="omh-link-list" data-omh-link="list">
+                    <h2>주문서</h2>
+                    <p class="omh-hub-card__desc">일자·업체별 주문서 조회 · PDF</p>
                 </a>
-                <a href="supervisor-order-pdf.html" class="company-division-card" id="omh-link-order-pdf" data-omh-link="order-pdf">
-                    <h2>발주서 PDF로 보기</h2>
-                </a>
-                <a href="supervisor-transaction-pdf.html" class="company-division-card" id="omh-link-transaction-pdf" data-omh-link="transaction-pdf">
-                    <h2>거래명세서 PDF로 보기</h2>
-                </a>
-                <a href="supervisor-transaction-list.html" class="company-division-card" id="omh-link-transaction-list" data-omh-link="transaction-list">
+                <a href="transaction-manual-list.html" class="company-division-card omh-hub-card" id="omh-link-transaction" data-omh-link="transaction">
                     <h2>거래명세서</h2>
+                    <p class="omh-hub-card__desc">주문 연동·수기 작성 목록</p>
                 </a>
             </div>
             <div class="omh-group">
-                <a href="transaction-manual-register.html" class="company-division-card" id="omh-link-transaction-manual" data-omh-link="transaction-manual">
-                    <h2>거래명세서 수기 작성</h2>
+                <a href="sales-ledger-inquiry.html" class="company-division-card omh-hub-card" id="omh-link-sales-inquiry" data-omh-link="sales-inquiry">
+                    <h2>매출장</h2>
+                    <p class="omh-hub-card__desc">주문서·거래명세서 기준 매출 조회</p>
                 </a>
-                <a href="transaction-manual-list.html" class="company-division-card" id="omh-link-transaction-manual-list" data-omh-link="transaction-manual-list">
-                    <h2>수기 거래명세서 목록</h2>
-                </a>
-            </div>
-            <div class="omh-group">
-                <a href="sales-ledger-inquiry.html" class="company-division-card" id="omh-link-sales-inquiry" data-omh-link="sales-inquiry">
-                    <h2>매출장 조회</h2>
+                <a href="tax-invoice.html" class="company-division-card omh-hub-card omh-hub-card--soon" id="omh-link-tax-invoice" data-omh-link="tax-invoice">
+                    <h2>세금계산서 발부</h2>
+                    <p class="omh-hub-card__desc">매출장 기준 양식 PDF 출력</p>
                 </a>
             </div>
         </div>

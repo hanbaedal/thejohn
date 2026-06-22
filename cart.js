@@ -85,18 +85,18 @@
         openDetailModal();
         historyDetailEl.innerHTML =
             '<div class="cart-detail-head">' +
-            '<h2 id="cart-detail-title" class="cart-detail-title">주문 상세</h2>' +
+            '<h2 id="cart-detail-title" class="cart-detail-title">주문서</h2>' +
             '<button type="button" class="cart-detail-modal__close" id="cart-history-head-close" aria-label="닫기">×</button>' +
             "</div>" +
             '<div class="cart-detail-layout">' +
             '<div class="cart-detail-meta-wrap">' +
-            OrderUI.renderOrderDetailMetaHtml(order, { showVendor: false }) +
+            OrderUI.renderVendorOrderHeaderMetaHtml(order) +
             "</div>" +
-            '<div class="cart-detail-items-scroll" tabindex="0" aria-label="주문 품목 목록">' +
-            OrderUI.renderOrderDetailItemsHtml(order) +
+            '<div class="cart-detail-items-scroll" tabindex="0" aria-label="매입처별 주문 품목">' +
+            OrderUI.renderOrderDetailSplitsHtml(order, { forceSplitView: true, vendorView: true }) +
             "</div>" +
             '<div class="cart-detail-foot">' +
-            OrderUI.renderOrderDetailTotalHtml(order) +
+            OrderUI.renderOrderDetailTotalHtml(order, { splitTotal: true, totalLabel: "전체 합계" }) +
             '<div class="cart-actions-row">' +
             '<button type="button" class="btn btn-primary" id="cart-history-pdf">PDF 저장</button>' +
             '<button type="button" class="btn" id="cart-history-delete">삭제</button>' +
@@ -192,7 +192,7 @@
                                 escapeHtml(it.orderNo || it.id) +
                                 "</span>" +
                                 '<span class="cart-history-meta">' +
-                                escapeHtml(OrderUI.formatDate(it.createdAt)) +
+                                escapeHtml(OrderUI.formatDateOnly(it.createdAt)) +
                                 " · " +
                                 escapeHtml(OrderUI.formatWon(it.totalAmount)) +
                                 " · 품목 " +
@@ -214,7 +214,7 @@
                 });
                 if (historyStatusEl) {
                     historyStatusEl.textContent =
-                        items.length + "건 — 항목을 클릭하면 품목·금액을 확인할 수 있습니다.";
+                        items.length + "건 — 주문서 번호를 클릭하면 매입처별 내역을 확인할 수 있습니다.";
                 }
             })
             .catch(function (err) {

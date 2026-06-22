@@ -116,7 +116,7 @@
         listItems = items || [];
         if (!listEl) return;
         if (!listItems.length) {
-            listEl.innerHTML = '<p class="am-list-empty">조회된 발주가 없습니다.</p>';
+            listEl.innerHTML = '<p class="am-list-empty">조회된 주문서가 없습니다.</p>';
             return;
         }
         var actionsHtml =
