@@ -1152,14 +1152,6 @@
         } catch (e) {}
     }
 
-    function loadOrderSubnav() {
-        try {
-            var data = JSON.parse(sessionStorage.getItem(ORDER_SUBNAV_STORAGE_KEY) || "[]");
-            if (Array.isArray(data) && data.length) return data;
-        } catch (e2) {}
-        return getDefaultOrderSubnavItems();
-    }
-
     function getDefaultOrderSubnavItems() {
         if (!getOrderManageHubAccess().allowed) return [];
         var links = getOrderManageHubLinks();
@@ -1170,17 +1162,11 @@
                 label: "주문서"
             });
         }
-        if (links.orderPdf && staffNavHrefFile(links.orderPdf) !== ORDER_MANAGE_HUB_PAGE) {
-            items.push({ href: links.orderPdf, label: "주문서 PDF" });
-        }
-        if (links.transactionPdf) {
-            items.push({ href: links.transactionPdf, label: "거래명세서 PDF" });
-        }
-        if (links.transactionList) {
-            items.push({ href: links.transactionList, label: "거래명세서" });
-        }
-        if (links.transactionManual) {
-            items.push({ href: links.transactionManual, label: "거래명세서(수기)" });
+        if (links.transactionList || links.transactionManualList) {
+            items.push({
+                href: links.transactionList || links.transactionManualList,
+                label: "거래명세서"
+            });
         }
         if (links.salesLedgerHub) {
             items.push({ href: links.salesLedgerHub, label: "매출장" });
@@ -1191,6 +1177,86 @@
             items.push({ href: links.taxInvoice, label: "세금계산서 발부" });
         }
         return items;
+    }
+
+    /** 영업관리 헤더 탭 — 하위 페이지를 상위 메뉴와 묶어 is-current 판정 */
+    var ORDER_SUBNAV_RELATED_PAGES = {
+        "order-manage-hub.html": ["order-manage-hub.html"],
+        "supervisor-order-list.html": [
+            "supervisor-order-list.html",
+            "order-list-admin.html",
+            "supervisor-order-pdf.html"
+        ],
+        "order-list-admin.html": [
+            "supervisor-order-list.html",
+            "order-list-admin.html",
+            "supervisor-order-pdf.html"
+        ],
+        "supervisor-order-pdf.html": [
+            "supervisor-order-list.html",
+            "order-list-admin.html",
+            "supervisor-order-pdf.html"
+        ],
+        "transaction-list.html": [
+            "transaction-list.html",
+            "transaction-manual-register.html",
+            "transaction-manual-list.html",
+            "supervisor-transaction-list.html",
+            "supervisor-transaction-pdf.html"
+        ],
+        "transaction-manual-register.html": [
+            "transaction-list.html",
+            "transaction-manual-register.html",
+            "transaction-manual-list.html",
+            "supervisor-transaction-list.html",
+            "supervisor-transaction-pdf.html"
+        ],
+        "sales-ledger-hub.html": [
+            "sales-ledger-hub.html",
+            "sales-ledger-by-vendor.html",
+            "sales-ledger-by-product.html",
+            "sales-ledger-by-date.html",
+            "sales-ledger-inquiry.html",
+            "sales-ledger-list.html",
+            "sales-ledger-register.html",
+            "sales-by-product.html",
+            "sales-by-vendor.html"
+        ],
+        "tax-invoice.html": ["tax-invoice.html"]
+    };
+
+    function orderSubnavLinkMatchesPage(linkHref, curFile) {
+        var linkFile = staffNavHrefFile(linkHref);
+        if (!linkFile || !curFile) return false;
+        if (linkFile === curFile) return true;
+        var related = ORDER_SUBNAV_RELATED_PAGES[linkFile];
+        if (related) return related.indexOf(curFile) >= 0;
+        return false;
+    }
+
+    function isValidOrderSubnavItems(items) {
+        if (!items || !items.length) return false;
+        var files = {};
+        for (var i = 0; i < items.length; i++) {
+            files[staffNavHrefFile(items[i].href)] = true;
+        }
+        if (!files[ORDER_MANAGE_HUB_PAGE]) return false;
+        if (
+            files["sales-ledger-by-vendor.html"] ||
+            files["sales-ledger-by-product.html"] ||
+            files["sales-ledger-by-date.html"]
+        ) {
+            return false;
+        }
+        return true;
+    }
+
+    function loadOrderSubnav() {
+        try {
+            var data = JSON.parse(sessionStorage.getItem(ORDER_SUBNAV_STORAGE_KEY) || "[]");
+            if (Array.isArray(data) && data.length && isValidOrderSubnavItems(data)) return data;
+        } catch (e2) {}
+        return getDefaultOrderSubnavItems();
     }
 
     function collectOrderSubnavFromBody() {
@@ -1209,21 +1275,8 @@
             saveOrderSubnav(items);
             return items;
         }
-        var bodyItems = collectBodyNavCards(document);
-        if (bodyItems.length) {
-            var merged = [{ href: ORDER_MANAGE_HUB_PAGE, label: "영업관리" }];
-            var seen2 = {};
-            seen2[ORDER_MANAGE_HUB_PAGE] = true;
-            for (var j = 0; j < bodyItems.length; j++) {
-                var f2 = staffNavHrefFile(bodyItems[j].href);
-                if (!f2 || seen2[f2]) continue;
-                seen2[f2] = true;
-                merged.push(bodyItems[j]);
-            }
-            saveOrderSubnav(merged);
-            return merged;
-        }
         var cached = loadOrderSubnav();
+        if (!cached.length) cached = getDefaultOrderSubnavItems();
         saveOrderSubnav(cached);
         return cached;
     }
@@ -1242,7 +1295,7 @@
         var links = nav.querySelectorAll("a[data-order-subnav]");
         for (var i = 0; i < links.length; i++) {
             var link = links[i];
-            var on = staffNavHrefFile(link.getAttribute("href")) === cur;
+            var on = orderSubnavLinkMatchesPage(link.getAttribute("href"), cur);
             link.classList.toggle("is-current", on);
             if (on) link.setAttribute("aria-current", "page");
             else link.removeAttribute("aria-current");
@@ -1269,7 +1322,7 @@
             a.textContent = it.label;
             a.setAttribute("data-staff-nav-injected", "order");
             a.setAttribute("data-order-subnav", "1");
-            if (file === cur) {
+            if (orderSubnavLinkMatchesPage(it.href, cur)) {
                 a.classList.add("is-current");
                 a.setAttribute("aria-current", "page");
             }
