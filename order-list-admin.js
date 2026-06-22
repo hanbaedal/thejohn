@@ -331,6 +331,7 @@
     }
 
     if (Auth.setStaffNavMode) Auth.setStaffNavMode("order");
+    if (Auth.refreshOrderHeader) Auth.refreshOrderHeader();
 
     if (DetailModal && DetailModal.create) {
         detailModal = DetailModal.create({

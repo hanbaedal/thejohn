@@ -71,8 +71,7 @@
             "vendor-dm-print.html": true,
             "vendor-prospect-list.html": true,
             "vendor-prospect-finder.html": true,
-            "vendor-excel-import.html": true,
-            "order-list-admin.html": true
+            "vendor-excel-import.html": true
         };
         var productDrop = nav.querySelector('[data-nav-dropdown="product-manage"]');
         var vendorDrop = nav.querySelector('[data-nav-dropdown="vendor-manage"]');

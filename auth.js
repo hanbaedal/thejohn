@@ -815,7 +815,8 @@
         "sales-ledger-register.html",
         "sales-by-product.html",
         "sales-by-vendor.html",
-        "tax-invoice.html"
+        "tax-invoice.html",
+        "order-list-admin.html"
     ];
     var WORK_HUB_PAGE = "work-hub.html";
     var WORK_HUB_LABEL = "그룹 마케팅 관리";
@@ -904,7 +905,6 @@
     VENDOR_ADMIN_PAGES.forEach(function (f) {
         STAFF_NAV_VENDOR_PAGES[f] = true;
     });
-    STAFF_NAV_VENDOR_PAGES["order-list-admin.html"] = true;
 
     function staffNavGet() {
         try {
@@ -929,6 +929,7 @@
         if (!file) return "";
         if (file === WORK_HUB_PAGE) return "hub";
         if (STAFF_NAV_PRODUCT_PAGES[file]) return "product";
+        if (STAFF_NAV_ORDER_PAGES[file]) return "order";
         if (STAFF_NAV_VENDOR_PAGES[file]) return "vendor-manage";
         if (file === "support-inquiry.html") {
             var inquiryStored = staffNavGet();
@@ -936,7 +937,6 @@
             return "public";
         }
         if (STAFF_NAV_MANAGE_HOME_PAGES[file]) return "manage-home";
-        if (STAFF_NAV_ORDER_PAGES[file]) return "order";
         if (STAFF_NAV_WORK_PAGES[file]) return "work";
         if (isStaffNavPublicPage(file)) return "public";
         return "";
