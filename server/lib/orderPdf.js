@@ -203,7 +203,8 @@ function itemUnit(it) {
     return "식";
 }
 
-function itemRemark(it) {
+function itemRemark(it, order) {
+    if (order && order.orderKind === "vendor") return "";
     var parts = [];
     if (it.pd_dept_label || it.pd_dept) parts.push(it.pd_dept_label || it.pd_dept);
     if (it.priceLabel && it.priceLabel !== "단가") parts.push(it.priceLabel);
@@ -275,7 +276,7 @@ function drawItemsTable(doc, order, x, y, tableW, pageItems, rowOffset, isLastPa
             drawValueCell(doc, cellX(4), cy, cols[4], ROW_H, formatNum(it.quantity), "right");
             drawValueCell(doc, cellX(5), cy, cols[5], ROW_H, formatNum(it.unitPrice), "right");
             drawValueCell(doc, cellX(6), cy, cols[6], ROW_H, formatNum(it.lineTotal), "right");
-            drawValueCell(doc, cellX(7), cy, cols[7], ROW_H, itemRemark(it));
+            drawValueCell(doc, cellX(7), cy, cols[7], ROW_H, itemRemark(it, order));
         } else if (r === belowBlankRow) {
             for (var c = 1; c < cols.length; c++) {
                 drawValueCell(

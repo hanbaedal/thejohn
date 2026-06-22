@@ -125,36 +125,60 @@
         return '<dl class="order-detail-meta">' + buildOrderDetailMeta(order, opts).join("") + "</dl>";
     }
 
-    function renderOrderDetailItemsHtml(order) {
+    function renderOrderDetailItemsHtml(order, opts) {
         if (!order) return "";
-        return renderOrderItemsTableHtml(order.items || []);
+        return renderOrderItemsTableHtml(order.items || [], opts);
     }
 
-    function renderOrderItemsTableHtml(items) {
+    function renderOrderItemsTableHtml(items, opts) {
+        opts = opts || {};
+        var vendorView = !!opts.vendorView;
+        var headers = vendorView
+            ? ["순번", "품명", "규격", "단가", "수량", "금액"]
+            : ["#", "상품", "규격", "단가", "수량", "금액"];
         var rows = (items || [])
             .map(function (it, idx) {
+                var unitText = vendorView
+                    ? formatWon(it.unitPrice)
+                    : (it.priceLabel ? it.priceLabel + " " : "") + formatWon(it.unitPrice);
                 return (
-                    "<tr><td data-label=\"#\">" +
+                    "<tr><td data-label=\"" +
+                    escapeHtml(headers[0]) +
+                    '">' +
                     escapeHtml(String(idx + 1)) +
-                    '</td><td data-label="상품">' +
+                    '</td><td data-label="' +
+                    escapeHtml(headers[1]) +
+                    '">' +
                     escapeHtml(it.productName || "") +
-                    '</td><td data-label="규격">' +
+                    '</td><td data-label="' +
+                    escapeHtml(headers[2]) +
+                    '">' +
                     escapeHtml(String(it.pd_size || "").trim() || "—") +
-                    '</td><td data-label="단가">' +
-                    escapeHtml(it.priceLabel || "") +
-                    " " +
-                    escapeHtml(formatWon(it.unitPrice)) +
-                    '</td><td data-label="수량">' +
+                    '</td><td data-label="' +
+                    escapeHtml(headers[3]) +
+                    '">' +
+                    escapeHtml(unitText) +
+                    '</td><td data-label="' +
+                    escapeHtml(headers[4]) +
+                    '">' +
                     escapeHtml(String(it.quantity || 0)) +
-                    '</td><td data-label="금액">' +
+                    '</td><td data-label="' +
+                    escapeHtml(headers[5]) +
+                    '">' +
                     escapeHtml(formatWon(it.lineTotal)) +
                     "</td></tr>"
                 );
             })
             .join("");
         return (
-            '<div class="order-detail-table-wrap"><table class="order-detail-table"><thead><tr>' +
-            "<th>#</th><th>상품</th><th>규격</th><th>단가</th><th>수량</th><th>금액</th>" +
+            '<div class="order-detail-table-wrap"><table class="order-detail-table' +
+            (vendorView ? " order-detail-table--vendor" : "") +
+            '"><thead><tr>' +
+            headers
+                .map(function (h) {
+                    return "<th>" + escapeHtml(h) + "</th>";
+                })
+                .join("") +
             "</tr></thead><tbody>" +
             (rows || '<tr><td colspan="6">품목 없음</td></tr>') +
             "</tbody></table></div>"
@@ -237,7 +261,7 @@
                         titleLabel +
                         "</h3>" +
                         meta +
-                        renderOrderItemsTableHtml(split.items || []) +
+                        renderOrderItemsTableHtml(split.items || [], { vendorView: vendorView }) +
                         '<p class="order-admin-split__total">소계: <strong>' +
                         escapeHtml(formatWon(split.totalAmount)) +
                         "</strong></p></section>"

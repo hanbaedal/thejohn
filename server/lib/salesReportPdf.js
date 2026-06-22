@@ -113,10 +113,10 @@ function buildSalesReportPdfBuffer(opts) {
 
         var cols = opts.layout === "date-ledger"
             ? [
-                  { label: "일자", w: 52 },
-                  { label: "업체", w: 72 },
-                  { label: "코드", w: 44 },
-                  { label: "품명", w: 88 },
+                  { label: "일자", w: 48 },
+                  { label: "업체", w: 96 },
+                  { label: "코드", w: 40 },
+                  { label: "품명", w: 76 },
                   { label: "수량", w: 32, align: "right" },
                   { label: "단가", w: 48, align: "right" },
                   { label: "소계", w: 52, align: "right" }

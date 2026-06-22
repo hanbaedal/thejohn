@@ -29,9 +29,15 @@
     text-align: center;
 }
 .srp-results-wrap {
+    width: 100%;
     max-width: 52rem;
     margin: 0 auto;
     padding: 0 0.75rem 2rem;
+    box-sizing: border-box;
+    min-width: 0;
+}
+.srp-results-wrap:has(.srp-table--date-ledger) {
+    max-width: 58rem;
 }
 .srp-ledger-sheet {
     background: #fff;
@@ -39,6 +45,8 @@
     border-radius: 10px;
     overflow: hidden;
     box-shadow: 0 1px 4px rgba(5, 42, 77, 0.06);
+    max-width: 100%;
+    min-width: 0;
 }
 .srp-ledger-sheet[hidden] {
     display: none !important;
@@ -68,6 +76,10 @@
 }
 .srp-table-wrap {
     overflow-x: auto;
+    overflow-y: hidden;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior-x: contain;
+    max-width: 100%;
     border: 1px solid #e0e6ed;
     border-radius: 8px;
     background: #fff;
@@ -79,9 +91,13 @@
     border-top: 1px solid #e8edf2;
 }
 .srp-table {
-    width: 100%;
+    width: max-content;
+    min-width: 100%;
     border-collapse: collapse;
     font-size: 0.86rem;
+}
+.srp-table:not(.srp-table--date-ledger) {
+    min-width: 48rem;
 }
 .srp-table th,
 .srp-table td {
@@ -100,27 +116,32 @@
 }
 .srp-table--date-ledger {
     table-layout: fixed;
+    width: 40rem;
+    min-width: 40rem;
 }
 .srp-table--date-ledger col.col-date {
-    width: 5.5rem;
-}
-.srp-table--date-ledger col.col-vendor {
-    width: 6.5rem;
-}
-.srp-table--date-ledger col.col-code {
-    width: 4.5rem;
-}
-.srp-table--date-ledger col.col-qty {
-    width: 3.25rem;
-}
-.srp-table--date-ledger col.col-price {
-    width: 4.75rem;
-}
-.srp-table--date-ledger col.col-amount {
     width: 5.25rem;
 }
-.srp-table--date-ledger td.name,
+.srp-table--date-ledger col.col-vendor {
+    width: 12rem;
+}
+.srp-table--date-ledger col.col-code {
+    width: 4.25rem;
+}
+.srp-table--date-ledger col.col-qty {
+    width: 3rem;
+}
+.srp-table--date-ledger col.col-price {
+    width: 4.5rem;
+}
+.srp-table--date-ledger col.col-amount {
+    width: 5rem;
+}
+.srp-table--date-ledger th:nth-child(2),
 .srp-table--date-ledger td.vendor {
+    white-space: nowrap;
+}
+.srp-table--date-ledger td.name {
     white-space: normal;
     word-break: break-word;
 }
@@ -287,6 +308,15 @@
     font-size: 0.8rem;
     color: #6a7d8e;
     margin-top: 0.15rem;
+}
+@media (max-width: 720px) {
+    .srp-page .srp-results-wrap {
+        padding-left: max(0.5rem, env(safe-area-inset-left, 0));
+        padding-right: max(0.5rem, env(safe-area-inset-right, 0));
+    }
+    .srp-table-wrap {
+        touch-action: pan-x pan-y;
+    }
 }
 @media print {
     .site-header,
