@@ -1,35 +1,180 @@
-.tax-page .tax-detail-meta {
+#tax-detail-modal .odm-panel:has(.tax-invoice-detail) {
+    width: min(100%, 46rem);
+    max-height: min(92dvh, 50rem);
+}
+
+.tax-invoice-detail {
+    padding: 0 0 0.5rem;
+}
+
+.tax-invoice-detail__meta {
     margin: 0 0 0.75rem;
+    padding: 0.55rem 0.65rem;
+    background: #fff;
+    border: 1px solid #d4e2f0;
+    border-radius: 8px;
+}
+
+.tax-invoice-detail__meta p {
+    margin: 0.15rem 0;
     font-size: 0.88rem;
     color: #3d5166;
-    line-height: 1.55;
 }
-.tax-page .tax-detail-meta p {
-    margin: 0.2rem 0;
+
+.tax-invoice-detail__label {
+    display: inline-block;
+    min-width: 4.5rem;
+    font-weight: 600;
+    color: #052a4d;
 }
-.tax-page .tax-detail-table-wrap {
-    overflow-x: auto;
-    margin-bottom: 0.5rem;
+
+.tax-invoice-detail__parties {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.65rem;
+    margin-bottom: 0.75rem;
 }
-.tax-page .tax-detail-table {
+
+@media (max-width: 640px) {
+    .tax-invoice-detail__parties {
+        grid-template-columns: 1fr;
+    }
+}
+
+.tax-party-table {
     width: 100%;
     border-collapse: collapse;
-    font-size: 0.88rem;
-}
-.tax-page .tax-detail-table th,
-.tax-page .tax-detail-table td {
+    font-size: 0.82rem;
+    background: #fff;
     border: 1px solid #d4e2f0;
-    padding: 0.4rem 0.5rem;
+    border-radius: 8px;
+    overflow: hidden;
 }
-.tax-page .tax-detail-table th {
+
+.tax-party-table caption {
+    padding: 0.45rem 0.55rem;
+    text-align: left;
+    font-weight: 700;
+    color: #052a4d;
+    background: #f0f6fc;
+    border-bottom: 1px solid #d4e2f0;
+}
+
+.tax-party-table th {
+    width: 5.5rem;
+    padding: 0.35rem 0.5rem;
+    text-align: left;
+    font-weight: 600;
+    color: #5a6d7e;
+    background: #f8fafc;
+    border: 1px solid #e8edf2;
+    vertical-align: top;
+    white-space: nowrap;
+}
+
+.tax-party-table td {
+    padding: 0.35rem 0.5rem;
+    color: #052a4d;
+    border: 1px solid #e8edf2;
+    word-break: break-word;
+}
+
+.tax-invoice-detail__items-wrap {
+    overflow-x: auto;
+    margin-bottom: 0.65rem;
+    border: 1px solid #d4e2f0;
+    border-radius: 8px;
+    background: #fff;
+}
+
+.tax-invoice-items-table {
+    width: 100%;
+    min-width: 32rem;
+    border-collapse: collapse;
+    font-size: 0.86rem;
+    table-layout: fixed;
+}
+
+.tax-invoice-items-table col.col-name {
+    width: auto;
+}
+.tax-invoice-items-table col.col-qty {
+    width: 3rem;
+}
+.tax-invoice-items-table col.col-price,
+.tax-invoice-items-table col.col-supply,
+.tax-invoice-items-table col.col-tax,
+.tax-invoice-items-table col.col-amount {
+    width: 5.25rem;
+}
+
+.tax-invoice-items-table th,
+.tax-invoice-items-table td {
+    border: 1px solid #e0e6ed;
+    padding: 0.42rem 0.5rem;
+}
+
+.tax-invoice-items-table thead th {
     background: #f0f6fc;
     font-weight: 600;
+    color: #052a4d;
+    white-space: nowrap;
 }
-.tax-page .tax-detail-table td.num {
+
+.tax-invoice-items-table td.name {
+    word-break: break-word;
+}
+
+.tax-invoice-items-table th.num,
+.tax-invoice-items-table td.num {
     text-align: right;
     white-space: nowrap;
 }
-.tax-page .tax-detail-table tr.tax-total-row td {
-    background: #f0f6fc;
+
+.tax-invoice-items-table tr.tax-items-total td {
+    background: #f8fafc;
     font-weight: 600;
+    border-top: 2px solid #c5d8eb;
+}
+
+.tax-invoice-summary-table {
+    width: 100%;
+    max-width: 18rem;
+    margin-left: auto;
+    border-collapse: collapse;
+    font-size: 0.88rem;
+    background: #fff;
+    border: 1px solid #d4e2f0;
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.tax-invoice-summary-table th,
+.tax-invoice-summary-table td {
+    padding: 0.45rem 0.6rem;
+    border: 1px solid #e8edf2;
+}
+
+.tax-invoice-summary-table th {
+    width: 7rem;
+    text-align: left;
+    font-weight: 600;
+    color: #5a6d7e;
+    background: #f8fafc;
+}
+
+.tax-invoice-summary-table td.num {
+    text-align: right;
+    white-space: nowrap;
+    color: #052a4d;
+}
+
+.tax-invoice-summary-table__total th,
+.tax-invoice-summary-table__total td {
+    background: #f0f6fc;
+    border-top: 2px solid #c5d8eb;
+}
+
+.odm-custom-body .tax-invoice-detail {
+    padding: 0.15rem 0 0.5rem;
 }

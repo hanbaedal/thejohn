@@ -145,19 +145,55 @@
         setStatus(vendorGroups.length + "개 업체 — 업체를 클릭하면 세금계산서를 발부할 수 있습니다.", "ok");
     }
 
+    function renderPartyTable(caption, party) {
+        party = party || {};
+        function row(label, value) {
+            var v = String(value || "").trim();
+            if (!v) return "";
+            return (
+                "<tr><th scope=\"row\">" +
+                SR.escapeHtml(label) +
+                "</th><td>" +
+                SR.escapeHtml(v) +
+                "</td></tr>"
+            );
+        }
+        var body =
+            row("상호", party.company) +
+            row("사업자번호", party.bizNo) +
+            row("대표자", party.ceo) +
+            row("업태", party.bizType) +
+            row("종목", party.bizItem) +
+            row("주소", party.address) +
+            row("연락처", party.phone);
+        if (!body) {
+            body = '<tr><td colspan="2">—</td></tr>';
+        }
+        return (
+            '<table class="tax-party-table"><caption>' +
+            SR.escapeHtml(caption) +
+            "</caption><tbody>" +
+            body +
+            "</tbody></table>"
+        );
+    }
+
     function renderPreviewBody(preview) {
         if (!preview) return "";
         var items = preview.items || [];
         var totalSupply = 0;
         var totalTax = 0;
+        var totalAmount = 0;
         var rows = items
             .map(function (it) {
                 var vat = splitVat(it.lineTotal);
+                var lineTotal = Number(it.lineTotal) || 0;
                 totalSupply += vat.supply;
                 totalTax += vat.tax;
+                totalAmount += lineTotal;
                 return (
                     "<tr>" +
-                    "<td>" +
+                    '<td class="name">' +
                     SR.escapeHtml(it.productName || "") +
                     "</td>" +
                     '<td class="num">' +
@@ -172,39 +208,87 @@
                     '<td class="num">' +
                     SR.escapeHtml(SR.formatWon(vat.tax).replace("원", "")) +
                     "</td>" +
+                    '<td class="num">' +
+                    SR.escapeHtml(SR.formatWon(lineTotal).replace("원", "")) +
+                    "</td>" +
                     "</tr>"
                 );
             })
             .join("");
-        rows +=
-            '<tr class="tax-total-row"><td colspan="3"><strong>합계</strong></td>' +
-            '<td class="num"><strong>' +
-            SR.escapeHtml(SR.formatWon(totalSupply).replace("원", "")) +
-            "</strong></td>" +
-            '<td class="num"><strong>' +
-            SR.escapeHtml(SR.formatWon(totalTax).replace("원", "")) +
-            "</strong></td></tr>";
+        if (!rows) {
+            rows = '<tr><td colspan="6">품목이 없습니다.</td></tr>';
+        } else {
+            rows +=
+                '<tr class="tax-items-total">' +
+                '<td colspan="3"><strong>합계</strong></td>' +
+                '<td class="num"><strong>' +
+                SR.escapeHtml(SR.formatWon(totalSupply).replace("원", "")) +
+                "</strong></td>" +
+                '<td class="num"><strong>' +
+                SR.escapeHtml(SR.formatWon(totalTax).replace("원", "")) +
+                "</strong></td>" +
+                '<td class="num"><strong>' +
+                SR.escapeHtml(SR.formatWon(totalAmount).replace("원", "")) +
+                "</strong></td>" +
+                "</tr>";
+        }
 
         var periodText =
             preview.period && preview.period.dateFrom && preview.period.dateTo
                 ? preview.period.dateFrom + " ~ " + preview.period.dateTo
                 : "";
+        var issueDate = String(preview.issueDate || "").trim();
 
         return (
-            '<div class="tax-detail-meta">' +
-            (periodText ? "<p>발부 기간: " + SR.escapeHtml(periodText) + "</p>" : "") +
-            "<p>공급자: " +
-            SR.escapeHtml((preview.issuer && preview.issuer.company) || "") +
-            "</p>" +
-            "<p>공급받는자: " +
-            SR.escapeHtml((preview.buyer && preview.buyer.company) || "") +
-            "</p>" +
+            '<div class="tax-invoice-detail">' +
+            '<div class="tax-invoice-detail__meta">' +
+            (periodText
+                ? '<p class="tax-invoice-detail__period"><span class="tax-invoice-detail__label">발부 기간</span> ' +
+                  SR.escapeHtml(periodText) +
+                  "</p>"
+                : "") +
+            (issueDate
+                ? '<p class="tax-invoice-detail__issue"><span class="tax-invoice-detail__label">작성일자</span> ' +
+                  SR.escapeHtml(issueDate) +
+                  "</p>"
+                : "") +
             "</div>" +
-            '<div class="tax-detail-table-wrap" tabindex="0" aria-label="세금계산서 품목">' +
-            '<table class="tax-detail-table"><thead><tr>' +
-            "<th>품목</th><th>수량</th><th>단가</th><th>공급가액</th><th>세액</th>" +
-            "</tr></thead><tbody>" +
-            (rows || '<tr><td colspan="5">품목이 없습니다.</td></tr>') +
+            '<div class="tax-invoice-detail__parties">' +
+            renderPartyTable("공급자", preview.issuer) +
+            renderPartyTable("공급받는자", preview.buyer) +
+            "</div>" +
+            '<div class="tax-invoice-detail__items-wrap">' +
+            '<table class="tax-invoice-items-table" aria-label="세금계산서 품목">' +
+            "<colgroup>" +
+            '<col class="col-name">' +
+            '<col class="col-qty">' +
+            '<col class="col-price">' +
+            '<col class="col-supply">' +
+            '<col class="col-tax">' +
+            '<col class="col-amount">' +
+            "</colgroup>" +
+            "<thead><tr>" +
+            "<th scope=\"col\">품목</th>" +
+            '<th scope="col" class="num">수량</th>' +
+            '<th scope="col" class="num">단가</th>' +
+            '<th scope="col" class="num">공급가액</th>' +
+            '<th scope="col" class="num">세액</th>' +
+            '<th scope="col" class="num">합계금액</th>' +
+            "</tr></thead>" +
+            "<tbody>" +
+            rows +
+            "</tbody></table></div>" +
+            '<table class="tax-invoice-summary-table" aria-label="세금계산서 합계">' +
+            "<tbody>" +
+            "<tr><th scope=\"row\">공급가액 합계</th><td class=\"num\">" +
+            SR.escapeHtml(SR.formatWon(totalSupply)) +
+            "</td></tr>" +
+            "<tr><th scope=\"row\">세액 합계</th><td class=\"num\">" +
+            SR.escapeHtml(SR.formatWon(totalTax)) +
+            "</td></tr>" +
+            '<tr class="tax-invoice-summary-table__total"><th scope="row">합계금액</th><td class="num"><strong>' +
+            SR.escapeHtml(SR.formatWon(totalAmount)) +
+            "</strong></td></tr>" +
             "</tbody></table></div>"
         );
     }
