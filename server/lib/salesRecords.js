@@ -302,6 +302,56 @@ async function backfillSalesRecords(db) {
     return { skipped: false, orders: orders.length, manual: manuals.length, lines: total, orderLines, manualLines };
 }
 
+/** 주문·수기 거래명세서 → sales_records 누락분 보정 (기능 도입 전 데이터·동기화 실패) */
+async function repairSalesRecords(db) {
+    await ensureIndexes(db);
+    const col = db.collection(COL);
+    let ordersFixed = 0;
+    let orderLines = 0;
+
+    const orders = await db
+        .collection("orders")
+        .find({ orderKind: { $ne: "vendor" } })
+        .toArray();
+    for (let i = 0; i < orders.length; i++) {
+        const order = orders[i];
+        const n = await col.countDocuments({ source: "order", sourceId: order.id });
+        if (n > 0) continue;
+        ordersFixed++;
+        orderLines += await syncFromOrder(db, order);
+    }
+
+    let manualsFixed = 0;
+    let manualLines = 0;
+    const manuals = await db.collection("transaction_manual").find({}).toArray();
+    for (let j = 0; j < manuals.length; j++) {
+        const doc = manuals[j];
+        const n = await col.countDocuments({ source: "manual", sourceId: doc.id });
+        if (n === 0) {
+            manualsFixed++;
+            manualLines += await syncFromManualTransaction(db, doc);
+        }
+        try {
+            const { updateFromTransaction } = require("./salesLedger");
+            await updateFromTransaction(db, doc);
+        } catch (ledgerErr) {
+            console.warn("[sales_records] repair ledger", doc.id, ledgerErr.message);
+        }
+    }
+
+    if (ordersFixed || manualsFixed) {
+        console.log(
+            "[sales_records] repair — orders:",
+            ordersFixed,
+            "+" + orderLines,
+            "lines, manual:",
+            manualsFixed,
+            "+" + manualLines
+        );
+    }
+    return { ordersFixed, orderLines, manualsFixed, manualLines };
+}
+
 module.exports = {
     COL,
     ensureIndexes,
@@ -311,5 +361,6 @@ module.exports = {
     queryByProduct,
     queryByVendor,
     backfillSalesRecords,
+    repairSalesRecords,
     toPublicRow
 };

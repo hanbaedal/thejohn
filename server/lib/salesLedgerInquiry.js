@@ -18,6 +18,13 @@ function issuerFilter(auth, adminStaffId) {
     return { issuerStaffLoginId: registeredByInFilter(trimStaffLoginId(auth.userId)) };
 }
 
+function vendorCompanyMatchQuery(company) {
+    const v = str(company);
+    if (!v) return {};
+    const esc = v.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    return { vendorCompany: { $regex: new RegExp("^" + esc + "$", "i") } };
+}
+
 function ledgerRowsFromDoc(doc) {
     const items = Array.isArray(doc.items) ? doc.items : [];
     const rows = [];
@@ -114,7 +121,7 @@ function aggregateByDate(items) {
 
 async function fetchLedgerItems(db, auth, query, dateQ, issuerQ, vendorCompany) {
     const orderMatch = Object.assign({}, issuerQ, dateQ, { source: "order" });
-    if (vendorCompany) orderMatch.vendorCompany = vendorCompany;
+    if (vendorCompany) Object.assign(orderMatch, vendorCompanyMatchQuery(vendorCompany));
 
     const orderRows = await db
         .collection(RECORDS_COL)
@@ -132,7 +139,7 @@ async function fetchLedgerItems(db, auth, query, dateQ, issuerQ, vendorCompany) 
     const ledgerMatch = Object.assign({}, issuerQ, dateQ, {
         sourceType: "transaction_manual"
     });
-    if (vendorCompany) ledgerMatch.vendorCompany = vendorCompany;
+    if (vendorCompany) Object.assign(ledgerMatch, vendorCompanyMatchQuery(vendorCompany));
 
     const ledgerDocs = await db
         .collection(LEDGER_COL)
@@ -222,8 +229,44 @@ async function querySalesLedgerInquiry(db, auth, query) {
     return result;
 }
 
+/** 매출장 업체 선택 — 등록 업체 + 거래명세서에 실제 등장한 업체명 */
+async function listLedgerVendorCompanies(db, auth, query) {
+    query = query || {};
+    const issuerQ = issuerFilter(auth, query.adminStaffId);
+    const companies = {};
+
+    const recRows = await db
+        .collection(RECORDS_COL)
+        .aggregate([
+            { $match: issuerQ },
+            { $group: { _id: "$vendorCompany" } }
+        ])
+        .toArray();
+    recRows.forEach(function (row) {
+        const name = str(row._id);
+        if (name) companies[name] = true;
+    });
+
+    const ledgerRows = await db
+        .collection(LEDGER_COL)
+        .aggregate([
+            { $match: issuerQ },
+            { $group: { _id: "$vendorCompany" } }
+        ])
+        .toArray();
+    ledgerRows.forEach(function (row) {
+        const name = str(row._id);
+        if (name) companies[name] = true;
+    });
+
+    return Object.keys(companies).sort(function (a, b) {
+        return a.localeCompare(b, "ko");
+    });
+}
+
 module.exports = {
     querySalesLedgerInquiry,
+    listLedgerVendorCompanies,
     ledgerRowsFromDoc,
     aggregateByDate
 };

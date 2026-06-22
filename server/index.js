@@ -299,10 +299,14 @@ function startMongoConnect() {
     connectDb()
         .then(function () {
             console.log("[thejohn] MongoDB connected");
-            const { backfillSalesRecords } = require("./lib/salesRecords");
-            backfillSalesRecords(getDb()).catch(function (err) {
-                console.error("[sales_records] backfill", err.message);
-            });
+            const { backfillSalesRecords, repairSalesRecords } = require("./lib/salesRecords");
+            backfillSalesRecords(getDb())
+                .then(function () {
+                    return repairSalesRecords(getDb());
+                })
+                .catch(function (err) {
+                    console.error("[sales_records] backfill/repair", err.message);
+                });
         })
         .catch(function (err) {
             console.error("[thejohn] MongoDB 연결 실패:", err.message);

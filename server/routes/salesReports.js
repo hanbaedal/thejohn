@@ -7,7 +7,7 @@ const {
     queryByProduct,
     queryByVendor
 } = require("../lib/salesRecords");
-const { querySalesLedgerInquiry } = require("../lib/salesLedgerInquiry");
+const { querySalesLedgerInquiry, listLedgerVendorCompanies } = require("../lib/salesLedgerInquiry");
 const { buildSalesReportPdfBuffer, formatYmd } = require("../lib/salesReportPdf");
 
 const router = express.Router();
@@ -35,6 +35,21 @@ router.get("/inquiry", async function (req, res) {
     } catch (e) {
         console.error("GET /api/sales-reports/inquiry", e);
         res.status(500).json({ ok: false, error: e.message || "매출장 조회에 실패했습니다." });
+    }
+});
+
+router.get("/vendor-companies", async function (req, res) {
+    try {
+        await assertOrderManageAccess(req.auth);
+        const db = getDb();
+        await ensureIndexes(db);
+        const { ensureIndexes: ensureLedgerIndexes } = require("../lib/salesLedger");
+        await ensureLedgerIndexes(db);
+        const companies = await listLedgerVendorCompanies(db, req.auth, req.query);
+        res.json({ ok: true, companies: companies });
+    } catch (e) {
+        console.error("GET /api/sales-reports/vendor-companies", e);
+        res.status(500).json({ ok: false, error: e.message || "매출 업체 목록을 불러오지 못했습니다." });
     }
 });
 

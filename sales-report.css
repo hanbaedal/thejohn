@@ -15,6 +15,9 @@
 .srp-toolbar .btn {
     min-width: 5.5rem;
 }
+.srp-toolbar--actions {
+    justify-content: flex-end;
+}
 .srp-summary {
     max-width: 36rem;
     margin: 0 auto 0.75rem;

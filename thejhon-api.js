@@ -718,6 +718,15 @@
             var q = parts.length ? "?" + parts.join("&") : "";
             return request("GET", "/api/sales-reports/inquiry" + q);
         },
+        getLedgerVendorCompanies: function (opts) {
+            opts = opts || {};
+            var parts = [];
+            if (opts.adminStaffId) parts.push("adminStaffId=" + encodeURIComponent(String(opts.adminStaffId)));
+            var q = parts.length ? "?" + parts.join("&") : "";
+            return request("GET", "/api/sales-reports/vendor-companies" + q).then(function (d) {
+                return d.companies || [];
+            });
+        },
         fetchSalesReportPdf: function (body) {
             var url = apiUrl("/api/sales-reports/pdf");
             return fetch(url, {

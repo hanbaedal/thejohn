@@ -37,28 +37,29 @@
         <h1>일자별 매출장</h1>
         <p class="srp-hint">기간 내 거래명세서(주문·수기) 매출을 일자별로 집계합니다.</p>
         <p id="slp-status" class="shub-status" role="status" aria-live="polite"></p>
-        <div class="srp-period-tabs" role="group" aria-label="조회 기간">
-            <button type="button" class="btn btn-secondary slp-preset is-active" data-preset="today">1일</button>
-            <button type="button" class="btn btn-secondary slp-preset" data-preset="lastMonth">1개월</button>
-            <button type="button" class="btn btn-secondary slp-preset" data-preset="last3Months">3개월</button>
-            <button type="button" class="btn btn-secondary slp-preset" data-preset="custom">기간설정</button>
-        </div>
-        <div class="srp-toolbar">
-            <button type="button" class="btn btn-primary" id="slp-btn-search">확인</button>
-            <button type="button" class="btn btn-secondary" id="slp-btn-pdf" disabled>PDF 저장</button>
-            <button type="button" class="btn btn-secondary" id="slp-btn-print" disabled>출력</button>
-        </div>
-        <div class="ol-query-filters">
-            <section class="ol-query-filters__section" id="slp-admin-wrap" hidden>
-                <h2 class="ol-query-filters__heading">담당 관리자</h2>
+        <div class="ol-query-filters" aria-label="매출장 조회 조건">
+            <section class="ol-query-filters__section" aria-labelledby="slp-filter-period-heading">
+                <h2 id="slp-filter-period-heading" class="ol-query-filters__heading">조회 기간</h2>
+                <div class="ol-query-filters__row">
+                    <label for="slp-date-from">시작일</label>
+                    <input type="date" id="slp-date-from">
+                </div>
+                <div class="ol-query-filters__row">
+                    <label for="slp-date-to">종료일</label>
+                    <input type="date" id="slp-date-to">
+                </div>
+                <div class="ol-query-filters__row ol-query-filters__row--query">
+                    <button type="button" class="btn btn-primary" id="slp-btn-search">조회</button>
+                </div>
+            </section>
+            <section class="ol-query-filters__section" id="slp-admin-wrap" hidden aria-labelledby="slp-filter-admin-heading">
+                <h2 id="slp-filter-admin-heading" class="ol-query-filters__heading">담당 관리자</h2>
                 <div class="ol-query-filters__row"><label for="slp-admin">관리자</label><select id="slp-admin"><option value="">전체</option></select></div>
             </section>
-            <section class="ol-query-filters__section">
-                <h2 class="ol-query-filters__heading">조회 조건</h2>
-                <p id="slp-period-label" class="srp-period-label"></p>
-                <div id="slp-custom-from" class="ol-query-filters__row" hidden><label for="slp-date-from">시작일</label><input type="date" id="slp-date-from"></div>
-                <div id="slp-custom-to" class="ol-query-filters__row" hidden><label for="slp-date-to">종료일</label><input type="date" id="slp-date-to"></div>
-            </section>
+        </div>
+        <div class="srp-toolbar srp-toolbar--actions">
+            <button type="button" class="btn btn-secondary" id="slp-btn-pdf" disabled>PDF 저장</button>
+            <button type="button" class="btn btn-secondary" id="slp-btn-print" disabled>출력</button>
         </div>
         <p id="slp-print-title" class="srp-print-title" hidden></p>
         <p id="slp-summary" class="srp-summary" hidden></p>
