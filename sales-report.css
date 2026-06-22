@@ -117,10 +117,13 @@
 .srp-table--date-ledger {
     table-layout: fixed;
     width: max-content;
-    min-width: 52rem;
+    min-width: 56rem;
 }
 .srp-table--date-ledger col.col-date {
     width: 5.5rem;
+}
+.srp-table--date-ledger col.col-kind {
+    width: 3.25rem;
 }
 .srp-table--date-ledger col.col-vendor {
     width: 11rem;
@@ -141,6 +144,8 @@
     width: 5.5rem;
 }
 .srp-table--date-ledger th:nth-child(2),
+.srp-table--date-ledger td.kind,
+.srp-table--date-ledger th:nth-child(3),
 .srp-table--date-ledger td.vendor,
 .srp-table--date-ledger td.code {
     white-space: nowrap;
@@ -150,6 +155,18 @@
     max-width: 14rem;
     overflow: hidden;
     text-overflow: ellipsis;
+}
+.srp-table--ledger-vendor {
+    min-width: 44rem;
+}
+.srp-table--ledger-product {
+    min-width: 38rem;
+}
+.srp-table--ledger-vendor col.col-name {
+    width: 12rem;
+}
+.srp-table--ledger-product col.col-vendor {
+    width: 14rem;
 }
 @media (min-width: 900px) {
     .srp-results-wrap:has(.srp-table--date-ledger) {
@@ -162,6 +179,10 @@
     .srp-table--date-ledger {
         table-layout: auto;
         width: 100%;
+        min-width: 0;
+    }
+    .srp-table--ledger-vendor,
+    .srp-table--ledger-product {
         min-width: 0;
     }
     .srp-table--date-ledger th,

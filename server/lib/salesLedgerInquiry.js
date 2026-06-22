@@ -38,7 +38,7 @@ function ledgerRowsFromDoc(doc) {
             id: str(doc.id) + ":" + i,
             issueDate: Number(doc.issueDate) || Number(doc.createdAt) || 0,
             source: "ledger",
-            sourceLabel: "거래명세서(수기)",
+            sourceLabel: "수기",
             orderNo: "",
             vendorCompany: str(doc.vendorCompany),
             productId: str(it.productId),
@@ -132,7 +132,7 @@ async function fetchLedgerItems(db, auth, query, dateQ, issuerQ, vendorCompany) 
 
     let items = orderRows.map(function (doc) {
         const row = toPublicRow(doc);
-        row.sourceLabel = "거래명세서(주문)";
+        row.sourceLabel = "주문";
         return row;
     });
 

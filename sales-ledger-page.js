@@ -586,7 +586,7 @@
 
         }
 
-        SR.renderResultsTable($("slp-tbody"), (data && data.items) || []);
+        SR.renderResultsTable($("slp-tbody"), (data && data.items) || [], mode === "product" ? "product" : "vendor");
 
         return ((data && data.items) || []).length;
 

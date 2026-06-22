@@ -133,13 +133,20 @@ router.post("/pdf", async function (req, res) {
             period = result.period.dateFrom + " ~ " + result.period.dateTo;
         }
 
+        var inquiryLayout = "";
+        if (reportType === "inquiry") {
+            if (result.mode === "vendor") inquiryLayout = "vendor-ledger";
+            else if (result.mode === "product") inquiryLayout = "product-ledger";
+            else inquiryLayout = "date-ledger";
+        }
+
         const buf = await buildSalesReportPdfBuffer({
             title: title,
             subtitle: subtitle,
             period: period,
             items: result.items,
             summary: result.summary,
-            layout: reportType === "inquiry" ? "date-ledger" : ""
+            layout: inquiryLayout
         });
 
         const fname = safeFilePart(title + "_" + subtitle) + ".pdf";

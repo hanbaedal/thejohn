@@ -66,6 +66,132 @@ function drawTableRow(doc, cols, values, y) {
     });
 }
 
+function formatSourceKind(row) {
+    var src = String((row && row.source) || "").toLowerCase();
+    var label = String((row && row.sourceLabel) || "");
+    if (src === "order" || label.indexOf("주문") >= 0) return "주문";
+    if (src === "manual" || src === "ledger" || label.indexOf("수기") >= 0) return "수기";
+    return label || "";
+}
+
+function groupItemsByDate(items) {
+    var map = {};
+    (items || []).forEach(function (row) {
+        var ymd = formatYmd(row.issueDate);
+        if (!map[ymd]) {
+            map[ymd] = { issueDate: ymd, items: [] };
+        }
+        map[ymd].items.push(row);
+    });
+    return Object.keys(map)
+        .sort(function (a, b) {
+            return b.localeCompare(a);
+        })
+        .map(function (k) {
+            return map[k];
+        });
+}
+
+function expandLedgerRowsForPdf(items, layout) {
+    var groups = groupItemsByDate(items);
+    var dedupeVendor = layout === "date-ledger" || layout === "product-ledger";
+    var out = [];
+    groups.forEach(function (group) {
+        var firstInDay = true;
+        var lastVendor = null;
+        (group.items || []).forEach(function (row) {
+            var dateCell = firstInDay ? group.issueDate : "";
+            firstInDay = false;
+            var vendorName = String(row.vendorCompany || "");
+            var vendorCell = "";
+            if (dedupeVendor) {
+                if (vendorName !== lastVendor) {
+                    vendorCell = vendorName;
+                    lastVendor = vendorName;
+                }
+            }
+            var kind = formatSourceKind(row);
+            if (layout === "vendor-ledger") {
+                out.push([
+                    dateCell,
+                    kind,
+                    row.pd_code || "",
+                    row.productName || "",
+                    formatNum(row.quantity),
+                    formatNum(row.unitPrice),
+                    formatNum(row.lineTotal)
+                ]);
+            } else if (layout === "product-ledger") {
+                out.push([
+                    dateCell,
+                    kind,
+                    vendorCell,
+                    formatNum(row.quantity),
+                    formatNum(row.unitPrice),
+                    formatNum(row.lineTotal)
+                ]);
+            } else if (layout === "date-ledger") {
+                out.push([
+                    dateCell,
+                    kind,
+                    vendorCell,
+                    row.pd_code || "",
+                    row.productName || "",
+                    formatNum(row.quantity),
+                    formatNum(row.unitPrice),
+                    formatNum(row.lineTotal)
+                ]);
+            }
+        });
+    });
+    return out;
+}
+
+function ledgerTableCols(layout) {
+    if (layout === "vendor-ledger") {
+        return [
+            { label: "일자", w: 40 },
+            { label: "구분", w: 28 },
+            { label: "제품코드", w: 44 },
+            { label: "품명", w: 92 },
+            { label: "수량", w: 28, align: "right" },
+            { label: "단가", w: 42, align: "right" },
+            { label: "금액", w: 46, align: "right" }
+        ];
+    }
+    if (layout === "product-ledger") {
+        return [
+            { label: "일자", w: 40 },
+            { label: "구분", w: 28 },
+            { label: "업체명", w: 100 },
+            { label: "수량", w: 28, align: "right" },
+            { label: "단가", w: 42, align: "right" },
+            { label: "금액", w: 46, align: "right" }
+        ];
+    }
+    if (layout === "date-ledger") {
+        return [
+            { label: "일자", w: 40 },
+            { label: "구분", w: 28 },
+            { label: "업체명", w: 76 },
+            { label: "제품코드", w: 42 },
+            { label: "품명", w: 72 },
+            { label: "수량", w: 28, align: "right" },
+            { label: "단가", w: 42, align: "right" },
+            { label: "금액", w: 46, align: "right" }
+        ];
+    }
+    return [
+        { label: "일자", w: 62 },
+        { label: "구분", w: 32 },
+        { label: "업체", w: 88 },
+        { label: "품목", w: 100 },
+        { label: "수량", w: 36, align: "right" },
+        { label: "단가", w: 52, align: "right" },
+        { label: "금액", w: 58, align: "right" }
+    ];
+}
+
 function buildSalesReportPdfBuffer(opts) {
     opts = opts || {};
     var title = String(opts.title || "매출 집계");
@@ -111,60 +237,35 @@ function buildSalesReportPdfBuffer(opts) {
         );
         y += 22;
 
-        var cols = opts.layout === "date-ledger"
-            ? [
-                  { label: "일자", w: 44 },
-                  { label: "업체명", w: 88 },
-                  { label: "제품코드", w: 48 },
-                  { label: "품명", w: 80 },
-                  { label: "수량", w: 30, align: "right" },
-                  { label: "단가", w: 46, align: "right" },
-                  { label: "금액", w: 50, align: "right" }
-              ]
-            : [
-                  { label: "일자", w: 62 },
-                  { label: "구분", w: 32 },
-                  { label: "업체", w: 88 },
-                  { label: "품목", w: 100 },
-                  { label: "수량", w: 36, align: "right" },
-                  { label: "단가", w: 52, align: "right" },
-                  { label: "금액", w: 58, align: "right" }
-              ];
+        var layout = String(opts.layout || "");
+        var cols = ledgerTableCols(layout);
+        var isLedgerLayout =
+            layout === "date-ledger" || layout === "vendor-ledger" || layout === "product-ledger";
+        var tableRows = isLedgerLayout
+            ? expandLedgerRowsForPdf(items, layout)
+            : items.map(function (row) {
+                  return [
+                      formatYmd(row.issueDate),
+                      formatSourceKind(row) || row.sourceLabel || row.source || "",
+                      row.vendorCompany || "",
+                      row.productName || "",
+                      formatNum(row.quantity),
+                      formatNum(row.unitPrice),
+                      formatNum(row.lineTotal)
+                  ];
+              });
 
         drawTableHeader(doc, cols, y);
         y += ROW_H;
 
-        items.forEach(function (row) {
+        tableRows.forEach(function (values) {
             if (y > doc.page.height - PAGE_MARGIN - ROW_H * 2) {
                 doc.addPage();
                 y = PAGE_MARGIN;
                 drawTableHeader(doc, cols, y);
                 y += ROW_H;
             }
-            drawTableRow(
-                doc,
-                cols,
-                opts.layout === "date-ledger"
-                    ? [
-                          formatYmd(row.issueDate),
-                          row.vendorCompany || "",
-                          row.pd_code || "",
-                          row.productName || "",
-                          formatNum(row.quantity),
-                          formatNum(row.unitPrice),
-                          formatNum(row.lineTotal)
-                      ]
-                    : [
-                          formatYmd(row.issueDate),
-                          row.sourceLabel || row.source || "",
-                          row.vendorCompany || "",
-                          row.productName || "",
-                          formatNum(row.quantity),
-                          formatNum(row.unitPrice),
-                          formatNum(row.lineTotal)
-                      ],
-                y
-            );
+            drawTableRow(doc, cols, values, y);
             y += ROW_H;
         });
 

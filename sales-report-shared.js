@@ -52,6 +52,14 @@
         if (toEl && !toEl.value) toEl.value = last;
     }
 
+    function formatSourceKind(row) {
+        var src = String((row && row.source) || "").toLowerCase();
+        var label = String((row && row.sourceLabel) || "");
+        if (src === "order" || label.indexOf("주문") >= 0) return "주문";
+        if (src === "manual" || src === "ledger" || label.indexOf("수기") >= 0) return "수기";
+        return label || "—";
+    }
+
     function groupItemsByDateClient(items) {
         var map = {};
         (items || []).forEach(function (row) {
@@ -72,24 +80,29 @@
             });
     }
 
-    function renderLedgerLinesTable(tbody, itemsOrGroups) {
+    function renderLedgerLinesTable(tbody, itemsOrGroups, columnMode) {
         if (!tbody) return;
+        var cols = columnMode || "full";
+        var colCount = cols === "product" ? 6 : cols === "vendor" ? 7 : 8;
+        var labelColspan = colCount - 3;
+        var dedupeVendor = cols === "full" || cols === "product";
         var dayGroups = itemsOrGroups;
         if (itemsOrGroups && itemsOrGroups.length && !itemsOrGroups[0].items) {
             dayGroups = groupItemsByDateClient(itemsOrGroups);
         }
         if (!dayGroups || !dayGroups.length) {
-            tbody.innerHTML = '<tr><td colspan="7">조회 결과가 없습니다.</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="' + colCount + '">조회 결과가 없습니다.</td></tr>';
             return;
         }
         var html = "";
         var totalAmount = 0;
         var totalQty = 0;
-        var totalLines = 0;
         dayGroups.forEach(function (group) {
             var dayQty = 0;
             var dayAmount = 0;
             var dayYmd = group.issueDate || "";
+            var firstInDay = true;
+            var lastVendor = null;
             (group.items || []).forEach(function (row) {
                 var qty = Number(row.quantity) || 0;
                 var line = Number(row.lineTotal) || 0;
@@ -97,21 +110,37 @@
                 dayAmount += line;
                 totalQty += qty;
                 totalAmount += line;
-                totalLines += 1;
+                var dateCell = firstInDay ? dayYmd : "";
+                firstInDay = false;
+                var vendorName = String(row.vendorCompany || "");
+                var vendorCell = "";
+                if (dedupeVendor) {
+                    if (vendorName !== lastVendor) {
+                        vendorCell = vendorName;
+                        lastVendor = vendorName;
+                    }
+                } else if (cols === "full") {
+                    vendorCell = vendorName;
+                }
                 html +=
-                    "<tr>" +
-                    "<td>" +
-                    escapeHtml(dayYmd) +
-                    "</td>" +
-                    "<td class=\"vendor\">" +
-                    escapeHtml(row.vendorCompany || "") +
-                    "</td>" +
-                    "<td class=\"code\">" +
-                    escapeHtml(row.pd_code || "—") +
-                    "</td>" +
-                    "<td class=\"name\">" +
-                    escapeHtml(row.productName || "") +
-                    "</td>" +
+                    "<tr><td>" +
+                    escapeHtml(dateCell) +
+                    '</td><td class="kind">' +
+                    escapeHtml(formatSourceKind(row)) +
+                    "</td>";
+                if (cols === "full" || cols === "product") {
+                    html += '<td class="vendor">' + escapeHtml(vendorCell) + "</td>";
+                }
+                if (cols !== "product") {
+                    html +=
+                        '<td class="code">' +
+                        escapeHtml(row.pd_code || "—") +
+                        "</td>" +
+                        '<td class="name">' +
+                        escapeHtml(row.productName || "") +
+                        "</td>";
+                }
+                html +=
                     '<td class="num">' +
                     escapeHtml(String(qty)) +
                     "</td>" +
@@ -120,12 +149,13 @@
                     "</td>" +
                     '<td class="num">' +
                     escapeHtml(formatWon(line).replace("원", "")) +
-                    "</td>" +
-                    "</tr>";
+                    "</td></tr>";
             });
             html +=
                 '<tr class="srp-day-total">' +
-                '<td colspan="4"><strong>일 소계</strong></td>' +
+                '<td colspan="' +
+                labelColspan +
+                '"><strong>일 소계</strong></td>' +
                 '<td class="num"><strong>' +
                 escapeHtml(String(dayQty)) +
                 "</strong></td>" +
@@ -137,11 +167,9 @@
         });
         html +=
             '<tr class="srp-total-row">' +
-            '<td colspan="4"><strong>합계 (' +
-            escapeHtml(String(dayGroups.length)) +
-            "일 · " +
-            escapeHtml(String(totalLines)) +
-            "건)</strong></td>" +
+            '<td colspan="' +
+            labelColspan +
+            '"><strong>합계</strong></td>' +
             '<td class="num"><strong>' +
             escapeHtml(String(totalQty)) +
             "</strong></td>" +
@@ -153,8 +181,8 @@
         tbody.innerHTML = html;
     }
 
-    function renderResultsTable(tbody, items) {
-        renderLedgerLinesTable(tbody, items);
+    function renderResultsTable(tbody, items, columnMode) {
+        renderLedgerLinesTable(tbody, items, columnMode);
     }
 
     function renderSummary(el, summary) {
@@ -208,7 +236,7 @@
     }
 
     function renderDateLedgerTable(tbody, dayGroups) {
-        renderLedgerLinesTable(tbody, dayGroups);
+        renderLedgerLinesTable(tbody, dayGroups, "full");
     }
 
     function renderDateGroupsTable(tbody, groups) {
