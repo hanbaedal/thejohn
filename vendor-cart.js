@@ -26,15 +26,17 @@
         }
     }
 
-    function writeCart(data) {
+    function writeCart(data, silent) {
         data.updatedAt = Date.now();
         try {
             var store = cartStorage();
             if (store) store.setItem(CART_KEY, JSON.stringify(data));
         } catch (e) {}
-        try {
-            global.dispatchEvent(new CustomEvent("thejhon-cart-updated"));
-        } catch (e2) {}
+        if (!silent) {
+            try {
+                global.dispatchEvent(new CustomEvent("thejhon-cart-updated"));
+            } catch (e2) {}
+        }
     }
 
     function canUseCart() {
@@ -107,7 +109,7 @@
         return { ok: true, cart: cart };
     }
 
-    function setQuantity(productId, quantity) {
+    function setQuantity(productId, quantity, silent) {
         var cart = readCart();
         var idx = findIndex(cart.items, productId);
         if (idx < 0) return { ok: false };
@@ -117,7 +119,7 @@
         } else {
             cart.items[idx].quantity = q;
         }
-        writeCart(cart);
+        writeCart(cart, !!silent);
         return { ok: true, cart: cart };
     }
 

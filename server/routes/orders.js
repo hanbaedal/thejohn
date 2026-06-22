@@ -109,6 +109,8 @@ function toOrderDetail(order) {
         vendorGradeLabel: order.vendorGradeLabel || "",
         vendorMgrName: order.vendorMgrName || "",
         vendorMgrTel: order.vendorMgrTel || "",
+        vendorRegisteredMgrName: order.vendorRegisteredMgrName || "",
+        vendorRegisteredMgrTel: order.vendorRegisteredMgrTel || "",
         vendorMgrEmail: order.vendorMgrEmail || "",
         vendorAddr: order.vendorAddr || "",
         vendorPhone: order.vendorPhone || "",
@@ -234,7 +236,7 @@ router.post("/", requireRole("vendor"), async function (req, res) {
         if (!req.body || req.body.orderContactConfirmed !== true) {
             return res.status(400).json({
                 ok: false,
-                error: "주문 담당자 확인에 체크해 주세요."
+                error: "주문하는 분 정보 확인에 체크해 주세요."
             });
         }
 

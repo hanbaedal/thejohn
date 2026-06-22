@@ -121,9 +121,11 @@ async function buildEnrichedOrder(db, vendorDoc, items, extras) {
         vendorPhone: str(v[VF.phone]),
         vendorCeo: str(v[VF.ceo]),
         vendorCeoTel: str(v[VF.ceoTel]),
-        vendorMgrName: str(v[VF.mgrName]),
-        vendorMgrTel: str(v[VF.mgrTel]),
-        vendorMgrEmail: str(v[VF.mgrEmail]),
+        vendorRegisteredMgrName: str(extras.vendorRegisteredMgrName || v[VF.mgrName]),
+        vendorRegisteredMgrTel: str(extras.vendorRegisteredMgrTel || v[VF.mgrTel]),
+        vendorMgrName: str(extras.vendorMgrName || extras.orderPlacerName || v[VF.mgrName]),
+        vendorMgrTel: str(extras.vendorMgrTel || extras.orderPlacerTel || v[VF.mgrTel]),
+        vendorMgrEmail: str(extras.vendorMgrEmail || v[VF.mgrEmail]),
         vendorRegisteredBy: supplierLogin,
         vendorRegisteredByName: supplier.name,
         supplier: supplier,
@@ -157,6 +159,8 @@ async function prepareOrderForPdf(db, order) {
     if (!str(o.vendorPhone)) o.vendorPhone = str(v[VF.phone]);
     if (!str(o.vendorMgrName)) o.vendorMgrName = str(v[VF.mgrName]);
     if (!str(o.vendorMgrTel)) o.vendorMgrTel = str(v[VF.mgrTel]);
+    if (!str(o.vendorRegisteredMgrName)) o.vendorRegisteredMgrName = str(v[VF.mgrName]);
+    if (!str(o.vendorRegisteredMgrTel)) o.vendorRegisteredMgrTel = str(v[VF.mgrTel]);
     if (!str(o.vendorMgrEmail)) o.vendorMgrEmail = str(v[VF.mgrEmail]);
     if (!str(o.vendorCeo)) o.vendorCeo = str(v[VF.ceo]);
     if (!str(o.vendorCeoTel)) o.vendorCeoTel = str(v[VF.ceoTel]);

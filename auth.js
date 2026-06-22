@@ -8,7 +8,7 @@
  * - 로그인 후 기본 이동: 업체 → index, 슈퍼바이저·관리자 → work-hub (login.js)
  * - 슈퍼바이저: 관리자(staff) 생성 · 전체 기능
  * - 관리자: 업체(vendors) 생성 · 모든 관리자 주문서관리 이용
- * - 업체: 관리자별 등록·등급(vendorProfiles) · 상품 등록 관리자에게 등록된 상품만 주문·등급가
+ * - 업체: 관리자별 등록·등급(vendorProfiles) · 등록 업체는 모든 상품 주문(등급가는 담당 관리자 상품만)
  * - 미로그인 방문: 상품 가격 숨김 · 공개 페이지 방문 횟수(page_view)만 기록
  */
 (function (global) {
@@ -286,6 +286,11 @@
         var name = String(c.mgrName != null ? c.mgrName : c.vn_mgr_name || "").trim();
         var tel = String(c.mgrTel != null ? c.mgrTel : c.vn_mgr_tel || "").trim();
         var email = String(c.mgrEmail != null ? c.mgrEmail : c.vn_mgr_email || "").trim();
+        if (!name) name = String(c.vn_ceo || c.ceo || "").trim();
+        if (!tel) {
+            tel = String(c.vn_ceo_tel || c.vn_phone || c.ceoPhone || c.phone || "").trim();
+        }
+        if (!email) email = String(c.vn_email || c.email || "").trim();
         if (name) authSet(VENDOR_MGR_NAME_KEY, name);
         else authRemove(VENDOR_MGR_NAME_KEY);
         if (tel) authSet(VENDOR_MGR_TEL_KEY, tel);
@@ -363,12 +368,11 @@
     }
 
     function fetchVendorOrderContactAsync() {
-        var cached = getVendorOrderContact();
-        if (cached.mgrName && cached.mgrTel) {
-            return Promise.resolve(cached);
-        }
         if (!global.THEJHON_API || !THEJHON_API.getVendorProfile) {
-            return Promise.resolve(cached);
+            return Promise.resolve(getVendorOrderContact());
+        }
+        if (!THEJHON_API.getToken || !THEJHON_API.getToken()) {
+            return Promise.resolve(getVendorOrderContact());
         }
         return THEJHON_API.getVendorProfile()
             .then(function (item) {
@@ -2006,6 +2010,15 @@
             } else {
                 authRemove(VENDOR_ORDER_ENABLED_KEY);
             }
+            if (sess.vendorMgrName || sess.vendorMgrTel || sess.vendorMgrEmail) {
+                storeVendorOrderContact({
+                    mgrName: sess.vendorMgrName,
+                    mgrTel: sess.vendorMgrTel,
+                    mgrEmail: sess.vendorMgrEmail
+                });
+            } else if (!getVendorOrderContact().mgrName || !getVendorOrderContact().mgrTel) {
+                fetchVendorOrderContactAsync();
+            }
             vendorPermsSynced = true;
         }
         syncStaffOrderEnabledFromSession(sess);
@@ -2246,13 +2259,13 @@
         return !!findVendorProfileForOwner(productOwner);
     }
 
-    /** 주문·장바구니 — 상품 등록 관리자에게 업체가 등록되어 있으면 가능 */
+    /** 주문·장바구니 — vendors에 등록된 업체는 모든 관리자 상품 주문 가능 */
     function vendorProductCanOrder(it) {
         if (!it || getRole() !== "vendor") return false;
         if (!isVendorOrderEnabled()) return false;
         var owner = String(it.pd_registered_by || "").trim();
         if (!owner || owner.toLowerCase() === "legacy") return false;
-        return !!findVendorProfileForOwner(owner);
+        return true;
     }
 
     /**

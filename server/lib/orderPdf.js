@@ -340,16 +340,23 @@ function drawConfirmBlock(doc, order, pageW) {
     var indentSub = 32;
     var indentConfirm = 36;
     var indentTime = 88;
-    var lines = [{ text: "주문 담당자(본인 확인)", xOff: 0 }];
+    var lines = [{ text: "주문 담당(확인)", xOff: 0 }];
     if (order.vendorMgrName) {
-        lines.push({ text: "담당자 : " + order.vendorMgrName, xOff: indentSub });
+        lines.push({ text: "주문하는 분 : " + order.vendorMgrName, xOff: indentSub });
     }
     if (order.vendorMgrTel) {
         lines.push({ text: "연락처 : " + order.vendorMgrTel, xOff: indentSub });
     }
+    if (order.vendorRegisteredMgrName || order.vendorRegisteredMgrTel) {
+        var reg = "등록 담당자 : " + str(order.vendorRegisteredMgrName);
+        if (order.vendorRegisteredMgrTel) {
+            reg += " / " + order.vendorRegisteredMgrTel;
+        }
+        lines.push({ text: reg, xOff: indentSub });
+    }
     if (order.orderContactConfirmed) {
         lines.push({
-            text: "확   인 : 주문 담당자 본인 확인 완료",
+            text: "확   인 : 주문하는 분 정보 확인 완료",
             xOff: indentConfirm
         });
         lines.push({

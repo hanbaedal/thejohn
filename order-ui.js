@@ -47,10 +47,20 @@
             );
         }
         if (order.vendorMgrName) {
-            meta.push("<dt>주문 담당</dt><dd>" + escapeHtml(order.vendorMgrName) + "</dd>");
+            meta.push("<dt>주문하는 분</dt><dd>" + escapeHtml(order.vendorMgrName) + "</dd>");
         }
         if (order.vendorMgrTel) {
-            meta.push("<dt>담당 연락처</dt><dd>" + escapeHtml(order.vendorMgrTel) + "</dd>");
+            meta.push("<dt>주문 연락처</dt><dd>" + escapeHtml(order.vendorMgrTel) + "</dd>");
+        }
+        if (order.vendorRegisteredMgrName) {
+            meta.push(
+                "<dt>등록 담당자</dt><dd>" + escapeHtml(order.vendorRegisteredMgrName) + "</dd>"
+            );
+        }
+        if (order.vendorRegisteredMgrTel) {
+            meta.push(
+                "<dt>등록 연락처</dt><dd>" + escapeHtml(order.vendorRegisteredMgrTel) + "</dd>"
+            );
         }
         if (order.vendorRegisteredByName) {
             meta.push(

@@ -8,6 +8,8 @@
     var contactReady = false;
     /** 주문 접수 직후 clearCart → thejhon-cart-updated 시 빈 장바구니 화면으로 덮이지 않도록 */
     var orderSuccessPending = false;
+    /** 수량 변경 시 썸네일 재요청 방지 */
+    var thumbCache = {};
 
     function escapeHtml(s) {
         return String(s)
@@ -90,8 +92,28 @@
     }
 
     function cartItemThumbHtml(it) {
+        var pid = it && it.productId;
+        var cached = pid ? thumbCache[pid] : null;
+        if (cached) {
+            if (cached.empty) {
+                return (
+                    '<div class="vom-cart-item__thumb vom-cart-item__thumb--empty">' +
+                    '<span class="vom-cart-item__thumb-ph" aria-hidden="true"></span></div>'
+                );
+            }
+            if (cached.src) {
+                return (
+                    '<div class="vom-cart-item__thumb">' +
+                    '<img src="' +
+                    escapeHtml(cached.src) +
+                    '" alt="">' +
+                    "</div>"
+                );
+            }
+        }
         var src = String((it && it.pd_image) || "").trim();
         if (src) {
+            if (pid) thumbCache[pid] = { src: src, empty: false };
             return (
                 '<div class="vom-cart-item__thumb">' +
                 '<img src="' +
@@ -101,6 +123,7 @@
             );
         }
         if (it && it.pd_has_image === false) {
+            if (pid) thumbCache[pid] = { src: "", empty: true };
             return (
                 '<div class="vom-cart-item__thumb vom-cart-item__thumb--empty">' +
                 '<span class="vom-cart-item__thumb-ph" aria-hidden="true"></span></div>'
@@ -123,15 +146,18 @@
             Api.get("api/products/" + encodeURIComponent(pid) + "/cover")
                 .then(function (data) {
                     if (!data || !data.pd_image) {
+                        thumbCache[pid] = { src: "", empty: true };
                         wrap.classList.remove("vom-cart-item__thumb--load");
                         wrap.classList.add("vom-cart-item__thumb--empty");
                         return;
                     }
+                    thumbCache[pid] = { src: data.pd_image, empty: false };
                     img.src = data.pd_image;
                     img.hidden = false;
                     wrap.classList.remove("vom-cart-item__thumb--load");
                 })
                 .catch(function () {
+                    thumbCache[pid] = { src: "", empty: true };
                     wrap.classList.remove("vom-cart-item__thumb--load");
                     wrap.classList.add("vom-cart-item__thumb--empty");
                 });
@@ -184,9 +210,13 @@
     function readFormState() {
         var box = document.getElementById("vomContactConfirm");
         var noteEl = document.getElementById("vom-note");
+        var placerNameEl = document.getElementById("vom-placer-name");
+        var placerTelEl = document.getElementById("vom-placer-tel");
         return {
             confirmed: !!(box && box.checked),
-            note: noteEl ? String(noteEl.value || "") : ""
+            note: noteEl ? String(noteEl.value || "") : "",
+            placerName: placerNameEl ? String(placerNameEl.value || "") : "",
+            placerTel: placerTelEl ? String(placerTelEl.value || "") : ""
         };
     }
 
@@ -194,11 +224,32 @@
         if (!state) return;
         var box = document.getElementById("vomContactConfirm");
         var noteEl = document.getElementById("vom-note");
+        var placerNameEl = document.getElementById("vom-placer-name");
+        var placerTelEl = document.getElementById("vom-placer-tel");
         if (box && state.confirmed) box.checked = true;
         if (noteEl) noteEl.value = state.note || "";
+        if (placerNameEl && state.placerName) placerNameEl.value = state.placerName;
+        if (placerTelEl && state.placerTel) placerTelEl.value = state.placerTel;
     }
 
-    function contactInfoHtml(contact) {
+    function defaultPlacerFromContact(contact) {
+        return {
+            name: String((contact && contact.mgrName) || "").trim(),
+            tel: String((contact && contact.mgrTel) || "").trim()
+        };
+    }
+
+    function readPlacerFields() {
+        var nameEl = document.getElementById("vom-placer-name");
+        var telEl = document.getElementById("vom-placer-tel");
+        return {
+            name: nameEl ? String(nameEl.value || "").trim() : "",
+            tel: telEl ? String(telEl.value || "").trim() : ""
+        };
+    }
+
+    function contactInfoHtml(contact, placerDefaults) {
+        placerDefaults = placerDefaults || defaultPlacerFromContact(contact);
         var company = escapeHtml((contact && contact.company) || "—");
         var mgrName = escapeHtml((contact && contact.mgrName) || "—");
         var mgrTel = (contact && contact.mgrTel) || "";
@@ -206,38 +257,51 @@
         var telLink = telHref(mgrTel);
         var telCell = telLink
             ? '<a href="' + escapeHtml(telLink) + '">' + telLabel + "</a>"
-            : telLabel;
-        var missing =
-            !contact || !String(contact.mgrName || "").trim() || !String(contact.mgrTel || "").trim();
-        var warn = missing
-            ? '<p class="cart-contact-warn">업체 등록에 주문 담당자 이름·연락처가 없습니다. 관리자에게 업체 정보 수정을 요청해 주세요.</p>'
+            : telLabel || "—";
+        var regMissing =
+            !contact ||
+            !String(contact.mgrName || "").trim() ||
+            !String(contact.mgrTel || "").trim();
+        var regWarn = regMissing
+            ? '<p class="cart-contact-warn cart-contact-warn--soft">등록 담당자 정보가 없습니다. 오른쪽에 주문하는 분 정보를 입력해 주세요.</p>'
             : "";
 
         return (
-            '<section class="cart-contact-confirm" aria-labelledby="vom-contact-title">' +
-            '<h3 class="cart-contact-title" id="vom-contact-title">주문 담당자 확인</h3>' +
-            '<p class="cart-contact-desc">아래 담당자 정보로 주문이 접수·연락됩니다.</p>' +
+            '<section class="cart-contact-panel" aria-labelledby="vom-contact-title">' +
+            '<h3 class="cart-contact-title" id="vom-contact-title">주문 담당자</h3>' +
+            '<p class="cart-contact-desc">등록된 담당자(왼쪽)와 실제 주문하는 분(오른쪽)을 확인·입력해 주세요.</p>' +
+            '<div class="cart-contact-cols">' +
+            '<div class="cart-contact-col cart-contact-col--registered">' +
+            '<h4 class="cart-contact-col__title">등록 담당자</h4>' +
             '<dl class="cart-contact-dl">' +
             "<dt>주문 업체</dt><dd>" +
             company +
-            "</dd><dt>주문 담당</dt><dd>" +
+            "</dd><dt>담당자</dt><dd>" +
             mgrName +
             "</dd><dt>연락처</dt><dd>" +
             telCell +
             "</dd></dl>" +
-            warn +
-            "</section>"
+            regWarn +
+            "</div>" +
+            '<div class="cart-contact-col cart-contact-col--placer">' +
+            '<h4 class="cart-contact-col__title">주문하는 분</h4>' +
+            '<label class="cart-placer-field" for="vom-placer-name">이름</label>' +
+            '<input type="text" id="vom-placer-name" class="cart-placer-input" maxlength="80" autocomplete="name" placeholder="주문하는 분 이름" value="' +
+            escapeHtml(placerDefaults.name) +
+            '">' +
+            '<label class="cart-placer-field" for="vom-placer-tel">연락처</label>' +
+            '<input type="tel" id="vom-placer-tel" class="cart-placer-input" maxlength="30" inputmode="tel" autocomplete="tel" placeholder="휴대폰 번호" value="' +
+            escapeHtml(placerDefaults.tel) +
+            '">' +
+            "</div></div></section>"
         );
     }
 
-    function contactCheckHtml(contact) {
-        var missing =
-            !contact || !String(contact.mgrName || "").trim() || !String(contact.mgrTel || "").trim();
+    function contactCheckHtml() {
         return (
             '<label class="cart-contact-check">' +
-            '<input type="checkbox" id="vomContactConfirm"' +
-            (missing ? " disabled" : "") +
-            '> <span class="cart-contact-check-text">위 주문 담당자가 <strong>본인</strong>이며, 주문·연락을 담당함을 확인합니다.</span></label>'
+            '<input type="checkbox" id="vomContactConfirm"> ' +
+            '<span class="cart-contact-check-text">오른쪽 <strong>주문하는 분</strong> 정보가 맞으며, 주문·연락을 담당함을 확인합니다.</span></label>'
         );
     }
 
@@ -245,11 +309,11 @@
         var btn = document.getElementById("vomSubmitOrder");
         var box = document.getElementById("vomContactConfirm");
         if (!btn) return;
+        var placer = readPlacerFields();
         var ok =
             contactReady &&
-            vendorContact &&
-            vendorContact.mgrName &&
-            vendorContact.mgrTel &&
+            placer.name &&
+            placer.tel &&
             box &&
             box.checked;
         btn.disabled = !ok;
@@ -258,7 +322,45 @@
     function bindContactConfirm() {
         var box = document.getElementById("vomContactConfirm");
         if (box) box.addEventListener("change", syncSubmitButton);
+        var nameEl = document.getElementById("vom-placer-name");
+        var telEl = document.getElementById("vom-placer-tel");
+        if (nameEl) nameEl.addEventListener("input", syncSubmitButton);
+        if (telEl) telEl.addEventListener("input", syncSubmitButton);
         syncSubmitButton();
+    }
+
+    function findCartItem(pid) {
+        var Cart = getCart();
+        if (!Cart || !pid) return null;
+        var items = Cart.readCart().items;
+        for (var i = 0; i < items.length; i++) {
+            if (items[i].productId === pid) return items[i];
+        }
+        return null;
+    }
+
+    function updateCartTotalDisplay() {
+        var Cart = getCart();
+        if (!bodyEl || !Cart) return;
+        var el = bodyEl.querySelector(".cart-total__amount");
+        if (el) el.textContent = formatWon(Cart.cartTotal(Cart.readCart()));
+    }
+
+    function updateQuantityRow(pid, q, row) {
+        var Cart = getCart();
+        if (!Cart || !pid) return;
+        var result = Cart.setQuantity(pid, q, true);
+        if (!result.ok) return;
+        var item = findCartItem(pid);
+        if (!item) {
+            renderBody();
+            return;
+        }
+        if (row) {
+            var lineEl = row.querySelector(".cart-line-total");
+            if (lineEl) lineEl.textContent = formatWon(Cart.lineTotal(item));
+        }
+        updateCartTotalDisplay();
     }
 
     function loadVendorContactThen(fn) {
@@ -301,6 +403,10 @@
         }
 
         var savedForm = readFormState();
+        var placerDefaults = {
+            name: savedForm.placerName || defaultPlacerFromContact(vendorContact).name,
+            tel: savedForm.placerTel || defaultPlacerFromContact(vendorContact).tel
+        };
 
         var rows = cart.items
             .map(function (it) {
@@ -349,10 +455,10 @@
             '<div class="vom-cart-list">' +
             rows +
             "</div>" +
-            contactInfoHtml(vendorContact) +
+            contactInfoHtml(vendorContact, placerDefaults) +
             "</div>" +
             '<div class="vendor-order-modal__footer">' +
-            contactCheckHtml(vendorContact) +
+            contactCheckHtml() +
             '<label class="cart-note-label" for="vom-note">주문 비고 (선택)</label>' +
             '<textarea id="vom-note" class="cart-note" rows="2" placeholder="배송·포장 요청 등" inputmode="text"></textarea>' +
             '<div class="cart-actions-row">' +
@@ -371,22 +477,14 @@
                     onChange: function (q) {
                         var row = el.closest(".vom-cart-item");
                         var pid = row && row.getAttribute("data-product-id");
-                        if (pid) Cart.setQuantity(pid, q);
-                        renderBody();
+                        if (pid) updateQuantityRow(pid, q, row);
                     },
                     onInput: function (q) {
                         var row = el.closest(".vom-cart-item");
                         var pid = row && row.getAttribute("data-product-id");
                         if (!pid) return;
                         var lineEl = row.querySelector(".cart-line-total");
-                        var item = null;
-                        var items = Cart.readCart().items;
-                        for (var i = 0; i < items.length; i++) {
-                            if (items[i].productId === pid) {
-                                item = items[i];
-                                break;
-                            }
-                        }
+                        var item = findCartItem(pid);
                         if (item && lineEl) {
                             lineEl.textContent = formatWon(
                                 Cart.lineTotal(Object.assign({}, item, { quantity: q }))
@@ -400,8 +498,7 @@
                 function commitQty() {
                     var row = inp.closest(".vom-cart-item");
                     var pid = row && row.getAttribute("data-product-id");
-                    if (pid) Cart.setQuantity(pid, inp.value);
-                    renderBody();
+                    if (pid) updateQuantityRow(pid, inp.value, row);
                 }
                 inp.addEventListener("change", commitQty);
                 inp.addEventListener("blur", commitQty);
@@ -420,7 +517,7 @@
         if (submitBtn) {
             submitBtn.addEventListener("click", function () {
                 if (submitBtn.disabled) {
-                    showMsg("주문 담당자 확인에 체크해 주세요.", "err");
+                    showMsg("주문하는 분 정보를 입력하고 확인에 체크해 주세요.", "err");
                     var box = document.getElementById("vomContactConfirm");
                     if (box) {
                         try {
@@ -456,7 +553,13 @@
 
         var confirmBox = document.getElementById("vomContactConfirm");
         if (!confirmBox || !confirmBox.checked) {
-            showMsg("주문 담당자 확인에 체크해 주세요.", "err");
+            showMsg("주문하는 분 정보 확인에 체크해 주세요.", "err");
+            return;
+        }
+
+        var placer = readPlacerFields();
+        if (!placer.name || !placer.tel) {
+            showMsg("주문하는 분 이름·연락처를 입력해 주세요.", "err");
             return;
         }
 
@@ -471,6 +574,8 @@
             vendorGrade: Auth.getVendorPriceGrade ? Auth.getVendorPriceGrade() : "",
             note: note,
             orderContactConfirmed: true,
+            orderPlacerName: placer.name,
+            orderPlacerTel: placer.tel,
             items: cart.items.map(function (it) {
                 return {
                     productId: it.productId,
@@ -497,8 +602,8 @@
                     orderNo: order.orderNo,
                     vendorCompany: body.vendorCompany,
                     vendorUserId: Auth.getUserId ? Auth.getUserId() : "",
-                    vendorMgrName: vendorContact.mgrName,
-                    vendorMgrTel: vendorContact.mgrTel,
+                    vendorMgrName: placer.name,
+                    vendorMgrTel: placer.tel,
                     items: body.items,
                     note: note,
                     totalAmount: order.totalAmount,

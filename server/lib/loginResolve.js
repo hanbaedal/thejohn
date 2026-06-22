@@ -16,6 +16,7 @@ const { getCompanyName: getVendorCompanyName, parseGrade, F: VF } = require("./v
 const { vendorCanPlaceOrders } = require("./orderAccess");
 const { findStaffByRegisteredBy } = require("./staffRegisteredBy");
 const { vendorProfilesFromDocs } = require("./vendorLookup");
+const { resolveVendorOrderContact } = require("./vendorOrderContact");
 const { getCompanyName: getStaffCompanyName, staffOrderEnabledFromDoc, fromLegacyDoc, F: SF } = require("./staffFields");
 
 function vendorGradeFromDoc(vendor) {
@@ -83,11 +84,13 @@ async function tryVendorLogin(vendor, loginId, password) {
 
     let vendorOrderEnabled = false;
     let vendorProfiles = [];
+    let orderContact = resolveVendorOrderContact([vendor]);
     try {
         const { findAllVendorsByLoginId } = require("./vendorLookup");
         const allVendors = await findAllVendorsByLoginId(loginId);
         vendorProfiles = vendorProfilesFromDocs(allVendors);
         vendorOrderEnabled = allVendors.length > 0;
+        orderContact = resolveVendorOrderContact(allVendors.length ? allVendors : [vendor]);
     } catch (orderErr) {
         console.warn("[login] vendor profiles:", orderErr.message);
         try {
@@ -99,17 +102,17 @@ async function tryVendorLogin(vendor, loginId, password) {
         ok: true,
         role: "vendor",
         userId: vendor.loginId,
-        companyName: getVendorCompanyName(vendor),
-        displayName: getVendorCompanyName(vendor) || vendor.loginId || "",
+        companyName: orderContact.company || getVendorCompanyName(vendor),
+        displayName: orderContact.company || getVendorCompanyName(vendor) || vendor.loginId || "",
         vendorGrade: vendorGradeFromDoc(vendor),
         vendorRegisteredBy: regBy,
         vendorRegisteredByName: brandCompanyName,
         brandCompanyName: brandCompanyName,
         vendorOrderEnabled: vendorOrderEnabled,
         vendorProfiles: vendorProfiles,
-        vendorMgrName: String(vendor[VF.mgrName] || "").trim(),
-        vendorMgrTel: String(vendor[VF.mgrTel] || "").trim(),
-        vendorMgrEmail: String(vendor[VF.mgrEmail] || "").trim(),
+        vendorMgrName: orderContact.mgrName,
+        vendorMgrTel: orderContact.mgrTel,
+        vendorMgrEmail: orderContact.mgrEmail,
         stLogo: stLogo
     };
 }

@@ -6,7 +6,7 @@ const {
     isLegacyRegisteredBy,
     registeredByInFilter
 } = require("./staffLoginId");
-const { findVendorByLoginAndRegistrar, vendorHasAnyRegistration } = require("./vendorLookup");
+const { vendorHasAnyRegistration } = require("./vendorLookup");
 
 function normalizeStaffLoginId(loginId) {
     return trimStaffLoginId(loginId);
@@ -109,13 +109,12 @@ async function staffCanReadOrder(auth, order) {
     return staffLoginIdsEqual(order.vendorRegisteredBy, auth.userId);
 }
 
-/** 상품 주문 — 해당 상품 등록 관리자에게 업체가 등록·등급이 있어야 함 */
+/** 상품 주문 — vendors에 1건 이상 등록된 업체는 모든 관리자 상품 주문 가능 */
 async function vendorProductAllowsOrderForVendor(productRegisteredBy, vendorLoginId) {
     const pReg = trimStaffLoginId(productRegisteredBy);
     const loginId = trimStaffLoginId(vendorLoginId);
     if (!pReg || isLegacyRegisteredBy(pReg) || !loginId) return false;
-    const vendorDoc = await findVendorByLoginAndRegistrar(loginId, pReg);
-    return !!vendorDoc;
+    return vendorHasAnyRegistration(loginId);
 }
 
 module.exports = {

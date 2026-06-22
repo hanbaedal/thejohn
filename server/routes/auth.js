@@ -149,11 +149,26 @@ router.post("/login", async (req, res) => {
 /** 업체 로그인 — 장바구니·주문 담당자 표시용 (비밀번호 제외) */
 router.get("/vendor-profile", requireRole("vendor"), async function (req, res) {
     try {
-        const vendor = await findVendorByLoginId(req.auth.userId || "");
-        if (!vendor) {
+        const { findAllVendorsByLoginId } = require("../lib/vendorLookup");
+        const { resolveVendorOrderContact } = require("../lib/vendorOrderContact");
+        const allVendors = await findAllVendorsByLoginId(req.auth.userId || "");
+        if (!allVendors.length) {
+            const vendor = await findVendorByLoginId(req.auth.userId || "");
+            if (!vendor) {
+                return res.status(404).json({ ok: false, error: "업체 정보를 찾을 수 없습니다." });
+            }
+            allVendors.push(vendor);
+        }
+        const contact = resolveVendorOrderContact(allVendors);
+        const base = toPublic(contact.vendor || allVendors[0]);
+        if (!base) {
             return res.status(404).json({ ok: false, error: "업체 정보를 찾을 수 없습니다." });
         }
-        return res.json({ ok: true, item: toPublic(vendor) });
+        base.vn_mgr_name = contact.mgrName;
+        base.vn_mgr_tel = contact.mgrTel;
+        base.vn_mgr_email = contact.mgrEmail;
+        if (contact.company) base.vn_company = contact.company;
+        return res.json({ ok: true, item: base });
     } catch (e) {
         console.error("GET /api/auth/vendor-profile", e);
         return res.status(500).json({ ok: false, error: "업체 정보를 불러오지 못했습니다." });
@@ -316,6 +331,9 @@ router.get("/session", async function (req, res) {
         var vendorOrderEnabled = !!payload.vendorOrderEnabled;
         var staffOrderEnabled = payload.role === "admin";
         var vendorProfiles = [];
+        var vendorMgrName = "";
+        var vendorMgrTel = "";
+        var vendorMgrEmail = "";
         var effectiveRole = String(payload.role || "").trim();
         var companyName = "";
         var brandCompanyName = "";
@@ -324,10 +342,15 @@ router.get("/session", async function (req, res) {
             try {
                 if (payload.role === "vendor") {
                     const { findAllVendorsByLoginId, vendorProfilesFromDocs } = require("../lib/vendorLookup");
+                    const { resolveVendorOrderContact } = require("../lib/vendorOrderContact");
                     const allVendors = await findAllVendorsByLoginId(payload.userId || "");
                     vendorOrderEnabled = allVendors.length > 0;
                     vendorProfiles = vendorProfilesFromDocs(allVendors);
-                    const vendor = allVendors[0] || (await findVendorByLoginId(payload.userId || ""));
+                    const contact = resolveVendorOrderContact(allVendors);
+                    vendorMgrName = contact.mgrName || "";
+                    vendorMgrTel = contact.mgrTel || "";
+                    vendorMgrEmail = contact.mgrEmail || "";
+                    const vendor = contact.vendor || allVendors[0] || (await findVendorByLoginId(payload.userId || ""));
                     if (vendor) {
                         companyName = getVendorCompanyName(vendor);
                         brandCompanyName = String(vendor[VF.registeredByName] || "").trim();
@@ -374,6 +397,9 @@ router.get("/session", async function (req, res) {
             vendorOrderEnabled: vendorOrderEnabled,
             staffOrderEnabled: staffOrderEnabled,
             vendorProfiles: vendorProfiles,
+            vendorMgrName: vendorMgrName,
+            vendorMgrTel: vendorMgrTel,
+            vendorMgrEmail: vendorMgrEmail,
             companyName: companyName,
             brandCompanyName: brandCompanyName,
             displayName: displayName

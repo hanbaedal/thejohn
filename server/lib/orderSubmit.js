@@ -9,6 +9,7 @@ const { notifyOrderAdmin } = require("./orderNotify");
 const { vendorProductAllowsOrderForVendor } = require("./orderAccess");
 const { trimStaffLoginId, staffLoginIdsEqual } = require("./staffLoginId");
 const { syncFromOrder, deleteSalesForSource } = require("./salesRecords");
+const { resolveVendorOrderContact } = require("./vendorOrderContact");
 
 function newOrderId() {
     return "ord_" + Date.now().toString(36) + "_" + Math.random().toString(36).slice(2, 8);
@@ -53,7 +54,7 @@ async function buildOrderItemsFromDb(db, clientItems, vendorLoginId) {
                 error:
                     "「" +
                     (product[PF.name] || product.pd_name || productId) +
-                    "」 상품 담당 관리자에게 등록된 업체 정보·등급이 없습니다. 해당 관리자에게 업체 등록을 요청해 주세요."
+                    "」 주문할 수 없습니다. 관리자에게 등록된 업체 계정으로 로그인했는지 확인해 주세요."
             };
         }
 
@@ -102,6 +103,21 @@ async function submitVendorOrder(db, auth, body) {
         return { error: "업체 정보를 찾을 수 없습니다.", status: 403 };
     }
 
+    var allVendors = await findAllVendorsByLoginId(vendorLoginId);
+    var registered = resolveVendorOrderContact(allVendors.length ? allVendors : [primaryVendor]);
+    var placerName = String((body && (body.orderPlacerName || body.vendorMgrName)) || "").trim();
+    var placerTel = String((body && (body.orderPlacerTel || body.vendorMgrTel)) || "").trim();
+    if (!placerName || !placerTel) {
+        return { error: "주문하는 분 이름·연락처를 입력해 주세요.", status: 400 };
+    }
+
+    var contactExtras = {
+        vendorRegisteredMgrName: registered.mgrName,
+        vendorRegisteredMgrTel: registered.mgrTel,
+        vendorMgrName: placerName,
+        vendorMgrTel: placerTel
+    };
+
     var builtItems = await buildOrderItemsFromDb(db, body && body.items, vendorLoginId);
     if (builtItems && builtItems.error) {
         return { error: builtItems.error, status: 403 };
@@ -118,7 +134,7 @@ async function submitVendorOrder(db, auth, body) {
         return s + it.lineTotal;
     }, 0);
 
-    var vendorOrder = await buildEnrichedOrder(db, primaryVendor, items, {
+    var vendorOrder = await buildEnrichedOrder(db, primaryVendor, items, Object.assign({}, contactExtras, {
         id: vendorOrderId,
         orderNo: vendorOrderNo,
         vendorUserId: vendorLoginId,
@@ -130,7 +146,7 @@ async function submitVendorOrder(db, auth, body) {
         orderContactConfirmed: true,
         orderContactConfirmedAt: createdAt,
         orderKind: "vendor"
-    });
+    }));
 
     await db.collection("orders").insertOne(vendorOrder);
 
@@ -146,7 +162,7 @@ async function submitVendorOrder(db, auth, body) {
 
         var adminOrderId = newOrderId();
         var adminOrderNo = vendorOrderNo + "-" + String(adminOrders.length + 1).padStart(2, "0");
-        var adminOrder = await buildSplitAdminOrder(db, vendorLoginId, primaryVendor, groupItems, {
+        var adminOrder = await buildSplitAdminOrder(db, vendorLoginId, primaryVendor, groupItems, Object.assign({}, contactExtras, {
             id: adminOrderId,
             orderNo: adminOrderNo,
             vendorUserId: vendorLoginId,
@@ -158,7 +174,7 @@ async function submitVendorOrder(db, auth, body) {
             orderContactConfirmedAt: createdAt,
             parentOrderId: vendorOrderId,
             orderStaffLoginId: staffLogin
-        });
+        }));
 
         await db.collection("orders").insertOne(adminOrder);
         adminOrders.push(adminOrder);

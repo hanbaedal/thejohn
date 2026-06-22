@@ -25,14 +25,14 @@
 |------|------|----------------|-------------|------------|-----------|
 | 슈퍼바이저 | `hanbaedal` 등 `supervisor` | ○ | ○ | ○ (전체) | — |
 | 관리자 | `staff` · `admin` | ○ | ✕ | ○ (전 admin) | — |
-| 업체 | `vendors` · `loginId` | ✕ | ✕ | — | ○ (상품 등록 관리자별 등록·등급) |
+| 업체 | `vendors` · `loginId` | ✕ | ✕ | — | ○ (등록 업체 — 모든 상품 주문, 등급가는 담당 관리자 상품만) |
 | 미로그인 | — | ✕ | ✕ | ✕ | ✕ |
 
 ## 업체 주문·관리자 주문서 (2026)
 
 1. **관리자** — 로그인 시 **주문서관리** 메뉴 (st_order_enabled UI·제한 **폐지**)
 2. **업체** — loginId로 로그인, `vendorProfiles`에 관리자별 등록·등급
-3. 상품 등록 관리자(`pd_registered_by`)에게 업체가 등록되어 있으면 **주문·장바구니** 가능
+3. vendors에 등록된 업체는 **모든 관리자 상품** 주문·장바구니 가능 (등급가는 `pd_registered_by`와 맞는 프로필만)
 4. 주문 시 **vendor 1 + admin N** 발주 분할, 관리자별 SMS
 
 `vendorProductCanOrder` · `server/lib/orderAccess.js` · `server/lib/orderSubmit.js`
