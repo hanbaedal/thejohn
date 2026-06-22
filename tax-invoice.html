@@ -11,9 +11,12 @@
     <title>세금계산서 발부 — 더존</title>
     <link rel="stylesheet" href="common.css">
     <link rel="stylesheet" href="staff-hub.css">
+    <link rel="stylesheet" href="order-list-filters.css">
     <link rel="stylesheet" href="order-manage-layout.css">
+    <link rel="stylesheet" href="sales-report.css">
     <script src="api-config.js"></script>
     <script src="thejhon-api.js"></script>
+    <script src="order-ui.js"></script>
     <script src="auth.js?v=20260620-order"></script>
     <script src="admin-header.js"></script>
     <script src="nav.js?v=20260530-order-nav" defer></script>
@@ -29,26 +32,90 @@
             <button type="button" class="btn btn-auth-icon btn-logout" id="btnLogout" hidden aria-label="로그아웃" title="로그아웃"></button>
         </nav>
     </header>
-    <main class="page-main page-main--hide-scrollbar shub-page om-page">
+    <main class="page-main page-main--hide-scrollbar shub-page om-page srp-page">
         <p class="shub-subnav"><a href="order-manage-hub.html">← 영업관리</a></p>
         <h1>세금계산서 발부</h1>
-        <p id="tax-inv-status" class="shub-status" role="status" aria-live="polite"></p>
-        <div class="company-division-card" style="max-width:36rem;padding:1.25rem 1.35rem">
-            <p style="margin:0 0 0.75rem;line-height:1.6;color:#3d5166">
-                매출장을 기준으로 세금계산서 <strong>양식 PDF</strong>를 출력하는 기능입니다.
-                전자세금계산서 국세청 연동은 포함하지 않습니다.
-            </p>
-            <p style="margin:0;line-height:1.55;color:#5a6d7e;font-size:0.92rem">
-                준비 중입니다. 매출장 정리(4단계) 완료 후 연결됩니다.
-            </p>
+        <p class="srp-hint">매출장(주문서·수기 거래명세서)을 기준으로 세금계산서 <strong>양식 PDF</strong>를 출력합니다. 전자세금계산서 국세청 연동은 포함하지 않습니다.</p>
+        <p id="tax-status" class="shub-status" role="status" aria-live="polite"></p>
+
+        <div class="srp-period-tabs" role="group" aria-label="발부 기간">
+            <button type="button" class="btn btn-secondary tax-preset is-active" data-preset="today">1일</button>
+            <button type="button" class="btn btn-secondary tax-preset" data-preset="lastMonth">1개월</button>
+            <button type="button" class="btn btn-secondary tax-preset" data-preset="last3Months">3개월</button>
+            <button type="button" class="btn btn-secondary tax-preset" data-preset="custom">기간설정</button>
+        </div>
+
+        <div class="srp-toolbar" aria-label="세금계산서 작업">
+            <button type="button" class="btn btn-primary" id="tax-btn-preview">미리보기</button>
+            <button type="button" class="btn btn-secondary" id="tax-btn-pdf-view" disabled>PDF 보기</button>
+            <button type="button" class="btn btn-secondary" id="tax-btn-pdf-save" disabled>PDF 저장</button>
+            <button type="button" class="btn btn-secondary" id="tax-btn-print" disabled>출력</button>
+        </div>
+
+        <div class="ol-query-filters" aria-label="발부 조건">
+            <section class="ol-query-filters__section" id="tax-admin-wrap" hidden aria-labelledby="tax-admin-heading">
+                <h2 id="tax-admin-heading" class="ol-query-filters__heading">공급 관리자</h2>
+                <div class="ol-query-filters__row ol-query-filters__row--query">
+                    <label for="tax-admin">관리자</label>
+                    <select id="tax-admin"><option value="">선택</option></select>
+                </div>
+            </section>
+            <section class="ol-query-filters__section">
+                <h2 class="ol-query-filters__heading">발부 조건</h2>
+                <p id="tax-period-label" class="srp-period-label"></p>
+                <div id="tax-custom-from" class="ol-query-filters__row" hidden>
+                    <label for="tax-date-from">시작일</label>
+                    <input type="date" id="tax-date-from">
+                </div>
+                <div id="tax-custom-to" class="ol-query-filters__row" hidden>
+                    <label for="tax-date-to">종료일</label>
+                    <input type="date" id="tax-date-to">
+                </div>
+                <div class="ol-query-filters__row">
+                    <label for="tax-vendor-display">공급받는 업체</label>
+                    <div class="srp-pick-row">
+                        <input type="text" id="tax-vendor-display" readonly placeholder="업체 선택" aria-label="선택한 업체">
+                        <button type="button" class="btn btn-secondary" id="tax-btn-vendor-pick">선택</button>
+                    </div>
+                    <input type="hidden" id="tax-vendor-company">
+                    <input type="hidden" id="tax-vendor-login">
+                </div>
+            </section>
+        </div>
+
+        <p id="tax-summary" class="srp-summary" hidden></p>
+        <div class="srp-results-wrap" id="tax-print-area">
+            <div class="srp-table-wrap">
+                <table class="srp-table" aria-label="세금계산서 품목 미리보기">
+                    <thead>
+                        <tr>
+                            <th>품목</th>
+                            <th>수량</th>
+                            <th>단가</th>
+                            <th>공급가액</th>
+                            <th>세액</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tax-tbody"></tbody>
+                </table>
+            </div>
         </div>
     </main>
-    <footer class="site-footer">
-        <div class="site-footer-inner">
-            <dl class="site-footer-grid" id="siteFooterCompanyGrid" aria-live="polite"></dl>
-            <p class="site-footer-company-msg" id="siteFooterCompanyMsg" hidden></p>
+
+    <div class="srp-modal-backdrop" id="tax-vendor-modal" hidden>
+        <div class="srp-modal" role="dialog" aria-modal="true" aria-labelledby="tax-vendor-modal-title">
+            <div class="srp-modal-head">
+                <h2 id="tax-vendor-modal-title">업체 선택</h2>
+                <button type="button" class="btn btn-secondary" id="tax-vendor-modal-close">닫기</button>
+            </div>
+            <div class="srp-modal-search">
+                <input type="search" id="tax-vendor-search" placeholder="업체명 검색" autocomplete="off">
+            </div>
+            <ul class="srp-modal-list" id="tax-vendor-list"></ul>
         </div>
-    </footer>
+    </div>
+
+    <script src="sales-report-shared.js"></script>
     <script src="tax-invoice.js"></script>
 </body>
 </html>

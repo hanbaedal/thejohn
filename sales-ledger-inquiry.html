@@ -8,7 +8,7 @@
     <script src="site-brand-boot.js"></script>
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#0a4d9c">
-    <title>매출장 조회 — 더존</title>
+    <title>매출장 — 더존</title>
     <link rel="stylesheet" href="common.css">
     <link rel="stylesheet" href="staff-hub.css">
     <link rel="stylesheet" href="order-list-filters.css">
@@ -35,8 +35,8 @@
     </header>
     <main class="page-main page-main--hide-scrollbar shub-page om-page srp-page">
         <p class="shub-subnav"><a href="order-manage-hub.html">← 영업관리</a></p>
-        <h1>매출장 조회</h1>
-        <p class="srp-hint">수기 거래명세·발주 매출을 기간별로 조회합니다. 매출 입력은 「거래명세서 수기 작성」에서 합니다.</p>
+        <h1>매출장</h1>
+        <p class="srp-hint">주문서(발주)·수기 거래명세서를 기준으로 기간별 매출을 조회합니다. 수기 매출 입력은 「거래명세서 → 수기 작성」에서 합니다.</p>
         <p id="sli-status" class="shub-status" role="status" aria-live="polite"></p>
 
         <div class="srp-mode-tabs" role="tablist" aria-label="조회 구분">
@@ -53,10 +53,18 @@
 
         <div class="srp-toolbar" aria-label="집계 작업">
             <button type="button" class="btn btn-primary" id="sli-btn-search">확인</button>
+            <button type="button" class="btn btn-secondary" id="sli-btn-pdf" disabled>PDF 저장</button>
             <button type="button" class="btn btn-secondary" id="sli-btn-print" disabled>출력</button>
         </div>
 
         <div class="ol-query-filters" aria-label="조회 조건">
+            <section class="ol-query-filters__section" id="sli-admin-wrap" hidden aria-labelledby="sli-admin-heading">
+                <h2 id="sli-admin-heading" class="ol-query-filters__heading">담당 관리자</h2>
+                <div class="ol-query-filters__row ol-query-filters__row--query">
+                    <label for="sli-admin">관리자</label>
+                    <select id="sli-admin"><option value="">전체</option></select>
+                </div>
+            </section>
             <section class="ol-query-filters__section">
                 <h2 class="ol-query-filters__heading">조회 조건</h2>
                 <p id="sli-period-label" class="srp-period-label"></p>
@@ -95,6 +103,7 @@
             </section>
         </div>
 
+        <p id="sli-print-title" class="srp-print-title" hidden></p>
         <p id="sli-summary" class="srp-summary" hidden></p>
 
         <div class="srp-results-wrap" id="sli-print-area">

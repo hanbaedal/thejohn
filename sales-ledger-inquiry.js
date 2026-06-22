@@ -9,6 +9,8 @@
     var preset = "today";
     var allVendors = [];
     var allProducts = [];
+    var isSupervisor = false;
+    var lastResult = null;
 
     function $(id) {
         return document.getElementById(id);
@@ -22,6 +24,14 @@
         try {
             var m = new URLSearchParams(window.location.search).get("mode");
             if (m === "product" || m === "vendor") mode = m;
+        } catch (e) {}
+    }
+
+    function syncModeToUrl() {
+        try {
+            var url = new URL(window.location.href);
+            url.searchParams.set("mode", mode);
+            window.history.replaceState({}, "", url.pathname + url.search);
         } catch (e) {}
     }
 
@@ -86,6 +96,27 @@
             html += '<option value="' + SR.escapeHtml(d.id) + '">' + SR.escapeHtml(d.label) + "</option>";
         });
         deptEl.innerHTML = html;
+    }
+
+    function loadAdminOptions() {
+        var adminEl = $("sli-admin");
+        if (!api || !api.listStaff || !adminEl) return Promise.resolve();
+        return api.listStaff().then(function (items) {
+            var opts = '<option value="">전체</option>';
+            (items || [])
+                .filter(function (it) {
+                    return it && it.role === "admin" && it.active !== false;
+                })
+                .sort(function (a, b) {
+                    return String(a.loginId || "").localeCompare(String(b.loginId || ""), "ko");
+                })
+                .forEach(function (it) {
+                    var id = String(it.loginId || "").trim();
+                    var label = (it.st_company || id) + " (" + id + ")";
+                    opts += '<option value="' + SR.escapeHtml(id) + '">' + SR.escapeHtml(label) + "</option>";
+                });
+            adminEl.innerHTML = opts;
+        });
     }
 
     function vendorCompanyName(v) {
@@ -217,12 +248,39 @@
             p.dateTo = SR.readDateInput($("sli-date-to"));
         }
         if (mode === "vendor") {
-            p.vendorCompany = String($("sli-vendor-company").value || "").trim();
+            p.vendorCompany = String(($("sli-vendor-company") && $("sli-vendor-company").value) || "").trim();
         } else {
-            p.dept = String($("sli-dept").value || "").trim();
-            p.productId = String($("sli-product-id").value || "").trim();
+            p.dept = String(($("sli-dept") && $("sli-dept").value) || "").trim();
+            p.productId = String(($("sli-product-id") && $("sli-product-id").value) || "").trim();
+            p.productName = String(($("sli-product-display") && $("sli-product-display").value) || "").trim();
+        }
+        if (isSupervisor && $("sli-admin")) {
+            var adminStaffId = String($("sli-admin").value || "").trim();
+            if (adminStaffId) p.adminStaffId = adminStaffId;
         }
         return p;
+    }
+
+    function updatePrintTitle(data) {
+        var el = $("sli-print-title");
+        if (!el || !data) {
+            if (el) el.hidden = true;
+            return;
+        }
+        var title =
+            mode === "product"
+                ? "매출장 (품목별) — " + String(($("sli-product-display") && $("sli-product-display").value) || "")
+                : "매출장 (업체별) — " + String(($("sli-vendor-display") && $("sli-vendor-display").value) || "");
+        if (data.period && data.period.dateFrom && data.period.dateTo) {
+            title += " · " + data.period.dateFrom + " ~ " + data.period.dateTo;
+        }
+        el.textContent = title;
+        el.hidden = false;
+    }
+
+    function setExportEnabled(enabled) {
+        if ($("sli-btn-print")) $("sli-btn-print").disabled = !enabled;
+        if ($("sli-btn-pdf")) $("sli-btn-pdf").disabled = !enabled;
     }
 
     function runSearch() {
@@ -235,10 +293,11 @@
             if (!p.productId) return setStatus("품목을 선택해 주세요.", "err");
         }
         setStatus("조회 중…");
-        $("sli-btn-print").disabled = true;
+        setExportEnabled(false);
         return api
             .getSalesLedgerInquiry(p)
             .then(function (data) {
+                lastResult = data;
                 SR.renderSummary($("sli-summary"), data.summary);
                 if (data.period) {
                     var pl = $("sli-period-label");
@@ -253,13 +312,41 @@
                             ")";
                     }
                 }
+                updatePrintTitle(data);
                 SR.renderResultsTable($("sli-tbody"), data.items || []);
                 var n = (data.items && data.items.length) || 0;
                 setStatus(n ? "조회 완료 (" + n + "건)" : "조회 결과가 없습니다.", n ? "ok" : "");
-                $("sli-btn-print").disabled = n === 0;
+                setExportEnabled(n > 0);
             })
             .catch(function (e) {
+                lastResult = null;
                 setStatus((e && e.message) || "조회에 실패했습니다.", "err");
+            });
+    }
+
+    function downloadPdf() {
+        if (!lastResult || !api.fetchSalesReportPdf) return;
+        var p = queryParams();
+        var body = Object.assign({ reportType: "inquiry", inline: false }, p);
+        setStatus("PDF 생성 중…");
+        if ($("sli-btn-pdf")) $("sli-btn-pdf").disabled = true;
+        api.fetchSalesReportPdf(body)
+            .then(function (blob) {
+                var name =
+                    mode === "product"
+                        ? "매출장_품목_" + (p.productName || "집계").replace(/[<>:"/\\|?*]/g, "_")
+                        : "매출장_업체_" + (p.vendorCompany || "집계").replace(/[<>:"/\\|?*]/g, "_");
+                if (lastResult.period && lastResult.period.dateFrom) {
+                    name += "_" + String(lastResult.period.dateFrom).replace(/-/g, "");
+                }
+                SR.downloadPdfBlob(blob, name + ".pdf");
+                setStatus("PDF를 저장했습니다.", "ok");
+            })
+            .catch(function (e) {
+                setStatus((e && e.message) || "PDF 생성에 실패했습니다.", "err");
+            })
+            .finally(function () {
+                setExportEnabled((lastResult && lastResult.items && lastResult.items.length) > 0);
             });
     }
 
@@ -269,6 +356,10 @@
             return;
         }
         if (Auth.setStaffNavMode) Auth.setStaffNavMode("order");
+        if (Auth.refreshOrderHeader) Auth.refreshOrderHeader();
+
+        isSupervisor = !!(Auth.isSupervisorStaff && Auth.isSupervisorStaff());
+        if ($("sli-admin-wrap")) $("sli-admin-wrap").hidden = !isSupervisor;
 
         readModeFromUrl();
         applyModeUi();
@@ -279,6 +370,7 @@
             tab.addEventListener("click", function () {
                 mode = tab.getAttribute("data-mode") || "vendor";
                 applyModeUi();
+                syncModeToUrl();
             });
         });
 
@@ -334,6 +426,22 @@
                 SR.printResults();
             });
         }
+        if ($("sli-btn-pdf")) {
+            $("sli-btn-pdf").addEventListener("click", downloadPdf);
+        }
+        if ($("sli-admin")) {
+            $("sli-admin").addEventListener("change", function () {
+                lastResult = null;
+                setExportEnabled(false);
+            });
+        }
+
+        var initPromise = isSupervisor ? loadAdminOptions() : Promise.resolve();
+        initPromise.then(function () {
+            if (mode === "product" && $("sli-dept")) {
+                /* URL mode=product — UI만 전환, 조회는 사용자가 확인 클릭 */
+            }
+        });
     }
 
     if (document.readyState === "loading") {

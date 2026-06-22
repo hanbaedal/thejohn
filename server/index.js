@@ -245,6 +245,7 @@ app.use("/api/vendor-new", requireDb, vendorNewRoutes);
 app.use("/api/orders", requireDb, orderRoutes);
 app.use("/api/transaction-manual", requireDb, require("./routes/transactionManual"));
 app.use("/api/sales-reports", requireDb, require("./routes/salesReports"));
+app.use("/api/tax-invoices", requireDb, require("./routes/taxInvoices"));
 app.use("/api/sales-ledgers", requireDb, require("./routes/salesLedgers"));
 app.use("/api/vendor-email", requireDb, vendorEmailRoutes);
 app.use("/api/supervisor", requireDb, supervisorRoutes);

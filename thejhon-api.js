@@ -738,6 +738,29 @@
                 return pdfBlobFromResponse(res);
             });
         },
+        fetchTaxInvoicePdf: function (body) {
+            var url = apiUrl("/api/tax-invoices/pdf");
+            return fetch(url, {
+                method: "POST",
+                headers: headers(),
+                body: JSON.stringify(body || {})
+            }).then(function (res) {
+                if (!res.ok) {
+                    return res.text().then(function (text) {
+                        var msg = "세금계산서 PDF를 만들지 못했습니다.";
+                        try {
+                            var data = JSON.parse(text);
+                            if (data && data.error) msg = data.error;
+                        } catch (e) {}
+                        throw new Error(msg);
+                    });
+                }
+                return pdfBlobFromResponse(res);
+            });
+        },
+        previewTaxInvoice: function (body) {
+            return request("POST", "/api/tax-invoices/preview", body || {});
+        },
         fetchTransactionManualPreviewPdf: function (body) {
             var url = apiUrl("/api/transaction-manual/pdf");
             return fetch(url, {

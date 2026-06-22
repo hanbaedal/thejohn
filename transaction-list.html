@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="public-site-config.js?v=20260620"></script>
+    <script src="auth-storage.js?v=20260620-public"></script>
+    <script src="site-brand-boot.js"></script>
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#0a4d9c">
+    <title>거래명세서 — 더존</title>
+    <link rel="stylesheet" href="common.css">
+    <link rel="stylesheet" href="staff-hub.css">
+    <link rel="stylesheet" href="order-manage-layout.css">
+    <link rel="stylesheet" href="order-list-filters.css">
+    <link rel="stylesheet" href="order-detail-modal.css">
+    <link rel="stylesheet" href="admin-manage.css">
+    <link rel="stylesheet" href="sales-report.css">
+    <link rel="stylesheet" href="transaction-manual-list.css">
+    <link rel="stylesheet" href="transaction-list.css">
+    <script src="api-config.js"></script>
+    <script src="thejhon-api.js"></script>
+    <script src="order-ui.js"></script>
+    <script src="order-detail-modal.js"></script>
+    <script src="auth.js?v=20260620-order"></script>
+    <script src="admin-header.js"></script>
+    <script src="nav.js?v=20260530-order-nav" defer></script>
+</head>
+<body>
+    <header class="site-header">
+        <div class="site-header-start">
+            <a href="work-hub.html" class="dz-logo dz-logo--compact" aria-label="그룹 마케팅 관리"><img src="img/logo.png" alt="" width="72" height="72" class="dz-logo-img"></a>
+            <nav class="site-header-nav site-header-nav--order" aria-label="영업관리 메뉴"></nav>
+        </div>
+        <nav class="site-header-actions" aria-label="계정">
+            <time class="header-date" id="headerToday" datetime=""></time>
+            <button type="button" class="btn btn-auth-icon btn-logout" id="btnLogout" hidden aria-label="로그아웃" title="로그아웃"></button>
+        </nav>
+    </header>
+    <main class="page-main page-main--hide-scrollbar shub-page om-page txn-page">
+        <p class="shub-subnav"><a href="order-manage-hub.html">← 영업관리</a></p>
+        <h1>거래명세서</h1>
+        <p id="txn-status" class="shub-status" role="status" aria-live="polite"></p>
+
+        <div class="srp-mode-tabs" role="tablist" aria-label="거래명세서 구분">
+            <button type="button" class="srp-mode-tab is-active" id="txn-tab-order" data-tab="order" role="tab" aria-selected="true">주문서 발행</button>
+            <button type="button" class="srp-mode-tab" id="txn-tab-manual" data-tab="manual" role="tab" aria-selected="false">수기</button>
+        </div>
+
+        <section id="txn-panel-order" class="txn-panel" data-panel="order">
+            <p class="txn-hint">주문서를 선택해 거래명세서 PDF를 보기·저장·출력합니다.</p>
+            <div class="ol-query-filters" aria-label="주문서 거래명세서 조회">
+                <section class="ol-query-filters__section" aria-labelledby="txn-order-period-heading">
+                    <h2 id="txn-order-period-heading" class="ol-query-filters__heading">조회 기간</h2>
+                    <div class="ol-query-filters__row">
+                        <label for="txn-date-from">시작일</label>
+                        <input type="date" id="txn-date-from">
+                    </div>
+                    <div class="ol-query-filters__row">
+                        <label for="txn-date-to">종료일</label>
+                        <input type="date" id="txn-date-to">
+                    </div>
+                    <div class="ol-query-filters__row ol-query-filters__row--query">
+                        <button type="button" class="btn btn-primary" id="txn-order-search">조회</button>
+                    </div>
+                </section>
+                <section class="ol-query-filters__section" id="txn-admin-filter-wrap" aria-labelledby="txn-admin-heading" hidden>
+                    <h2 id="txn-admin-heading" class="ol-query-filters__heading">담당 관리자</h2>
+                    <div class="ol-query-filters__row ol-query-filters__row--query">
+                        <label for="txn-admin">관리자</label>
+                        <select id="txn-admin"><option value="">전체</option></select>
+                    </div>
+                </section>
+            </div>
+            <button type="button" class="btn btn-secondary txn-back-btn" id="txn-order-back" hidden>← 구매업체 목록</button>
+            <h2 id="txn-order-step" class="txn-step-heading">구매업체 목록</h2>
+            <div id="txn-order-list" class="ol-list-scroll"></div>
+        </section>
+
+        <section id="txn-panel-manual" class="txn-panel" data-panel="manual" hidden>
+            <p class="txn-hint">업체를 선택해 상품을 등록·저장하면 거래명세서가 만들어집니다.</p>
+            <div class="tml-toolbar">
+                <a href="transaction-manual-register.html" class="btn btn-primary">거래명세서 수기 작성</a>
+            </div>
+            <div class="ol-query-filters" id="txn-manual-filter-wrap" aria-label="수기 거래명세서 조회" hidden>
+                <section class="ol-query-filters__section">
+                    <h2 class="ol-query-filters__heading">발행 관리자</h2>
+                    <div class="ol-query-filters__row ol-query-filters__row--query">
+                        <label for="txn-manual-admin">관리자</label>
+                        <select id="txn-manual-admin"><option value="">전체 관리자</option></select>
+                        <button type="button" class="btn btn-primary" id="txn-manual-search">조회</button>
+                    </div>
+                </section>
+            </div>
+            <section class="shub-panel">
+                <div class="tml-table-wrap">
+                    <table class="tml-table" aria-label="수기 거래명세서 목록">
+                        <thead>
+                            <tr>
+                                <th>발행일</th>
+                                <th>거래처</th>
+                                <th>메모</th>
+                                <th>공급자</th>
+                                <th>품목</th>
+                                <th>합계</th>
+                                <th class="tml-col-act">작업</th>
+                            </tr>
+                        </thead>
+                        <tbody id="txn-manual-body"></tbody>
+                    </table>
+                </div>
+                <p id="txn-manual-empty" class="tml-empty" hidden>표시할 수기 거래명세서가 없습니다.</p>
+            </section>
+        </section>
+    </main>
+    <footer class="site-footer">
+        <div class="site-footer-inner">
+            <dl class="site-footer-grid" id="siteFooterCompanyGrid" aria-live="polite"></dl>
+            <p class="site-footer-company-msg" id="siteFooterCompanyMsg" hidden></p>
+        </div>
+    </footer>
+    <div id="txn-detail-modal" class="odm-modal" hidden role="dialog" aria-modal="true" aria-labelledby="odm-detail-title">
+        <div id="txn-detail-panel" class="odm-panel" aria-live="polite"></div>
+    </div>
+    <script src="transaction-list.js"></script>
+</body>
+</html>

@@ -68,6 +68,21 @@
     font-size: 0.88rem;
     color: #556;
     text-align: center;
+    line-height: 1.5;
+}
+.srp-print-title {
+    max-width: 52rem;
+    margin: 0 auto 0.5rem;
+    padding: 0 0.75rem;
+    font-size: 1rem;
+    font-weight: 700;
+    color: #052a4d;
+    text-align: center;
+}
+@media screen {
+    .srp-print-title[hidden] {
+        display: none !important;
+    }
 }
 .srp-period-label {
     font-size: 0.9rem;
@@ -201,8 +216,14 @@
     .shub-subnav,
     .srp-toolbar,
     .ol-query-filters,
-    .shub-status {
+    .shub-status,
+    .srp-mode-tabs,
+    .srp-period-tabs,
+    .srp-hint {
         display: none !important;
+    }
+    .srp-print-title[hidden] {
+        display: block !important;
     }
     .page-main {
         padding: 0 !important;

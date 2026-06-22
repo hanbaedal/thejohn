@@ -11,6 +11,7 @@ const { trimStaffLoginId, staffLoginIdsEqual } = require("./staffLoginId");
 const { syncFromOrder, deleteSalesForSource } = require("./salesRecords");
 const { resolveVendorOrderContact } = require("./vendorOrderContact");
 const { allocVendorOrderNo } = require("./orderNo");
+const { ensureVendorRegistrationsForOrder } = require("./vendorAutoRegister");
 
 function newOrderId() {
     return "ord_" + Date.now().toString(36) + "_" + Math.random().toString(36).slice(2, 8);
@@ -120,6 +121,13 @@ async function submitVendorOrder(db, auth, body) {
         vendorMgrTel: placerTel
     };
 
+    var autoReg = { created: [] };
+    try {
+        autoReg = await ensureVendorRegistrationsForOrder(db, vendorLoginId, primaryVendor, body && body.items);
+    } catch (autoRegErr) {
+        console.error("vendor auto register on order", autoRegErr.message);
+    }
+
     var builtItems = await buildOrderItemsFromDb(db, body && body.items, vendorLoginId);
     if (builtItems && builtItems.error) {
         return { error: builtItems.error, status: 403 };
@@ -222,7 +230,8 @@ async function submitVendorOrder(db, auth, body) {
         ok: true,
         order: vendorOrder,
         adminOrders: adminOrders,
-        notifyResults: notifyResults
+        notifyResults: notifyResults,
+        autoRegisteredAdmins: autoReg.created || []
     };
 }
 

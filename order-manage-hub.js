@@ -20,8 +20,8 @@
         if (list && links.list) list.setAttribute("href", links.list);
         if (transaction) {
             var txHref =
-                links.transactionManualList ||
                 links.transactionList ||
+                links.transactionManualList ||
                 links.transactionManual ||
                 "";
             if (txHref) {

@@ -86,15 +86,31 @@ router.post("/pdf", async function (req, res) {
             result = await queryByVendor(db, req.auth, body);
             title = "업체별 매출 집계";
             subtitle = String(body.vendorCompany || result.filter?.vendorCompany || "");
+        } else if (reportType === "inquiry") {
+            const { ensureIndexes: ensureLedgerIndexes } = require("../lib/salesLedger");
+            await ensureLedgerIndexes(db);
+            result = await querySalesLedgerInquiry(db, req.auth, body);
+            if (result.mode === "product") {
+                title = "매출장 (품목별)";
+                subtitle = String(body.productName || "").trim();
+            } else {
+                title = "매출장 (업체별)";
+                subtitle = String(body.vendorCompany || result.filter?.vendorCompany || "");
+            }
         } else {
             return res.status(400).json({ ok: false, error: "reportType이 올바르지 않습니다." });
         }
 
         if (result.error) return res.status(400).json({ ok: false, error: result.error });
 
-        const from = body.dateFrom ? formatYmd(parseYmdLocal(body.dateFrom)) : "";
-        const to = body.dateTo ? formatYmd(parseYmdLocal(body.dateTo, true)) : "";
-        const period = from || to ? from + " ~ " + to : "전체";
+        var period = "";
+        if (reportType !== "inquiry") {
+            const from = body.dateFrom ? formatYmd(parseYmdLocal(body.dateFrom)) : "";
+            const to = body.dateTo ? formatYmd(parseYmdLocal(body.dateTo, true)) : "";
+            period = from || to ? from + " ~ " + to : "전체";
+        } else if (result.period && result.period.dateFrom && result.period.dateTo) {
+            period = result.period.dateFrom + " ~ " + result.period.dateTo;
+        }
 
         const buf = await buildSalesReportPdfBuffer({
             title: title,

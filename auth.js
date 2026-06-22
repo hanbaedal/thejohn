@@ -799,6 +799,7 @@
     var ORDER_MANAGE_PAGES = ["order-list-admin.html"];
     var ORDER_MANAGE_HUB_PAGES = [
         ORDER_MANAGE_HUB_PAGE,
+        "transaction-list.html",
         "supervisor-order-list.html",
         "supervisor-order-pdf.html",
         "supervisor-transaction-pdf.html",
@@ -806,6 +807,10 @@
         "transaction-manual-register.html",
         "transaction-manual-list.html",
         "sales-ledger-inquiry.html",
+        "sales-ledger-list.html",
+        "sales-ledger-register.html",
+        "sales-by-product.html",
+        "sales-by-vendor.html",
         "tax-invoice.html"
     ];
     var WORK_HUB_PAGE = "work-hub.html";
@@ -845,6 +850,7 @@
     var STAFF_NAV_ORDER_PAGES = {
         "order-manage-hub.html": true,
         "order-list-admin.html": true,
+        "transaction-list.html": true,
         "supervisor-order-list.html": true,
         "supervisor-order-pdf.html": true,
         "supervisor-transaction-pdf.html": true,
@@ -852,6 +858,10 @@
         "transaction-manual-register.html": true,
         "transaction-manual-list.html": true,
         "sales-ledger-inquiry.html": true,
+        "sales-ledger-list.html": true,
+        "sales-ledger-register.html": true,
+        "sales-by-product.html": true,
+        "sales-by-vendor.html": true,
         "tax-invoice.html": true
     };
     var STAFF_NAV_PRODUCT_PAGES = {};
@@ -1163,9 +1173,6 @@
         }
         if (links.transactionManual) {
             items.push({ href: links.transactionManual, label: "거래명세서(수기)" });
-        }
-        if (links.transactionManualList) {
-            items.push({ href: links.transactionManualList, label: "거래명세서 목록" });
         }
         if (links.salesLedgerInquiry) {
             items.push({ href: links.salesLedgerInquiry, label: "매출장" });
@@ -2441,9 +2448,9 @@
                 list: "supervisor-order-list.html",
                 orderPdf: "supervisor-order-pdf.html",
                 transactionPdf: "supervisor-transaction-pdf.html",
-                transactionList: "supervisor-transaction-list.html",
+                transactionList: "transaction-list.html",
                 transactionManual: "transaction-manual-register.html",
-                transactionManualList: "transaction-manual-list.html",
+                transactionManualList: "transaction-list.html?tab=manual",
                 salesLedgerInquiry: "sales-ledger-inquiry.html",
                 taxInvoice: "tax-invoice.html"
             };
@@ -2453,9 +2460,9 @@
                 list: "order-list-admin.html",
                 orderPdf: "supervisor-order-pdf.html",
                 transactionPdf: "supervisor-transaction-pdf.html",
-                transactionList: "supervisor-transaction-list.html",
+                transactionList: "transaction-list.html",
                 transactionManual: "transaction-manual-register.html",
-                transactionManualList: "transaction-manual-list.html",
+                transactionManualList: "transaction-list.html?tab=manual",
                 salesLedgerInquiry: "sales-ledger-inquiry.html",
                 taxInvoice: "tax-invoice.html"
             };

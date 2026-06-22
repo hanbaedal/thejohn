@@ -574,6 +574,38 @@
         });
     }
 
+    function printTransactionPdfWithAuth(api, orderId) {
+        if (!api || !api.fetchTransactionPdfBlob) {
+            return Promise.reject(new Error("거래명세서 PDF API를 사용할 수 없습니다."));
+        }
+        return api.fetchTransactionPdfBlob(orderId).then(openPdfForPrint);
+    }
+
+    function printTransactionManualPdfWithAuth(api, manualId) {
+        if (!api || !api.fetchTransactionManualPdf) {
+            return Promise.reject(new Error("거래명세서 PDF API를 사용할 수 없습니다."));
+        }
+        return api.fetchTransactionManualPdf(manualId).then(openPdfForPrint);
+    }
+
+    function downloadTransactionManualPdfWithAuth(api, manualId, filename) {
+        if (!api || !api.fetchTransactionManualPdf) {
+            return Promise.reject(new Error("거래명세서 PDF API를 사용할 수 없습니다."));
+        }
+        return api.fetchTransactionManualPdf(manualId).then(function (blob) {
+            triggerPdfDownload(blob, filename || "거래명세서.pdf");
+        });
+    }
+
+    function viewTransactionManualPdfWithAuth(api, manualId, filename) {
+        if (!api || !api.fetchTransactionManualPdf) {
+            return Promise.reject(new Error("거래명세서 PDF API를 사용할 수 없습니다."));
+        }
+        return api.fetchTransactionManualPdf(manualId).then(function (blob) {
+            return openPdfBlobInModal(blob, filename || "거래명세서.pdf");
+        });
+    }
+
     function printOrderPdfWithAuth(api, orderId) {
         if (!api || !api.fetchOrderPdfBlob) {
             return Promise.reject(new Error("PDF API를 사용할 수 없습니다."));
@@ -599,13 +631,6 @@
         });
     }
 
-    function printTransactionPdfWithAuth(api, orderId) {
-        if (!api || !api.fetchTransactionPdfBlob) {
-            return Promise.reject(new Error("거래명세서 PDF API를 사용할 수 없습니다."));
-        }
-        return api.fetchTransactionPdfBlob(orderId).then(openPdfForPrint);
-    }
-
     global.THEJHON_ORDER_UI = {
         escapeHtml: escapeHtml,
         formatWon: formatWon,
@@ -625,10 +650,13 @@
         _lastOrderForPdf: null,
         downloadOrderPdfWithAuth: downloadOrderPdfWithAuth,
         downloadTransactionPdfWithAuth: downloadTransactionPdfWithAuth,
+        printTransactionPdfWithAuth: printTransactionPdfWithAuth,
+        printTransactionManualPdfWithAuth: printTransactionManualPdfWithAuth,
+        downloadTransactionManualPdfWithAuth: downloadTransactionManualPdfWithAuth,
+        viewTransactionManualPdfWithAuth: viewTransactionManualPdfWithAuth,
         printOrderPdfWithAuth: printOrderPdfWithAuth,
         viewOrderPdfWithAuth: viewOrderPdfWithAuth,
         viewTransactionPdfWithAuth: viewTransactionPdfWithAuth,
-        printTransactionPdfWithAuth: printTransactionPdfWithAuth,
         triggerPdfDownload: triggerPdfDownload,
         openPdfBlobInModal: openPdfBlobInModal,
         closePdfBlobModal: closePdfBlobModal,
