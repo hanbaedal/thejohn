@@ -153,7 +153,7 @@
     function renderDateLedgerTable(tbody, dayGroups) {
         if (!tbody) return;
         if (!dayGroups || !dayGroups.length) {
-            tbody.innerHTML = '<tr><td colspan="6">조회 결과가 없습니다.</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="7">조회 결과가 없습니다.</td></tr>';
             return;
         }
         var html = "";
@@ -177,6 +177,9 @@
                     "<td>" +
                     escapeHtml(dayYmd) +
                     "</td>" +
+                    "<td class=\"vendor\">" +
+                    escapeHtml(row.vendorCompany || "") +
+                    "</td>" +
                     "<td>" +
                     escapeHtml(row.pd_code || "—") +
                     "</td>" +
@@ -197,6 +200,7 @@
             html +=
                 '<tr class="srp-day-total">' +
                 "<td></td>" +
+                "<td></td>" +
                 '<td colspan="2"><strong>일 소계</strong></td>' +
                 '<td class="num"><strong>' +
                 escapeHtml(String(dayQty)) +
@@ -209,7 +213,7 @@
         });
         html +=
             '<tr class="srp-total-row">' +
-            '<td colspan="3"><strong>합계 (' +
+            '<td colspan="4"><strong>합계 (' +
             escapeHtml(String(dayGroups.length)) +
             "일 · " +
             escapeHtml(String(totalLines)) +

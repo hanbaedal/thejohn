@@ -102,10 +102,13 @@
     table-layout: fixed;
 }
 .srp-table--date-ledger col.col-date {
-    width: 6.25rem;
+    width: 5.5rem;
+}
+.srp-table--date-ledger col.col-vendor {
+    width: 6.5rem;
 }
 .srp-table--date-ledger col.col-code {
-    width: 5.25rem;
+    width: 4.5rem;
 }
 .srp-table--date-ledger col.col-qty {
     width: 3.25rem;
@@ -116,7 +119,8 @@
 .srp-table--date-ledger col.col-amount {
     width: 5.25rem;
 }
-.srp-table--date-ledger td.name {
+.srp-table--date-ledger td.name,
+.srp-table--date-ledger td.vendor {
     white-space: normal;
     word-break: break-word;
 }
