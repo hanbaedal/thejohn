@@ -747,6 +747,15 @@
                 return pdfBlobFromResponse(res);
             });
         },
+        listTaxInvoiceVendors: function (opts) {
+            opts = opts || {};
+            var parts = [];
+            if (opts.dateFrom) parts.push("dateFrom=" + encodeURIComponent(String(opts.dateFrom)));
+            if (opts.dateTo) parts.push("dateTo=" + encodeURIComponent(String(opts.dateTo)));
+            if (opts.adminStaffId) parts.push("adminStaffId=" + encodeURIComponent(String(opts.adminStaffId)));
+            var q = parts.length ? "?" + parts.join("&") : "";
+            return request("GET", "/api/tax-invoices/vendors" + q);
+        },
         fetchTaxInvoicePdf: function (body) {
             var url = apiUrl("/api/tax-invoices/pdf");
             return fetch(url, {

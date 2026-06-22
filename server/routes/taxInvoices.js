@@ -4,7 +4,7 @@ const { requireRole } = require("../middleware/auth");
 const { assertOrderManageAccess } = require("../lib/transactionManual");
 const { ensureIndexes } = require("../lib/salesRecords");
 const { ensureIndexes: ensureLedgerIndexes } = require("../lib/salesLedger");
-const { buildTaxInvoicePayload } = require("../lib/taxInvoiceBuild");
+const { buildTaxInvoicePayload, listTaxInvoiceVendors } = require("../lib/taxInvoiceBuild");
 const { buildTaxInvoicePdfBuffer } = require("../lib/taxInvoicePdf");
 
 const router = express.Router();
@@ -18,6 +18,21 @@ function safeFilePart(s) {
 }
 
 router.use(requireRole("supervisor", "admin"));
+
+router.get("/vendors", async function (req, res) {
+    try {
+        await assertOrderManageAccess(req.auth);
+        const db = getDb();
+        await ensureIndexes(db);
+        await ensureLedgerIndexes(db);
+        const result = await listTaxInvoiceVendors(db, req.auth, req.query || {});
+        if (result.error) return res.status(400).json({ ok: false, error: result.error });
+        res.json(result);
+    } catch (e) {
+        console.error("GET /api/tax-invoices/vendors", e);
+        res.status(500).json({ ok: false, error: e.message || "업체 목록 조회에 실패했습니다." });
+    }
+});
 
 router.post("/pdf", async function (req, res) {
     try {

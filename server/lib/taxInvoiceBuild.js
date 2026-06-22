@@ -81,6 +81,57 @@ function aggregateItemsForTax(items) {
     return Array.from(map.values());
 }
 
+function aggregateVendorsFromItems(items) {
+    const map = {};
+    (items || []).forEach(function (row) {
+        const name = str(row.vendorCompany);
+        if (!name) return;
+        if (!map[name]) {
+            map[name] = {
+                vendorCompany: name,
+                vendorLoginId: "",
+                lineCount: 0,
+                totalAmount: 0
+            };
+        }
+        map[name].lineCount += 1;
+        map[name].totalAmount += Number(row.lineTotal) || 0;
+        if (!map[name].vendorLoginId && row.vendorLoginId) {
+            map[name].vendorLoginId = str(row.vendorLoginId);
+        }
+    });
+    return Object.keys(map)
+        .sort(function (a, b) {
+            return a.localeCompare(b, "ko");
+        })
+        .map(function (k) {
+            return map[k];
+        });
+}
+
+async function listTaxInvoiceVendors(db, auth, query) {
+    const issuerLoginId = await resolveIssuerStaffLoginId(auth, query || {});
+    if (!issuerLoginId) {
+        if (supervisorCanAccessAllOrders(auth)) {
+            return { error: "슈퍼바이저는 공급 관리자를 선택해 주세요." };
+        }
+        return { error: "공급자(관리자) 정보를 확인할 수 없습니다." };
+    }
+
+    const inquiry = await querySalesLedgerInquiry(
+        db,
+        auth,
+        Object.assign({}, query || {}, { mode: "date" })
+    );
+    if (inquiry.error) return { error: inquiry.error };
+
+    return {
+        ok: true,
+        period: inquiry.period,
+        vendors: aggregateVendorsFromItems(inquiry.items || [])
+    };
+}
+
 async function buildTaxInvoicePayload(db, auth, query) {
     const issuerLoginId = await resolveIssuerStaffLoginId(auth, query || {});
     if (!issuerLoginId) {
@@ -90,7 +141,11 @@ async function buildTaxInvoicePayload(db, auth, query) {
         return { error: "공급자(관리자) 정보를 확인할 수 없습니다." };
     }
 
-    const inquiry = await querySalesLedgerInquiry(db, auth, Object.assign({}, query, { mode: "vendor" }));
+    const inquiry = await querySalesLedgerInquiry(
+        db,
+        auth,
+        Object.assign({}, query || {}, { mode: "vendor" })
+    );
     if (inquiry.error) return { error: inquiry.error };
 
     const vendorCompany = str(query.vendorCompany);
@@ -137,5 +192,6 @@ async function buildTaxInvoicePayload(db, auth, query) {
 
 module.exports = {
     buildTaxInvoicePayload,
-    aggregateItemsForTax
+    aggregateItemsForTax,
+    listTaxInvoiceVendors
 };

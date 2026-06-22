@@ -1,0 +1,35 @@
+.tax-page .tax-detail-meta {
+    margin: 0 0 0.75rem;
+    font-size: 0.88rem;
+    color: #3d5166;
+    line-height: 1.55;
+}
+.tax-page .tax-detail-meta p {
+    margin: 0.2rem 0;
+}
+.tax-page .tax-detail-table-wrap {
+    overflow-x: auto;
+    margin-bottom: 0.5rem;
+}
+.tax-page .tax-detail-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.88rem;
+}
+.tax-page .tax-detail-table th,
+.tax-page .tax-detail-table td {
+    border: 1px solid #d4e2f0;
+    padding: 0.4rem 0.5rem;
+}
+.tax-page .tax-detail-table th {
+    background: #f0f6fc;
+    font-weight: 600;
+}
+.tax-page .tax-detail-table td.num {
+    text-align: right;
+    white-space: nowrap;
+}
+.tax-page .tax-detail-table tr.tax-total-row td {
+    background: #f0f6fc;
+    font-weight: 600;
+}

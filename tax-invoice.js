@@ -3,13 +3,16 @@
     var Auth = window.THEJHON_AUTH;
     var SR = window.THEJHON_SALES_REPORT;
     var OrderUI = window.THEJHON_ORDER_UI;
+    var DetailModal = window.THEJHON_ORDER_DETAIL_MODAL;
 
     var statusEl = document.getElementById("tax-status");
-    var preset = "today";
     var isSupervisor = false;
-    var allVendors = [];
+    var vendorGroups = [];
+    var selectedVendorKey = "";
+    var lastPeriod = null;
     var lastPreview = null;
-    var lastPdfBlob = null;
+    var lastVendor = null;
+    var detailModal = null;
 
     function $(id) {
         return document.getElementById(id);
@@ -26,49 +29,34 @@
         return { supply: supply, tax: total - supply };
     }
 
-    function setExportEnabled(enabled) {
-        ["tax-btn-pdf-view", "tax-btn-pdf-save", "tax-btn-print"].forEach(function (id) {
-            var el = $(id);
-            if (el) el.disabled = !enabled;
-        });
-    }
-
-    function setPreset(next) {
-        preset = next;
-        document.querySelectorAll(".tax-preset").forEach(function (btn) {
-            btn.classList.toggle("is-active", btn.getAttribute("data-preset") === preset);
-        });
-        var custom = preset === "custom";
-        if ($("tax-custom-from")) $("tax-custom-from").hidden = !custom;
-        if ($("tax-custom-to")) $("tax-custom-to").hidden = !custom;
-        updatePeriodLabel();
-    }
-
-    function updatePeriodLabel() {
-        var el = $("tax-period-label");
-        if (!el) return;
-        var labels = {
-            today: "발부 기간: 오늘 (1일)",
-            lastMonth: "발부 기간: 지난달 1개월",
-            last3Months: "발부 기간: 지난달 포함 최근 3개월",
-            custom: "발부 기간: 직접 선택"
-        };
-        el.textContent = labels[preset] || "";
-    }
-
-    function queryParams() {
+    function queryParams(vendor) {
         var p = {
-            mode: "vendor",
-            preset: preset,
-            vendorCompany: String(($("tax-vendor-company") && $("tax-vendor-company").value) || "").trim(),
-            vendorLoginId: String(($("tax-vendor-login") && $("tax-vendor-login").value) || "").trim()
+            dateFrom: SR.readDateInput($("tax-date-from")),
+            dateTo: SR.readDateInput($("tax-date-to"))
         };
-        if (preset === "custom") {
-            p.dateFrom = SR.readDateInput($("tax-date-from"));
-            p.dateTo = SR.readDateInput($("tax-date-to"));
-        }
         if (isSupervisor && $("tax-admin")) {
             p.adminStaffId = String($("tax-admin").value || "").trim();
+        }
+        if (vendor) {
+            p.vendorCompany = String(vendor.vendorCompany || "").trim();
+            if (vendor.vendorLoginId) p.vendorLoginId = String(vendor.vendorLoginId).trim();
+        }
+        return p;
+    }
+
+    function validatePeriod() {
+        var p = queryParams();
+        if (isSupervisor && !p.adminStaffId) {
+            setStatus("공급 관리자를 선택해 주세요.", "err");
+            return null;
+        }
+        if (!p.dateFrom || !p.dateTo) {
+            setStatus("조회 기간(시작일·종료일)을 선택해 주세요.", "err");
+            return null;
+        }
+        if (p.dateFrom > p.dateTo) {
+            setStatus("기간 선택이 올바르지 않습니다. (시작일 ≤ 종료일)", "err");
+            return null;
         }
         return p;
     }
@@ -93,76 +81,76 @@
         });
     }
 
-    function vendorCompanyName(v) {
-        return String(v.vn_company || v.company || v.vendorCompany || v.name || "").trim();
-    }
-
-    function loadVendors() {
-        setStatus("업체 목록을 불러오는 중…");
-        return api
-            .listVendors()
-            .then(function (items) {
-                allVendors = items || [];
-                setStatus("");
-                return allVendors;
-            })
-            .catch(function (e) {
-                setStatus((e && e.message) || "업체 목록을 불러오지 못했습니다.", "err");
-                return [];
-            });
-    }
-
-    function renderVendorList(filter) {
+    function renderVendorList(vendors) {
         var listEl = $("tax-vendor-list");
         if (!listEl) return;
-        var q = String(filter || "")
-            .trim()
-            .toLowerCase();
-        var list = allVendors.filter(function (v) {
-            var name = vendorCompanyName(v).toLowerCase();
-            return name && (!q || name.indexOf(q) >= 0);
-        });
-        if (!list.length) {
-            listEl.innerHTML =
-                '<li><span style="display:block;padding:1rem;color:#6a7d8e">표시할 업체가 없습니다.</span></li>';
+        vendorGroups = vendors || [];
+        selectedVendorKey = "";
+        if (detailModal) detailModal.dismiss();
+
+        if (!vendorGroups.length) {
+            listEl.innerHTML = '<p class="am-list-empty">해당 기간에 매출이 있는 업체가 없습니다.</p>';
+            setStatus("0개 업체");
             return;
         }
-        listEl.innerHTML = list
-            .map(function (v) {
-                var company = vendorCompanyName(v);
-                var loginId = String(v.loginId || "");
-                return (
-                    '<li><button type="button" data-company="' +
-                    SR.escapeHtml(company) +
-                    '" data-login="' +
-                    SR.escapeHtml(loginId) +
-                    '">' +
-                    SR.escapeHtml(company) +
-                    "</button></li>"
-                );
-            })
-            .join("");
-        listEl.querySelectorAll("button[data-company]").forEach(function (btn) {
-            btn.addEventListener("click", function () {
-                if ($("tax-vendor-company")) $("tax-vendor-company").value = btn.getAttribute("data-company") || "";
-                if ($("tax-vendor-login")) $("tax-vendor-login").value = btn.getAttribute("data-login") || "";
-                if ($("tax-vendor-display")) $("tax-vendor-display").value = btn.getAttribute("data-company") || "";
-                SR.closeModal($("tax-vendor-modal"));
+
+        listEl.innerHTML =
+            '<ul class="ol-admin-list">' +
+            vendorGroups
+                .map(function (v, idx) {
+                    return (
+                        '<li class="ol-admin-item ol-admin-item--vendor" data-vendor-idx="' +
+                        String(idx) +
+                        '" role="button" tabindex="0">' +
+                        '<div class="ol-admin-main">' +
+                        '<span class="ol-admin-name">' +
+                        SR.escapeHtml(v.vendorCompany || "") +
+                        "</span>" +
+                        '<span class="ol-admin-meta">품목 ' +
+                        SR.escapeHtml(String(v.lineCount || 0)) +
+                        "건 · " +
+                        SR.escapeHtml(SR.formatWon(v.totalAmount)) +
+                        "</span></div></li>"
+                    );
+                })
+                .join("") +
+            "</ul>";
+
+        listEl.querySelectorAll(".ol-admin-item--vendor").forEach(function (li) {
+            function open() {
+                var idx = parseInt(li.getAttribute("data-vendor-idx") || "", 10);
+                var v = vendorGroups[idx];
+                if (!v) return;
+                var key = v.vendorCompany || "";
+                if (selectedVendorKey === key) {
+                    selectedVendorKey = "";
+                    li.classList.remove("is-selected");
+                    if (detailModal) detailModal.dismiss();
+                    return;
+                }
+                selectedVendorKey = key;
+                listEl.querySelectorAll(".ol-admin-item").forEach(function (el) {
+                    el.classList.toggle("is-selected", el === li);
+                });
+                openVendorDetail(v);
+            }
+            li.addEventListener("click", open);
+            li.addEventListener("keydown", function (e) {
+                if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    open();
+                }
             });
         });
+        setStatus(vendorGroups.length + "개 업체 — 업체를 클릭하면 세금계산서를 발부할 수 있습니다.", "ok");
     }
 
-    function renderPreviewTable(preview) {
-        var tbody = $("tax-tbody");
-        if (!tbody) return;
-        var items = (preview && preview.items) || [];
-        if (!items.length) {
-            tbody.innerHTML = '<tr><td colspan="5">품목이 없습니다.</td></tr>';
-            return;
-        }
+    function renderPreviewBody(preview) {
+        if (!preview) return "";
+        var items = preview.items || [];
         var totalSupply = 0;
         var totalTax = 0;
-        tbody.innerHTML = items
+        var rows = items
             .map(function (it) {
                 var vat = splitVat(it.lineTotal);
                 totalSupply += vat.supply;
@@ -188,80 +176,37 @@
                 );
             })
             .join("");
-        tbody.innerHTML +=
-            '<tr class="srp-total-row"><td colspan="3"><strong>합계</strong></td>' +
+        rows +=
+            '<tr class="tax-total-row"><td colspan="3"><strong>합계</strong></td>' +
             '<td class="num"><strong>' +
             SR.escapeHtml(SR.formatWon(totalSupply).replace("원", "")) +
             "</strong></td>" +
             '<td class="num"><strong>' +
             SR.escapeHtml(SR.formatWon(totalTax).replace("원", "")) +
             "</strong></td></tr>";
-    }
 
-    function renderSummary(preview) {
-        var el = $("tax-summary");
-        if (!el || !preview || !preview.summary) {
-            if (el) el.hidden = true;
-            return;
-        }
-        var s = preview.summary;
-        var vat = splitVat(s.totalAmount);
-        el.textContent =
-            "공급자: " +
-            (preview.issuer && preview.issuer.company ? preview.issuer.company : "") +
-            " · 공급받는자: " +
-            (preview.buyer && preview.buyer.company ? preview.buyer.company : "") +
-            " · 품목 " +
-            (s.count || 0) +
-            " · 공급가액 " +
-            SR.formatWon(vat.supply) +
-            " · 세액 " +
-            SR.formatWon(vat.tax);
-        el.hidden = false;
-    }
+        var periodText =
+            preview.period && preview.period.dateFrom && preview.period.dateTo
+                ? preview.period.dateFrom + " ~ " + preview.period.dateTo
+                : "";
 
-    function validateQuery() {
-        var p = queryParams();
-        if (isSupervisor && !p.adminStaffId) {
-            setStatus("공급 관리자를 선택해 주세요.", "err");
-            return null;
-        }
-        if (!p.vendorCompany) {
-            setStatus("공급받는 업체를 선택해 주세요.", "err");
-            return null;
-        }
-        return p;
-    }
-
-    function runPreview() {
-        var p = validateQuery();
-        if (!p) return Promise.resolve();
-        setStatus("매출장을 조회하는 중…");
-        setExportEnabled(false);
-        lastPdfBlob = null;
-        return api
-            .previewTaxInvoice(p)
-            .then(function (data) {
-                lastPreview = data && data.preview;
-                if (!lastPreview) throw new Error("미리보기 데이터가 없습니다.");
-                renderSummary(lastPreview);
-                renderPreviewTable(lastPreview);
-                if (lastPreview.period && $("tax-period-label")) {
-                    $("tax-period-label").textContent =
-                        "발부 기간: " +
-                        lastPreview.period.dateFrom +
-                        " ~ " +
-                        lastPreview.period.dateTo;
-                }
-                setStatus("미리보기 완료 — PDF를 발부할 수 있습니다.", "ok");
-                setExportEnabled(true);
-            })
-            .catch(function (e) {
-                lastPreview = null;
-                renderPreviewTable(null);
-                if ($("tax-summary")) $("tax-summary").hidden = true;
-                setStatus((e && e.message) || "미리보기에 실패했습니다.", "err");
-            });
+        return (
+            '<div class="tax-detail-meta">' +
+            (periodText ? "<p>발부 기간: " + SR.escapeHtml(periodText) + "</p>" : "") +
+            "<p>공급자: " +
+            SR.escapeHtml((preview.issuer && preview.issuer.company) || "") +
+            "</p>" +
+            "<p>공급받는자: " +
+            SR.escapeHtml((preview.buyer && preview.buyer.company) || "") +
+            "</p>" +
+            "</div>" +
+            '<div class="tax-detail-table-wrap" tabindex="0" aria-label="세금계산서 품목">' +
+            '<table class="tax-detail-table"><thead><tr>' +
+            "<th>품목</th><th>수량</th><th>단가</th><th>공급가액</th><th>세액</th>" +
+            "</tr></thead><tbody>" +
+            (rows || '<tr><td colspan="5">품목이 없습니다.</td></tr>') +
+            "</tbody></table></div>"
+        );
     }
 
     function pdfFilename() {
@@ -274,9 +219,134 @@
     }
 
     function fetchPdf(inline) {
-        var p = validateQuery();
-        if (!p) return Promise.reject(new Error("조건을 확인해 주세요."));
-        return api.fetchTaxInvoicePdf(Object.assign({}, p, { inline: inline !== false }));
+        if (!lastPreview || !lastVendor) {
+            return Promise.reject(new Error("미리보기 정보가 없습니다."));
+        }
+        return api.fetchTaxInvoicePdf(Object.assign({}, queryParams(lastVendor), { inline: inline !== false }));
+    }
+
+    function taxPdfActions() {
+        return [
+            {
+                id: "tax-detail-pdf-view",
+                label: "PDF 보기",
+                primary: true,
+                onClick: function (_ctx, btn) {
+                    btn.disabled = true;
+                    setStatus("PDF 생성 중…");
+                    fetchPdf(true)
+                        .then(function (blob) {
+                            if (OrderUI && OrderUI.openPdfBlobInModal) {
+                                return OrderUI.openPdfBlobInModal(blob, pdfFilename());
+                            }
+                        })
+                        .then(function () {
+                            setStatus("PDF를 열었습니다.", "ok");
+                        })
+                        .catch(function (e) {
+                            setStatus((e && e.message) || "PDF를 열지 못했습니다.", "err");
+                        })
+                        .finally(function () {
+                            btn.disabled = false;
+                        });
+                }
+            },
+            {
+                id: "tax-detail-pdf-save",
+                label: "PDF 저장",
+                onClick: function (_ctx, btn) {
+                    btn.disabled = true;
+                    setStatus("PDF 생성 중…");
+                    fetchPdf(false)
+                        .then(function (blob) {
+                            if (OrderUI && OrderUI.triggerPdfDownload) {
+                                OrderUI.triggerPdfDownload(blob, pdfFilename());
+                            } else if (SR.downloadPdfBlob) {
+                                SR.downloadPdfBlob(blob, pdfFilename());
+                            }
+                            setStatus("PDF를 저장했습니다.", "ok");
+                        })
+                        .catch(function (e) {
+                            setStatus((e && e.message) || "PDF 저장에 실패했습니다.", "err");
+                        })
+                        .finally(function () {
+                            btn.disabled = false;
+                        });
+                }
+            },
+            {
+                id: "tax-detail-pdf-print",
+                label: "출력",
+                onClick: function (_ctx, btn) {
+                    btn.disabled = true;
+                    setStatus("PDF 생성 중…");
+                    fetchPdf(true)
+                        .then(function (blob) {
+                            var url = URL.createObjectURL(blob);
+                            var w = window.open(url, "_blank");
+                            if (!w) throw new Error("팝업이 차단되었습니다.");
+                            w.addEventListener("load", function () {
+                                try {
+                                    w.focus();
+                                    w.print();
+                                } catch (e) {}
+                            });
+                            setStatus("인쇄 창을 열었습니다.", "ok");
+                        })
+                        .catch(function (e) {
+                            setStatus((e && e.message) || "출력에 실패했습니다.", "err");
+                        })
+                        .finally(function () {
+                            btn.disabled = false;
+                        });
+                }
+            }
+        ];
+    }
+
+    function openVendorDetail(vendor) {
+        if (!detailModal) return;
+        var p = validatePeriod();
+        if (!p) return;
+
+        detailModal.showLoading("세금계산서를 불러오는 중…");
+        lastVendor = vendor;
+        api
+            .previewTaxInvoice(queryParams(vendor))
+            .then(function (data) {
+                lastPreview = data && data.preview;
+                if (!lastPreview) throw new Error("미리보기 데이터가 없습니다.");
+                if (lastPreview.period) lastPeriod = lastPreview.period;
+                detailModal.show(lastPreview, {
+                    title: "세금계산서 — " + (lastPreview.buyer && lastPreview.buyer.company ? lastPreview.buyer.company : ""),
+                    showVendor: false,
+                    renderBody: function (preview) {
+                        return renderPreviewBody(preview);
+                    },
+                    actions: taxPdfActions()
+                });
+            })
+            .catch(function (e) {
+                lastPreview = null;
+                detailModal.showError((e && e.message) || "세금계산서를 불러오지 못했습니다.");
+            });
+    }
+
+    function runSearch() {
+        var p = validatePeriod();
+        if (!p) return Promise.resolve();
+        setStatus("매출 업체를 조회하는 중…");
+        return api
+            .listTaxInvoiceVendors(p)
+            .then(function (data) {
+                lastPeriod = data.period || null;
+                renderVendorList(data.vendors || []);
+            })
+            .catch(function (e) {
+                vendorGroups = [];
+                renderVendorList([]);
+                setStatus((e && e.message) || "조회에 실패했습니다.", "err");
+            });
     }
 
     function init() {
@@ -290,100 +360,37 @@
         isSupervisor = !!(Auth.isSupervisorStaff && Auth.isSupervisorStaff());
         if ($("tax-admin-wrap")) $("tax-admin-wrap").hidden = !isSupervisor;
 
-        setPreset("today");
+        SR.defaultDateRange($("tax-date-from"), $("tax-date-to"));
 
-        document.querySelectorAll(".tax-preset").forEach(function (btn) {
-            btn.addEventListener("click", function () {
-                setPreset(btn.getAttribute("data-preset") || "today");
-            });
-        });
-
-        if ($("tax-btn-vendor-pick")) {
-            $("tax-btn-vendor-pick").addEventListener("click", function () {
-                loadVendors().then(function () {
-                    if ($("tax-vendor-search")) $("tax-vendor-search").value = "";
-                    renderVendorList("");
-                    SR.openModal($("tax-vendor-modal"));
-                });
-            });
-        }
-        if ($("tax-vendor-search")) {
-            $("tax-vendor-search").addEventListener("input", function () {
-                renderVendorList($("tax-vendor-search").value);
-            });
-        }
-        SR.wireModalClose($("tax-vendor-modal"), $("tax-vendor-modal-close"));
-
-        if ($("tax-btn-preview")) $("tax-btn-preview").addEventListener("click", runPreview);
-
-        if ($("tax-btn-pdf-view")) {
-            $("tax-btn-pdf-view").addEventListener("click", function () {
-                setStatus("PDF 생성 중…");
-                fetchPdf(true)
-                    .then(function (blob) {
-                        lastPdfBlob = blob;
-                        if (OrderUI && OrderUI.openPdfBlobInModal) {
-                            return OrderUI.openPdfBlobInModal(blob, pdfFilename());
-                        }
-                    })
-                    .then(function () {
-                        setStatus("PDF를 열었습니다.", "ok");
-                    })
-                    .catch(function (e) {
-                        setStatus((e && e.message) || "PDF를 열지 못했습니다.", "err");
-                    });
+        if (DetailModal && DetailModal.create) {
+            detailModal = DetailModal.create({
+                modalId: "tax-detail-modal",
+                panelId: "tax-detail-panel",
+                listEl: $("tax-vendor-list"),
+                itemSelector: ".ol-admin-item--vendor",
+                onDismiss: function () {
+                    selectedVendorKey = "";
+                }
             });
         }
 
-        if ($("tax-btn-pdf-save")) {
-            $("tax-btn-pdf-save").addEventListener("click", function () {
-                setStatus("PDF 생성 중…");
-                fetchPdf(false)
-                    .then(function (blob) {
-                        if (OrderUI && OrderUI.triggerPdfDownload) {
-                            OrderUI.triggerPdfDownload(blob, pdfFilename());
-                        } else if (SR.downloadPdfBlob) {
-                            SR.downloadPdfBlob(blob, pdfFilename());
-                        }
-                        setStatus("PDF를 저장했습니다.", "ok");
-                    })
-                    .catch(function (e) {
-                        setStatus((e && e.message) || "PDF 저장에 실패했습니다.", "err");
-                    });
-            });
-        }
-
-        if ($("tax-btn-print")) {
-            $("tax-btn-print").addEventListener("click", function () {
-                setStatus("PDF 생성 중…");
-                fetchPdf(true)
-                    .then(function (blob) {
-                        var url = URL.createObjectURL(blob);
-                        var w = window.open(url, "_blank");
-                        if (!w) throw new Error("팝업이 차단되었습니다.");
-                        w.addEventListener("load", function () {
-                            try {
-                                w.focus();
-                                w.print();
-                            } catch (e) {}
-                        });
-                        setStatus("인쇄 창을 열었습니다.", "ok");
-                    })
-                    .catch(function (e) {
-                        setStatus((e && e.message) || "출력에 실패했습니다.", "err");
-                    });
-            });
-        }
+        if ($("tax-btn-search")) $("tax-btn-search").addEventListener("click", runSearch);
 
         if ($("tax-admin")) {
             $("tax-admin").addEventListener("change", function () {
-                lastPreview = null;
-                setExportEnabled(false);
+                vendorGroups = [];
+                selectedVendorKey = "";
+                if (detailModal) detailModal.dismiss();
+                if ($("tax-vendor-list")) $("tax-vendor-list").innerHTML = "";
             });
         }
 
         var initPromise = isSupervisor ? loadAdminOptions() : Promise.resolve();
-        initPromise.then(function () {});
+        initPromise.then(function () {
+            if ($("tax-vendor-list")) {
+                $("tax-vendor-list").innerHTML = '<p class="am-list-empty">조회 기간을 선택한 뒤 조회해 주세요.</p>';
+            }
+        });
     }
 
     if (document.readyState === "loading") {
