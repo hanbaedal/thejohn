@@ -9,6 +9,25 @@
         var title = OrderUI.escapeHtml(viewOpts.title || "주문 상세");
         var showVendor = viewOpts.showVendor !== false;
         var actions = viewOpts.actions || [];
+        var bodyHtml = "";
+
+        if (typeof viewOpts.renderBody === "function") {
+            bodyHtml =
+                '<div class="odm-custom-body">' +
+                viewOpts.renderBody(order, OrderUI) +
+                "</div>";
+        } else {
+            bodyHtml =
+                '<div class="odm-meta-wrap">' +
+                OrderUI.renderOrderDetailMetaHtml(order, { showVendor: showVendor }) +
+                "</div>" +
+                '<div class="odm-items-scroll" tabindex="0" aria-label="주문 품목 목록">' +
+                OrderUI.renderOrderDetailItemsHtml(order) +
+                "</div>" +
+                '<div class="odm-foot-total">' +
+                OrderUI.renderOrderDetailTotalHtml(order) +
+                "</div>";
+        }
 
         var actionsHtml = actions
             .map(function (act) {
@@ -35,14 +54,8 @@
             '<button type="button" class="odm-head-close" id="odm-head-close" aria-label="닫기">×</button>' +
             "</div>" +
             '<div class="odm-layout">' +
-            '<div class="odm-meta-wrap">' +
-            OrderUI.renderOrderDetailMetaHtml(order, { showVendor: showVendor }) +
-            "</div>" +
-            '<div class="odm-items-scroll" tabindex="0" aria-label="주문 품목 목록">' +
-            OrderUI.renderOrderDetailItemsHtml(order) +
-            "</div>" +
+            bodyHtml +
             '<div class="odm-foot">' +
-            OrderUI.renderOrderDetailTotalHtml(order) +
             '<div class="odm-actions">' +
             actionsHtml +
             "</div></div></div>"

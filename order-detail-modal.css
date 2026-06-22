@@ -92,7 +92,15 @@ body.odm-modal-open {
     border-radius: 0;
     margin: 0;
 }
-.odm-foot {
+.odm-custom-body {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+    padding: 0 0.85rem;
+}
+.odm-custom-body .order-detail-meta {
+    margin-bottom: 0.65rem;
+}
     flex-shrink: 0;
     padding: 0.4rem 0.85rem;
     padding-bottom: max(0.65rem, env(safe-area-inset-bottom, 0));

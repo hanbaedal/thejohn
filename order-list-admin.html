@@ -90,6 +90,21 @@
             font: inherit;
         }
         .ol-picker-item-btn:hover { background: #f7fbff; }
+        .ol-step-heading {
+            margin: 0 0 0.65rem;
+            font-size: 1rem;
+            color: #052a4d;
+        }
+        .ol-back-btn { margin-bottom: 0.65rem; }
+        .odm-custom-body {
+            flex: 1 1 auto;
+            min-height: 0;
+            overflow-y: auto;
+            padding: 0 0.15rem;
+        }
+        .odm-custom-body .order-detail-table-wrap {
+            margin-top: 0.5rem;
+        }
     </style>
     <script src="api-config.js"></script>
     <script src="thejhon-api.js"></script>
@@ -128,17 +143,9 @@
         <p class="am-subnav"><a href="order-manage-hub.html">← 영업관리</a></p>
         <h1>주문서</h1>
         <p id="ol-status" class="ol-status" role="status" aria-live="polite"></p>
-        <div class="ol-query-filters" aria-label="주문 조회 조건">
-            <section class="ol-query-filters__section" aria-labelledby="ol-filter-vendor-heading">
-                <h2 id="ol-filter-vendor-heading" class="ol-query-filters__heading">등록업체조회</h2>
-                <div class="ol-query-filters__row ol-query-filters__row--query">
-                    <label for="ol-vendor-name">업체조회</label>
-                    <input type="text" id="ol-vendor-name" class="ol-vendor-input" placeholder="업체 선택" readonly>
-                    <button type="button" class="btn btn-primary" id="ol-search-btn">조회</button>
-                </div>
-            </section>
+        <div class="ol-query-filters" aria-label="주문서 조회 조건">
             <section class="ol-query-filters__section" aria-labelledby="ol-filter-period-heading">
-                <h2 id="ol-filter-period-heading" class="ol-query-filters__heading">기간으로조회</h2>
+                <h2 id="ol-filter-period-heading" class="ol-query-filters__heading">조회 기간</h2>
                 <div class="ol-query-filters__row">
                     <label for="ol-date-from">시작일</label>
                     <input type="date" id="ol-date-from">
@@ -147,20 +154,14 @@
                     <label for="ol-date-to">종료일</label>
                     <input type="date" id="ol-date-to">
                 </div>
+                <div class="ol-query-filters__row ol-query-filters__row--query">
+                    <button type="button" class="btn btn-primary" id="ol-search-btn">조회</button>
+                </div>
             </section>
         </div>
+        <button type="button" class="btn btn-secondary ol-back-btn" id="ol-back-btn" hidden>← 구매업체 목록</button>
+        <h2 id="ol-step-heading" class="ol-step-heading">구매업체 목록</h2>
         <div id="ol-list" class="ol-list-scroll"></div>
-        <div id="ol-vendor-modal" class="ol-picker-modal" hidden role="dialog" aria-modal="true" aria-labelledby="ol-vendor-modal-title">
-            <div class="ol-picker-panel">
-                <h2 id="ol-vendor-modal-title" class="ol-detail-title">업체 선택</h2>
-                <label for="ol-vendor-search" class="sr-only">업체 검색</label>
-                <input type="text" id="ol-vendor-search" placeholder="업체명 검색">
-                <ul id="ol-vendor-list" class="ol-picker-list"></ul>
-                <div class="vei-actions">
-                    <button type="button" class="btn" id="ol-vendor-modal-close">닫기</button>
-                </div>
-            </div>
-        </div>
     </main>
         <footer class="site-footer">
         <div class="site-footer-inner">

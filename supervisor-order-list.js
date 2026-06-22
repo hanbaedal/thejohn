@@ -92,8 +92,10 @@
             return;
         }
         detailModal.show(order, {
-            title: "발주 상세",
-            showVendor: true,
+            title: "주문서",
+            renderBody: function (ord, OU) {
+                return OU.renderStaffOrderSheetHtml(ord);
+            },
             actions: [
                 {
                     id: "sol-detail-pdf-view",
@@ -113,12 +115,25 @@
                 {
                     id: "sol-detail-pdf-save",
                     label: "PDF 저장",
-                    primary: false,
                     onClick: function (ord, btn) {
                         btn.disabled = true;
                         OrderUI.downloadOrderPdfWithAuth(api, ord.id, ord.orderNo, ord)
                             .catch(function (err) {
                                 alert((err && err.message) || "PDF 저장 실패");
+                            })
+                            .finally(function () {
+                                btn.disabled = false;
+                            });
+                    }
+                },
+                {
+                    id: "sol-detail-pdf-print",
+                    label: "출력",
+                    onClick: function (ord, btn) {
+                        btn.disabled = true;
+                        OrderUI.printOrderPdfWithAuth(api, ord.id)
+                            .catch(function (err) {
+                                alert((err && err.message) || "출력에 실패했습니다.");
                             })
                             .finally(function () {
                                 btn.disabled = false;
@@ -132,7 +147,7 @@
     function renderList(items) {
         if (!listEl) return;
         if (!items.length) {
-            listEl.innerHTML = '<p class="am-list-empty">조회된 발주서가 없습니다.</p>';
+            listEl.innerHTML = '<p class="am-list-empty">조회된 주문서가 없습니다.</p>';
             showDetail(null);
             return;
         }

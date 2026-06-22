@@ -248,6 +248,51 @@
         );
     }
 
+    function displayOrderSheetNo(order) {
+        var no = String((order && order.orderNo) || order.id || "").trim();
+        if (order && order.orderKind === "admin") {
+            var m = /^(.+)-\d{2}$/.exec(no);
+            if (m) return m[1];
+        }
+        return no;
+    }
+
+    function renderStaffOrderSheetHtml(order) {
+        if (!order) return "";
+        var sheetNo = displayOrderSheetNo(order);
+        var meta = [];
+        meta.push(
+            "<dt>구매업체</dt><dd>" +
+                escapeHtml(order.vendorCompany || order.vendorUserId || "") +
+                "</dd>"
+        );
+        meta.push("<dt>주문서 번호</dt><dd>" + escapeHtml(sheetNo) + "</dd>");
+        if (order.orderKind === "admin" && order.orderNo && order.orderNo !== sheetNo) {
+            meta.push(
+                "<dt>처리 번호</dt><dd>" + escapeHtml(order.orderNo) + "</dd>"
+            );
+        }
+        meta.push(
+            "<dt>주문일자</dt><dd>" + escapeHtml(formatDateOnly(order.createdAt)) + "</dd>"
+        );
+        if (order.vendorMgrName) {
+            meta.push("<dt>주문자</dt><dd>" + escapeHtml(order.vendorMgrName) + "</dd>");
+        }
+        if (order.vendorMgrTel) {
+            meta.push("<dt>연락처</dt><dd>" + escapeHtml(order.vendorMgrTel) + "</dd>");
+        }
+        if (order.note) {
+            meta.push("<dt>참고사항</dt><dd>" + escapeHtml(order.note) + "</dd>");
+        }
+        return (
+            '<dl class="order-detail-meta order-detail-meta--staff-sheet">' +
+            meta.join("") +
+            "</dl>" +
+            renderOrderDetailItemsHtml(order) +
+            renderOrderDetailTotalHtml(order, { totalLabel: "합계" })
+        );
+    }
+
     function renderVendorOrderSheetHtml(order, opts) {
         opts = opts || {};
         if (!order) return "";
@@ -529,6 +574,13 @@
         });
     }
 
+    function printOrderPdfWithAuth(api, orderId) {
+        if (!api || !api.fetchOrderPdfBlob) {
+            return Promise.reject(new Error("PDF API를 사용할 수 없습니다."));
+        }
+        return api.fetchOrderPdfBlob(orderId).then(openPdfForPrint);
+    }
+
     function viewOrderPdfWithAuth(api, orderId) {
         if (!api || !api.fetchOrderPdfBlob) {
             return Promise.reject(new Error("PDF API를 사용할 수 없습니다."));
@@ -563,6 +615,8 @@
         renderVendorOrderHeaderMetaHtml: renderVendorOrderHeaderMetaHtml,
         renderVendorOrderSheetHtml: renderVendorOrderSheetHtml,
         formatDateOnly: formatDateOnly,
+        displayOrderSheetNo: displayOrderSheetNo,
+        renderStaffOrderSheetHtml: renderStaffOrderSheetHtml,
         renderOrderDetailItemsHtml: renderOrderDetailItemsHtml,
         renderOrderDetailSplitsHtml: renderOrderDetailSplitsHtml,
         resolveAdminSplits: resolveAdminSplits,
@@ -571,6 +625,7 @@
         _lastOrderForPdf: null,
         downloadOrderPdfWithAuth: downloadOrderPdfWithAuth,
         downloadTransactionPdfWithAuth: downloadTransactionPdfWithAuth,
+        printOrderPdfWithAuth: printOrderPdfWithAuth,
         viewOrderPdfWithAuth: viewOrderPdfWithAuth,
         viewTransactionPdfWithAuth: viewTransactionPdfWithAuth,
         printTransactionPdfWithAuth: printTransactionPdfWithAuth,
