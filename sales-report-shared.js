@@ -150,6 +150,52 @@
         }, 2000);
     }
 
+    function renderDateGroupsTable(tbody, groups) {
+        if (!tbody) return;
+        if (!groups || !groups.length) {
+            tbody.innerHTML = '<tr><td colspan="4">조회 결과가 없습니다.</td></tr>';
+            return;
+        }
+        var html = "";
+        var totalAmount = 0;
+        var totalQty = 0;
+        var totalCount = 0;
+        groups.forEach(function (row) {
+            totalAmount += Number(row.totalAmount) || 0;
+            totalQty += Number(row.totalQuantity) || 0;
+            totalCount += Number(row.count) || 0;
+            html +=
+                "<tr>" +
+                "<td>" +
+                escapeHtml(row.issueDate || "") +
+                "</td>" +
+                "<td class=\"num\">" +
+                escapeHtml(String(row.count || 0)) +
+                "</td>" +
+                "<td class=\"num\">" +
+                escapeHtml(String(row.totalQuantity || 0)) +
+                "</td>" +
+                "<td class=\"num\">" +
+                escapeHtml(formatWon(row.totalAmount).replace("원", "")) +
+                "</td>" +
+                "</tr>";
+        });
+        html +=
+            '<tr class="srp-total-row">' +
+            '<td><strong>합계 (' + escapeHtml(String(groups.length)) + "일)</strong></td>" +
+            '<td class="num"><strong>' +
+            escapeHtml(String(totalCount)) +
+            "</strong></td>" +
+            '<td class="num"><strong>' +
+            escapeHtml(String(totalQty)) +
+            "</strong></td>" +
+            '<td class="num"><strong>' +
+            escapeHtml(formatWon(totalAmount).replace("원", "")) +
+            "</strong></td>" +
+            "</tr>";
+        tbody.innerHTML = html;
+    }
+
     global.THEJHON_SALES_REPORT = {
         escapeHtml: escapeHtml,
         formatWon: formatWon,
@@ -158,6 +204,7 @@
         readDateInput: readDateInput,
         defaultDateRange: defaultDateRange,
         renderResultsTable: renderResultsTable,
+        renderDateGroupsTable: renderDateGroupsTable,
         renderSummary: renderSummary,
         openModal: openModal,
         closeModal: closeModal,

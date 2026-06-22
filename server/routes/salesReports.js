@@ -90,7 +90,27 @@ router.post("/pdf", async function (req, res) {
             const { ensureIndexes: ensureLedgerIndexes } = require("../lib/salesLedger");
             await ensureLedgerIndexes(db);
             result = await querySalesLedgerInquiry(db, req.auth, body);
-            if (result.mode === "product") {
+            if (result.mode === "date") {
+                title = "매출장 (일자별)";
+                subtitle =
+                    result.period && result.period.dateFrom && result.period.dateTo
+                        ? result.period.dateFrom + " ~ " + result.period.dateTo
+                        : "";
+                if (result.dayGroups && result.dayGroups.length) {
+                    result.items = result.dayGroups.map(function (g) {
+                        return {
+                            issueDate: g.issueDate,
+                            sourceLabel: "일자합계",
+                            orderNo: String(g.count || 0) + "건",
+                            vendorCompany: "",
+                            productName: "",
+                            quantity: g.totalQuantity,
+                            unitPrice: 0,
+                            lineTotal: g.totalAmount
+                        };
+                    });
+                }
+            } else if (result.mode === "product") {
                 title = "매출장 (품목별)";
                 subtitle = String(body.productName || "").trim();
             } else {

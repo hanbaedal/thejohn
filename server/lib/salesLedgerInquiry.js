@@ -31,7 +31,7 @@ function ledgerRowsFromDoc(doc) {
             id: str(doc.id) + ":" + i,
             issueDate: Number(doc.issueDate) || Number(doc.createdAt) || 0,
             source: "ledger",
-            sourceLabel: "수기거래명세",
+            sourceLabel: "거래명세서(수기)",
             orderNo: "",
             vendorCompany: str(doc.vendorCompany),
             productId: str(it.productId),
@@ -79,6 +79,75 @@ function rowMatchesProduct(row, dept, productId, pdCode) {
     return false;
 }
 
+function ymdFromTs(ts) {
+    const d = new Date(Number(ts) || Date.now());
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, "0");
+    const day = String(d.getDate()).padStart(2, "0");
+    return y + "-" + m + "-" + day;
+}
+
+function aggregateByDate(items) {
+    const map = {};
+    (items || []).forEach(function (row) {
+        const ymd = ymdFromTs(row.issueDate);
+        if (!map[ymd]) {
+            map[ymd] = {
+                issueDate: ymd,
+                count: 0,
+                totalQuantity: 0,
+                totalAmount: 0
+            };
+        }
+        map[ymd].count += 1;
+        map[ymd].totalQuantity += Number(row.quantity) || 0;
+        map[ymd].totalAmount += Number(row.lineTotal) || 0;
+    });
+    return Object.keys(map)
+        .sort(function (a, b) {
+            return b.localeCompare(a);
+        })
+        .map(function (k) {
+            return map[k];
+        });
+}
+
+async function fetchLedgerItems(db, auth, query, dateQ, issuerQ, vendorCompany) {
+    const orderMatch = Object.assign({}, issuerQ, dateQ, { source: "order" });
+    if (vendorCompany) orderMatch.vendorCompany = vendorCompany;
+
+    const orderRows = await db
+        .collection(RECORDS_COL)
+        .find(orderMatch)
+        .sort({ issueDate: -1 })
+        .limit(5000)
+        .toArray();
+
+    let items = orderRows.map(function (doc) {
+        const row = toPublicRow(doc);
+        row.sourceLabel = "거래명세서(주문)";
+        return row;
+    });
+
+    const ledgerMatch = Object.assign({}, issuerQ, dateQ, {
+        sourceType: "transaction_manual"
+    });
+    if (vendorCompany) ledgerMatch.vendorCompany = vendorCompany;
+
+    const ledgerDocs = await db
+        .collection(LEDGER_COL)
+        .find(ledgerMatch)
+        .sort({ issueDate: -1 })
+        .limit(500)
+        .toArray();
+
+    ledgerDocs.forEach(function (doc) {
+        items = items.concat(ledgerRowsFromDoc(doc));
+    });
+
+    return items;
+}
+
 async function querySalesLedgerInquiry(db, auth, query) {
     query = query || {};
     const mode = str(query.mode || "vendor").toLowerCase();
@@ -103,40 +172,8 @@ async function querySalesLedgerInquiry(db, auth, query) {
     const issuerQ = issuerFilter(auth, query.adminStaffId);
     const dateQ = datePack.query;
 
-    const orderMatch = Object.assign({}, issuerQ, dateQ, {
-        source: "order",
-        vendorCompany: vendorCompany || undefined
-    });
-    if (!vendorCompany) delete orderMatch.vendorCompany;
-
-    const orderRows = await db
-        .collection(RECORDS_COL)
-        .find(orderMatch)
-        .sort({ issueDate: -1 })
-        .limit(5000)
-        .toArray();
-
-    let items = orderRows.map(function (doc) {
-        const row = toPublicRow(doc);
-        row.sourceLabel = "발주";
-        return row;
-    });
-
-    const ledgerMatch = Object.assign({}, issuerQ, dateQ, {
-        sourceType: "transaction_manual"
-    });
-    if (vendorCompany) ledgerMatch.vendorCompany = vendorCompany;
-
-    const ledgerDocs = await db
-        .collection(LEDGER_COL)
-        .find(ledgerMatch)
-        .sort({ issueDate: -1 })
-        .limit(500)
-        .toArray();
-
-    ledgerDocs.forEach(function (doc) {
-        items = items.concat(ledgerRowsFromDoc(doc));
-    });
+    const vendorFilter = mode === "vendor" ? vendorCompany : "";
+    let items = await fetchLedgerItems(db, auth, query, dateQ, issuerQ, vendorFilter);
 
     if (mode === "product") {
         const product = await db.collection("products").findOne({ id: productId });
@@ -150,7 +187,7 @@ async function querySalesLedgerInquiry(db, auth, query) {
 
     items = sortRows(items);
 
-    return {
+    const result = {
         ok: true,
         mode: mode,
         period: {
@@ -162,13 +199,31 @@ async function querySalesLedgerInquiry(db, auth, query) {
         filter:
             mode === "vendor"
                 ? { vendorCompany: vendorCompany }
-                : { dept: dept, productId: productId },
+                : mode === "product"
+                  ? { dept: dept, productId: productId }
+                  : {},
         summary: summarize(items),
         items: items
     };
+
+    if (mode === "date") {
+        result.dayGroups = aggregateByDate(items);
+        result.summary = {
+            count: result.dayGroups.length,
+            totalQuantity: items.reduce(function (s, r) {
+                return s + (Number(r.quantity) || 0);
+            }, 0),
+            totalAmount: items.reduce(function (s, r) {
+                return s + (Number(r.lineTotal) || 0);
+            }, 0)
+        };
+    }
+
+    return result;
 }
 
 module.exports = {
     querySalesLedgerInquiry,
-    ledgerRowsFromDoc
+    ledgerRowsFromDoc,
+    aggregateByDate
 };

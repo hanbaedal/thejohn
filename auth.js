@@ -807,6 +807,10 @@
         "transaction-manual-register.html",
         "transaction-manual-list.html",
         "sales-ledger-inquiry.html",
+        "sales-ledger-hub.html",
+        "sales-ledger-by-vendor.html",
+        "sales-ledger-by-product.html",
+        "sales-ledger-by-date.html",
         "sales-ledger-list.html",
         "sales-ledger-register.html",
         "sales-by-product.html",
@@ -858,6 +862,10 @@
         "transaction-manual-register.html": true,
         "transaction-manual-list.html": true,
         "sales-ledger-inquiry.html": true,
+        "sales-ledger-hub.html": true,
+        "sales-ledger-by-vendor.html": true,
+        "sales-ledger-by-product.html": true,
+        "sales-ledger-by-date.html": true,
         "sales-ledger-list.html": true,
         "sales-ledger-register.html": true,
         "sales-by-product.html": true,
@@ -1174,7 +1182,9 @@
         if (links.transactionManual) {
             items.push({ href: links.transactionManual, label: "거래명세서(수기)" });
         }
-        if (links.salesLedgerInquiry) {
+        if (links.salesLedgerHub) {
+            items.push({ href: links.salesLedgerHub, label: "매출장" });
+        } else if (links.salesLedgerInquiry) {
             items.push({ href: links.salesLedgerInquiry, label: "매출장" });
         }
         if (links.taxInvoice) {
@@ -2451,7 +2461,11 @@
                 transactionList: "transaction-list.html",
                 transactionManual: "transaction-manual-register.html",
                 transactionManualList: "transaction-list.html?tab=manual",
-                salesLedgerInquiry: "sales-ledger-inquiry.html",
+                salesLedgerHub: "sales-ledger-hub.html",
+                salesLedgerByVendor: "sales-ledger-by-vendor.html",
+                salesLedgerByProduct: "sales-ledger-by-product.html",
+                salesLedgerByDate: "sales-ledger-by-date.html",
+                salesLedgerInquiry: "sales-ledger-hub.html",
                 taxInvoice: "tax-invoice.html"
             };
         }
@@ -2463,7 +2477,11 @@
                 transactionList: "transaction-list.html",
                 transactionManual: "transaction-manual-register.html",
                 transactionManualList: "transaction-list.html?tab=manual",
-                salesLedgerInquiry: "sales-ledger-inquiry.html",
+                salesLedgerHub: "sales-ledger-hub.html",
+                salesLedgerByVendor: "sales-ledger-by-vendor.html",
+                salesLedgerByProduct: "sales-ledger-by-product.html",
+                salesLedgerByDate: "sales-ledger-by-date.html",
+                salesLedgerInquiry: "sales-ledger-hub.html",
                 taxInvoice: "tax-invoice.html"
             };
         }
@@ -2473,6 +2491,7 @@
             transactionPdf: "",
             transactionManual: "",
             transactionManualList: "",
+            salesLedgerHub: "",
             salesLedgerInquiry: "",
             taxInvoice: ""
         };

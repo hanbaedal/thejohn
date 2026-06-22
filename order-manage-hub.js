@@ -32,8 +32,9 @@
             }
         }
         if (sales) {
-            if (links.salesLedgerInquiry) {
-                sales.setAttribute("href", links.salesLedgerInquiry);
+            var salesHref = links.salesLedgerHub || links.salesLedgerInquiry || "";
+            if (salesHref) {
+                sales.setAttribute("href", salesHref);
                 sales.hidden = false;
             } else {
                 sales.hidden = true;

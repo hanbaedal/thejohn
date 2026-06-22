@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="public-site-config.js?v=20260620"></script>
+    <script src="auth-storage.js?v=20260620-public"></script>
+    <script src="site-brand-boot.js"></script>
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#0a4d9c">
+    <title>매출장 — 더존</title>
+    <link rel="stylesheet" href="common.css">
+    <link rel="stylesheet" href="staff-hub.css">
+    <link rel="stylesheet" href="order-manage-layout.css">
+    <style>
+        .slh-hub-card__desc { margin: 0.35rem 0 0; font-size: 0.88rem; color: #5a6d7e; line-height: 1.45; }
+    </style>
+    <script src="api-config.js"></script>
+    <script src="thejhon-api.js"></script>
+    <script src="auth.js?v=20260620-order"></script>
+    <script src="admin-header.js"></script>
+    <script src="nav.js?v=20260530-order-nav" defer></script>
+</head>
+<body>
+    <header class="site-header">
+        <div class="site-header-start">
+            <a href="work-hub.html" class="dz-logo dz-logo--compact" aria-label="그룹 마케팅 관리"><img src="img/logo.png" alt="" width="72" height="72" class="dz-logo-img"></a>
+            <nav class="site-header-nav site-header-nav--order" aria-label="영업관리 메뉴"></nav>
+        </div>
+        <nav class="site-header-actions" aria-label="계정">
+            <time class="header-date" id="headerToday" datetime=""></time>
+            <button type="button" class="btn btn-auth-icon btn-logout" id="btnLogout" hidden aria-label="로그아웃" title="로그아웃"></button>
+        </nav>
+    </header>
+    <main class="page-main page-main--hide-scrollbar company-main company-main--support-hub om-page omh-hub-page">
+        <p class="shub-subnav"><a href="order-manage-hub.html">← 영업관리</a></p>
+        <h1>매출장</h1>
+        <p class="srp-hint" style="max-width:36rem;margin:0 auto 1rem;text-align:center">거래명세서(주문·수기)를 기준으로 매출을 조회합니다.</p>
+        <p id="slh-status" class="shub-status" role="status" aria-live="polite"></p>
+        <div class="company-divisions omh-hub-rows">
+            <div class="omh-group">
+                <a href="sales-ledger-by-vendor.html" class="company-division-card omh-hub-card slh-hub-card">
+                    <h2>업체별 매출장</h2>
+                    <p class="slh-hub-card__desc">거래처별 거래명세서 품목·금액</p>
+                </a>
+                <a href="sales-ledger-by-product.html" class="company-division-card omh-hub-card slh-hub-card">
+                    <h2>품목별 매출장</h2>
+                    <p class="slh-hub-card__desc">품목별 거래명세서 매출 내역</p>
+                </a>
+            </div>
+            <div class="omh-group">
+                <a href="sales-ledger-by-date.html" class="company-division-card omh-hub-card slh-hub-card">
+                    <h2>일자별 매출장</h2>
+                    <p class="slh-hub-card__desc">일자별 거래명세서 매출 합계</p>
+                </a>
+            </div>
+        </div>
+    </main>
+    <footer class="site-footer">
+        <div class="site-footer-inner">
+            <dl class="site-footer-grid" id="siteFooterCompanyGrid" aria-live="polite"></dl>
+            <p class="site-footer-company-msg" id="siteFooterCompanyMsg" hidden></p>
+        </div>
+    </footer>
+    <script src="sales-ledger-hub.js"></script>
+</body>
+</html>

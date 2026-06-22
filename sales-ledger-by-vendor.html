@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="public-site-config.js?v=20260620"></script>
+    <script src="auth-storage.js?v=20260620-public"></script>
+    <script src="site-brand-boot.js"></script>
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#0a4d9c">
+    <title>업체별 매출장 — 더존</title>
+    <link rel="stylesheet" href="common.css">
+    <link rel="stylesheet" href="staff-hub.css">
+    <link rel="stylesheet" href="order-list-filters.css">
+    <link rel="stylesheet" href="order-manage-layout.css">
+    <link rel="stylesheet" href="sales-report.css">
+    <script src="api-config.js"></script>
+    <script src="thejhon-api.js"></script>
+    <script src="order-ui.js"></script>
+    <script src="auth.js?v=20260620-order"></script>
+    <script src="admin-header.js"></script>
+    <script src="nav.js?v=20260530-order-nav" defer></script>
+</head>
+<body>
+    <header class="site-header">
+        <div class="site-header-start">
+            <a href="work-hub.html" class="dz-logo dz-logo--compact" aria-label="그룹 마케팅 관리"><img src="img/logo.png" alt="" width="72" height="72" class="dz-logo-img"></a>
+            <nav class="site-header-nav site-header-nav--order" aria-label="영업관리 메뉴"></nav>
+        </div>
+        <nav class="site-header-actions" aria-label="계정">
+            <time class="header-date" id="headerToday" datetime=""></time>
+            <button type="button" class="btn btn-auth-icon btn-logout" id="btnLogout" hidden aria-label="로그아웃" title="로그아웃"></button>
+        </nav>
+    </header>
+    <main class="page-main page-main--hide-scrollbar shub-page om-page srp-page">
+        <p class="shub-subnav"><a href="sales-ledger-hub.html">← 매출장</a> · <a href="order-manage-hub.html">영업관리</a></p>
+        <h1>업체별 매출장</h1>
+        <p class="srp-hint">선택한 업체의 거래명세서(주문·수기) 품목별 매출을 조회합니다.</p>
+        <p id="slp-status" class="shub-status" role="status" aria-live="polite"></p>
+        <div class="srp-period-tabs" role="group" aria-label="조회 기간">
+            <button type="button" class="btn btn-secondary slp-preset is-active" data-preset="today">1일</button>
+            <button type="button" class="btn btn-secondary slp-preset" data-preset="lastMonth">1개월</button>
+            <button type="button" class="btn btn-secondary slp-preset" data-preset="last3Months">3개월</button>
+            <button type="button" class="btn btn-secondary slp-preset" data-preset="custom">기간설정</button>
+        </div>
+        <div class="srp-toolbar">
+            <button type="button" class="btn btn-primary" id="slp-btn-search">확인</button>
+            <button type="button" class="btn btn-secondary" id="slp-btn-pdf" disabled>PDF 저장</button>
+            <button type="button" class="btn btn-secondary" id="slp-btn-print" disabled>출력</button>
+        </div>
+        <div class="ol-query-filters">
+            <section class="ol-query-filters__section" id="slp-admin-wrap" hidden>
+                <h2 class="ol-query-filters__heading">담당 관리자</h2>
+                <div class="ol-query-filters__row"><label for="slp-admin">관리자</label><select id="slp-admin"><option value="">전체</option></select></div>
+            </section>
+            <section class="ol-query-filters__section">
+                <h2 class="ol-query-filters__heading">조회 조건</h2>
+                <p id="slp-period-label" class="srp-period-label"></p>
+                <div id="slp-custom-from" class="ol-query-filters__row" hidden><label for="slp-date-from">시작일</label><input type="date" id="slp-date-from"></div>
+                <div id="slp-custom-to" class="ol-query-filters__row" hidden><label for="slp-date-to">종료일</label><input type="date" id="slp-date-to"></div>
+                <div class="ol-query-filters__row">
+                    <label for="slp-vendor-display">업체</label>
+                    <div class="srp-pick-row">
+                        <input type="text" id="slp-vendor-display" readonly placeholder="업체 선택">
+                        <button type="button" class="btn btn-secondary" id="slp-btn-vendor-pick">선택</button>
+                    </div>
+                    <input type="hidden" id="slp-vendor-company">
+                </div>
+            </section>
+        </div>
+        <p id="slp-print-title" class="srp-print-title" hidden></p>
+        <p id="slp-summary" class="srp-summary" hidden></p>
+        <div class="srp-results-wrap" id="slp-print-area">
+            <div class="srp-table-wrap">
+                <table class="srp-table" aria-label="업체별 매출장">
+                    <thead><tr><th>일자</th><th>구분</th><th>거래명세</th><th>업체</th><th>품목</th><th>수량</th><th>단가</th><th>금액</th></tr></thead>
+                    <tbody id="slp-tbody"></tbody>
+                </table>
+            </div>
+        </div>
+    </main>
+    <div class="srp-modal-backdrop" id="slp-vendor-modal" hidden>
+        <div class="srp-modal" role="dialog" aria-modal="true">
+            <div class="srp-modal-head"><h2>업체 선택</h2><button type="button" class="btn btn-secondary" id="slp-vendor-modal-close">닫기</button></div>
+            <div class="srp-modal-search"><input type="search" id="slp-vendor-search" placeholder="업체명 검색"></div>
+            <ul class="srp-modal-list" id="slp-vendor-list"></ul>
+        </div>
+    </div>
+    <script>window.SALES_LEDGER_PAGE_CONFIG={mode:"vendor",title:"업체별 매출장",pdfPrefix:"매출장_업체"};</script>
+    <script src="sales-report-shared.js"></script>
+    <script src="sales-ledger-page.js"></script>
+</body>
+</html>
