@@ -180,7 +180,7 @@
                     "<td class=\"vendor\">" +
                     escapeHtml(row.vendorCompany || "") +
                     "</td>" +
-                    "<td>" +
+                    "<td class=\"code\">" +
                     escapeHtml(row.pd_code || "—") +
                     "</td>" +
                     "<td class=\"name\">" +
@@ -199,9 +199,7 @@
             });
             html +=
                 '<tr class="srp-day-total">' +
-                "<td></td>" +
-                "<td></td>" +
-                '<td colspan="2"><strong>일 소계</strong></td>' +
+                '<td colspan="4"><strong>일 소계</strong></td>' +
                 '<td class="num"><strong>' +
                 escapeHtml(String(dayQty)) +
                 "</strong></td>" +

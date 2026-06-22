@@ -37,7 +37,7 @@
     min-width: 0;
 }
 .srp-results-wrap:has(.srp-table--date-ledger) {
-    max-width: 58rem;
+    max-width: min(100%, 76rem);
 }
 .srp-ledger-sheet {
     background: #fff;
@@ -116,34 +116,69 @@
 }
 .srp-table--date-ledger {
     table-layout: fixed;
-    width: 40rem;
-    min-width: 40rem;
+    width: max-content;
+    min-width: 52rem;
 }
 .srp-table--date-ledger col.col-date {
-    width: 5.25rem;
+    width: 5.5rem;
 }
 .srp-table--date-ledger col.col-vendor {
-    width: 12rem;
+    width: 11rem;
 }
 .srp-table--date-ledger col.col-code {
-    width: 4.25rem;
+    width: 5.5rem;
+}
+.srp-table--date-ledger col.col-name {
+    width: 10rem;
 }
 .srp-table--date-ledger col.col-qty {
-    width: 3rem;
+    width: 3.25rem;
 }
 .srp-table--date-ledger col.col-price {
-    width: 4.5rem;
-}
-.srp-table--date-ledger col.col-amount {
     width: 5rem;
 }
+.srp-table--date-ledger col.col-amount {
+    width: 5.5rem;
+}
 .srp-table--date-ledger th:nth-child(2),
-.srp-table--date-ledger td.vendor {
+.srp-table--date-ledger td.vendor,
+.srp-table--date-ledger td.code {
     white-space: nowrap;
 }
 .srp-table--date-ledger td.name {
-    white-space: normal;
-    word-break: break-word;
+    white-space: nowrap;
+    max-width: 14rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+@media (min-width: 900px) {
+    .srp-results-wrap:has(.srp-table--date-ledger) {
+        padding-left: 1rem;
+        padding-right: 1rem;
+    }
+    .srp-table-wrap:has(.srp-table--date-ledger) {
+        overflow-x: visible;
+    }
+    .srp-table--date-ledger {
+        table-layout: auto;
+        width: 100%;
+        min-width: 0;
+    }
+    .srp-table--date-ledger th,
+    .srp-table--date-ledger td {
+        white-space: nowrap;
+    }
+    .srp-table--date-ledger td.name {
+        max-width: none;
+        overflow: visible;
+        text-overflow: clip;
+    }
+    .srp-table--date-ledger td.vendor {
+        min-width: 10rem;
+    }
+    .srp-table--date-ledger td.code {
+        min-width: 5rem;
+    }
 }
 .srp-table td.num {
     text-align: right;
