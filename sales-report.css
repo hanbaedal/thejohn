@@ -13,10 +13,9 @@
     padding: 0 0.75rem;
 }
 .srp-toolbar .btn {
+    flex: 1 1 0;
     min-width: 5.5rem;
-}
-.srp-toolbar--actions {
-    justify-content: flex-end;
+    max-width: 10rem;
 }
 .srp-summary {
     max-width: 36rem;

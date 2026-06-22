@@ -48,9 +48,6 @@
                     <label for="slp-date-to">종료일</label>
                     <input type="date" id="slp-date-to">
                 </div>
-                <div class="ol-query-filters__row ol-query-filters__row--query">
-                    <button type="button" class="btn btn-primary" id="slp-btn-search">조회</button>
-                </div>
             </section>
             <section class="ol-query-filters__section" id="slp-admin-wrap" hidden aria-labelledby="slp-filter-admin-heading">
                 <h2 id="slp-filter-admin-heading" class="ol-query-filters__heading">담당 관리자</h2>
@@ -68,7 +65,8 @@
                 </div>
             </section>
         </div>
-        <div class="srp-toolbar srp-toolbar--actions">
+        <div class="srp-toolbar">
+            <button type="button" class="btn btn-primary" id="slp-btn-search">조회</button>
             <button type="button" class="btn btn-secondary" id="slp-btn-pdf" disabled>PDF 저장</button>
             <button type="button" class="btn btn-secondary" id="slp-btn-print" disabled>출력</button>
         </div>
