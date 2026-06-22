@@ -34,6 +34,8 @@
     var authSessionEpoch = 0;
     /** 업체 주문 권한 — 로그인·세션 API 확인 후에만 true (로컬 캐시만으로 주문 불가) */
     var vendorPermsSynced = false;
+    /** checkSession 권한 동기화 — nav·cart 등에서 중복 호출 방지 */
+    var sessionPermRefreshPromise = null;
 
     /** 탭마다 sessionStorage(크롬 새 탭 업체별 로그인). PWA(홈 화면)만 localStorage 유지 */
     var AUTH_PERSIST_KEYS = [
@@ -2057,6 +2059,7 @@
     }
 
     function refreshSessionPermissionsAsync() {
+        if (sessionPermRefreshPromise) return sessionPermRefreshPromise;
         if (!global.THEJHON_API || !THEJHON_API.checkSession) {
             return Promise.resolve(null);
         }
@@ -2067,7 +2070,7 @@
             return Promise.resolve(null);
         }
         var epoch = authSessionEpoch;
-        return THEJHON_API.checkSession()
+        sessionPermRefreshPromise = THEJHON_API.checkSession()
             .then(function (sess) {
                 if (epoch !== authSessionEpoch) return sess;
                 if (sess && sess.code === "SESSION_INVALID") {
@@ -2114,7 +2117,11 @@
                     } catch (e4) {}
                 }
                 return null;
+            })
+            .finally(function () {
+                sessionPermRefreshPromise = null;
             });
+        return sessionPermRefreshPromise;
     }
 
     function refreshBrandFromStaffProfileAsync() {
@@ -2757,10 +2764,12 @@
         }
     }
 
-    function redirectFromProtectedPage(showDeniedAlert) {
-        window.location.replace(
-            showDeniedAlert ? "index.html?denied=register" : "index.html"
-        );
+    function redirectFromProtectedPage(showDeniedAlert, deniedKind) {
+        var url = "index.html";
+        if (showDeniedAlert) {
+            url += deniedKind === "cart" ? "?denied=cart" : "?denied=register";
+        }
+        window.location.replace(url);
     }
 
     function trackPageViewIfNeeded() {
@@ -2837,9 +2846,17 @@
             return;
         }
         if (page === "cart.html") {
-            if (!getVendorCartAccess().allowed) {
-                redirectFromProtectedPage(isLoggedIn());
+            if (getVendorCartAccess().allowed) return;
+            if (
+                isLoggedIn() &&
+                getRole() === "vendor" &&
+                global.THEJHON_API &&
+                THEJHON_API.getToken &&
+                THEJHON_API.getToken()
+            ) {
+                return;
             }
+            redirectFromProtectedPage(isLoggedIn(), "cart");
             return;
         }
         if (ADMIN_REGISTER_PAGES.indexOf(page) < 0) return;

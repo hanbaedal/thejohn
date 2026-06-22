@@ -242,6 +242,23 @@
         }
     });
 
-    renderOrderHistory();
+    function bootCartPage() {
+        var Auth = window.THEJHON_AUTH;
+        if (
+            Auth &&
+            Auth.refreshSessionPermissionsAsync &&
+            Auth.isLoggedIn &&
+            Auth.isLoggedIn() &&
+            Auth.getRole &&
+            Auth.getRole() === "vendor"
+        ) {
+            Auth.refreshSessionPermissionsAsync().finally(renderOrderHistory);
+            return;
+        }
+        renderOrderHistory();
+    }
+
+    bootCartPage();
     window.addEventListener("thejhon-orders-updated", renderOrderHistory);
+    window.addEventListener("thejhon-auth-permissions-updated", renderOrderHistory);
 })();

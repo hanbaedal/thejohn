@@ -1,9 +1,24 @@
 (function () {
     if (window.THEJHON_AUTH) {
-        THEJHON_AUTH.enforceSiteLogin();
-        THEJHON_AUTH.enforceRegisterPages();
-        THEJHON_AUTH.applyNavRegisterVisibility();
-        if (THEJHON_AUTH.trackPageViewIfNeeded) THEJHON_AUTH.trackPageViewIfNeeded();
+        var Auth = THEJHON_AUTH;
+        Auth.enforceSiteLogin();
+        function finishNavGuard() {
+            Auth.enforceRegisterPages();
+            Auth.applyNavRegisterVisibility();
+            if (Auth.trackPageViewIfNeeded) Auth.trackPageViewIfNeeded();
+        }
+        var waitSession =
+            Auth.isLoggedIn &&
+            Auth.isLoggedIn() &&
+            window.THEJHON_API &&
+            THEJHON_API.getToken &&
+            THEJHON_API.getToken() &&
+            Auth.refreshSessionPermissionsAsync;
+        if (waitSession) {
+            Auth.refreshSessionPermissionsAsync().finally(finishNavGuard);
+        } else {
+            finishNavGuard();
+        }
     }
 
     (function ensureHeaderLayout() {
