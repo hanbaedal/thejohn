@@ -191,6 +191,15 @@ async function runStartupMigrations(database) {
     );
     const { migrateProductsCollection } = require("./lib/productFields");
     await migrateProductsCollection(database);
+    try {
+        const { fixDrinkProductOwnerForCheongsan } = require("./lib/productOwnerFix");
+        const drinkOwnerFix = await fixDrinkProductOwnerForCheongsan(database);
+        if (drinkOwnerFix && drinkOwnerFix.fixed) {
+            console.log("[products] startup drink owner fix:", drinkOwnerFix);
+        }
+    } catch (drinkOwnerErr) {
+        console.warn("[thejohn] drink product owner fix:", drinkOwnerErr.message);
+    }
     await safeCreateIndex(database.collection("vendors"), { id: 1 }, { unique: true });
     await dropObsoleteVendorIndexes(database);
     await safeCreateIndex(
