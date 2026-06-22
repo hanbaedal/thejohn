@@ -94,19 +94,19 @@ function ymdFromTs(ts) {
     return y + "-" + m + "-" + day;
 }
 
-function aggregateByDate(items) {
+function groupItemsByDate(items) {
     const map = {};
     (items || []).forEach(function (row) {
         const ymd = ymdFromTs(row.issueDate);
         if (!map[ymd]) {
             map[ymd] = {
                 issueDate: ymd,
-                count: 0,
+                items: [],
                 totalQuantity: 0,
                 totalAmount: 0
             };
         }
-        map[ymd].count += 1;
+        map[ymd].items.push(row);
         map[ymd].totalQuantity += Number(row.quantity) || 0;
         map[ymd].totalAmount += Number(row.lineTotal) || 0;
     });
@@ -214,16 +214,8 @@ async function querySalesLedgerInquiry(db, auth, query) {
     };
 
     if (mode === "date") {
-        result.dayGroups = aggregateByDate(items);
-        result.summary = {
-            count: result.dayGroups.length,
-            totalQuantity: items.reduce(function (s, r) {
-                return s + (Number(r.quantity) || 0);
-            }, 0),
-            totalAmount: items.reduce(function (s, r) {
-                return s + (Number(r.lineTotal) || 0);
-            }, 0)
-        };
+        result.dayGroups = groupItemsByDate(items);
+        result.summary = summarize(items);
     }
 
     return result;
@@ -268,5 +260,5 @@ module.exports = {
     querySalesLedgerInquiry,
     listLedgerVendorCompanies,
     ledgerRowsFromDoc,
-    aggregateByDate
+    groupItemsByDate
 };

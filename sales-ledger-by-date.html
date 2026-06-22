@@ -35,7 +35,7 @@
     <main class="page-main page-main--hide-scrollbar shub-page om-page srp-page">
         <p class="shub-subnav"><a href="sales-ledger-hub.html">← 매출장</a> · <a href="order-manage-hub.html">영업관리</a></p>
         <h1>일자별 매출장</h1>
-        <p class="srp-hint">기간 내 거래명세서(주문·수기) 매출을 일자별로 집계합니다.</p>
+        <p class="srp-hint">기간 내 거래명세서(주문·수기) 매출을 일자별·품목별로 조회합니다.</p>
         <p id="slp-status" class="shub-status" role="status" aria-live="polite"></p>
         <div class="ol-query-filters" aria-label="매출장 조회 조건">
             <section class="ol-query-filters__section" aria-labelledby="slp-filter-period-heading">
@@ -48,27 +48,47 @@
                     <label for="slp-date-to">종료일</label>
                     <input type="date" id="slp-date-to">
                 </div>
-                <div class="ol-query-filters__row ol-query-filters__row--query">
-                    <button type="button" class="btn btn-primary" id="slp-btn-search">조회</button>
-                </div>
             </section>
             <section class="ol-query-filters__section" id="slp-admin-wrap" hidden aria-labelledby="slp-filter-admin-heading">
                 <h2 id="slp-filter-admin-heading" class="ol-query-filters__heading">담당 관리자</h2>
                 <div class="ol-query-filters__row"><label for="slp-admin">관리자</label><select id="slp-admin"><option value="">전체</option></select></div>
             </section>
         </div>
-        <div class="srp-toolbar srp-toolbar--actions">
+        <div class="srp-toolbar">
+            <button type="button" class="btn btn-primary" id="slp-btn-search">조회</button>
             <button type="button" class="btn btn-secondary" id="slp-btn-pdf" disabled>PDF 저장</button>
             <button type="button" class="btn btn-secondary" id="slp-btn-print" disabled>출력</button>
         </div>
-        <p id="slp-print-title" class="srp-print-title" hidden></p>
-        <p id="slp-summary" class="srp-summary" hidden></p>
         <div class="srp-results-wrap" id="slp-print-area">
-            <div class="srp-table-wrap">
-                <table class="srp-table" aria-label="일자별 매출장">
-                    <thead><tr><th>일자</th><th>건수</th><th>수량</th><th>매출합계</th></tr></thead>
-                    <tbody id="slp-tbody"></tbody>
-                </table>
+            <div class="srp-ledger-sheet" id="slp-ledger-sheet" hidden>
+                <header class="srp-ledger-sheet__head">
+                    <h2 id="slp-print-title" class="srp-ledger-sheet__title"></h2>
+                    <p id="slp-print-period" class="srp-ledger-sheet__meta"></p>
+                    <p id="slp-summary" class="srp-ledger-sheet__meta srp-ledger-sheet__summary" hidden></p>
+                </header>
+                <div class="srp-table-wrap srp-table-wrap--inset">
+                    <table class="srp-table srp-table--date-ledger" aria-label="일자별 매출장">
+                        <colgroup>
+                            <col class="col-date">
+                            <col class="col-code">
+                            <col class="col-name">
+                            <col class="col-qty">
+                            <col class="col-price">
+                            <col class="col-amount">
+                        </colgroup>
+                        <thead>
+                            <tr>
+                                <th scope="col">일자</th>
+                                <th scope="col">코드</th>
+                                <th scope="col">품명</th>
+                                <th scope="col" class="num">수량</th>
+                                <th scope="col" class="num">단가</th>
+                                <th scope="col" class="num">소계</th>
+                            </tr>
+                        </thead>
+                        <tbody id="slp-tbody"></tbody>
+                    </table>
+                </div>
             </div>
         </div>
     </main>

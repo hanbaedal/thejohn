@@ -150,6 +150,81 @@
         }, 2000);
     }
 
+    function renderDateLedgerTable(tbody, dayGroups) {
+        if (!tbody) return;
+        if (!dayGroups || !dayGroups.length) {
+            tbody.innerHTML = '<tr><td colspan="6">조회 결과가 없습니다.</td></tr>';
+            return;
+        }
+        var html = "";
+        var totalAmount = 0;
+        var totalQty = 0;
+        var totalLines = 0;
+        dayGroups.forEach(function (group) {
+            var dayQty = 0;
+            var dayAmount = 0;
+            var dayYmd = group.issueDate || "";
+            (group.items || []).forEach(function (row) {
+                var qty = Number(row.quantity) || 0;
+                var line = Number(row.lineTotal) || 0;
+                dayQty += qty;
+                dayAmount += line;
+                totalQty += qty;
+                totalAmount += line;
+                totalLines += 1;
+                html +=
+                    "<tr>" +
+                    "<td>" +
+                    escapeHtml(dayYmd) +
+                    "</td>" +
+                    "<td>" +
+                    escapeHtml(row.pd_code || "—") +
+                    "</td>" +
+                    "<td class=\"name\">" +
+                    escapeHtml(row.productName || "") +
+                    "</td>" +
+                    '<td class="num">' +
+                    escapeHtml(String(qty)) +
+                    "</td>" +
+                    '<td class="num">' +
+                    escapeHtml(formatWon(row.unitPrice).replace("원", "")) +
+                    "</td>" +
+                    '<td class="num">' +
+                    escapeHtml(formatWon(line).replace("원", "")) +
+                    "</td>" +
+                    "</tr>";
+            });
+            html +=
+                '<tr class="srp-day-total">' +
+                "<td></td>" +
+                '<td colspan="2"><strong>일 소계</strong></td>' +
+                '<td class="num"><strong>' +
+                escapeHtml(String(dayQty)) +
+                "</strong></td>" +
+                "<td></td>" +
+                '<td class="num"><strong>' +
+                escapeHtml(formatWon(dayAmount).replace("원", "")) +
+                "</strong></td>" +
+                "</tr>";
+        });
+        html +=
+            '<tr class="srp-total-row">' +
+            '<td colspan="3"><strong>합계 (' +
+            escapeHtml(String(dayGroups.length)) +
+            "일 · " +
+            escapeHtml(String(totalLines)) +
+            "건)</strong></td>" +
+            '<td class="num"><strong>' +
+            escapeHtml(String(totalQty)) +
+            "</strong></td>" +
+            "<td></td>" +
+            '<td class="num"><strong>' +
+            escapeHtml(formatWon(totalAmount).replace("원", "")) +
+            "</strong></td>" +
+            "</tr>";
+        tbody.innerHTML = html;
+    }
+
     function renderDateGroupsTable(tbody, groups) {
         if (!tbody) return;
         if (!groups || !groups.length) {
@@ -205,6 +280,7 @@
         defaultDateRange: defaultDateRange,
         renderResultsTable: renderResultsTable,
         renderDateGroupsTable: renderDateGroupsTable,
+        renderDateLedgerTable: renderDateLedgerTable,
         renderSummary: renderSummary,
         openModal: openModal,
         closeModal: closeModal,

@@ -33,11 +33,50 @@
     margin: 0 auto;
     padding: 0 0.75rem 2rem;
 }
+.srp-ledger-sheet {
+    background: #fff;
+    border: 1px solid #d4e2f0;
+    border-radius: 10px;
+    overflow: hidden;
+    box-shadow: 0 1px 4px rgba(5, 42, 77, 0.06);
+}
+.srp-ledger-sheet[hidden] {
+    display: none !important;
+}
+.srp-ledger-sheet__head {
+    padding: 1rem 1.15rem 0.85rem;
+    text-align: center;
+    border-bottom: 1px solid #e8edf2;
+    background: #f8fafc;
+}
+.srp-ledger-sheet__title {
+    margin: 0;
+    font-size: 1.12rem;
+    font-weight: 700;
+    color: #052a4d;
+    line-height: 1.4;
+}
+.srp-ledger-sheet__meta {
+    margin: 0.35rem 0 0;
+    font-size: 0.88rem;
+    color: #455a6e;
+    line-height: 1.45;
+}
+.srp-ledger-sheet__summary {
+    font-weight: 600;
+    color: #2a4a5e;
+}
 .srp-table-wrap {
     overflow-x: auto;
     border: 1px solid #e0e6ed;
     border-radius: 8px;
     background: #fff;
+}
+.srp-table-wrap--inset {
+    margin: 0;
+    border: none;
+    border-radius: 0;
+    border-top: 1px solid #e8edf2;
 }
 .srp-table {
     width: 100%;
@@ -56,12 +95,45 @@
     font-weight: 700;
     color: #052a4d;
 }
+.srp-table th.num {
+    text-align: right;
+}
+.srp-table--date-ledger {
+    table-layout: fixed;
+}
+.srp-table--date-ledger col.col-date {
+    width: 6.25rem;
+}
+.srp-table--date-ledger col.col-code {
+    width: 5.25rem;
+}
+.srp-table--date-ledger col.col-qty {
+    width: 3.25rem;
+}
+.srp-table--date-ledger col.col-price {
+    width: 4.75rem;
+}
+.srp-table--date-ledger col.col-amount {
+    width: 5.25rem;
+}
+.srp-table--date-ledger td.name {
+    white-space: normal;
+    word-break: break-word;
+}
 .srp-table td.num {
     text-align: right;
 }
 .srp-table tr.srp-total-row td {
     background: #f0f6fc;
     border-top: 2px solid #c5d8eb;
+}
+.srp-table tr.srp-day-total td {
+    font-weight: 600;
+    background: #f8fafc;
+    border-bottom: 2px solid #d4e2f0;
+}
+.srp-table tr.srp-day-total td:first-child {
+    border-bottom-color: #eef2f6;
 }
 .srp-hint {
     max-width: 36rem;
@@ -221,8 +293,20 @@
     .shub-status,
     .srp-mode-tabs,
     .srp-period-tabs,
-    .srp-hint {
+    .srp-hint,
+    .srp-page > h1 {
         display: none !important;
+    }
+    .srp-ledger-sheet[hidden] {
+        display: block !important;
+    }
+    .srp-ledger-sheet {
+        border: none;
+        box-shadow: none;
+    }
+    .srp-ledger-sheet__head {
+        background: #fff;
+        padding-top: 0;
     }
     .srp-print-title[hidden] {
         display: block !important;

@@ -111,15 +111,24 @@ function buildSalesReportPdfBuffer(opts) {
         );
         y += 22;
 
-        var cols = [
-            { label: "일자", w: 62 },
-            { label: "구분", w: 32 },
-            { label: "업체", w: 88 },
-            { label: "품목", w: 100 },
-            { label: "수량", w: 36, align: "right" },
-            { label: "단가", w: 52, align: "right" },
-            { label: "금액", w: 58, align: "right" }
-        ];
+        var cols = opts.layout === "date-ledger"
+            ? [
+                  { label: "일자", w: 62 },
+                  { label: "코드", w: 52 },
+                  { label: "품명", w: 100 },
+                  { label: "수량", w: 36, align: "right" },
+                  { label: "단가", w: 52, align: "right" },
+                  { label: "소계", w: 58, align: "right" }
+              ]
+            : [
+                  { label: "일자", w: 62 },
+                  { label: "구분", w: 32 },
+                  { label: "업체", w: 88 },
+                  { label: "품목", w: 100 },
+                  { label: "수량", w: 36, align: "right" },
+                  { label: "단가", w: 52, align: "right" },
+                  { label: "금액", w: 58, align: "right" }
+              ];
 
         drawTableHeader(doc, cols, y);
         y += ROW_H;
@@ -134,15 +143,24 @@ function buildSalesReportPdfBuffer(opts) {
             drawTableRow(
                 doc,
                 cols,
-                [
-                    formatYmd(row.issueDate),
-                    row.sourceLabel || row.source || "",
-                    row.vendorCompany || "",
-                    row.productName || "",
-                    formatNum(row.quantity),
-                    formatNum(row.unitPrice),
-                    formatNum(row.lineTotal)
-                ],
+                opts.layout === "date-ledger"
+                    ? [
+                          formatYmd(row.issueDate),
+                          row.pd_code || "",
+                          row.productName || "",
+                          formatNum(row.quantity),
+                          formatNum(row.unitPrice),
+                          formatNum(row.lineTotal)
+                      ]
+                    : [
+                          formatYmd(row.issueDate),
+                          row.sourceLabel || row.source || "",
+                          row.vendorCompany || "",
+                          row.productName || "",
+                          formatNum(row.quantity),
+                          formatNum(row.unitPrice),
+                          formatNum(row.lineTotal)
+                      ],
                 y
             );
             y += ROW_H;

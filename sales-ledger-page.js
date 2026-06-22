@@ -514,11 +514,21 @@
 
     function updatePrintTitle(data) {
 
+        var sheet = $("slp-ledger-sheet");
+
         var el = $("slp-print-title");
+
+        var periodEl = $("slp-print-period");
 
         if (!el || !data) {
 
-            if (el) el.hidden = true;
+            if (sheet) sheet.hidden = true;
+
+            else if (el) el.hidden = true;
+
+            if (el) el.textContent = "";
+
+            if (periodEl) periodEl.textContent = "";
 
             return;
 
@@ -536,15 +546,31 @@
 
         }
 
-        if (data.period && data.period.dateFrom && data.period.dateTo) {
+        el.textContent = title;
 
-            title += " · " + data.period.dateFrom + " ~ " + data.period.dateTo;
+        if (periodEl) {
+
+            if (data.period && data.period.dateFrom && data.period.dateTo) {
+
+                periodEl.textContent =
+
+                    "조회 기간: " + data.period.dateFrom + " ~ " + data.period.dateTo;
+
+            } else {
+
+                periodEl.textContent = "";
+
+            }
+
+        } else if (data.period && data.period.dateFrom && data.period.dateTo) {
+
+            el.textContent = title + " · " + data.period.dateFrom + " ~ " + data.period.dateTo;
 
         }
 
-        el.textContent = title;
+        if (sheet) sheet.hidden = false;
 
-        el.hidden = false;
+        else el.hidden = false;
 
     }
 
@@ -554,9 +580,9 @@
 
         if (mode === "date") {
 
-            SR.renderDateGroupsTable($("slp-tbody"), (data && data.dayGroups) || []);
+            SR.renderDateLedgerTable($("slp-tbody"), (data && data.dayGroups) || []);
 
-            return ((data && data.dayGroups) || []).length;
+            return ((data && data.items) || []).length;
 
         }
 
@@ -618,7 +644,7 @@
 
                 if (mode === "date") {
 
-                    setStatus(n ? "조회 완료 (" + n + "일)" : "조회 결과가 없습니다.", n ? "ok" : "");
+                    setStatus(n ? "조회 완료 (" + n + "건)" : "조회 결과가 없습니다.", n ? "ok" : "");
 
                 } else {
 
@@ -633,6 +659,8 @@
             .catch(function (e) {
 
                 lastResult = null;
+
+                if ($("slp-ledger-sheet")) $("slp-ledger-sheet").hidden = true;
 
                 setStatus((e && e.message) || "조회에 실패했습니다.", "err");
 
@@ -690,7 +718,7 @@
 
                     mode === "date"
 
-                        ? lastResult && lastResult.dayGroups && lastResult.dayGroups.length
+                        ? lastResult && lastResult.items && lastResult.items.length
 
                         : lastResult && lastResult.items && lastResult.items.length;
 

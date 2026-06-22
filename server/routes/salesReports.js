@@ -111,20 +111,6 @@ router.post("/pdf", async function (req, res) {
                     result.period && result.period.dateFrom && result.period.dateTo
                         ? result.period.dateFrom + " ~ " + result.period.dateTo
                         : "";
-                if (result.dayGroups && result.dayGroups.length) {
-                    result.items = result.dayGroups.map(function (g) {
-                        return {
-                            issueDate: g.issueDate,
-                            sourceLabel: "일자합계",
-                            orderNo: String(g.count || 0) + "건",
-                            vendorCompany: "",
-                            productName: "",
-                            quantity: g.totalQuantity,
-                            unitPrice: 0,
-                            lineTotal: g.totalAmount
-                        };
-                    });
-                }
             } else if (result.mode === "product") {
                 title = "매출장 (품목별)";
                 subtitle = String(body.productName || "").trim();
@@ -152,7 +138,8 @@ router.post("/pdf", async function (req, res) {
             subtitle: subtitle,
             period: period,
             items: result.items,
-            summary: result.summary
+            summary: result.summary,
+            layout: reportType === "inquiry" && result.mode === "date" ? "date-ledger" : ""
         });
 
         const fname = safeFilePart(title + "_" + subtitle) + ".pdf";
