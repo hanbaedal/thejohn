@@ -52,106 +52,32 @@
         if (toEl && !toEl.value) toEl.value = last;
     }
 
-    function renderResultsTable(tbody, items) {
-        if (!tbody) return;
-        if (!items || !items.length) {
-            tbody.innerHTML = '<tr><td colspan="8">조회 결과가 없습니다.</td></tr>';
-            return;
-        }
-        var html = "";
-        var totalAmount = 0;
-        items.forEach(function (row) {
-            totalAmount += Number(row.lineTotal) || 0;
-            html +=
-                "<tr>" +
-                "<td>" +
-                escapeHtml(formatYmd(row.issueDate)) +
-                "</td>" +
-                "<td>" +
-                escapeHtml(row.sourceLabel || row.source || "") +
-                "</td>" +
-                "<td>" +
-                escapeHtml(row.orderNo || "—") +
-                "</td>" +
-                "<td>" +
-                escapeHtml(row.vendorCompany || "") +
-                "</td>" +
-                "<td>" +
-                escapeHtml(row.productName || "") +
-                "</td>" +
-                "<td class=\"num\">" +
-                escapeHtml(String(row.quantity || 0)) +
-                "</td>" +
-                "<td class=\"num\">" +
-                escapeHtml(formatWon(row.unitPrice).replace("원", "")) +
-                "</td>" +
-                "<td class=\"num\">" +
-                escapeHtml(formatWon(row.lineTotal).replace("원", "")) +
-                "</td>" +
-                "</tr>";
+    function groupItemsByDateClient(items) {
+        var map = {};
+        (items || []).forEach(function (row) {
+            var ymd = formatYmd(row.issueDate);
+            if (!map[ymd]) {
+                map[ymd] = { issueDate: ymd, items: [], totalQuantity: 0, totalAmount: 0 };
+            }
+            map[ymd].items.push(row);
+            map[ymd].totalQuantity += Number(row.quantity) || 0;
+            map[ymd].totalAmount += Number(row.lineTotal) || 0;
         });
-        html +=
-            '<tr class="srp-total-row">' +
-            '<td colspan="7"><strong>합계</strong></td>' +
-            '<td class="num"><strong>' +
-            escapeHtml(formatWon(totalAmount).replace("원", "")) +
-            "</strong></td>" +
-            "</tr>";
-        tbody.innerHTML = html;
-    }
-
-    function renderSummary(el, summary) {
-        if (!el || !summary) return;
-        el.textContent =
-            "건수 " +
-            (summary.count || 0) +
-            " · 수량 " +
-            (summary.totalQuantity || 0).toLocaleString("ko-KR") +
-            " · 합계 " +
-            formatWon(summary.totalAmount);
-        el.hidden = false;
-    }
-
-    function openModal(backdrop) {
-        if (backdrop) backdrop.hidden = false;
-    }
-
-    function closeModal(backdrop) {
-        if (backdrop) backdrop.hidden = true;
-    }
-
-    function wireModalClose(backdrop, closeBtn) {
-        if (closeBtn) {
-            closeBtn.addEventListener("click", function () {
-                closeModal(backdrop);
+        return Object.keys(map)
+            .sort(function (a, b) {
+                return b.localeCompare(a);
+            })
+            .map(function (k) {
+                return map[k];
             });
-        }
-        if (backdrop) {
-            backdrop.addEventListener("click", function (e) {
-                if (e.target === backdrop) closeModal(backdrop);
-            });
-        }
     }
 
-    function printResults() {
-        window.print();
-    }
-
-    function downloadPdfBlob(blob, filename) {
-        var url = URL.createObjectURL(blob);
-        var a = document.createElement("a");
-        a.href = url;
-        a.download = filename || "매출집계.pdf";
-        document.body.appendChild(a);
-        a.click();
-        a.remove();
-        setTimeout(function () {
-            URL.revokeObjectURL(url);
-        }, 2000);
-    }
-
-    function renderDateLedgerTable(tbody, dayGroups) {
+    function renderLedgerLinesTable(tbody, itemsOrGroups) {
         if (!tbody) return;
+        var dayGroups = itemsOrGroups;
+        if (itemsOrGroups && itemsOrGroups.length && !itemsOrGroups[0].items) {
+            dayGroups = groupItemsByDateClient(itemsOrGroups);
+        }
         if (!dayGroups || !dayGroups.length) {
             tbody.innerHTML = '<tr><td colspan="7">조회 결과가 없습니다.</td></tr>';
             return;
@@ -225,6 +151,64 @@
             "</strong></td>" +
             "</tr>";
         tbody.innerHTML = html;
+    }
+
+    function renderResultsTable(tbody, items) {
+        renderLedgerLinesTable(tbody, items);
+    }
+
+    function renderSummary(el, summary) {
+        if (!el || !summary) return;
+        el.textContent =
+            "건수 " +
+            (summary.count || 0) +
+            " · 수량 " +
+            (summary.totalQuantity || 0).toLocaleString("ko-KR") +
+            " · 합계 " +
+            formatWon(summary.totalAmount);
+        el.hidden = false;
+    }
+
+    function openModal(backdrop) {
+        if (backdrop) backdrop.hidden = false;
+    }
+
+    function closeModal(backdrop) {
+        if (backdrop) backdrop.hidden = true;
+    }
+
+    function wireModalClose(backdrop, closeBtn) {
+        if (closeBtn) {
+            closeBtn.addEventListener("click", function () {
+                closeModal(backdrop);
+            });
+        }
+        if (backdrop) {
+            backdrop.addEventListener("click", function (e) {
+                if (e.target === backdrop) closeModal(backdrop);
+            });
+        }
+    }
+
+    function printResults() {
+        window.print();
+    }
+
+    function downloadPdfBlob(blob, filename) {
+        var url = URL.createObjectURL(blob);
+        var a = document.createElement("a");
+        a.href = url;
+        a.download = filename || "매출집계.pdf";
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        setTimeout(function () {
+            URL.revokeObjectURL(url);
+        }, 2000);
+    }
+
+    function renderDateLedgerTable(tbody, dayGroups) {
+        renderLedgerLinesTable(tbody, dayGroups);
     }
 
     function renderDateGroupsTable(tbody, groups) {

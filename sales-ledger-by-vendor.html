@@ -70,14 +70,38 @@
             <button type="button" class="btn btn-secondary" id="slp-btn-pdf" disabled>PDF 저장</button>
             <button type="button" class="btn btn-secondary" id="slp-btn-print" disabled>출력</button>
         </div>
-        <p id="slp-print-title" class="srp-print-title" hidden></p>
-        <p id="slp-summary" class="srp-summary" hidden></p>
         <div class="srp-results-wrap" id="slp-print-area">
-            <div class="srp-table-wrap">
-                <table class="srp-table" aria-label="업체별 매출장">
-                    <thead><tr><th>일자</th><th>구분</th><th>거래명세</th><th>업체</th><th>품목</th><th>수량</th><th>단가</th><th>금액</th></tr></thead>
-                    <tbody id="slp-tbody"></tbody>
-                </table>
+            <div class="srp-ledger-sheet" id="slp-ledger-sheet" hidden>
+                <header class="srp-ledger-sheet__head">
+                    <h2 id="slp-print-title" class="srp-ledger-sheet__title"></h2>
+                    <p id="slp-print-period" class="srp-ledger-sheet__meta"></p>
+                    <p id="slp-summary" class="srp-ledger-sheet__meta srp-ledger-sheet__summary" hidden></p>
+                </header>
+                <div class="srp-table-wrap srp-table-wrap--inset">
+                    <table class="srp-table srp-table--date-ledger" aria-label="업체별 매출장">
+                        <colgroup>
+                            <col class="col-date">
+                            <col class="col-vendor">
+                            <col class="col-code">
+                            <col class="col-name">
+                            <col class="col-qty">
+                            <col class="col-price">
+                            <col class="col-amount">
+                        </colgroup>
+                        <thead>
+                            <tr>
+                                <th scope="col">일자</th>
+                                <th scope="col">업체명</th>
+                                <th scope="col">제품코드</th>
+                                <th scope="col">품명</th>
+                                <th scope="col" class="num">수량</th>
+                                <th scope="col" class="num">단가</th>
+                                <th scope="col" class="num">금액</th>
+                            </tr>
+                        </thead>
+                        <tbody id="slp-tbody"></tbody>
+                    </table>
+                </div>
             </div>
         </div>
     </main>

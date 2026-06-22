@@ -139,7 +139,7 @@ router.post("/pdf", async function (req, res) {
             period: period,
             items: result.items,
             summary: result.summary,
-            layout: reportType === "inquiry" && result.mode === "date" ? "date-ledger" : ""
+            layout: reportType === "inquiry" ? "date-ledger" : ""
         });
 
         const fname = safeFilePart(title + "_" + subtitle) + ".pdf";
