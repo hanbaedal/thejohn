@@ -12,8 +12,26 @@
     font-size: 1rem;
     color: #052a4d;
 }
-.txn-back-btn {
-    margin-bottom: 0.65rem;
+.txn-vendor-back {
+    border: none;
+    background: none;
+    padding: 0;
+    margin: 0;
+    font: inherit;
+    font-size: inherit;
+    font-weight: 700;
+    color: var(--dz-blue, #0a4d9c);
+    cursor: pointer;
+    text-decoration: underline;
+    text-underline-offset: 2px;
+}
+.txn-vendor-back:hover {
+    color: #083d7a;
+}
+.txn-vendor-back:focus-visible {
+    outline: 2px solid var(--dz-blue, #0a4d9c);
+    outline-offset: 2px;
+    border-radius: 2px;
 }
 .txn-page .ol-admin-list {
     list-style: none;

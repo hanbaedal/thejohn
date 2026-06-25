@@ -12,7 +12,6 @@
 
     var orderListEl = document.getElementById("txn-order-list");
     var orderStepEl = document.getElementById("txn-order-step");
-    var orderBackBtn = document.getElementById("txn-order-back");
     var orderDateFromEl = document.getElementById("txn-date-from");
     var orderDateToEl = document.getElementById("txn-date-to");
     var orderSearchBtn = document.getElementById("txn-order-search");
@@ -269,13 +268,32 @@
         });
     }
 
+    function setVendorListHeading() {
+        if (!orderStepEl) return;
+        orderStepEl.textContent = "구매업체 목록";
+    }
+
+    function setOrderListHeading(vendorCompany) {
+        if (!orderStepEl) return;
+        orderStepEl.textContent = "";
+        orderStepEl.appendChild(document.createTextNode("주문서 목록 — "));
+        var btn = document.createElement("button");
+        btn.type = "button";
+        btn.className = "txn-vendor-back";
+        btn.textContent = vendorCompany;
+        btn.setAttribute("aria-label", vendorCompany + " — 구매업체 목록으로 돌아가기");
+        btn.addEventListener("click", function () {
+            renderVendorList(groupOrdersByVendor(orderCached));
+        });
+        orderStepEl.appendChild(btn);
+    }
+
     function renderVendorList(groups) {
         orderViewMode = "vendors";
         orderSelectedVendor = "";
         orderSelectedId = "";
         showOrderDetail(null);
-        if (orderBackBtn) orderBackBtn.hidden = true;
-        if (orderStepEl) orderStepEl.textContent = "구매업체 목록";
+        setVendorListHeading();
         orderVendorGroups = groups;
 
         if (!orderListEl) return;
@@ -322,8 +340,7 @@
         orderSelectedVendor = vendorCompany;
         orderSelectedId = "";
         showOrderDetail(null);
-        if (orderBackBtn) orderBackBtn.hidden = false;
-        if (orderStepEl) orderStepEl.textContent = "주문서 목록 — " + vendorCompany;
+        setOrderListHeading(vendorCompany);
 
         var orders = orderCached.filter(function (it) {
             var name = String((it && it.vendorCompany) || "(회사명 없음)").trim() || "(회사명 없음)";
@@ -391,8 +408,7 @@
                     }
                     showOrderDetail(null);
                     setStatus("0건");
-                    if (orderBackBtn) orderBackBtn.hidden = true;
-                    if (orderStepEl) orderStepEl.textContent = "구매업체 목록";
+                    setVendorListHeading();
                     orderViewMode = "vendors";
                     return;
                 }
@@ -638,11 +654,6 @@
             orderViewMode = "vendors";
             orderSelectedVendor = "";
             loadOrderList();
-        });
-    }
-    if (orderBackBtn) {
-        orderBackBtn.addEventListener("click", function () {
-            renderVendorList(groupOrdersByVendor(orderCached));
         });
     }
     if (manualSearchBtn) manualSearchBtn.addEventListener("click", loadManualList);
