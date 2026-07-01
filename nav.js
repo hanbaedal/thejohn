@@ -670,11 +670,13 @@
             inner.querySelector(".site-footer-social");
         var linked = buildPublicFooterSocialNavHtml();
         if (!socialEl) {
-            var shell = document.createElement("div");
-            shell.innerHTML = PUBLIC_FOOTER_SHELL_HTML;
             var grid =
                 inner.querySelector(".site-footer-grid") ||
                 document.getElementById("siteFooterCompanyGrid");
+            var shell = document.createElement("div");
+            shell.innerHTML = inner.querySelector(".site-footer-head")
+                ? buildPublicFooterSocialNavHtml()
+                : PUBLIC_FOOTER_SHELL_HTML;
             while (shell.firstChild) {
                 inner.insertBefore(shell.firstChild, grid || inner.firstChild);
             }
@@ -685,6 +687,18 @@
             !socialEl.querySelector("a.site-footer-social__btn--facebook[href]");
         if (needsLinks) {
             socialEl.outerHTML = linked;
+        }
+    }
+
+    function dedupePublicFooterCopyright(inner) {
+        if (!inner) return;
+        var copies = inner.querySelectorAll(".site-footer-copy");
+        for (var i = 1; i < copies.length; i++) {
+            copies[i].remove();
+        }
+        var heads = inner.querySelectorAll(":scope > .site-footer-head");
+        for (var j = 1; j < heads.length; j++) {
+            heads[j].remove();
         }
     }
 
@@ -715,6 +729,7 @@
             inner.insertBefore(sep, gridRef || null);
         }
         refreshPublicFooterSocialNav();
+        dedupePublicFooterCopyright(inner);
         if (grid && !grid.querySelector("dt")) {
             grid.innerHTML = PUBLIC_FOOTER_COMPANY_FALLBACK;
         }
