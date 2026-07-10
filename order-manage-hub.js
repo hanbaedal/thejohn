@@ -17,6 +17,8 @@
         var transaction = document.getElementById("omh-link-transaction");
         var sales = document.getElementById("omh-link-sales-inquiry");
         var tax = document.getElementById("omh-link-tax-invoice");
+        var marketingRegister = document.getElementById("omh-link-marketing-register");
+        var marketingList = document.getElementById("omh-link-marketing-list");
         if (list && links.list) list.setAttribute("href", links.list);
         if (transaction) {
             var txHref =
@@ -42,6 +44,12 @@
         }
         if (tax && links.taxInvoice) {
             tax.setAttribute("href", links.taxInvoice);
+        }
+        if (marketingRegister && links.marketingRegister) {
+            marketingRegister.setAttribute("href", links.marketingRegister);
+        }
+        if (marketingList && links.marketingList) {
+            marketingList.setAttribute("href", links.marketingList);
         }
     }
 

@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="public-site-config.js?v=20260620"></script>
+    <script src="auth-storage.js?v=20260620-public"></script>
+    <script src="site-brand-boot.js"></script>
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#0a4d9c">
+    <title>마케팅 자료 리스트 — 더존</title>
+    <link rel="stylesheet" href="common.css">
+    <link rel="stylesheet" href="staff-hub.css">
+    <link rel="stylesheet" href="order-manage-layout.css">
+    <link rel="stylesheet" href="support-pages.css">
+    <link rel="stylesheet" href="marketing-material.css">
+    <script src="api-config.js"></script>
+    <script src="thejhon-api.js"></script>
+    <script src="auth.js?v=20260617-order-subnav"></script>
+    <script src="marketing-material-shared.js"></script>
+    <script src="admin-header.js"></script>
+    <script src="nav.js?v=20260530-order-nav" defer></script>
+</head>
+<body>
+    <header class="site-header">
+        <div class="site-header-start">
+            <a href="work-hub.html" class="dz-logo dz-logo--compact" aria-label="그룹 마케팅 관리"><img src="img/logo.png" alt="" width="72" height="72" class="dz-logo-img"></a>
+            <nav class="site-header-nav site-header-nav--order" aria-label="영업관리 메뉴"></nav>
+        </div>
+        <nav class="site-header-actions" aria-label="계정">
+            <time class="header-date" id="headerToday" datetime=""></time>
+            <button type="button" class="btn btn-auth-icon btn-logout" id="btnLogout" hidden aria-label="로그아웃" title="로그아웃"></button>
+        </nav>
+    </header>
+    <main class="page-main page-main--hide-scrollbar shub-page om-page">
+        <p class="shub-subnav"><a href="order-manage-hub.html">← 영업관리</a> · <a href="marketing-material-register.html">마케팅 자료 등록하기</a></p>
+        <h1>마케팅 자료 리스트</h1>
+        <p class="mm-retention-note">등록 후 7일이 지나면 자료가 자동 삭제됩니다.</p>
+        <p id="mml-status" class="shub-status" role="status" aria-live="polite"></p>
+
+        <div class="mm-table-wrap">
+            <table class="mm-table" id="mml-table">
+                <thead>
+                    <tr>
+                        <th scope="col">등록일</th>
+                        <th scope="col">제목</th>
+                        <th scope="col">분류</th>
+                        <th scope="col">파일</th>
+                        <th scope="col">삭제 예정</th>
+                        <th scope="col">작업</th>
+                    </tr>
+                </thead>
+                <tbody id="mml-tbody">
+                    <tr><td colspan="6" class="mm-empty">불러오는 중…</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </main>
+    <script src="marketing-material-list.js"></script>
+</body>
+</html>

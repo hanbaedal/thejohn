@@ -136,6 +136,7 @@ app.use(
         credentials: true
     })
 );
+app.use("/api/marketing-materials", express.json({ limit: "70mb" }));
 app.use(express.json({ limit: "15mb" }));
 
 /** Render health check — 즉시 200 (DB 상세 조회·마이그레이션과 분리) */
@@ -253,6 +254,7 @@ app.use("/api/access", requireDb, accessRoutes);
 app.use("/api/support-news", requireDb, supportNewsRoutes);
 app.use("/api/support-board", requireDb, supportBoardRoutes);
 app.use("/api/support-inquiry", requireDb, supportInquiryRoutes);
+app.use("/api/marketing-materials", requireDb, require("./routes/marketingMaterials"));
 
 function setNoCacheGateHeaders(res, filePath) {
     var base = path.basename(String(filePath || "")).toLowerCase();
@@ -303,6 +305,10 @@ function startMongoConnect() {
             backfillSalesRecords(getDb())
                 .then(function () {
                     return repairSalesRecords(getDb());
+                })
+                .then(function () {
+                    const { scheduleMarketingMaterialPurge } = require("./lib/marketingMaterialPurge");
+                    scheduleMarketingMaterialPurge(getDb);
                 })
                 .catch(function (err) {
                     console.error("[sales_records] backfill/repair", err.message);

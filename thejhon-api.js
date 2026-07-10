@@ -923,6 +923,47 @@
         },
         deleteSupportInquiry: function (id, body) {
             return request("DELETE", "/api/support-inquiry/" + encodeURIComponent(id), body || {});
+        },
+        listMarketingMaterials: function () {
+            return request("GET", "/api/marketing-materials").then(function (d) {
+                return d.items || [];
+            });
+        },
+        getMarketingMaterial: function (id) {
+            return request("GET", "/api/marketing-materials/" + encodeURIComponent(id)).then(function (d) {
+                return d.item;
+            });
+        },
+        createMarketingMaterial: function (body) {
+            return request("POST", "/api/marketing-materials", body).then(function (d) {
+                return d.item;
+            });
+        },
+        updateMarketingMaterial: function (id, body) {
+            return request("PUT", "/api/marketing-materials/" + encodeURIComponent(id), body).then(function (d) {
+                return d.item;
+            });
+        },
+        deleteMarketingMaterial: function (id) {
+            return request("DELETE", "/api/marketing-materials/" + encodeURIComponent(id));
+        },
+        fetchMarketingMaterialFileBlob: function (materialId, fileIdx) {
+            var path =
+                "/api/marketing-materials/" +
+                encodeURIComponent(materialId) +
+                "/files/" +
+                encodeURIComponent(String(fileIdx));
+            return fetch(apiUrl(path), {
+                method: "GET",
+                headers: { Authorization: headers().Authorization || "" }
+            }).then(function (res) {
+                if (!res.ok) {
+                    return parseJson(res).then(function (data) {
+                        throw new Error((data && data.error) || "파일을 불러오지 못했습니다.");
+                    });
+                }
+                return res.blob();
+            });
         }
     };
 })(typeof window !== "undefined" ? window : this);

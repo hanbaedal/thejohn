@@ -1,0 +1,90 @@
+.mm-retention-note {
+    margin: 0.35rem 0 1rem;
+    font-size: 0.9rem;
+    color: #5a6d7e;
+    line-height: 1.5;
+}
+.mm-form-grid {
+    display: grid;
+    gap: 0.85rem;
+    max-width: 40rem;
+}
+.mm-form-grid label {
+    display: grid;
+    gap: 0.35rem;
+    font-weight: 600;
+    color: #2f4050;
+}
+.mm-form-grid input[type="text"],
+.mm-form-grid textarea {
+    font: inherit;
+    padding: 0.55rem 0.65rem;
+    border: 1px solid #c5d3df;
+    border-radius: 0.45rem;
+}
+.mm-file-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin: 0.5rem 0;
+}
+.mm-file-list {
+    list-style: none;
+    margin: 0.75rem 0 0;
+    padding: 0;
+    display: grid;
+    gap: 0.5rem;
+}
+.mm-file-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    padding: 0.55rem 0.7rem;
+    border: 1px solid #d7e2ec;
+    border-radius: 0.45rem;
+    background: #f8fbff;
+}
+.mm-file-item__meta {
+    min-width: 0;
+}
+.mm-file-item__name {
+    margin: 0;
+    font-weight: 600;
+    word-break: break-all;
+}
+.mm-file-item__sub {
+    margin: 0.15rem 0 0;
+    font-size: 0.82rem;
+    color: #607386;
+}
+.mm-table-wrap {
+    overflow-x: auto;
+    margin-top: 0.75rem;
+}
+.mm-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.92rem;
+}
+.mm-table th,
+.mm-table td {
+    border-bottom: 1px solid #d9e4ee;
+    padding: 0.65rem 0.5rem;
+    text-align: left;
+    vertical-align: middle;
+}
+.mm-table th {
+    font-size: 0.82rem;
+    color: #5a6d7e;
+    font-weight: 700;
+}
+.mm-table__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem;
+}
+.mm-empty {
+    margin: 1rem 0;
+    color: #607386;
+}

@@ -816,6 +816,8 @@
         "sales-by-product.html",
         "sales-by-vendor.html",
         "tax-invoice.html",
+        "marketing-material-register.html",
+        "marketing-material-list.html",
         "order-list-admin.html"
     ];
     var WORK_HUB_PAGE = "work-hub.html";
@@ -1176,6 +1178,9 @@
         if (links.taxInvoice) {
             items.push({ href: links.taxInvoice, label: "세금계산서 발부" });
         }
+        if (links.marketingList) {
+            items.push({ href: links.marketingList, label: "마케팅 자료" });
+        }
         return items;
     }
 
@@ -1222,7 +1227,9 @@
             "sales-by-product.html",
             "sales-by-vendor.html"
         ],
-        "tax-invoice.html": ["tax-invoice.html"]
+        "tax-invoice.html": ["tax-invoice.html"],
+        "marketing-material-list.html": ["marketing-material-list.html", "marketing-material-register.html"],
+        "marketing-material-register.html": ["marketing-material-list.html", "marketing-material-register.html"]
     };
 
     function orderSubnavLinkMatchesPage(linkHref, curFile) {
@@ -2519,7 +2526,9 @@
                 salesLedgerByProduct: "sales-ledger-by-product.html",
                 salesLedgerByDate: "sales-ledger-by-date.html",
                 salesLedgerInquiry: "sales-ledger-hub.html",
-                taxInvoice: "tax-invoice.html"
+                taxInvoice: "tax-invoice.html",
+                marketingRegister: "marketing-material-register.html",
+                marketingList: "marketing-material-list.html"
             };
         }
         if (canShowOrderManageMenu()) {
@@ -2535,7 +2544,9 @@
                 salesLedgerByProduct: "sales-ledger-by-product.html",
                 salesLedgerByDate: "sales-ledger-by-date.html",
                 salesLedgerInquiry: "sales-ledger-hub.html",
-                taxInvoice: "tax-invoice.html"
+                taxInvoice: "tax-invoice.html",
+                marketingRegister: "marketing-material-register.html",
+                marketingList: "marketing-material-list.html"
             };
         }
         return {

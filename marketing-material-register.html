@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="public-site-config.js?v=20260620"></script>
+    <script src="auth-storage.js?v=20260620-public"></script>
+    <script src="site-brand-boot.js"></script>
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#0a4d9c">
+    <title>마케팅 자료 등록 — 더존</title>
+    <link rel="stylesheet" href="common.css">
+    <link rel="stylesheet" href="staff-hub.css">
+    <link rel="stylesheet" href="order-manage-layout.css">
+    <link rel="stylesheet" href="support-pages.css">
+    <link rel="stylesheet" href="marketing-material.css">
+    <script src="api-config.js"></script>
+    <script src="thejhon-api.js"></script>
+    <script src="auth.js?v=20260617-order-subnav"></script>
+    <script src="marketing-material-shared.js"></script>
+    <script src="admin-header.js"></script>
+    <script src="nav.js?v=20260530-order-nav" defer></script>
+</head>
+<body>
+    <header class="site-header">
+        <div class="site-header-start">
+            <a href="work-hub.html" class="dz-logo dz-logo--compact" aria-label="그룹 마케팅 관리"><img src="img/logo.png" alt="" width="72" height="72" class="dz-logo-img"></a>
+            <nav class="site-header-nav site-header-nav--order" aria-label="영업관리 메뉴"></nav>
+        </div>
+        <nav class="site-header-actions" aria-label="계정">
+            <time class="header-date" id="headerToday" datetime=""></time>
+            <button type="button" class="btn btn-auth-icon btn-logout" id="btnLogout" hidden aria-label="로그아웃" title="로그아웃"></button>
+        </nav>
+    </header>
+    <main class="page-main page-main--hide-scrollbar shub-page om-page">
+        <p class="shub-subnav"><a href="order-manage-hub.html">← 영업관리</a> · <a href="marketing-material-list.html">마케팅 자료 리스트</a></p>
+        <h1 id="mmr-title">마케팅 자료 등록하기</h1>
+        <p class="mm-retention-note">등록 후 <strong>7일</strong>이 지나면 자료가 자동 삭제됩니다. 동영상은 <strong>mp4</strong>만 업로드할 수 있으며, 파일은 최대 5개·각 10MB·총 50MB까지 가능합니다.</p>
+        <p id="mmr-status" class="shub-status" role="status" aria-live="polite"></p>
+
+        <form id="mmr-form" class="sp-panel">
+            <input type="hidden" id="mmr-edit-id" value="">
+            <div class="mm-form-grid">
+                <label>
+                    제목
+                    <input type="text" id="mmr-title-input" maxlength="120" required placeholder="자료 제목">
+                </label>
+                <label>
+                    분류 <span style="font-weight:400;color:#607386">(선택)</span>
+                    <input type="text" id="mmr-category" maxlength="40" placeholder="예: 브로셔, 영상, 카탈로그">
+                </label>
+                <label>
+                    설명 <span style="font-weight:400;color:#607386">(선택)</span>
+                    <textarea id="mmr-description" rows="4" maxlength="500" placeholder="자료 설명"></textarea>
+                </label>
+            </div>
+
+            <h2 class="sp-panel__heading" style="margin-top:1rem">파일 첨부</h2>
+            <div class="mm-file-actions">
+                <button type="button" class="sp-btn sp-btn--secondary" id="mmr-pick-files">파일 선택</button>
+                <input type="file" id="mmr-file-input" multiple hidden accept=".jpg,.jpeg,.png,.webp,.mp4,.pdf,.hwp,.hwpx,.doc,.docx,.xls,.xlsx">
+            </div>
+            <ul id="mmr-file-list" class="mm-file-list" aria-live="polite"></ul>
+
+            <div class="sp-form__actions" style="margin-top:1rem">
+                <button type="submit" class="sp-btn sp-btn--primary" id="mmr-submit">등록</button>
+                <a href="marketing-material-list.html" class="sp-btn sp-btn--secondary">리스트</a>
+            </div>
+        </form>
+    </main>
+    <script src="marketing-material-register.js"></script>
+</body>
+</html>
