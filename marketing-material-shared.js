@@ -169,10 +169,11 @@
         });
     }
 
-    function visualPreviewHtml(kind, url, filename, thumb) {
+    function visualPreviewHtml(kind, url, filename, thumb, zoomable) {
         if (!url) return previewPlaceholderHtml(kind, "미리보기");
         var safeUrl = String(url).replace(/"/g, "&quot;");
         var safeName = escapeHtml(filename || "미리보기");
+        var title = zoomable && kind === "image" ? "클릭하여 크게 보기" : safeName;
         var cls = "mm-file-preview" + (thumb ? " mm-preview-thumb" : "");
         if (kind === "video") {
             cls += " mm-file-preview--video" + (thumb ? " mm-preview-thumb--video" : "");
@@ -186,7 +187,20 @@
                 '"></video>'
             );
         }
-        return '<img class="' + cls + '" src="' + safeUrl + '" alt="' + safeName + '" title="' + safeName + '">';
+        if (zoomable) {
+            cls += " mm-preview-thumb--zoom mml-preview-image";
+        }
+        return (
+            '<img class="' +
+            cls +
+            '" src="' +
+            safeUrl +
+            '" alt="' +
+            safeName +
+            '" title="' +
+            escapeHtml(title) +
+            '">'
+        );
     }
 
     global.THEJHON_MARKETING_MATERIAL = {

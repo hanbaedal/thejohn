@@ -15,6 +15,9 @@
 
     var statusEl = document.getElementById("mml-status");
     var tbody = document.getElementById("mml-tbody");
+    var previewModal = document.getElementById("mml-preview-modal");
+    var previewImage = document.getElementById("mml-preview-image");
+    var previewTitle = document.getElementById("mml-preview-title");
 
     function setStatus(msg, isErr) {
         if (!statusEl) return;
@@ -52,9 +55,10 @@
             .map(function (row) {
                 var kind = MM.resolveFileKind(row.file);
                 var url = api.marketingMaterialFileUrl(materialId, row.idx, { inline: true });
+                var previewHtml = MM.visualPreviewHtml(kind, url, row.file.filename, true, kind === "image");
                 return (
                     '<div class="mm-preview-strip__item">' +
-                    MM.visualPreviewHtml(kind, url, row.file.filename, true) +
+                    previewHtml +
                     '<span class="mm-preview-strip__label">' +
                     MM.escapeHtml(row.file.filename) +
                     "</span></div>"
@@ -170,6 +174,24 @@
             });
     }
 
+    function openPreview(url, filename) {
+        if (!previewModal || !previewImage) return;
+        previewImage.src = url;
+        previewImage.alt = filename || "미리보기";
+        if (previewTitle) previewTitle.textContent = filename || "이미지 미리보기";
+        previewModal.hidden = false;
+        document.body.classList.add("mm-preview-modal-open");
+    }
+
+    function closePreview() {
+        if (!previewModal || !previewImage) return;
+        previewModal.hidden = true;
+        previewImage.removeAttribute("src");
+        previewImage.alt = "";
+        if (previewTitle) previewTitle.textContent = "";
+        document.body.classList.remove("mm-preview-modal-open");
+    }
+
     if (!Auth.getOrderManageHubAccess || !Auth.getOrderManageHubAccess().allowed) {
         setStatus("이용 권한이 없습니다.", true);
         return;
@@ -179,6 +201,11 @@
 
     if (tbody) {
         tbody.addEventListener("click", function (ev) {
+            var previewImg = ev.target.closest(".mml-preview-image");
+            if (previewImg && previewImg.src) {
+                openPreview(previewImg.src, previewImg.title || previewImg.alt || "");
+                return;
+            }
             var delBtn = ev.target.closest(".mml-delete");
             if (delBtn) {
                 onDelete(delBtn.getAttribute("data-id"));
@@ -194,6 +221,17 @@
             }
         });
     }
+
+    if (previewModal) {
+        previewModal.querySelectorAll("[data-mml-preview-close]").forEach(function (el) {
+            el.addEventListener("click", closePreview);
+        });
+    }
+    document.addEventListener("keydown", function (ev) {
+        if (ev.key === "Escape" && previewModal && !previewModal.hidden) {
+            closePreview();
+        }
+    });
 
     loadList();
 })();

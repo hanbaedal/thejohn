@@ -13,11 +13,11 @@
     <link rel="stylesheet" href="staff-hub.css">
     <link rel="stylesheet" href="order-manage-layout.css">
     <link rel="stylesheet" href="support-pages.css">
-    <link rel="stylesheet" href="marketing-material.css?v=20260710-list2">
+    <link rel="stylesheet" href="marketing-material.css?v=20260710-modal">
     <script src="api-config.js"></script>
     <script src="thejhon-api.js?v=20260710-preview"></script>
     <script src="auth.js?v=20260617-order-subnav"></script>
-    <script src="marketing-material-shared.js?v=20260710-preview"></script>
+    <script src="marketing-material-shared.js?v=20260710-modal"></script>
     <script src="admin-header.js"></script>
     <script src="nav.js?v=20260530-order-nav" defer></script>
 </head>
@@ -56,6 +56,20 @@
             </table>
         </div>
     </main>
-    <script src="marketing-material-list.js?v=20260710-list2"></script>
+
+    <div id="mml-preview-modal" class="mm-preview-modal" hidden role="dialog" aria-modal="true" aria-labelledby="mml-preview-title">
+        <button type="button" class="mm-preview-modal__backdrop" data-mml-preview-close aria-label="닫기"></button>
+        <div class="mm-preview-modal__panel" role="document">
+            <div class="mm-preview-modal__head">
+                <h2 id="mml-preview-title" class="mm-preview-modal__title"></h2>
+                <button type="button" class="mm-preview-modal__close" data-mml-preview-close aria-label="닫기">×</button>
+            </div>
+            <div class="mm-preview-modal__body">
+                <img id="mml-preview-image" class="mm-preview-modal__image" alt="">
+            </div>
+        </div>
+    </div>
+
+    <script src="marketing-material-list.js?v=20260710-modal"></script>
 </body>
 </html>
