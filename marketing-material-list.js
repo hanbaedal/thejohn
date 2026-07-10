@@ -61,7 +61,7 @@
                 );
             })
             .join("");
-        return '<div class="mm-preview-strip">' + items + "</div>";
+        return '<div class="mm-preview-strip mm-preview-strip--row">' + items + "</div>";
     }
 
     function renderRows(items) {
@@ -73,6 +73,7 @@
         tbody.innerHTML = items
             .map(function (it) {
                 var files = it.mm_files || [];
+                var previewHtml = previewStripHtml(it.id, files);
                 var downloadBtns = files
                     .map(function (f, idx) {
                         return (
@@ -88,13 +89,10 @@
                         );
                     })
                     .join("");
-                return (
-                    "<tr>" +
-                    '<td class="mm-table__date">' +
-                    '<div class="mm-table__date-text">' +
+                var textRow =
+                    '<tr class="mm-table__text-row">' +
+                    "<td>" +
                     MM.escapeHtml(MM.formatDateKo(it.createdAt)) +
-                    "</div>" +
-                    previewStripHtml(it.id, files) +
                     "</td>" +
                     "<td>" +
                     MM.escapeHtml(it.mm_title) +
@@ -117,8 +115,11 @@
                     '">삭제</button>' +
                     downloadBtns +
                     "</div></td>" +
-                    "</tr>"
-                );
+                    "</tr>";
+                var previewRow = previewHtml
+                    ? '<tr class="mm-table__preview-row"><td colspan="6">' + previewHtml + "</td></tr>"
+                    : "";
+                return textRow + previewRow;
             })
             .join("");
     }
