@@ -1,6 +1,6 @@
 const express = require("express");
 const { getDb } = require("../db");
-const { requireRole } = require("../middleware/auth");
+const { requireRole, extractBearer, verifyToken } = require("../middleware/auth");
 const { findStaffByLoginId } = require("../lib/loginResolve");
 const { isR2Enabled, putObject, getBuffer } = require("../lib/r2Storage");
 const {
@@ -23,6 +23,28 @@ const router = express.Router();
 
 function newId(prefix) {
     return prefix + "_" + Date.now().toString(36) + "_" + Math.random().toString(36).slice(2, 10);
+}
+
+function resolveMarketingAuth(req) {
+    const q = req.query || {};
+    const token = extractBearer(req) || String(q.access || q.token || "").trim();
+    if (!token) return null;
+    try {
+        const payload = verifyToken(token);
+        if (payload.role !== "admin" && payload.role !== "supervisor") return null;
+        return payload;
+    } catch (e) {
+        return null;
+    }
+}
+
+function requireMarketingAuth(req, res, next) {
+    const auth = resolveMarketingAuth(req);
+    if (!auth) {
+        return res.status(401).json({ ok: false, error: "로그인이 필요합니다." });
+    }
+    req.auth = auth;
+    next();
 }
 
 async function staffMeta(auth) {
@@ -96,7 +118,7 @@ router.get("/", requireRole("admin", "supervisor"), async function (req, res) {
     }
 });
 
-router.get("/:id/files/:fileIdx", requireRole("admin", "supervisor"), async function (req, res) {
+router.get("/:id/files/:fileIdx", requireMarketingAuth, async function (req, res) {
     try {
         const db = getDb();
         const id = String(req.params.id || "");
@@ -115,8 +137,16 @@ router.get("/:id/files/:fileIdx", requireRole("admin", "supervisor"), async func
             return res.status(404).json({ ok: false, error: "파일을 불러올 수 없습니다." });
         }
         const filename = encodeURIComponent(file.filename);
+        const inline = String(req.query.inline || "") === "1";
         res.setHeader("Content-Type", file.mime || "application/octet-stream");
-        res.setHeader("Content-Disposition", 'attachment; filename="' + filename + '"; filename*=UTF-8\'\'' + filename);
+        res.setHeader(
+            "Content-Disposition",
+            (inline ? "inline" : "attachment") +
+                '; filename="' +
+                filename +
+                '"; filename*=UTF-8\'\'' +
+                filename
+        );
         res.send(buf);
     } catch (err) {
         res.status(500).json({ ok: false, error: err.message });

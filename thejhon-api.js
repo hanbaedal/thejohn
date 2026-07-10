@@ -964,6 +964,19 @@
                 }
                 return res.blob();
             });
+        },
+        marketingMaterialFileUrl: function (materialId, fileIdx, opts) {
+            var path =
+                "/api/marketing-materials/" +
+                encodeURIComponent(materialId) +
+                "/files/" +
+                encodeURIComponent(String(fileIdx));
+            var qs = [];
+            if (opts && opts.inline) qs.push("inline=1");
+            var token = getToken();
+            if (token) qs.push("access=" + encodeURIComponent(token));
+            if (qs.length) path += "?" + qs.join("&");
+            return apiUrl(path);
         }
     };
 })(typeof window !== "undefined" ? window : this);

@@ -146,6 +146,49 @@
         }
     }
 
+    function resolveFileKind(file) {
+        if (!file) return "other";
+        if (file.kind) return file.kind;
+        return fileKind(fileExt(file.filename || file.name || ""));
+    }
+
+    function filePreviewDataUrl(file) {
+        return new Promise(function (resolve) {
+            if (!file || !isVisualKind(fileKind(fileExt(file.name || "")))) {
+                resolve("");
+                return;
+            }
+            var reader = new FileReader();
+            reader.onload = function () {
+                resolve(String(reader.result || ""));
+            };
+            reader.onerror = function () {
+                resolve("");
+            };
+            reader.readAsDataURL(file);
+        });
+    }
+
+    function visualPreviewHtml(kind, url, filename, thumb) {
+        if (!url) return previewPlaceholderHtml(kind, "미리보기");
+        var safeUrl = String(url).replace(/"/g, "&quot;");
+        var safeName = escapeHtml(filename || "미리보기");
+        var cls = "mm-file-preview" + (thumb ? " mm-preview-thumb" : "");
+        if (kind === "video") {
+            cls += " mm-file-preview--video" + (thumb ? " mm-preview-thumb--video" : "");
+            return (
+                '<video class="' +
+                cls +
+                '" src="' +
+                safeUrl +
+                '" controls muted playsinline preload="metadata" title="' +
+                safeName +
+                '"></video>'
+            );
+        }
+        return '<img class="' + cls + '" src="' + safeUrl + '" alt="' + safeName + '" title="' + safeName + '">';
+    }
+
     global.THEJHON_MARKETING_MATERIAL = {
         MAX_FILES: MAX_FILES,
         MAX_FILE_BYTES: MAX_FILE_BYTES,
@@ -155,15 +198,18 @@
         escapeHtml: escapeHtml,
         fileExt: fileExt,
         fileKind: fileKind,
+        resolveFileKind: resolveFileKind,
         kindLabel: kindLabel,
         isVisualKind: isVisualKind,
         formatBytes: formatBytes,
         formatDateKo: formatDateKo,
         formatExpireKo: formatExpireKo,
         fileToBase64: fileToBase64,
+        filePreviewDataUrl: filePreviewDataUrl,
         validateFile: validateFile,
         triggerDownload: triggerDownload,
         previewPlaceholderHtml: previewPlaceholderHtml,
+        visualPreviewHtml: visualPreviewHtml,
         mountVisualPreview: mountVisualPreview,
         revokeObjectUrl: revokeObjectUrl
     };

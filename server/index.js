@@ -266,6 +266,10 @@ function setNoCacheGateHeaders(res, filePath) {
         base === "thejhon-api.js" ||
         base === "marketing-material-register.html" ||
         base === "marketing-material-list.html" ||
+        base === "marketing-material-shared.js" ||
+        base === "marketing-material-register.js" ||
+        base === "marketing-material-list.js" ||
+        base === "marketing-material.css" ||
         base === "manifest.json"
     ) {
         res.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
