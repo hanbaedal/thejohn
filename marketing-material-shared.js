@@ -102,6 +102,50 @@
         }, 1000);
     }
 
+    function isVisualKind(kind) {
+        return kind === "image" || kind === "video";
+    }
+
+    function previewPlaceholderHtml(kind, label) {
+        var text = escapeHtml(label || kindLabel(kind));
+        return (
+            '<div class="mm-preview-placeholder" aria-hidden="true">' +
+            '<span class="mm-preview-placeholder__label">' +
+            text +
+            "</span></div>"
+        );
+    }
+
+    function mountVisualPreview(container, kind, url, filename) {
+        if (!container || !url) return null;
+        container.innerHTML = "";
+        var el;
+        if (kind === "video") {
+            el = document.createElement("video");
+            el.className = "mm-file-preview mm-file-preview--video";
+            el.controls = true;
+            el.muted = true;
+            el.playsInline = true;
+            el.preload = "metadata";
+        } else {
+            el = document.createElement("img");
+            el.className = "mm-file-preview";
+            el.alt = filename || "미리보기";
+        }
+        el.src = url;
+        el.title = filename || "";
+        container.appendChild(el);
+        return el;
+    }
+
+    function revokeObjectUrl(url) {
+        if (url) {
+            try {
+                URL.revokeObjectURL(url);
+            } catch (e) {}
+        }
+    }
+
     global.THEJHON_MARKETING_MATERIAL = {
         MAX_FILES: MAX_FILES,
         MAX_FILE_BYTES: MAX_FILE_BYTES,
@@ -112,11 +156,15 @@
         fileExt: fileExt,
         fileKind: fileKind,
         kindLabel: kindLabel,
+        isVisualKind: isVisualKind,
         formatBytes: formatBytes,
         formatDateKo: formatDateKo,
         formatExpireKo: formatExpireKo,
         fileToBase64: fileToBase64,
         validateFile: validateFile,
-        triggerDownload: triggerDownload
+        triggerDownload: triggerDownload,
+        previewPlaceholderHtml: previewPlaceholderHtml,
+        mountVisualPreview: mountVisualPreview,
+        revokeObjectUrl: revokeObjectUrl
     };
 })(typeof window !== "undefined" ? window : this);

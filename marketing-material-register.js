@@ -28,11 +28,19 @@
 
     var keptFiles = [];
     var newFiles = [];
+    var editMaterialId = "";
 
     function setStatus(msg, isErr) {
         if (!statusEl) return;
         statusEl.textContent = msg || "";
         statusEl.className = "shub-status" + (isErr ? " shub-status--err" : "");
+    }
+
+    function revokeNewFileUrls() {
+        newFiles.forEach(function (entry) {
+            MM.revokeObjectUrl(entry.previewUrl);
+            entry.previewUrl = "";
+        });
     }
 
     function totalBytes() {
@@ -46,14 +54,28 @@
         return total;
     }
 
+    function previewSlotHtml(kind) {
+        if (MM.isVisualKind(kind)) {
+            return '<div class="mm-file-item__preview-slot" data-preview-slot></div>';
+        }
+        return (
+            '<div class="mm-file-item__preview-slot">' + MM.previewPlaceholderHtml(kind, "문서") + "</div>"
+        );
+    }
+
     function renderFileList() {
         if (!fileListEl) return;
         var items = keptFiles
-            .map(function (f) {
+            .map(function (f, idx) {
                 return (
                     '<li class="mm-file-item" data-kind="kept" data-id="' +
                     MM.escapeHtml(f.id) +
+                    '" data-file-idx="' +
+                    idx +
+                    '" data-file-kind="' +
+                    MM.escapeHtml(f.kind) +
                     '">' +
+                    '<div class="mm-file-item__body">' +
                     '<div class="mm-file-item__meta">' +
                     '<p class="mm-file-item__name">' +
                     MM.escapeHtml(f.filename) +
@@ -64,6 +86,8 @@
                     MM.escapeHtml(MM.formatBytes(f.size)) +
                     " · 기존 파일</p>" +
                     "</div>" +
+                    previewSlotHtml(f.kind) +
+                    "</div>" +
                     '<button type="button" class="sp-btn sp-btn--danger mmr-remove-kept">제거</button>' +
                     "</li>"
                 );
@@ -72,19 +96,25 @@
                 newFiles.map(function (entry, idx) {
                     var f = entry.file;
                     var ext = MM.fileExt(f.name);
+                    var kind = MM.fileKind(ext);
                     return (
                         '<li class="mm-file-item" data-kind="new" data-idx="' +
                         idx +
+                        '" data-file-kind="' +
+                        MM.escapeHtml(kind) +
                         '">' +
+                        '<div class="mm-file-item__body">' +
                         '<div class="mm-file-item__meta">' +
                         '<p class="mm-file-item__name">' +
                         MM.escapeHtml(f.name) +
                         "</p>" +
                         '<p class="mm-file-item__sub">' +
-                        MM.escapeHtml(MM.kindLabel(MM.fileKind(ext))) +
+                        MM.escapeHtml(MM.kindLabel(kind)) +
                         " · " +
                         MM.escapeHtml(MM.formatBytes(f.size)) +
                         " · 새 파일</p>" +
+                        "</div>" +
+                        previewSlotHtml(kind) +
                         "</div>" +
                         '<button type="button" class="sp-btn sp-btn--danger mmr-remove-new">제거</button>' +
                         "</li>"
@@ -94,6 +124,53 @@
         fileListEl.innerHTML = items.length
             ? items.join("")
             : '<li class="mm-empty" style="list-style:none">첨부된 파일이 없습니다.</li>';
+        mountNewFilePreviews();
+        if (editMaterialId) mountKeptFilePreviews(editMaterialId);
+    }
+
+    function mountNewFilePreviews() {
+        if (!fileListEl) return;
+        fileListEl.querySelectorAll('.mm-file-item[data-kind="new"]').forEach(function (row) {
+            var idx = Number(row.getAttribute("data-idx"));
+            var entry = newFiles[idx];
+            if (!entry || !entry.file) return;
+            var kind = row.getAttribute("data-file-kind");
+            var slot = row.querySelector("[data-preview-slot]");
+            if (!slot || !MM.isVisualKind(kind)) return;
+            if (!entry.previewUrl) {
+                entry.previewUrl = URL.createObjectURL(entry.file);
+            }
+            MM.mountVisualPreview(slot, kind, entry.previewUrl, entry.file.name);
+        });
+    }
+
+    function mountKeptFilePreviews(materialId) {
+        if (!fileListEl || !materialId) return;
+        fileListEl.querySelectorAll('.mm-file-item[data-kind="kept"]').forEach(function (row) {
+            var kind = row.getAttribute("data-file-kind");
+            var slot = row.querySelector("[data-preview-slot]");
+            var fileIdx = Number(row.getAttribute("data-file-idx"));
+            var file = keptFiles[fileIdx];
+            if (!slot || !file || !MM.isVisualKind(kind)) return;
+            slot.innerHTML = '<span class="mm-preview-strip__loading">미리보기 로딩…</span>';
+            api.fetchMarketingMaterialFileBlob(materialId, fileIdx)
+                .then(function (blob) {
+                    var url = URL.createObjectURL(blob);
+                    row.setAttribute("data-preview-url", url);
+                    MM.mountVisualPreview(slot, kind, url, file.filename);
+                })
+                .catch(function () {
+                    slot.innerHTML = MM.previewPlaceholderHtml(kind, "미리보기 실패");
+                });
+        });
+    }
+
+    function revokeKeptPreviewUrls() {
+        if (!fileListEl) return;
+        fileListEl.querySelectorAll('.mm-file-item[data-kind="kept"][data-preview-url]').forEach(function (row) {
+            MM.revokeObjectUrl(row.getAttribute("data-preview-url"));
+            row.removeAttribute("data-preview-url");
+        });
     }
 
     function addFiles(fileList) {
@@ -113,12 +190,13 @@
                 setStatus("첨부 총 용량은 50MB 이하로 제한됩니다.", true);
                 break;
             }
-            newFiles.push({ file: file });
+            newFiles.push({ file: file, previewUrl: "" });
         }
         renderFileList();
     }
 
     function loadForEdit(id) {
+        editMaterialId = id;
         setStatus("불러오는 중…");
         return api
             .getMarketingMaterial(id)
@@ -129,6 +207,7 @@
                 if (categoryInput) categoryInput.value = item.mm_category || "";
                 if (descriptionInput) descriptionInput.value = item.mm_description || "";
                 keptFiles = (item.mm_files || []).slice();
+                revokeNewFileUrls();
                 newFiles = [];
                 renderFileList();
                 if (titleHeading) titleHeading.textContent = "마케팅 자료 수정";
@@ -223,6 +302,7 @@
             if (!row) return;
             if (btn.classList.contains("mmr-remove-kept")) {
                 var id = row.getAttribute("data-id");
+                MM.revokeObjectUrl(row.getAttribute("data-preview-url"));
                 keptFiles = keptFiles.filter(function (f) {
                     return f.id !== id;
                 });
@@ -231,6 +311,8 @@
             }
             if (btn.classList.contains("mmr-remove-new")) {
                 var idx = Number(row.getAttribute("data-idx"));
+                var entry = newFiles[idx];
+                if (entry) MM.revokeObjectUrl(entry.previewUrl);
                 newFiles.splice(idx, 1);
                 renderFileList();
             }
@@ -238,6 +320,11 @@
     }
 
     if (form) form.addEventListener("submit", onSubmit);
+
+    window.addEventListener("pagehide", function () {
+        revokeKeptPreviewUrls();
+        revokeNewFileUrls();
+    });
 
     renderFileList();
 

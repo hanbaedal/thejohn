@@ -15,6 +15,7 @@
 
     var statusEl = document.getElementById("mml-status");
     var tbody = document.getElementById("mml-tbody");
+    var previewUrls = [];
 
     function setStatus(msg, isErr) {
         if (!statusEl) return;
@@ -22,17 +23,46 @@
         statusEl.className = "shub-status" + (isErr ? " shub-status--err" : "");
     }
 
+    function clearPreviewUrls() {
+        previewUrls.forEach(function (url) {
+            MM.revokeObjectUrl(url);
+        });
+        previewUrls = [];
+    }
+
     function filesSummary(files) {
         var list = files || [];
         if (!list.length) return "없음";
-        if (list.length === 1) {
-            return MM.kindLabel(list[0].kind) + " · " + list[0].filename;
+        var visual = list.filter(function (f) {
+            return MM.isVisualKind(f.kind);
+        }).length;
+        var docs = list.length - visual;
+        if (visual && docs) {
+            return "이미지·동영상 " + visual + " · 문서 " + docs;
         }
-        return list.length + "개 (" + MM.kindLabel(list[0].kind) + " 외)";
+        if (visual === list.length) {
+            return visual + "개 (이미지·동영상)";
+        }
+        return list.length + "개 (문서)";
+    }
+
+    function previewStripHtml(materialId, files) {
+        var visual = (files || []).filter(function (f) {
+            return MM.isVisualKind(f.kind);
+        });
+        if (!visual.length) {
+            return "";
+        }
+        return (
+            '<div class="mm-preview-strip" data-preview-strip="' +
+            MM.escapeHtml(materialId) +
+            '"><span class="mm-preview-strip__loading">미리보기 로딩…</span></div>'
+        );
     }
 
     function renderRows(items) {
         if (!tbody) return;
+        clearPreviewUrls();
         if (!items.length) {
             tbody.innerHTML = '<tr><td colspan="6" class="mm-empty">등록된 자료가 없습니다.</td></tr>';
             return;
@@ -57,8 +87,11 @@
                     .join("");
                 return (
                     "<tr>" +
-                    "<td>" +
+                    '<td class="mm-table__date">' +
+                    '<div class="mm-table__date-text">' +
                     MM.escapeHtml(MM.formatDateKo(it.createdAt)) +
+                    "</div>" +
+                    previewStripHtml(it.id, files) +
                     "</td>" +
                     "<td>" +
                     MM.escapeHtml(it.mm_title) +
@@ -85,6 +118,61 @@
                 );
             })
             .join("");
+        loadRowPreviews(items);
+    }
+
+    function loadRowPreviews(items) {
+        (items || []).forEach(function (it) {
+            var strip = tbody.querySelector('[data-preview-strip="' + it.id + '"]');
+            if (!strip) return;
+            var visualFiles = (it.mm_files || [])
+                .map(function (f, idx) {
+                    return { file: f, idx: idx };
+                })
+                .filter(function (row) {
+                    return MM.isVisualKind(row.file.kind);
+                });
+            if (!visualFiles.length) {
+                strip.remove();
+                return;
+            }
+            strip.innerHTML = "";
+            visualFiles.forEach(function (row) {
+                var wrap = document.createElement("div");
+                wrap.className = "mm-preview-strip__item";
+                wrap.innerHTML =
+                    '<span class="mm-preview-strip__loading">…</span>' +
+                    '<span class="mm-preview-strip__label">' +
+                    MM.escapeHtml(row.file.filename) +
+                    "</span>";
+                strip.appendChild(wrap);
+                api.fetchMarketingMaterialFileBlob(it.id, row.idx)
+                    .then(function (blob) {
+                        var url = URL.createObjectURL(blob);
+                        previewUrls.push(url);
+                        wrap.innerHTML =
+                            '<span class="mm-preview-strip__label">' +
+                            MM.escapeHtml(row.file.filename) +
+                            "</span>";
+                        var slot = document.createElement("div");
+                        wrap.insertBefore(slot, wrap.firstChild);
+                        var el = MM.mountVisualPreview(slot, row.file.kind, url, row.file.filename);
+                        if (el) {
+                            el.classList.add("mm-preview-thumb");
+                            if (row.file.kind === "video") {
+                                el.classList.add("mm-preview-thumb--video");
+                            }
+                        }
+                    })
+                    .catch(function () {
+                        wrap.innerHTML =
+                            MM.previewPlaceholderHtml(row.file.kind, "로드 실패") +
+                            '<span class="mm-preview-strip__label">' +
+                            MM.escapeHtml(row.file.filename) +
+                            "</span>";
+                    });
+            });
+        });
     }
 
     function loadList() {
@@ -149,10 +237,16 @@
             }
             var dlBtn = ev.target.closest(".mml-download");
             if (dlBtn) {
-                onDownload(dlBtn.getAttribute("data-id"), dlBtn.getAttribute("data-idx"), dlBtn.getAttribute("data-name"));
+                onDownload(
+                    dlBtn.getAttribute("data-id"),
+                    dlBtn.getAttribute("data-idx"),
+                    dlBtn.getAttribute("data-name")
+                );
             }
         });
     }
+
+    window.addEventListener("pagehide", clearPreviewUrls);
 
     loadList();
 })();
