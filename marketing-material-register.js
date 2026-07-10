@@ -3,6 +3,15 @@
     var Auth = window.THEJHON_AUTH;
     var MM = window.THEJHON_MARKETING_MATERIAL;
     if (!api || !Auth || !MM) return;
+    if (!api.createMarketingMaterial || !api.updateMarketingMaterial) {
+        var statusEarly = document.getElementById("mmr-status");
+        if (statusEarly) {
+            statusEarly.textContent =
+                "API 스크립트가 오래된 버전입니다. Ctrl+Shift+R(강력 새로고침) 후 다시 시도해 주세요.";
+            statusEarly.className = "shub-status shub-status--err";
+        }
+        return;
+    }
 
     var statusEl = document.getElementById("mmr-status");
     var form = document.getElementById("mmr-form");
