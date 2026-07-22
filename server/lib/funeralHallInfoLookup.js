@@ -13,7 +13,8 @@ var FHI_REGIONS = [
 var CACHE_TTL_MS = 24 * 60 * 60 * 1000;
 var cache = {
     summaries: { at: 0, data: null },
-    regions: {}
+    regions: {},
+    images: {}
 };
 
 function decodeEntities(s) {
@@ -167,6 +168,44 @@ async function enrichPhones(items) {
     return items;
 }
 
+async function fetchFhiImageBuffer(fhiId) {
+    var id = String(fhiId || "").trim();
+    if (!/^\d+$/.test(id)) throw new Error("INVALID_FHI_ID");
+
+    var now = Date.now();
+    var cached = cache.images[id];
+    if (cached && now - cached.at < CACHE_TTL_MS) {
+        return cached;
+    }
+
+    var controller = new AbortController();
+    var timer = setTimeout(function () {
+        controller.abort();
+    }, 20000);
+    try {
+        var res = await fetch(FHI_BASE + "/media/funeral-home/" + id + "/", {
+            method: "GET",
+            headers: {
+                "User-Agent":
+                    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+                Accept: "image/avif,image/webp,image/apng,image/*,*/*;q=0.8"
+            },
+            signal: controller.signal
+        });
+        if (!res.ok) throw new Error("FHI_IMG_" + res.status);
+        var buf = Buffer.from(await res.arrayBuffer());
+        var entry = {
+            at: now,
+            buf: buf,
+            type: String(res.headers.get("content-type") || "image/webp").split(";")[0].trim()
+        };
+        cache.images[id] = entry;
+        return entry;
+    } finally {
+        clearTimeout(timer);
+    }
+}
+
 async function getRegionSummaries() {
     var now = Date.now();
     if (cache.summaries.data && now - cache.summaries.at < CACHE_TTL_MS) {
@@ -214,5 +253,6 @@ module.exports = {
     FHI_REGIONS,
     getRegionSummaries,
     getRegionItems,
+    fetchFhiImageBuffer,
     normRegionKey
 };

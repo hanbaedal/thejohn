@@ -1,6 +1,6 @@
 const express = require("express");
 const { getDb } = require("../db");
-const { requireRole } = require("../middleware/auth");
+const { requireRole, extractBearer, verifyToken } = require("../middleware/auth");
 const { F } = require("../lib/vendorFields");
 const { stampNewVendorRegistration } = require("../lib/vendorAccess");
 const {
@@ -20,9 +20,21 @@ const {
     canUseNaver,
     searchFuneralHalls
 } = require("../lib/vendorExternalLookup");
-const { getRegionSummaries, getRegionItems } = require("../lib/funeralHallInfoLookup");
+const { getRegionSummaries, getRegionItems, fetchFhiImageBuffer } = require("../lib/funeralHallInfoLookup");
 
 const router = express.Router();
+
+function optionalAuth(req) {
+    const q = req.query || {};
+    const token =
+        extractBearer(req) || String(q.access || q.token || "").trim();
+    if (!token) return null;
+    try {
+        return verifyToken(token);
+    } catch (e) {
+        return null;
+    }
+}
 
 function normText(v) {
     return String(v || "")
@@ -202,6 +214,25 @@ router.get("/fhi-region", requireRole("admin"), async function (req, res) {
         }
         console.error("GET /api/vendor-prospects/fhi-region", e);
         res.status(500).json({ ok: false, error: "장례식장 목록을 불러오지 못했습니다." });
+    }
+});
+
+/** 관리자 — funeralhallinfo 장례식장 이미지 프록시 (CORP same-site 우회) */
+router.get("/fhi-image/:id", async function (req, res) {
+    try {
+        const auth = optionalAuth(req);
+        if (!auth || auth.role !== "admin") {
+            return res.status(401).end();
+        }
+        const id = String(req.params.id || "")
+            .replace(/\.(jpg|jpeg|webp|png)$/i, "")
+            .trim();
+        const img = await fetchFhiImageBuffer(id);
+        res.set("Cache-Control", "public, max-age=86400");
+        return res.type(img.type || "image/webp").send(img.buf);
+    } catch (e) {
+        console.error("GET /api/vendor-prospects/fhi-image/:id", e);
+        return res.status(404).end();
     }
 });
 

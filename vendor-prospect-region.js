@@ -51,6 +51,23 @@
         if (countEl) countEl.textContent = "총 " + items.length + "건 · 선택 " + n + "건";
     }
 
+    function cardImageHtml(row) {
+        var src =
+            api && api.fhiImageUrl && row.fhi_id
+                ? api.fhiImageUrl(row.fhi_id)
+                : row.image_url || "";
+        if (!src) {
+            return '<div class="vpr-card__img vpr-card__img--empty"></div>';
+        }
+        return (
+            '<img class="vpr-card__img" src="' +
+            escapeAttr(src) +
+            '" alt="' +
+            escapeAttr(row.vn_company) +
+            '" loading="lazy">'
+        );
+    }
+
     function renderGrid() {
         if (!gridEl) return;
         if (!items.length) {
@@ -62,13 +79,7 @@
             .map(function (row, idx) {
                 var id = String(row.fhi_id || idx);
                 var checked = !!selected[id];
-                var img = row.image_url
-                    ? '<img class="vpr-card__img" src="' +
-                      escapeAttr(row.image_url) +
-                      '" alt="' +
-                      escapeAttr(row.vn_company) +
-                      '" loading="lazy">'
-                    : '<div class="vpr-card__img" style="background:#e2e8f0"></div>';
+                var img = cardImageHtml(row);
                 return (
                     '<article class="vpr-card' +
                     (checked ? " is-selected" : "") +

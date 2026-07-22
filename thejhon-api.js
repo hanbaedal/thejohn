@@ -390,6 +390,13 @@
                 };
             });
         },
+        fhiImageUrl: function (fhiId) {
+            var id = String(fhiId || "").trim();
+            if (!id) return "";
+            return appendImageAccessToken(
+                apiUrl("/api/vendor-prospects/fhi-image/" + encodeURIComponent(id))
+            );
+        },
         sendVendorBroadcastEmail: function (payload) {
             return request("POST", "/api/vendor-email/broadcast", payload || {});
         },
