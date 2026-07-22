@@ -351,14 +351,13 @@
             }
             if (gridEl) {
                 gridEl.className = "vpr-district-wrap";
-                gridEl.innerHTML =
-                    '<p class="vpr-loading">목록을 불러오는 중입니다. 전화번호 조회는 최초 1회만 시간이 걸릴 수 있습니다…</p>';
+                gridEl.innerHTML = '<p class="vpr-loading">불러오는 중…</p>';
             }
             if (districtsEl) {
                 districtsEl.hidden = true;
                 districtsEl.innerHTML = "";
             }
-            setStatus(refresh ? "새로고침 중…" : "장례식장 목록 불러오는 중…");
+            setStatus(refresh ? "새로고침 중…" : "불러오는 중…");
             if (importBtn) importBtn.disabled = true;
             selected = {};
             activeDistrict = "";
@@ -375,20 +374,20 @@
                     enrichDistricts();
                     var meta = data.region || {};
                     if (titleEl) titleEl.textContent = (meta.label || regionParam) + " 장례식장";
-                    if (subtitleEl) {
-                        subtitleEl.textContent =
-                            (meta.sub || "") +
-                            " — 시·구·군별로 분류되어 있습니다. 저장할 시설만 선택하세요." +
-                            (data.registeredCount
-                                ? " · 사업부문 등록 " + data.registeredCount + "곳(빨간 「등록업체」)"
-                                : "") +
-                            (data.cached ? " (캐시)" : "");
-                    }
+                    if (subtitleEl) subtitleEl.textContent = "";
                     renderGrid();
-                    setStatus(
-                        (meta.label || regionParam) + " " + items.length + "건 조회 완료",
-                        "ok"
-                    );
+                    var regCount =
+                        data.registeredCount != null
+                            ? data.registeredCount
+                            : items.filter(function (row) {
+                                  return row.registered_vendor;
+                              }).length;
+                    var statusMsg =
+                        (meta.label || regionParam) + " " + items.length + "건 조회 완료";
+                    if (regCount > 0) {
+                        statusMsg += " · 사업부문 등록 " + regCount + "곳(빨간 「등록업체」)";
+                    }
+                    setStatus(statusMsg, "ok");
                     return data;
                 })
                 .catch(function (err) {

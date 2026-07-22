@@ -45,6 +45,103 @@
     var logoPicker = null;
     var idDupCheck = null;
     var pwConfirmCheck = null;
+    var newVendorPicker = null;
+    var newVendorIdInput = document.getElementById("vr-new-vendor-id");
+
+    function setSelectedDepts(ids) {
+        if (deptPicker) deptPicker.setValues(ids);
+    }
+
+    function getNewVendorSourceId() {
+        return newVendorIdInput ? newVendorIdInput.value.trim() : "";
+    }
+
+    function setGrade(value) {
+        if (!gradeSelect) return;
+        var g = String(value || "1");
+        if (g === "4") g = "3";
+        if (g !== "1" && g !== "2" && g !== "3") g = "1";
+        gradeSelect.value = g;
+    }
+
+    function fillFromNewVendor(it) {
+        if (!it) return;
+        companyInput.value = it.vn_company || "";
+        if (ceoInput) ceoInput.value = it.vn_ceo || "";
+        if (ceoTelInput) ceoTelInput.value = it.vn_ceo_tel || "";
+        setGrade(it.vn_grade || "1");
+        if (roomCountInput) roomCountInput.value = it.vn_room_count || "";
+        if (it.vn_depts && it.vn_depts.length) {
+            setSelectedDepts(it.vn_depts);
+        }
+        if (webInput) webInput.value = it.vn_web || "";
+        if (emailInput) emailInput.value = it.vn_email || "";
+        if (phoneInput) phoneInput.value = it.vn_phone || "";
+        if (bizNoInput) bizNoInput.value = it.vn_biz_no || "";
+        if (bizItemInput) bizItemInput.value = it.vn_biz_item || "";
+        if (bizTypeInput) bizTypeInput.value = it.vn_biz_type || "";
+        if (addrPicker) {
+            addrPicker.setValues({
+                zip: it.vn_zip,
+                addr: it.vn_addr || "",
+                detail: it.vn_addr_detail || ""
+            });
+        }
+        if (mgrNameInput) mgrNameInput.value = it.vn_mgr_name || "";
+        if (mgrTelInput) mgrTelInput.value = it.vn_mgr_tel || "";
+        if (mgrEmailInput) mgrEmailInput.value = it.vn_mgr_email || "";
+        if (noteInput) noteInput.value = it.vn_note || "";
+        if (loginIdInput && it.loginId && !loginIdInput.value.trim()) {
+            loginIdInput.value = it.loginId;
+        }
+        pendingLogoData = it.vn_logo || "";
+        updateLogoPreview(pendingLogoData);
+        if (logoPicker && !pendingLogoData) logoPicker.clear();
+        setStatus(
+            "신규업체 「" +
+                (it.vn_company || "") +
+                "」 정보를 불러왔습니다. 사업부문·로그인 정보를 확인한 뒤 저장하세요."
+        );
+    }
+
+    function buildSubmitBody(partnerDepts) {
+        var body = {
+            loginId: loginIdInput.value.trim(),
+            password: passwordInput ? String(passwordInput.value || "").trim() : "",
+            vn_company: companyInput.value.trim(),
+            vn_depts: partnerDepts != null ? partnerDepts : getSelectedDepts(),
+            vn_ceo: ceoInput.value.trim(),
+            vn_ceo_tel: ceoTelInput.value.trim(),
+            vn_grade: gradeSelect && gradeSelect.value ? gradeSelect.value : "1",
+            vn_room_count: roomCountInput ? roomCountInput.value.trim() : "",
+            vn_web: webInput.value.trim(),
+            vn_email: emailInput.value.trim(),
+            vn_phone: phoneInput.value.trim(),
+            vn_biz_no: bizNoInput ? bizNoInput.value.trim() : "",
+            vn_biz_item: bizItemInput ? bizItemInput.value.trim() : "",
+            vn_biz_type: bizTypeInput ? bizTypeInput.value.trim() : "",
+            vn_mgr_name: mgrNameInput.value.trim(),
+            vn_mgr_tel: mgrTelInput.value.trim(),
+            vn_mgr_email: mgrEmailInput.value.trim(),
+            vn_logo: pendingLogoData || "",
+            vn_note: noteInput.value.trim(),
+            vn_record_type: "partner"
+        };
+        if (addrPicker) addrPicker.applyToBody(body);
+        return body;
+    }
+
+    function resetFormAfterSave() {
+        form.reset();
+        pendingLogoData = "";
+        if (logoPicker) logoPicker.clear();
+        if (idDupCheck) idDupCheck.reset();
+        updateLogoPreview("");
+        clearSelectedDepts();
+        if (addrPicker && addrPicker.clear) addrPicker.clear();
+        if (gradeSelect) gradeSelect.value = "1";
+        if (newVendorPicker) newVendorPicker.clear();
+    }
 
     function setStatus(msg, isError) {
         if (!statusEl) return;
@@ -132,6 +229,29 @@
 
     if (gradeSelect) gradeSelect.value = "1";
 
+    var VNP = window.THEJHON_VENDOR_NEW_PICKER;
+    if (VNP && VNP.init && api && api.listVendorNew) {
+        newVendorPicker = VNP.init({
+            modal: document.getElementById("vn-modal"),
+            closeBtn: document.getElementById("vn-modal-close"),
+            sourceIdInput: newVendorIdInput,
+            companyInput: companyInput,
+            badgeEl: document.getElementById("vr-new-vendor-badge"),
+            searchInput: document.getElementById("vn-search"),
+            listEl: document.getElementById("vn-list"),
+            statusEl: document.getElementById("vn-status"),
+            openOnFocus: true,
+            listItems: function (q) {
+                return api.listVendorNew(q);
+            },
+            onSelect: function (it) {
+                if (newVendorIdInput) newVendorIdInput.value = it.id || "";
+                fillFromNewVendor(it);
+            },
+            onClear: function () {}
+        });
+    }
+
     form.addEventListener("submit", function (e) {
         e.preventDefault();
 
@@ -152,31 +272,21 @@
             }
         }
 
-        var body = {
-            loginId: loginIdInput.value.trim(),
-            password: passwordInput ? String(passwordInput.value || "").trim() : "",
-            vn_company: companyInput.value.trim(),
-            vn_depts: getSelectedDepts(),
-            vn_ceo: ceoInput.value.trim(),
-            vn_ceo_tel: ceoTelInput.value.trim(),
-            vn_grade: gradeSelect && gradeSelect.value ? gradeSelect.value : "1",
-            vn_room_count: roomCountInput ? roomCountInput.value.trim() : "",
-            vn_web: webInput.value.trim(),
-            vn_email: emailInput.value.trim(),
-            vn_phone: phoneInput.value.trim(),
-            vn_biz_no: bizNoInput ? bizNoInput.value.trim() : "",
-            vn_biz_item: bizItemInput ? bizItemInput.value.trim() : "",
-            vn_biz_type: bizTypeInput ? bizTypeInput.value.trim() : "",
-            vn_mgr_name: mgrNameInput.value.trim(),
-            vn_mgr_tel: mgrTelInput.value.trim(),
-            vn_mgr_email: mgrEmailInput.value.trim(),
-            vn_logo: pendingLogoData || "",
-            vn_note: noteInput.value.trim(),
-            vn_record_type: "partner"
-        };
-        if (addrPicker) addrPicker.applyToBody(body);
+        var body = buildSubmitBody(null);
+        var sourceNewId = getNewVendorSourceId();
+        var partnerDepts = VF ? VF.filterPartnerDepts(body.vn_depts) : body.vn_depts;
+        if (sourceNewId) {
+            body.vn_depts = partnerDepts;
+            var deptErr = VF ? VF.validatePartnerDeptsSelection(partnerDepts) : "";
+            if (deptErr) {
+                setStatus(deptErr, true);
+                return;
+            }
+        }
 
-        var err = VF ? VF.validateVendorFields(body, { requirePassword: true }) : "";
+        var err = VF
+            ? VF.validateVendorFields(body, { requirePassword: !sourceNewId })
+            : "";
         if (err) {
             setStatus(err, true);
             return;
@@ -184,17 +294,17 @@
 
         function saveVendor() {
             submitBtn.disabled = true;
-            api.createVendor(body)
-                .then(function () {
-                    form.reset();
-                    pendingLogoData = "";
-                    if (logoPicker) logoPicker.clear();
-                    if (idDupCheck) idDupCheck.reset();
-                    updateLogoPreview("");
-                    clearSelectedDepts();
-                    if (addrPicker && addrPicker.clear) addrPicker.clear();
-                    if (gradeSelect) gradeSelect.value = "1";
-                    setStatus("저장했습니다. 계속 등록하거나 업체 수정·협력업체 목록에서 확인하세요.");
+            var savePromise = sourceNewId
+                ? api.promoteVendorNewToVendor(sourceNewId, body)
+                : api.createVendor(body);
+            savePromise
+                .then(function (item) {
+                    resetFormAfterSave();
+                    if (sourceNewId && item && item.id) {
+                        setStatus("신규업체를 업체등록했습니다. 업체 수정에서 확인할 수 있습니다.");
+                    } else {
+                        setStatus("저장했습니다. 계속 등록하거나 업체 수정·협력업체 목록에서 확인하세요.");
+                    }
                     if (PF && PF.speakKorean) PF.speakKorean("저장되었습니다");
                 })
                 .catch(function (err2) {

@@ -17,6 +17,7 @@
     <link rel="stylesheet" href="admin-manage.css">
     <link rel="stylesheet" href="address-fields.css">
     <link rel="stylesheet" href="vendor-form-page.css">
+    <link rel="stylesheet" href="vendor-prospect-picker.css">
     <link rel="stylesheet" href="vendor-mobile.css?v=20260722-mob">
     <script src="api-config.js"></script>
     <script src="thejhon-api.js"></script>
@@ -49,6 +50,7 @@
         <p id="vr-status" class="vr-status" role="status" aria-live="polite"></p>
         <form id="vr-form" class="vr-form" novalidate>
             <input type="hidden" id="vr-edit-id" value="">
+            <input type="hidden" id="vr-new-vendor-id" value="">
             <div class="vr-field vr-dept-row vr-dept-wrap vr-section-gap-after">
                 <div class="vr-dept-line">
                     <span class="vr-dept-caption" id="vr-dept-label">사업부문</span>
@@ -94,9 +96,10 @@
                 </div>
             </div>
             <div class="vr-row vr-row--3">
-                <div class="vr-slot">
+                <div class="vr-slot vr-slot--company-pick">
                     <label for="vr-company">업체이름</label>
-                    <input type="text" id="vr-company" name="vn_company" required maxlength="200" autocomplete="organization" placeholder="업체이름">
+                    <input type="text" id="vr-company" name="vn_company" required maxlength="200" autocomplete="organization" placeholder="업체이름 (클릭 시 신규업체 목록)">
+                    <span id="vr-new-vendor-badge" class="vr-prospect-badge" hidden>신규업체에서 불러옴</span>
                 </div>
                 <div class="vr-slot">
                     <label for="vr-ceo">대표자 이름</label>
@@ -170,6 +173,21 @@
                 <button type="button" class="btn btn-secondary" id="vr-cancel-edit" hidden>편집 취소</button>
             </div>
         </form>
+        <div id="vn-modal" class="vp-modal" hidden role="dialog" aria-modal="true" aria-labelledby="vn-modal-title">
+            <div class="vp-modal__panel">
+                <div class="vp-modal__head">
+                    <h2 id="vn-modal-title" class="vp-modal__title">신규업체 선택</h2>
+                    <button type="button" class="vp-modal__close" id="vn-modal-close" aria-label="닫기">×</button>
+                </div>
+                <div class="vp-modal__search">
+                    <input type="search" id="vn-search" placeholder="업체명 검색" autocomplete="off" aria-label="업체명 검색">
+                </div>
+                <p id="vn-status" class="vp-status" role="status"></p>
+                <div class="vp-list-wrap">
+                    <ul id="vn-list" class="vp-list"></ul>
+                </div>
+            </div>
+        </div>
         <div id="vr-dept-modal" class="vr-dept-modal" hidden role="dialog" aria-modal="true" aria-labelledby="vr-dept-modal-title">
             <div class="vr-dept-modal__panel">
                 <h2 id="vr-dept-modal-title" class="vr-dept-modal__title">사업부문 선택</h2>
@@ -212,6 +230,7 @@
             syncAuthUi();
         })();
     </script>
+    <script src="vendor-new-picker.js"></script>
     <script src="vendor-register.js"></script>
 </body>
 </html>

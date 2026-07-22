@@ -9,9 +9,8 @@
     var activeSlug = "";
     var detailPanel = null;
 
-    var DETAIL_IDS = {
+        var DETAIL_IDS = {
         title: "vpf-detail-title",
-        subtitle: "vpf-detail-subtitle",
         status: "vpf-detail-status",
         count: "vpf-detail-count",
         districts: "vpf-detail-districts",
@@ -75,9 +74,6 @@
                     "<div>" +
                     '<p class="vpr-region-card__label">' +
                     escapeHtml(r.label) +
-                    "</p>" +
-                    '<p class="vpr-region-card__sub">' +
-                    escapeHtml(r.sub) +
                     "</p>" +
                     "</div></div>" +
                     '<div class="vpr-region-card__count">' +

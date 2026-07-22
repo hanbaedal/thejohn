@@ -1,7 +1,15 @@
-/* 파트너회사 소개 — 업체 리스트 + 상품상세형 모달 */
+/* 파트너회사 소개 — 업체 카드 그리드 + 상세 피드 */
 .page-main--partners {
-    max-width: 56rem;
-    padding: 0.75rem 0.85rem 1.25rem;
+    max-width: min(76rem, 100%);
+    padding: 0.75rem max(0.75rem, env(safe-area-inset-right, 0)) 1.25rem
+        max(0.75rem, env(safe-area-inset-left, 0));
+    box-sizing: border-box;
+}
+.page-main--partners #sp-partners-root {
+    margin-top: 0.5rem;
+}
+.page-main--partners .vpr-loading {
+    grid-column: 1 / -1;
 }
 .sp-partners-lead {
     margin: 0 0 0.85rem;
@@ -283,7 +291,8 @@
 
 @media (max-width: 720px) {
     .page-main--partners {
-        padding: 0.45rem 0.55rem 0.85rem;
+        padding: 0.45rem max(0.5rem, env(safe-area-inset-right, 0)) 0.85rem
+            max(0.5rem, env(safe-area-inset-left, 0));
     }
     .sp-title {
         font-size: 1.05rem;

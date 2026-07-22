@@ -41,26 +41,20 @@
         <div class="vpf-sticky">
             <p class="am-subnav"><a href="vendor-manage.html">← 업체관리</a> · <a href="vendor-prospect-list.html">예비업체 리스트</a></p>
             <h1>예비 업체 찾기</h1>
-            <p class="vei-hint">신규 장례식장 발굴 — 수도권(서울·경기·인천) 지역을 선택한 뒤, 관심 시설만 예비거래처 DB에 저장하세요. <strong>사업부문에 이미 등록된 업체</strong>는 사진 위에 빨간 「등록업체」 표시가 나타납니다.</p>
             <p id="vpf-status" class="vei-status" role="status" aria-live="polite"></p>
             <p class="vpr-backfill-bar">
                 <button type="button" class="btn btn-secondary" id="vpf-backfill-logos-btn">로고 없는 업체 — FHI 이미지 보강</button>
-                <span class="vei-hint vpr-backfill-hint">사업부문 업체 중 이미지가 없는 곳을 funeralhallinfo와 이름·전화·주소로 비교해 자동 저장합니다.</span>
             </p>
 
             <section class="vei-panel vpf-region-panel" aria-labelledby="vpf-region-title">
                 <h2 id="vpf-region-title">1. 지역 선택</h2>
-                <p class="vei-hint vpf-region-hint">수도권 주요 지역(서울·경기·인천) 장례식장 정보입니다.</p>
                 <div id="vpf-region-cards" class="vpr-region-cards" aria-live="polite"></div>
             </section>
         </div>
 
         <section id="vpf-detail" class="vpf-detail vei-panel" hidden aria-labelledby="vpf-detail-title">
             <div class="vpr-list-head">
-                <div>
-                    <h2 id="vpf-detail-title">장례식장 목록</h2>
-                    <p id="vpf-detail-subtitle" class="vei-hint"></p>
-                </div>
+                <h2 id="vpf-detail-title">장례식장 목록</h2>
                 <p id="vpf-detail-count" class="vei-hint"></p>
             </div>
             <p id="vpf-detail-status" class="vei-status" role="status" aria-live="polite"></p>
