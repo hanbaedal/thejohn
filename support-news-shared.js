@@ -57,8 +57,10 @@
         var modalBtns = options.modalBtns;
         var includeAll = !!options.includeAll;
         var openOnHover = options.openOnHover === true;
+        var openOnFieldHover = options.openOnFieldHover === true;
         var siteNewsDept = options.siteNewsDept || "";
         var siteNewsLabel = options.siteNewsLabel || "더존소식";
+        var siteNewsIcon = options.siteNewsIcon || "📢";
         var onSelect = options.onSelect;
 
         if (!catalog || !displayInput || !hiddenInput || !modal || !modalBtns) {
@@ -122,7 +124,44 @@
             modalBtns.appendChild(btn);
         });
 
-        if (openOnHover) {
+        if (openOnFieldHover) {
+            var hoverCloseTimer = null;
+
+            function cancelHoverClose() {
+                if (hoverCloseTimer) {
+                    clearTimeout(hoverCloseTimer);
+                    hoverCloseTimer = null;
+                }
+            }
+
+            function scheduleHoverClose() {
+                cancelHoverClose();
+                hoverCloseTimer = window.setTimeout(function () {
+                    hoverCloseTimer = null;
+                    closeModal();
+                }, 150);
+            }
+
+            function isInHoverZone(target) {
+                if (!target) return false;
+                if (target === displayInput || displayInput.contains(target)) return true;
+                return modal.contains(target);
+            }
+
+            displayInput.addEventListener("mouseenter", function () {
+                cancelHoverClose();
+                openModal();
+            });
+            displayInput.addEventListener("mouseleave", function (e) {
+                if (isInHoverZone(e.relatedTarget)) return;
+                scheduleHoverClose();
+            });
+            modal.addEventListener("mouseenter", cancelHoverClose);
+            modal.addEventListener("mouseleave", function (e) {
+                if (isInHoverZone(e.relatedTarget)) return;
+                scheduleHoverClose();
+            });
+        } else if (openOnHover) {
             displayInput.addEventListener("mouseenter", openModal);
             displayInput.addEventListener("click", openModal);
         } else {
@@ -152,7 +191,7 @@
         });
         var siteNewsBtn = modal.querySelector(".sn-dept-modal__site-news");
         if (siteNewsBtn && siteNewsDept) {
-            siteNewsBtn.textContent = siteNewsLabel;
+            siteNewsBtn.textContent = siteNewsIcon + " " + siteNewsLabel;
             siteNewsBtn.addEventListener("click", function () {
                 setDept(siteNewsDept);
             });

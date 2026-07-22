@@ -511,17 +511,6 @@
     font-weight: 600;
     cursor: pointer;
 }
-.sn-dept-modal__site-news {
-    border-color: var(--dz-blue);
-    background: #eef4fc;
-    font-weight: 700;
-    color: var(--dz-blue);
-}
-.sn-dept-modal__site-news:hover,
-.sn-dept-modal__site-news.is-selected {
-    background: var(--dz-blue);
-    color: #fff;
-}
 .sn-filter-bar {
     max-width: min(100%, 42rem);
     margin: 0 auto 0.85rem;

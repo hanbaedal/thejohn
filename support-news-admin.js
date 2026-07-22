@@ -22,9 +22,10 @@
         hiddenInput: deptHidden,
         modal: document.getElementById("sn-dept-modal"),
         modalBtns: document.getElementById("sn-dept-modal-btns"),
-        openOnHover: false,
+        openOnFieldHover: true,
         siteNewsDept: SN.SITE_NEWS_DEPT,
-        siteNewsLabel: "더존소식"
+        siteNewsLabel: "더존소식",
+        siteNewsIcon: "📢"
     });
 
     var photoManager = SN.initPhotoManager({
