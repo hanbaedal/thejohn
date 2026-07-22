@@ -2886,6 +2886,12 @@
         normalizeLegacySession();
         var page = currentPageFile();
         if (page === "login.html") return;
+        if (page === "support-partner-detail.html") {
+            if (!isLoggedIn()) {
+                window.location.replace("support-partners.html?membersOnly=1");
+            }
+            return;
+        }
         if (isSitePublicPage(page)) return;
         if (isLoggedIn()) return;
         var next = window.location.pathname + window.location.search + window.location.hash;

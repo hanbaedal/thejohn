@@ -4,12 +4,76 @@
     var PF = window.THEJHON_PRODUCT_FORM;
     var catalog = window.THEJHON_PRODUCT_CATALOG;
     var root = document.getElementById("sp-partners-root");
+    var membersModal = document.getElementById("sp-members-modal");
     var DETAIL_HREF = "support-partner-detail.html";
+    var MEMBERS_MSG = "회원 전용입니다.";
+    var membersModalTimer = null;
 
     var GRADE_NAMES = { 1: "Silver", 2: "Gold", 3: "Diamond" };
 
     function detailHref(id) {
         return DETAIL_HREF + "?id=" + encodeURIComponent(String(id || ""));
+    }
+
+    function isMember() {
+        return !!(window.THEJHON_AUTH && THEJHON_AUTH.isLoggedIn && THEJHON_AUTH.isLoggedIn());
+    }
+
+    function speakKorean(text) {
+        if (!text || !window.speechSynthesis) return;
+        try {
+            window.speechSynthesis.cancel();
+            var utter = new SpeechSynthesisUtterance(text);
+            utter.lang = "ko-KR";
+            utter.rate = 0.95;
+            window.speechSynthesis.speak(utter);
+        } catch (e) {}
+    }
+
+    function hideMembersOnlyModal() {
+        if (membersModal) membersModal.hidden = true;
+        if (membersModalTimer) {
+            clearTimeout(membersModalTimer);
+            membersModalTimer = null;
+        }
+    }
+
+    function showMembersOnlyModal() {
+        if (!membersModal) return;
+        membersModal.hidden = false;
+        speakKorean(MEMBERS_MSG);
+        if (membersModalTimer) clearTimeout(membersModalTimer);
+        membersModalTimer = window.setTimeout(function () {
+            hideMembersOnlyModal();
+            try {
+                var q = new URLSearchParams(window.location.search);
+                if (q.get("membersOnly") === "1") {
+                    window.history.replaceState(null, "", "support-partners.html");
+                }
+            } catch (e) {}
+        }, 4000);
+    }
+
+    function tryOpenDetail(href, e) {
+        if (!href) return;
+        if (!isMember()) {
+            if (e) {
+                e.preventDefault();
+                e.stopPropagation();
+            }
+            showMembersOnlyModal();
+            return;
+        }
+        window.location.href = href;
+    }
+
+    function checkMembersOnlyQuery() {
+        try {
+            var q = new URLSearchParams(window.location.search);
+            if (q.get("membersOnly") === "1") {
+                showMembersOnlyModal();
+            }
+        } catch (e2) {}
     }
 
     function normalizeVendorDeptId(id) {
@@ -57,19 +121,21 @@
         root.querySelectorAll(".vpr-card--clickable").forEach(function (card) {
             if (card.getAttribute("data-sp-card-bound") === "1") return;
             card.setAttribute("data-sp-card-bound", "1");
-            card.addEventListener("click", function (e) {
-                var href =
-                    card.getAttribute("data-href") ||
-                    (card.querySelector(".vpr-card__overlay-link") &&
-                        card.querySelector(".vpr-card__overlay-link").getAttribute("href"));
-                if (!href) return;
-                window.location.href = href;
-            });
+            card.addEventListener(
+                "click",
+                function (e) {
+                    var href =
+                        card.getAttribute("data-href") ||
+                        (card.querySelector(".vpr-card__overlay-link") &&
+                            card.querySelector(".vpr-card__overlay-link").getAttribute("href"));
+                    tryOpenDetail(href, e);
+                },
+                true
+            );
             card.addEventListener("keydown", function (e) {
                 if (e.key !== "Enter" && e.key !== " ") return;
                 e.preventDefault();
-                var href = card.getAttribute("data-href");
-                if (href) window.location.href = href;
+                tryOpenDetail(card.getAttribute("data-href"), e);
             });
         });
     }
@@ -122,5 +188,6 @@
             });
     }
 
+    checkMembersOnlyQuery();
     load();
 })();

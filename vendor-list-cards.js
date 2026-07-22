@@ -14,32 +14,34 @@
         return escapeHtml(s).replace(/'/g, "&#39;");
     }
 
-    function logoHtml(it) {
+    function logoHtml(it, opts) {
+        opts = opts || {};
+        var alt = escapeAttr(it && it.vn_company ? it.vn_company : "");
+        var stored = String((it && it.vn_logo) || "").trim();
+        if (stored) {
+            return (
+                '<img class="vpr-card__img" src="' +
+                escapeAttr(stored) +
+                '" alt="' +
+                alt +
+                '" loading="lazy">'
+            );
+        }
         var api = global.THEJHON_API;
         var fhiId = String((it && it.fhi_id) || "").trim();
-        if (fhiId && api && api.fhiImageUrl) {
+        if (fhiId && api && api.fhiImageUrl && opts.allowFhiImage !== false) {
             var fhiSrc = api.fhiImageUrl(fhiId);
             if (fhiSrc) {
                 return (
                     '<img class="vpr-card__img" src="' +
                     escapeAttr(fhiSrc) +
                     '" alt="' +
-                    escapeAttr(it.vn_company || "") +
+                    alt +
                     '" loading="lazy">'
                 );
             }
         }
-        var src = String((it && it.vn_logo) || "").trim();
-        if (!src) {
-            return '<div class="vpr-card__img vpr-card__img--empty"></div>';
-        }
-        return (
-            '<img class="vpr-card__img" src="' +
-            escapeAttr(src) +
-            '" alt="' +
-            escapeAttr(it.vn_company || "") +
-            '" loading="lazy">'
-        );
+        return '<div class="vpr-card__img vpr-card__img--empty"></div>';
     }
 
     function metaRow(label, value) {
@@ -200,7 +202,7 @@
             '<div class="vpr-card__img-wrap' +
             imgWrapClass +
             '">' +
-            logoHtml(it) +
+            logoHtml(it, opts) +
             (badge ? '<span class="vpr-card__badge">' + escapeHtml(badge) + "</span>" : "") +
             registeredOverlay +
             "</div>" +
@@ -248,6 +250,7 @@
     global.THEJHON_VENDOR_LIST_CARDS = {
         escapeHtml: escapeHtml,
         escapeAttr: escapeAttr,
+        logoHtml: logoHtml,
         renderCard: renderCard,
         renderGrid: renderGrid
     };

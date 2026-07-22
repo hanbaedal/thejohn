@@ -128,12 +128,8 @@
                 (checked ? " checked" : "") +
                 "> 선택</label>" +
                 '<div class="vpr-card__img-wrap">' +
-                (api && api.fhiImageUrl && row.fhi_id
-                    ? '<img class="vpr-card__img" src="' +
-                      escapeAttr(api.fhiImageUrl(row.fhi_id)) +
-                      '" alt="' +
-                      escapeAttr(row.vn_company) +
-                      '" loading="lazy">'
+                (CARDS && CARDS.logoHtml
+                    ? CARDS.logoHtml(row)
                     : '<div class="vpr-card__img vpr-card__img--empty"></div>') +
                 (row.vn_public_type
                     ? '<span class="vpr-card__badge">' + escapeHtml(row.vn_public_type) + "</span>"

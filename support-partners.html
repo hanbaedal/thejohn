@@ -23,7 +23,7 @@
     <script src="admin-header.js"></script>
     <script src="product-catalog.js"></script>
     <script src="product-form-shared.js"></script>
-    <script src="vendor-list-cards.js?v=20260722-cardlink"></script>
+    <script src="vendor-list-cards.js?v=20260722-logo"></script>
     <script src="nav.js" defer></script>
 </head>
 <body class="page-support">
@@ -56,6 +56,11 @@
         <h1>파트너회사 소개</h1>
         <div id="sp-partners-root" aria-live="polite"></div>
     </main>
+    <div id="sp-members-modal" class="sp-members-modal" hidden role="alertdialog" aria-modal="true" aria-labelledby="sp-members-modal-msg">
+        <div class="sp-members-modal__panel">
+            <p id="sp-members-modal-msg" class="sp-members-modal__msg">회원 전용입니다.</p>
+        </div>
+    </div>
     <footer class="site-footer">
         <div class="site-footer-inner">
             <dl class="site-footer-grid" id="siteFooterCompanyGrid" aria-live="polite"></dl>
