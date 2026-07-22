@@ -445,8 +445,8 @@ body.vpf-detail-open .vpf-footer {
     height: 132px;
     background: #eef2f6;
 }
-.vpr-card--browse .vpr-card__img--contain {
-    object-fit: contain;
+.vpr-card--browse .vpr-card__img {
+    object-fit: cover;
     object-position: center center;
 }
 .vpr-card--browse .vpr-card__body--browse {

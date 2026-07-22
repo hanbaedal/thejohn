@@ -47,8 +47,11 @@
 
         function findRowById(id) {
             var key = String(id || "");
+            if (!key) return null;
             for (var i = 0; i < items.length; i++) {
-                if (String(items[i].fhi_id || items[i].id) === key) return items[i];
+                var row = items[i];
+                if (row.id != null && String(row.id) === key) return row;
+                if (row.fhi_id != null && String(row.fhi_id) === key) return row;
             }
             return null;
         }
@@ -119,7 +122,6 @@
                 return CARDS.renderCard(row, {
                     layout: "prospectBrowse",
                     mode: "prospect",
-                    imgContain: true,
                     showCheck: true,
                     checkId: id,
                     cardId: id,

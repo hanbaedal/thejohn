@@ -190,7 +190,7 @@
             '<div class="vpr-card__img-wrap' +
             imgWrapClass +
             '">' +
-            logoHtml(it, Object.assign({}, opts, { imgContain: true })) +
+            logoHtml(it, opts) +
             registeredOverlay +
             "</div>" +
             '<div class="vpr-card__body vpr-card__body--browse">' +
@@ -296,6 +296,23 @@
             if (hoverPanel) hoverPanel.hidden = true;
             hoverRowId = "";
         }, 120);
+    }
+
+    function matchRowByKey(row, key) {
+        key = String(key || "");
+        if (!key || !row) return false;
+        if (row.id != null && String(row.id) === key) return true;
+        if (row.fhi_id != null && String(row.fhi_id) === key) return true;
+        return false;
+    }
+
+    function findRowInItems(items, key) {
+        key = String(key || "");
+        if (!key || !items || !items.length) return null;
+        for (var i = 0; i < items.length; i++) {
+            if (matchRowByKey(items[i], key)) return items[i];
+        }
+        return null;
     }
 
     function rowHoverKey(row) {
@@ -573,12 +590,7 @@
             bindBrowseHover(
                 container,
                 function (id) {
-                    var key = String(id || "");
-                    for (var i = 0; i < items.length; i++) {
-                        var row = items[i];
-                        if (String(row.fhi_id || row.id) === key) return row;
-                    }
-                    return null;
+                    return findRowInItems(items, id);
                 },
                 options.hoverPanelOptions
             );
