@@ -98,9 +98,41 @@ async function loadPartnerVendors(db) {
         .collection("vendors")
         .find({ vn_record_type: { $ne: "new" } })
         .toArray();
-    return docs.map(normalizeVendorForMatch).filter(function (v) {
-        return v && v.id && pickCompany(v);
-    });
+    return docs
+        .map(function (doc) {
+            const v = normalizeVendorForMatch(doc);
+            v.kind = "partner";
+            return v;
+        })
+        .filter(function (v) {
+            return v && v.id && pickCompany(v);
+        });
+}
+
+async function loadNewVendors(db) {
+    const docs = await db.collection("vendor_new").find({}).toArray();
+    return docs
+        .map(function (doc) {
+            const v = normalizeVendorForMatch(doc);
+            v.kind = "new";
+            return v;
+        })
+        .filter(function (v) {
+            return v && v.id && pickCompany(v);
+        });
+}
+
+async function loadProspectVendors(db) {
+    const docs = await db.collection("vendor_prospects").find({}).toArray();
+    return docs
+        .map(function (doc) {
+            const v = normalizeVendorForMatch(doc);
+            v.kind = "prospect";
+            return v;
+        })
+        .filter(function (v) {
+            return v && v.id && pickCompany(v);
+        });
 }
 
 function buildVendorMatchIndex(vendors) {
@@ -214,23 +246,69 @@ function findBestFhiMatch(vendor, fhiItems) {
     return Object.assign({}, best, { score: bestScore });
 }
 
-function annotateFhiItems(items, vendors) {
+function buildRegisteredVendorMeta(vendor, score) {
+    const kind = String((vendor && vendor.kind) || "partner").trim();
+    return {
+        id: vendor.id,
+        kind: kind === "new" || kind === "prospect" ? kind : "partner",
+        vn_company: vendor.vn_company || "",
+        vn_depts: Array.isArray(vendor.vn_depts) ? vendor.vn_depts : [],
+        has_logo: hasVendorLogo(vendor),
+        match_score: score
+    };
+}
+
+function annotateFhiItems(items, vendorsOrOptions) {
     if (!Array.isArray(items) || !items.length) return items || [];
-    const index = buildVendorMatchIndex(vendors);
+    const options = Array.isArray(vendorsOrOptions)
+        ? { partners: vendorsOrOptions }
+        : vendorsOrOptions || {};
+    const partners = options.partners || [];
+    const newVendors = options.newVendors || [];
+    const prospects = options.prospects || [];
+    const partnerIndex = buildVendorMatchIndex(partners);
+    const newIndex = buildVendorMatchIndex(newVendors);
+    const prospectIndex = buildVendorMatchIndex(prospects);
+
     return items.map(function (row) {
-        const matched = matchFhiRowToVendor(row, index);
-        if (!matched) return row;
-        const v = matched.vendor;
-        return Object.assign({}, row, {
-            registered_vendor: {
-                id: v.id,
-                vn_company: v.vn_company || "",
-                vn_depts: Array.isArray(v.vn_depts) ? v.vn_depts : [],
-                has_logo: hasVendorLogo(v),
-                match_score: matched.score
-            }
-        });
+        const partnerMatch = matchFhiRowToVendor(row, partnerIndex);
+        if (partnerMatch) {
+            return Object.assign({}, row, {
+                registered_vendor: buildRegisteredVendorMeta(
+                    Object.assign({}, partnerMatch.vendor, { kind: "partner" }),
+                    partnerMatch.score
+                )
+            });
+        }
+        const newMatch = matchFhiRowToVendor(row, newIndex);
+        if (newMatch) {
+            return Object.assign({}, row, {
+                registered_vendor: buildRegisteredVendorMeta(
+                    Object.assign({}, newMatch.vendor, { kind: "new" }),
+                    newMatch.score
+                )
+            });
+        }
+        const prospectMatch = matchFhiRowToVendor(row, prospectIndex);
+        if (prospectMatch) {
+            return Object.assign({}, row, {
+                registered_vendor: buildRegisteredVendorMeta(
+                    Object.assign({}, prospectMatch.vendor, { kind: "prospect" }),
+                    prospectMatch.score
+                )
+            });
+        }
+        return row;
     });
+}
+
+function countRegistrationKinds(items) {
+    const counts = { partner: 0, new: 0, prospect: 0 };
+    (items || []).forEach(function (row) {
+        const kind = row && row.registered_vendor && row.registered_vendor.kind;
+        if (kind && counts[kind] != null) counts[kind]++;
+    });
+    return counts;
 }
 
 module.exports = {
@@ -242,8 +320,11 @@ module.exports = {
     scoreFhiMatch,
     hasVendorLogo,
     loadPartnerVendors,
+    loadNewVendors,
+    loadProspectVendors,
     buildVendorMatchIndex,
     matchFhiRowToVendor,
     findBestFhiMatch,
-    annotateFhiItems
+    annotateFhiItems,
+    countRegistrationKinds
 };

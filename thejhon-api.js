@@ -387,7 +387,8 @@
                     region: d.region,
                     items: d.items || [],
                     cached: d.cached,
-                    registeredCount: d.registeredCount || 0
+                    registeredCount: d.registeredCount || 0,
+                    registrationCounts: d.registrationCounts || null
                 };
             });
         },

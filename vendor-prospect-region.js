@@ -387,16 +387,29 @@
                     if (titleEl) titleEl.textContent = (meta.label || regionParam) + " 장례식장";
                     if (subtitleEl) subtitleEl.textContent = "";
                     renderGrid();
-                    var regCount =
-                        data.registeredCount != null
-                            ? data.registeredCount
+                    var counts = data.registrationCounts || {};
+                    var partnerCount =
+                        counts.partner != null
+                            ? counts.partner
                             : items.filter(function (row) {
-                                  return row.registered_vendor;
+                                  return (
+                                      row.registered_vendor &&
+                                      (!row.registered_vendor.kind ||
+                                          row.registered_vendor.kind === "partner")
+                                  );
                               }).length;
+                    var newCount = counts.new || 0;
+                    var prospectCount = counts.prospect || 0;
                     var statusMsg =
                         (meta.label || regionParam) + " " + items.length + "건 조회 완료";
-                    if (regCount > 0) {
-                        statusMsg += " · 사업부문 등록 " + regCount + "곳(빨간 「등록업체」)";
+                    if (partnerCount > 0) {
+                        statusMsg += " · 등록 업체 " + partnerCount + "곳";
+                    }
+                    if (newCount > 0) {
+                        statusMsg += " · 신규업체 " + newCount + "곳";
+                    }
+                    if (prospectCount > 0) {
+                        statusMsg += " · 예비업체 " + prospectCount + "곳";
                     }
                     setStatus(statusMsg, "ok");
                     return data;

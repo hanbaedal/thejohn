@@ -100,15 +100,72 @@
         return "빈소 " + n + "실";
     }
 
+    function registrationKindMeta(registered) {
+        var kind = String((registered && registered.kind) || "partner").trim();
+        if (kind !== "new" && kind !== "prospect") kind = "partner";
+        var labels = {
+            partner: "등록 업체",
+            new: "신규업체 등록",
+            prospect: "예비업체 등록"
+        };
+        return { kind: kind, label: labels[kind] };
+    }
+
+    function registrationEditHref(registered) {
+        if (!registered || !registered.id) return "";
+        var kind = registrationKindMeta(registered).kind;
+        if (kind === "prospect") return "";
+        var from = kind === "new" ? "new" : "partner";
+        return (
+            "vendor-edit.html?id=" +
+            encodeURIComponent(registered.id) +
+            "&from=" +
+            from
+        );
+    }
+
+    function registeredOverlayParts(registered, fallbackName) {
+        if (!registered || !registered.id) {
+            return { overlay: "", cardClass: "", imgWrapClass: "" };
+        }
+        var meta = registrationKindMeta(registered);
+        var regTitle = String(registered.vn_company || fallbackName || "").trim();
+        var overlayClass =
+            "vpr-card__registered-overlay vpr-card__registered-overlay--" + meta.kind;
+        var href = registrationEditHref(registered);
+        var overlay = href
+            ? '<a class="' +
+              overlayClass +
+              '" href="' +
+              escapeAttr(href) +
+              '" title="' +
+              escapeAttr(regTitle) +
+              '">' +
+              escapeHtml(meta.label) +
+              "</a>"
+            : '<span class="' +
+              overlayClass +
+              '" title="' +
+              escapeAttr(regTitle) +
+              '">' +
+              escapeHtml(meta.label) +
+              "</span>";
+        return {
+            overlay: overlay,
+            cardClass: " vpr-card--registered vpr-card--registered-" + meta.kind,
+            imgWrapClass:
+                " vpr-card__img-wrap--registered vpr-card__img-wrap--registered-" + meta.kind
+        };
+    }
+
     function renderProspectBrowseCard(it, opts) {
         opts = opts || {};
         var name = String((it && it.vn_company) || "").trim() || "(업체명 없음)";
         var cardId = String(opts.cardId || opts.checkId || "").trim();
         var cardClass = "vpr-card vpr-card--browse";
         if (opts.selected) cardClass += " is-selected";
-        if (opts.registeredVendor && opts.registeredVendor.id) {
-            cardClass += " vpr-card--registered";
-        }
+        var registeredParts = registeredOverlayParts(opts.registeredVendor, name);
+        if (registeredParts.cardClass) cardClass += registeredParts.cardClass;
 
         var checkHtml = "";
         if (opts.showCheck) {
@@ -122,34 +179,6 @@
                 (opts.selected ? " checked" : "") +
                 (isRegistered ? " disabled" : "") +
                 "> 선택</label>";
-        }
-
-        var registered = opts.registeredVendor || null;
-        var imgWrapClass = registered ? " vpr-card__img-wrap--registered" : "";
-        var registeredOverlay = "";
-        if (registered) {
-            var regLabel = "등록업체";
-            var regTitle = String(registered.vn_company || name).trim();
-            var regHref = registered.id
-                ? "vendor-edit.html?id=" + encodeURIComponent(registered.id)
-                : "";
-            if (regHref) {
-                registeredOverlay =
-                    '<a class="vpr-card__registered-overlay" href="' +
-                    escapeAttr(regHref) +
-                    '" title="' +
-                    escapeAttr(regTitle) +
-                    '">' +
-                    escapeHtml(regLabel) +
-                    "</a>";
-            } else {
-                registeredOverlay =
-                    '<span class="vpr-card__registered-overlay" title="' +
-                    escapeAttr(regTitle) +
-                    '">' +
-                    escapeHtml(regLabel) +
-                    "</span>";
-            }
         }
 
         var rooms = roomCountLabel(it);
@@ -188,10 +217,10 @@
             '">' +
             checkHtml +
             '<div class="vpr-card__img-wrap' +
-            imgWrapClass +
+            registeredParts.imgWrapClass +
             '">' +
             logoHtml(it, opts) +
-            registeredOverlay +
+            registeredParts.overlay +
             "</div>" +
             '<div class="vpr-card__body vpr-card__body--browse">' +
             '<h3 class="vpr-card__name">' +
@@ -484,6 +513,9 @@
             cardClass += " vpr-card--clickable";
         }
 
+        var registeredParts = registeredOverlayParts(opts.registeredVendor, name);
+        if (registeredParts.cardClass) cardClass += registeredParts.cardClass;
+
         var nameHtml =
             editHref && !cardLink
                 ? '<h3 class="vpr-card__name"><a class="vpr-card__name-link" href="' +
@@ -492,34 +524,6 @@
                   escapeHtml(name) +
                   "</a></h3>"
                 : '<h3 class="vpr-card__name">' + escapeHtml(name) + "</h3>";
-
-        var registered = opts.registeredVendor || null;
-        var imgWrapClass = registered ? " vpr-card__img-wrap--registered" : "";
-        var registeredOverlay = "";
-        if (registered) {
-            var regLabel = "등록업체";
-            var regTitle = String(registered.vn_company || name).trim();
-            var regHref = registered.id
-                ? "vendor-edit.html?id=" + encodeURIComponent(registered.id)
-                : "";
-            if (regHref) {
-                registeredOverlay =
-                    '<a class="vpr-card__registered-overlay" href="' +
-                    escapeAttr(regHref) +
-                    '" title="' +
-                    escapeAttr(regTitle) +
-                    '">' +
-                    escapeHtml(regLabel) +
-                    "</a>";
-            } else {
-                registeredOverlay =
-                    '<span class="vpr-card__registered-overlay" title="' +
-                    escapeAttr(regTitle) +
-                    '">' +
-                    escapeHtml(regLabel) +
-                    "</span>";
-            }
-        }
 
         var overlayLink = cardLink
             ? '<a class="vpr-card__overlay-link" href="' +
@@ -539,11 +543,11 @@
             '">' +
             checkHtml +
             '<div class="vpr-card__img-wrap' +
-            imgWrapClass +
+            registeredParts.imgWrapClass +
             '">' +
             logoHtml(it, opts) +
             (badge ? '<span class="vpr-card__badge">' + escapeHtml(badge) + "</span>" : "") +
-            registeredOverlay +
+            registeredParts.overlay +
             "</div>" +
             '<div class="vpr-card__body">' +
             nameHtml +

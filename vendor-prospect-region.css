@@ -192,17 +192,38 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    background: rgba(220, 38, 38, 0.62);
-    color: #fff;
     font-size: 0.82rem;
     font-weight: 700;
     letter-spacing: 0.02em;
     text-decoration: none;
     z-index: 3;
+    text-align: center;
+    padding: 0.35rem;
+    line-height: 1.35;
 }
-.vpr-card__registered-overlay:hover {
+.vpr-card__registered-overlay--partner {
+    background: rgba(220, 38, 38, 0.62);
+    color: #fff;
+}
+.vpr-card__registered-overlay--partner:hover {
     background: rgba(185, 28, 28, 0.72);
     color: #fff;
+}
+.vpr-card__registered-overlay--new {
+    background: rgba(250, 204, 21, 0.82);
+    color: #713f12;
+}
+.vpr-card__registered-overlay--new:hover {
+    background: rgba(234, 179, 8, 0.92);
+    color: #422006;
+}
+.vpr-card__registered-overlay--prospect {
+    background: rgba(56, 189, 248, 0.78);
+    color: #0c4a6e;
+}
+.vpr-card__registered-overlay--prospect:hover {
+    background: rgba(14, 165, 233, 0.88);
+    color: #082f49;
 }
 .vpr-card__check--disabled {
     opacity: 0.55;

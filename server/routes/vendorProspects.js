@@ -22,7 +22,7 @@ const {
 } = require("../lib/vendorExternalLookup");
 const { getRegionSummaries, getRegionItems, fetchFhiImageBuffer } = require("../lib/funeralHallInfoLookup");
 const { applyFhiMediaToDoc } = require("../lib/vendorFhiMedia");
-const { loadPartnerVendors, annotateFhiItems } = require("../lib/vendorFhiMatch");
+const { loadPartnerVendors, loadNewVendors, loadProspectVendors, annotateFhiItems, countRegistrationKinds } = require("../lib/vendorFhiMatch");
 
 const router = express.Router();
 
@@ -209,15 +209,21 @@ router.get("/fhi-region", requireRole("admin"), async function (req, res) {
         const result = await getRegionItems(region, { refresh: refresh, withPhones: withPhones });
         const db = getDb();
         const partnerVendors = await loadPartnerVendors(db);
-        const items = annotateFhiItems(result.items || [], partnerVendors);
+        const newVendors = await loadNewVendors(db);
+        const prospects = await loadProspectVendors(db);
+        const items = annotateFhiItems(result.items || [], {
+            partners: partnerVendors,
+            newVendors: newVendors,
+            prospects: prospects
+        });
+        const registrationCounts = countRegistrationKinds(items);
         res.json({
             ok: true,
             region: result.region,
             items: items,
             cached: !!result.cached,
-            registeredCount: items.filter(function (row) {
-                return row.registered_vendor;
-            }).length,
+            registeredCount: registrationCounts.partner + registrationCounts.new + registrationCounts.prospect,
+            registrationCounts: registrationCounts,
             source: "esky"
         });
     } catch (e) {
