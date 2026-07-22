@@ -55,12 +55,12 @@
     }
 
     function tryOpenDetail(href, e) {
-        if (!href) return;
+        if (e) {
+            e.preventDefault();
+            e.stopPropagation();
+        }
+        if (!href || href === "#") return;
         if (!isMember()) {
-            if (e) {
-                e.preventDefault();
-                e.stopPropagation();
-            }
             showMembersOnlyModal();
             return;
         }
@@ -121,21 +121,19 @@
         root.querySelectorAll(".vpr-card--clickable").forEach(function (card) {
             if (card.getAttribute("data-sp-card-bound") === "1") return;
             card.setAttribute("data-sp-card-bound", "1");
-            card.addEventListener(
-                "click",
-                function (e) {
-                    var href =
-                        card.getAttribute("data-href") ||
-                        (card.querySelector(".vpr-card__overlay-link") &&
-                            card.querySelector(".vpr-card__overlay-link").getAttribute("href"));
-                    tryOpenDetail(href, e);
-                },
-                true
-            );
+            var href = card.getAttribute("data-href") || "";
+
+            function handleActivate(e) {
+                tryOpenDetail(href, e);
+            }
+
+            card.querySelectorAll(".vpr-card__overlay-link").forEach(function (link) {
+                link.addEventListener("click", handleActivate);
+            });
+            card.addEventListener("click", handleActivate, true);
             card.addEventListener("keydown", function (e) {
                 if (e.key !== "Enter" && e.key !== " ") return;
-                e.preventDefault();
-                tryOpenDetail(card.getAttribute("data-href"), e);
+                handleActivate(e);
             });
         });
     }
@@ -164,6 +162,7 @@
                     registrar: it.vn_mgr_name || "",
                     editHref: detailHref(it.id),
                     cardLink: true,
+                    suppressNavHref: true,
                     showActions: false
                 };
             },

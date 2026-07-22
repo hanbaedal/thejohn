@@ -184,7 +184,7 @@
 
         var overlayLink = cardLink
             ? '<a class="vpr-card__overlay-link" href="' +
-              escapeAttr(editHref) +
+              escapeAttr(opts.suppressNavHref ? "#" : editHref) +
               '" aria-label="' +
               escapeAttr(name) +
               ' 상세보기"></a>'

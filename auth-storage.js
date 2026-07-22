@@ -140,6 +140,13 @@
     function enforceSiteLoginEarly() {
         if (typeof global.location === "undefined") return;
         var PS = publicSite();
+        var page = PS && PS.currentPageFile ? PS.currentPageFile() : "";
+        if (page === "support-partner-detail.html") {
+            if (!isLoggedInEarly()) {
+                global.location.replace("support-partners.html?membersOnly=1");
+            }
+            return;
+        }
         if (PS && PS.isPublicPage && PS.isPublicPage()) return;
         if (PS && PS.isLoginPage && PS.isLoginPage()) return;
         if (isLoggedInEarly()) return;
