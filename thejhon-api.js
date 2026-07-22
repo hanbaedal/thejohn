@@ -398,12 +398,15 @@
                 force: !!options.force
             });
         },
-        fhiImageUrl: function (fhiId) {
+        fhiImageUrl: function (fhiId, fileurl) {
             var id = String(fhiId || "").trim();
             if (!id) return "";
-            return appendImageAccessToken(
-                apiUrl("/api/vendor-prospects/fhi-image/" + encodeURIComponent(id))
-            );
+            var path = String(fileurl || "").trim();
+            var url = apiUrl("/api/vendor-prospects/fhi-image/" + encodeURIComponent(id));
+            if (path) {
+                url += (url.indexOf("?") >= 0 ? "&" : "?") + "path=" + encodeURIComponent(path);
+            }
+            return appendImageAccessToken(url);
         },
         sendVendorBroadcastEmail: function (payload) {
             return request("POST", "/api/vendor-email/broadcast", payload || {});

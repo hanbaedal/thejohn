@@ -157,7 +157,7 @@
         btn.addEventListener("click", function () {
             if (
                 !window.confirm(
-                    "로고(이미지)가 없는 사업부문 업체를 funeralhallinfo 데이터와 비교해 이미지를 저장합니다.\n\n계속할까요?"
+                    "로고(이미지)가 없는 사업부문 업체를 e하늘 데이터와 비교해 이미지를 저장합니다.\n\n계속할까요?"
                 )
             ) {
                 return;

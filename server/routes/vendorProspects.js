@@ -186,18 +186,18 @@ router.get("/search-funeral-halls", requireRole("admin"), async function (req, r
     }
 });
 
-/** 관리자 — funeralhallinfo 수도권 지역 요약 (서울·경기·인천) */
+/** 관리자 — e하늘 수도권 지역 요약 (서울·경기·인천) */
 router.get("/fhi-regions", requireRole("admin"), async function (req, res) {
     try {
         const regions = await getRegionSummaries();
-        res.json({ ok: true, regions: regions, source: "funeralhallinfo" });
+        res.json({ ok: true, regions: regions, source: "esky" });
     } catch (e) {
         console.error("GET /api/vendor-prospects/fhi-regions", e);
         res.status(500).json({ ok: false, error: "지역 정보를 불러오지 못했습니다." });
     }
 });
 
-/** 관리자 — funeralhallinfo 지역별 장례식장 목록 */
+/** 관리자 — e하늘 지역별 장례식장 목록 */
 router.get("/fhi-region", requireRole("admin"), async function (req, res) {
     try {
         const region = String(req.query.region || "").trim();
@@ -218,7 +218,7 @@ router.get("/fhi-region", requireRole("admin"), async function (req, res) {
             registeredCount: items.filter(function (row) {
                 return row.registered_vendor;
             }).length,
-            source: "funeralhallinfo"
+            source: "esky"
         });
     } catch (e) {
         if (String((e && e.message) || "") === "UNKNOWN_REGION") {
@@ -229,7 +229,7 @@ router.get("/fhi-region", requireRole("admin"), async function (req, res) {
     }
 });
 
-/** 관리자 — funeralhallinfo 장례식장 이미지 프록시 (CORP same-site 우회) */
+/** 관리자 — e하늘 장례식장 이미지 프록시 */
 router.get("/fhi-image/:id", async function (req, res) {
     try {
         const auth = optionalAuth(req);
@@ -239,7 +239,8 @@ router.get("/fhi-image/:id", async function (req, res) {
         const id = String(req.params.id || "")
             .replace(/\.(jpg|jpeg|webp|png)$/i, "")
             .trim();
-        const img = await fetchFhiImageBuffer(id);
+        const fileurl = String(req.query.path || req.query.fileurl || "").trim();
+        const img = await fetchFhiImageBuffer(id, fileurl);
         res.set("Cache-Control", "public, max-age=86400");
         return res.type(img.type || "image/webp").send(img.buf);
     } catch (e) {

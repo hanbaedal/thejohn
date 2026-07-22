@@ -205,7 +205,7 @@ router.post("/backfill-fhi-logos", requireRole("supervisor", "admin"), async (re
 
             try {
                 const built = { vn_logo: "" };
-                await applyFhiLogoToBuilt(built, match.fhi_id);
+                await applyFhiLogoToBuilt(built, match.fhi_id, match.fileurl);
                 const col = db.collection("vendors");
                 const ret = await col.updateOne(
                     { id: vendor.id },

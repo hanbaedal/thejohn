@@ -29,8 +29,9 @@
         }
         var api = global.THEJHON_API;
         var fhiId = String((it && it.fhi_id) || "").trim();
+        var fileurl = String((it && it.fileurl) || "").trim();
         if (fhiId && api && api.fhiImageUrl && opts.allowFhiImage !== false) {
-            var fhiSrc = api.fhiImageUrl(fhiId);
+            var fhiSrc = api.fhiImageUrl(fhiId, fileurl);
             if (fhiSrc) {
                 return (
                     '<img class="vpr-card__img" src="' +
