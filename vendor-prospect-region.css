@@ -479,6 +479,35 @@ body.vpf-detail-open .vpf-footer {
     box-shadow: 0 4px 14px rgba(10, 40, 80, 0.1);
 }
 
+.vpr-card--browse.vpr-card--list .vpr-card__body--browse {
+    padding-bottom: 0.45rem;
+}
+.vpr-card--browse.vpr-card--list .vpr-card__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem;
+    justify-content: flex-end;
+    align-items: center;
+    margin-top: 0.35rem;
+    padding-top: 0.45rem;
+    border-top: 1px solid #e2e8f0;
+}
+.vpr-card--browse.vpr-card--list .vpr-card__btn {
+    font-size: 0.72rem;
+    padding: 0.28rem 0.55rem;
+    min-height: 1.85rem;
+    line-height: 1.2;
+}
+.vpr-card--browse.vpr-card--list .vpr-card__btn--del {
+    border-color: #e8b4b4;
+    color: #a12c2c;
+    background: #fff;
+}
+.vpr-card--browse.vpr-card--list .vpr-card__btn--del:hover {
+    background: #fef5f5;
+    border-color: #c44;
+}
+
 .vpr-hover-panel {
     position: fixed;
     z-index: 10050;

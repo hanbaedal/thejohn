@@ -132,16 +132,20 @@
             return (b.updatedAt || 0) - (a.updatedAt || 0);
         });
         CARDS.renderGrid(listEl, items, {
+            layout: "prospectBrowse",
             gridClass: "vpr-grid vpr-grid--cols3",
             emptyHtml:
                 '<p class="vpr-loading">신규 업체가 없습니다. <a href="vendor-new-register.html">신규업체 등록</a>에서 추가해 주세요.</p>',
+            hoverPanelOptions: function (it) {
+                return {
+                    deptLabel: vendorDeptLabels(it) || "미지정",
+                    gradeLabel: gradeLabel(it),
+                    registrar: registrarText(it)
+                };
+            },
             cardOptions: function (it) {
                 return {
-                    mode: "new",
-                    badge: "신규",
-                    gradeLabel: gradeLabel(it),
-                    deptLabel: vendorDeptLabels(it) || "미지정",
-                    registrar: registrarText(it),
+                    cardId: it.id,
                     editHref: editHref(it),
                     showActions: true,
                     canWrite: canWriteItem(it),

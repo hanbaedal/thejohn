@@ -44,158 +44,18 @@
         var selected = {};
         var activeDistrict = "";
         var bound = false;
-        var hoverPanel = null;
-        var hoverHideTimer = null;
-        var hoverRowId = "";
 
         function findRowById(id) {
             var key = String(id || "");
             for (var i = 0; i < items.length; i++) {
-                if (String(items[i].fhi_id) === key) return items[i];
+                if (String(items[i].fhi_id || items[i].id) === key) return items[i];
             }
             return null;
         }
 
-        function ensureHoverPanel() {
-            if (hoverPanel) return hoverPanel;
-            hoverPanel = document.getElementById("vpr-hover-panel");
-            if (!hoverPanel) {
-                hoverPanel = document.createElement("div");
-                hoverPanel.id = "vpr-hover-panel";
-                hoverPanel.className = "vpr-hover-panel";
-                hoverPanel.hidden = true;
-                hoverPanel.setAttribute("role", "tooltip");
-                document.body.appendChild(hoverPanel);
-            }
-            if (!hoverPanel.dataset.bound) {
-                hoverPanel.dataset.bound = "1";
-                hoverPanel.addEventListener("mouseenter", function () {
-                    if (hoverHideTimer) {
-                        clearTimeout(hoverHideTimer);
-                        hoverHideTimer = null;
-                    }
-                });
-                hoverPanel.addEventListener("mouseleave", function (e) {
-                    if (e.relatedTarget && e.relatedTarget.closest(".vpr-card--browse")) return;
-                    scheduleHideHoverPanel();
-                });
-            }
-            return hoverPanel;
-        }
-
-        function scheduleHideHoverPanel() {
-            if (hoverHideTimer) clearTimeout(hoverHideTimer);
-            hoverHideTimer = window.setTimeout(function () {
-                hoverHideTimer = null;
-                if (hoverPanel) hoverPanel.hidden = true;
-                hoverRowId = "";
-            }, 120);
-        }
-
-        function hoverDetailRow(label, value) {
-            var v = String(value || "").trim();
-            return (
-                '<div class="vpr-hover-panel__row"><dt>' +
-                escapeHtml(label) +
-                "</dt><dd>" +
-                escapeHtml(v || "-") +
-                "</dd></div>"
-            );
-        }
-
-        function buildHoverPanelHtml(row) {
-            var convHtml =
-                CARDS && CARDS.convenienceHtml
-                    ? CARDS.convenienceHtml(row)
-                    : '<span class="vpr-hover-panel__empty">-</span>';
-            var mort = row.vn_mortuary_count ? String(row.vn_mortuary_count) + " 구" : "-";
-            var rooms = row.vn_room_count ? String(row.vn_room_count) + " 개" : "-";
-            var park = row.vn_park_count ? String(row.vn_park_count) + " 대" : "-";
-            return (
-                '<div class="vpr-hover-panel__inner">' +
-                '<p class="vpr-hover-panel__title">' +
-                escapeHtml(row.vn_company || "") +
-                "</p>" +
-                '<dl class="vpr-hover-panel__list">' +
-                hoverDetailRow("주소", row.vn_addr) +
-                hoverDetailRow("전화번호", row.vn_phone) +
-                hoverDetailRow("팩스번호", row.vn_fax) +
-                hoverDetailRow("안치능력", mort) +
-                hoverDetailRow("빈소수", rooms) +
-                hoverDetailRow("주차가능대수", park) +
-                "</dl>" +
-                '<div class="vpr-hover-panel__amenities">' +
-                '<p class="vpr-hover-panel__amenities-label">편의시설</p>' +
-                '<div class="vpr-hover-panel__amenity-list">' +
-                convHtml +
-                "</div></div></div>"
-            );
-        }
-
-        function positionHoverPanel(card) {
-            if (!hoverPanel || !card) return;
-            var rect = card.getBoundingClientRect();
-            var panel = hoverPanel;
-            panel.hidden = false;
-            panel.style.visibility = "hidden";
-            panel.style.left = "0px";
-            panel.style.top = "0px";
-            var pw = panel.offsetWidth;
-            var ph = panel.offsetHeight;
-            var gap = 8;
-            var left = rect.left + rect.width / 2 - pw / 2;
-            var top = rect.bottom + gap;
-            if (top + ph > window.innerHeight - 8) {
-                top = rect.top - ph - gap;
-            }
-            if (left < 8) left = 8;
-            if (left + pw > window.innerWidth - 8) left = window.innerWidth - pw - 8;
-            if (top < 8) top = rect.bottom + gap;
-            panel.style.left = Math.round(left) + "px";
-            panel.style.top = Math.round(top) + "px";
-            panel.style.visibility = "";
-        }
-
-        function showHoverPanel(card, row) {
-            if (!row) return;
-            var panel = ensureHoverPanel();
-            if (hoverHideTimer) {
-                clearTimeout(hoverHideTimer);
-                hoverHideTimer = null;
-            }
-            hoverRowId = String(row.fhi_id || "");
-            panel.innerHTML = buildHoverPanelHtml(row);
-            panel.hidden = false;
-            positionHoverPanel(card);
-        }
-
         function bindHoverCards(root) {
-            if (!root) return;
-            ensureHoverPanel();
-            root.querySelectorAll(".vpr-card--browse").forEach(function (card) {
-                card.addEventListener("mouseenter", function () {
-                    var row = findRowById(card.getAttribute("data-id"));
-                    if (row) showHoverPanel(card, row);
-                });
-                card.addEventListener("mouseleave", function (e) {
-                    var next = e.relatedTarget;
-                    if (next && (hoverPanel.contains(next) || card.contains(next))) return;
-                    scheduleHideHoverPanel();
-                });
-                card.addEventListener("click", function (e) {
-                    if (e.target.closest(".vpr-card__check")) return;
-                    if (!window.matchMedia("(hover: hover)").matches) {
-                        var row = findRowById(card.getAttribute("data-id"));
-                        if (!row) return;
-                        if (!hoverPanel.hidden && hoverRowId === String(row.fhi_id)) {
-                            hoverPanel.hidden = true;
-                            hoverRowId = "";
-                            return;
-                        }
-                        showHoverPanel(card, row);
-                    }
-                });
-            });
+            if (!root || !CARDS || !CARDS.bindBrowseHover) return;
+            CARDS.bindBrowseHover(root, findRowById);
         }
 
         function setStatus(msg, kind) {
@@ -603,13 +463,6 @@
                     if (e.target === saveModal) closeSaveModal();
                 });
             }
-            window.addEventListener(
-                "scroll",
-                function () {
-                    scheduleHideHoverPanel();
-                },
-                true
-            );
         }
 
         function setRegion(nextRegion) {

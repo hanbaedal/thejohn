@@ -49,15 +49,18 @@
         if (!CARDS || !listEl) return;
         if (DIST && DIST.enrichItems) DIST.enrichItems(cachedItems);
         CARDS.renderGrid(listEl, cachedItems, {
+            layout: "prospectBrowse",
             gridClass: "vpr-grid vpr-grid--cols3",
             emptyHtml:
                 '<p class="vpr-loading">예비업체가 없습니다. <a href="vendor-prospect-finder.html">예비 업체 찾기</a>에서 추가해 주세요.</p>',
+            hoverPanelOptions: function (it) {
+                return {
+                    districtLabel: districtLabel(it) || ""
+                };
+            },
             cardOptions: function (it) {
                 return {
-                    mode: "prospect",
-                    badge: it.vn_public_type || "예비",
-                    district: districtLabel(it),
-                    facilityType: it.vn_public_type || "예비",
+                    cardId: it.id,
                     showActions: true,
                     canWrite: true,
                     deleteId: it.id
