@@ -229,11 +229,24 @@
                 focusOpenTimer = setTimeout(function () {
                     focusOpenTimer = null;
                     if (!modal.hidden) return;
+                    if (document.activeElement !== companyInput) return;
                     openModal(true);
                 }, 120);
             }
             companyInput.addEventListener("focusin", scheduleOpenFromField);
-            companyInput.addEventListener("mouseenter", scheduleOpenFromField);
+            companyInput.addEventListener("focusout", function (e) {
+                if (focusOpenTimer) {
+                    clearTimeout(focusOpenTimer);
+                    focusOpenTimer = null;
+                }
+                var next = e.relatedTarget;
+                if (next && modal.contains(next)) return;
+                window.setTimeout(function () {
+                    if (modal.contains(document.activeElement)) return;
+                    if (document.activeElement === companyInput) return;
+                    closeModal();
+                }, 150);
+            });
         }
 
         updateBadge();
