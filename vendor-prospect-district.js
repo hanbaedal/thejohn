@@ -16,11 +16,8 @@
         m = s.match(/^인천광역시\s+(\S+?[구군])/);
         if (m) return m[1];
 
-        m = s.match(/^경기도\s+(\S+?[시군])\s+(\S+?[구읍면])/);
-        if (m && /[구읍면]$/.test(m[2])) return m[1] + " " + m[2];
-
-        m = s.match(/^경기도\s+(\S+?[시군])/);
-        if (m) return m[1];
+    m = s.match(/^경기도\s+(\S+?[시군])/);
+    if (m) return m[1];
 
         var parts = s.split(/\s+/);
         if (parts.length >= 2 && /(?:특별시|광역시|도)$/.test(parts[0])) return parts[1];
