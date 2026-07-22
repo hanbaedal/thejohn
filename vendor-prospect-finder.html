@@ -22,9 +22,10 @@
     <script src="auth.js"></script>
     <script src="staff-vendor-boot.js"></script>
     <script src="admin-header.js"></script>
+    <script src="vendor-excel-import-map.js"></script>
     <script src="nav.js" defer></script>
 </head>
-<body>
+<body class="vpf-body">
     <header class="site-header">
         <div class="site-header-start">
             <a href="work-hub.html" class="dz-logo dz-logo--compact" aria-label="그룹 마케팅 관리"><img src="img/logo.png" alt="" width="72" height="72" class="dz-logo-img"></a>
@@ -35,24 +36,52 @@
             <button type="button" class="btn btn-auth-icon btn-logout" id="btnLogout" hidden aria-label="로그아웃" title="로그아웃"></button>
         </nav>
     </header>
-    <main class="page-main vei-main page-main--hide-scrollbar">
-        <p class="am-subnav"><a href="vendor-manage.html">← 업체관리</a> · <a href="vendor-prospect-list.html">예비업체 리스트</a></p>
-        <h1>예비 업체 찾기</h1>
-        <p class="vei-hint">신규 장례식장 발굴 — 수도권(서울·경기·인천) 지역을 선택한 뒤, 관심 시설만 예비거래처 DB에 저장하세요.</p>
-        <p id="vpf-status" class="vei-status" role="status" aria-live="polite"></p>
+    <main class="page-main vei-main vpf-page">
+        <div class="vpf-sticky">
+            <p class="am-subnav"><a href="vendor-manage.html">← 업체관리</a> · <a href="vendor-prospect-list.html">예비업체 리스트</a></p>
+            <h1>예비 업체 찾기</h1>
+            <p class="vei-hint">신규 장례식장 발굴 — 수도권(서울·경기·인천) 지역을 선택한 뒤, 관심 시설만 예비거래처 DB에 저장하세요.</p>
+            <p id="vpf-status" class="vei-status" role="status" aria-live="polite"></p>
 
-        <section class="vei-panel" aria-labelledby="vpf-region-title">
-            <h2 id="vpf-region-title">1. 지역 선택</h2>
-            <p class="vei-hint">수도권 주요 지역(서울·경기·인천) 장례식장 정보입니다.</p>
-            <div id="vpf-region-cards" class="vpr-region-cards" aria-live="polite"></div>
+            <section class="vei-panel vpf-region-panel" aria-labelledby="vpf-region-title">
+                <h2 id="vpf-region-title">1. 지역 선택</h2>
+                <p class="vei-hint vpf-region-hint">수도권 주요 지역(서울·경기·인천) 장례식장 정보입니다.</p>
+                <div id="vpf-region-cards" class="vpr-region-cards" aria-live="polite"></div>
+            </section>
+        </div>
+
+        <section id="vpf-detail" class="vpf-detail vei-panel" hidden aria-labelledby="vpf-detail-title">
+            <div class="vpr-list-head">
+                <div>
+                    <h2 id="vpf-detail-title">장례식장 목록</h2>
+                    <p id="vpf-detail-subtitle" class="vei-hint"></p>
+                </div>
+                <p id="vpf-detail-count" class="vei-hint"></p>
+            </div>
+            <p id="vpf-detail-status" class="vei-status" role="status" aria-live="polite"></p>
+            <div class="vpr-toolbar">
+                <label class="vpr-check-all"><input type="checkbox" id="vpf-detail-check-all"> 전체 선택</label>
+                <button type="button" class="btn btn-secondary" id="vpf-detail-refresh-btn">새로고침</button>
+                <button type="button" class="btn btn-primary" id="vpf-detail-import-btn" disabled>선택 항목 예비거래처 DB에 저장</button>
+            </div>
+            <div id="vpf-detail-grid" class="vpr-grid" aria-live="polite"></div>
+            <div id="vpf-detail-result" class="vei-result" hidden></div>
         </section>
+
+        <div id="vpf-save-modal" class="vr-alert-modal" hidden role="alertdialog" aria-modal="true" aria-labelledby="vpf-save-modal-msg">
+            <div class="vr-alert-modal__panel">
+                <p id="vpf-save-modal-msg" class="vr-alert-modal__msg">선택한 내용이 저장되었습니다.</p>
+                <button type="button" class="vr-alert-modal__btn" id="vpf-save-modal-ok">확인</button>
+            </div>
+        </div>
     </main>
-    <footer class="site-footer">
+    <footer class="site-footer vpf-footer">
         <div class="site-footer-inner">
             <dl class="site-footer-grid" id="siteFooterCompanyGrid" aria-live="polite"></dl>
             <p class="site-footer-company-msg" id="siteFooterCompanyMsg" hidden></p>
         </div>
     </footer>
+    <script src="vendor-prospect-region.js"></script>
     <script src="vendor-prospect-finder.js"></script>
 </body>
 </html>
