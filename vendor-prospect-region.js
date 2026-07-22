@@ -19,6 +19,7 @@
         var api = global.THEJHON_API;
         var MAP = global.THEJHON_EXCEL_IMPORT_MAP;
         var DIST = global.THEJHON_VENDOR_DISTRICT;
+        var CARDS = global.THEJHON_VENDOR_LIST_CARDS;
         var ids = options.ids || DEFAULT_IDS;
         var regionParam = String(options.region || "서울").trim();
 
@@ -99,27 +100,22 @@
             }
         }
 
-        function cardImageHtml(row) {
-            var src =
-                api && api.fhiImageUrl && row.fhi_id
-                    ? api.fhiImageUrl(row.fhi_id)
-                    : row.image_url || "";
-            if (!src) {
-                return '<div class="vpr-card__img vpr-card__img--empty"></div>';
-            }
-            return (
-                '<img class="vpr-card__img" src="' +
-                escapeAttr(src) +
-                '" alt="' +
-                escapeAttr(row.vn_company) +
-                '" loading="lazy">'
-            );
-        }
-
         function renderCardHtml(row, idx) {
             var id = String(row.fhi_id || idx);
+            if (CARDS && CARDS.renderCard) {
+                return CARDS.renderCard(row, {
+                    mode: "prospect",
+                    district: row.district,
+                    facilityType: row.vn_public_type,
+                    badge: row.vn_public_type,
+                    showCheck: true,
+                    checkId: id,
+                    cardId: id,
+                    selected: !!selected[id],
+                    registeredVendor: row.registered_vendor || null
+                });
+            }
             var checked = !!selected[id];
-            var img = cardImageHtml(row);
             return (
                 '<article class="vpr-card' +
                 (checked ? " is-selected" : "") +
@@ -132,7 +128,13 @@
                 (checked ? " checked" : "") +
                 "> 선택</label>" +
                 '<div class="vpr-card__img-wrap">' +
-                img +
+                (api && api.fhiImageUrl && row.fhi_id
+                    ? '<img class="vpr-card__img" src="' +
+                      escapeAttr(api.fhiImageUrl(row.fhi_id)) +
+                      '" alt="' +
+                      escapeAttr(row.vn_company) +
+                      '" loading="lazy">'
+                    : '<div class="vpr-card__img vpr-card__img--empty"></div>') +
                 (row.vn_public_type
                     ? '<span class="vpr-card__badge">' + escapeHtml(row.vn_public_type) + "</span>"
                     : "") +
@@ -306,15 +308,19 @@
                 return;
             }
             checkAllEl.checked = visible.every(function (row) {
-                return selected[String(row.fhi_id)];
+                return isRegisteredRow(row) || selected[String(row.fhi_id)];
             });
+        }
+
+        function isRegisteredRow(row) {
+            return !!(row && row.registered_vendor && row.registered_vendor.id);
         }
 
         function toImportRows() {
             var out = [];
             items.forEach(function (row) {
                 var id = String(row.fhi_id);
-                if (!selected[id]) return;
+                if (!selected[id] || isRegisteredRow(row)) return;
                 out.push(
                     normalizeRow({
                         vn_company: row.vn_company,
@@ -373,6 +379,9 @@
                         subtitleEl.textContent =
                             (meta.sub || "") +
                             " — 시·구·군별로 분류되어 있습니다. 저장할 시설만 선택하세요." +
+                            (data.registeredCount
+                                ? " · 사업부문 등록 " + data.registeredCount + "곳(빨간 표시)"
+                                : "") +
                             (data.cached ? " (캐시)" : "");
                     }
                     renderGrid();
@@ -396,6 +405,7 @@
                 checkAllEl.addEventListener("change", function () {
                     var on = checkAllEl.checked;
                     getVisibleItems().forEach(function (row) {
+                        if (isRegisteredRow(row)) return;
                         selected[String(row.fhi_id)] = on;
                     });
                     renderGrid();

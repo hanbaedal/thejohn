@@ -16,7 +16,7 @@
     <link rel="stylesheet" href="staff-hub.css">
     <link rel="stylesheet" href="admin-manage.css">
     <link rel="stylesheet" href="vendor-excel-import.css">
-    <link rel="stylesheet" href="vendor-prospect-region.css?v=20260722">
+    <link rel="stylesheet" href="vendor-prospect-region.css?v=20260722-reg">
     <script src="api-config.js"></script>
     <script src="thejhon-api.js"></script>
     <script src="auth.js"></script>
@@ -36,12 +36,16 @@
             <button type="button" class="btn btn-auth-icon btn-logout" id="btnLogout" hidden aria-label="로그아웃" title="로그아웃"></button>
         </nav>
     </header>
-    <main class="page-main vei-main vpf-page">
+    <main class="page-main vei-main vpf-page page-main--vendor-cards">
         <div class="vpf-sticky">
             <p class="am-subnav"><a href="vendor-manage.html">← 업체관리</a> · <a href="vendor-prospect-list.html">예비업체 리스트</a></p>
             <h1>예비 업체 찾기</h1>
-            <p class="vei-hint">신규 장례식장 발굴 — 수도권(서울·경기·인천) 지역을 선택한 뒤, 관심 시설만 예비거래처 DB에 저장하세요.</p>
+            <p class="vei-hint">신규 장례식장 발굴 — 수도권(서울·경기·인천) 지역을 선택한 뒤, 관심 시설만 예비거래처 DB에 저장하세요. <strong>사업부문에 이미 등록된 업체</strong>는 사진 위에 빨간 「등록됨」 표시가 나타납니다.</p>
             <p id="vpf-status" class="vei-status" role="status" aria-live="polite"></p>
+            <p class="vpr-backfill-bar">
+                <button type="button" class="btn btn-secondary" id="vpf-backfill-logos-btn">로고 없는 업체 — FHI 이미지 보강</button>
+                <span class="vei-hint vpr-backfill-hint">사업부문 업체 중 이미지가 없는 곳을 funeralhallinfo와 이름·전화·주소로 비교해 자동 저장합니다.</span>
+            </p>
 
             <section class="vei-panel vpf-region-panel" aria-labelledby="vpf-region-title">
                 <h2 id="vpf-region-title">1. 지역 선택</h2>
@@ -83,6 +87,7 @@
         </div>
     </footer>
     <script src="vendor-prospect-district.js"></script>
+    <script src="vendor-list-cards.js?v=20260722-reg"></script>
     <script src="vendor-prospect-region.js"></script>
     <script src="vendor-prospect-finder.js"></script>
 </body>

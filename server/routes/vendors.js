@@ -22,6 +22,13 @@ const {
 } = require("../lib/vendorAccess");
 const { findAnyVendorLoginConflict, findDuplicateVendorByRegistrar } = require("../lib/vendorCollections");
 const { trimStaffLoginId } = require("../lib/staffLoginId");
+const { FHI_REGIONS, getRegionItems } = require("../lib/funeralHallInfoLookup");
+const {
+    findBestFhiMatch,
+    hasVendorLogo,
+    loadPartnerVendors
+} = require("../lib/vendorFhiMatch");
+const { applyFhiLogoToBuilt } = require("../lib/vendorFhiMedia");
 
 function isNewVendorRecordBody(body) {
     return (
@@ -144,6 +151,114 @@ router.get("/check-login-id", requireRole("supervisor", "admin"), async (req, re
     } catch (e) {
         console.error("GET /api/vendors/check-login-id", e);
         res.status(500).json({ ok: false, error: "아이디 중복 확인에 실패했습니다." });
+    }
+});
+
+/** 슈퍼바이저/관리자 — 로고 없는 사업부문 업체에 FHI 이미지 보강 */
+router.post("/backfill-fhi-logos", requireRole("supervisor", "admin"), async (req, res) => {
+    try {
+        const dryRun = !!(req.body && req.body.dryRun);
+        const force = !!(req.body && req.body.force);
+        const db = getDb();
+        const vendors = await loadPartnerVendors(db);
+        const needLogo = vendors.filter(function (v) {
+            return force || !hasVendorLogo(v);
+        });
+
+        const allFhi = [];
+        for (let i = 0; i < FHI_REGIONS.length; i++) {
+            const slug = FHI_REGIONS[i].slug;
+            const result = await getRegionItems(slug, { withPhones: true, refresh: false });
+            if (result.items && result.items.length) {
+                allFhi.push.apply(allFhi, result.items);
+            }
+        }
+
+        const results = [];
+        let updated = 0;
+        let skipped = 0;
+        let failed = 0;
+
+        for (let i = 0; i < needLogo.length; i++) {
+            const vendor = needLogo[i];
+            const match = findBestFhiMatch(vendor, allFhi);
+            if (!match || !match.fhi_id) {
+                skipped++;
+                results.push({
+                    vendorId: vendor.id,
+                    company: vendor.vn_company || "",
+                    status: "no_match"
+                });
+                continue;
+            }
+
+            if (dryRun) {
+                results.push({
+                    vendorId: vendor.id,
+                    company: vendor.vn_company || "",
+                    fhi_id: match.fhi_id,
+                    score: match.score,
+                    status: "would_update"
+                });
+                continue;
+            }
+
+            try {
+                const built = { vn_logo: "" };
+                await applyFhiLogoToBuilt(built, match.fhi_id);
+                const col = db.collection("vendors");
+                const ret = await col.updateOne(
+                    { id: vendor.id },
+                    {
+                        $set: {
+                            [F.logo]: built.vn_logo,
+                            fhi_id: String(match.fhi_id),
+                            updatedAt: Date.now()
+                        }
+                    }
+                );
+                if (ret && ret.modifiedCount) {
+                    updated++;
+                    results.push({
+                        vendorId: vendor.id,
+                        company: vendor.vn_company || "",
+                        fhi_id: match.fhi_id,
+                        score: match.score,
+                        status: "updated"
+                    });
+                } else {
+                    skipped++;
+                    results.push({
+                        vendorId: vendor.id,
+                        company: vendor.vn_company || "",
+                        status: "unchanged"
+                    });
+                }
+            } catch (e) {
+                failed++;
+                results.push({
+                    vendorId: vendor.id,
+                    company: vendor.vn_company || "",
+                    fhi_id: match.fhi_id,
+                    status: "image_failed",
+                    error: (e && e.message) || "이미지 저장 실패"
+                });
+            }
+        }
+
+        res.json({
+            ok: true,
+            dryRun: dryRun,
+            total: needLogo.length,
+            updated: updated,
+            skipped: skipped,
+            failed: failed,
+            fhiPool: allFhi.length,
+            results: results.slice(0, 100)
+        });
+    } catch (e) {
+        console.error("POST /api/vendors/backfill-fhi-logos", e);
+        res.status(500).json({ ok: false, error: "업체 이미지 보강에 실패했습니다." });
     }
 });
 

@@ -386,8 +386,16 @@
                 return {
                     region: d.region,
                     items: d.items || [],
-                    cached: d.cached
+                    cached: d.cached,
+                    registeredCount: d.registeredCount || 0
                 };
+            });
+        },
+        backfillVendorFhiLogos: function (options) {
+            options = options || {};
+            return request("POST", "/api/vendors/backfill-fhi-logos", {
+                dryRun: !!options.dryRun,
+                force: !!options.force
             });
         },
         fhiImageUrl: function (fhiId) {

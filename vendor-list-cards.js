@@ -83,8 +83,7 @@
                 )
             );
             rows.push(metaRow("전화번호", it.vn_phone));
-            if (it.loginId) rows.push(metaRow("아이디", it.loginId));
-            if (opts.registrar) rows.push(metaRow("담당", opts.registrar));
+            rows.push(metaRow("담당", opts.registrar || it.loginId || ""));
         }
         return rows.join("");
     }
@@ -96,8 +95,31 @@
         var canWrite = opts.canWrite !== false;
         var badge = String(opts.badge || "").trim();
         var footActions = "";
+        var checkHtml = "";
+        var cardId = String(opts.cardId || opts.checkId || "").trim();
+        var cardClass = "vpr-card";
+
+        if (opts.showCheck) {
+            var checked = !!opts.selected;
+            var isRegistered = !!(opts.registeredVendor && opts.registeredVendor.id);
+            if (checked) cardClass += " is-selected";
+            if (isRegistered) cardClass += " vpr-card--registered";
+            checkHtml =
+                '<label class="vpr-card__check' +
+                (isRegistered ? " vpr-card__check--disabled" : "") +
+                '"><input type="checkbox" class="vpr-item-check" data-id="' +
+                escapeAttr(opts.checkId || cardId) +
+                '"' +
+                (checked ? " checked" : "") +
+                (isRegistered ? " disabled" : "") +
+                "> 선택</label>";
+        } else if (opts.showActions) {
+            checkHtml =
+                '<div class="vpr-card__check vpr-card__check--placeholder" aria-hidden="true"></div>';
+        }
 
         if (opts.showActions) {
+            cardClass += " vpr-card--list";
             footActions = '<div class="vpr-card__actions">';
             if (editHref) {
                 footActions +=
@@ -124,11 +146,47 @@
               "</a></h3>"
             : '<h3 class="vpr-card__name">' + escapeHtml(name) + "</h3>";
 
+        var registered = opts.registeredVendor || null;
+        var imgWrapClass = registered ? " vpr-card__img-wrap--registered" : "";
+        var registeredOverlay = "";
+        if (registered) {
+            var regLabel = "등록됨";
+            var regTitle = String(registered.vn_company || name).trim();
+            var regHref = registered.id
+                ? "vendor-edit.html?id=" + encodeURIComponent(registered.id)
+                : "";
+            if (regHref) {
+                registeredOverlay =
+                    '<a class="vpr-card__registered-overlay" href="' +
+                    escapeAttr(regHref) +
+                    '" title="' +
+                    escapeAttr(regTitle) +
+                    '">' +
+                    escapeHtml(regLabel) +
+                    "</a>";
+            } else {
+                registeredOverlay =
+                    '<span class="vpr-card__registered-overlay" title="' +
+                    escapeAttr(regTitle) +
+                    '">' +
+                    escapeHtml(regLabel) +
+                    "</span>";
+            }
+        }
+
         return (
-            '<article class="vpr-card vpr-card--list">' +
-            '<div class="vpr-card__img-wrap">' +
+            "<article" +
+            (cardId ? ' data-id="' + escapeAttr(cardId) + '"' : "") +
+            ' class="' +
+            cardClass +
+            '">' +
+            checkHtml +
+            '<div class="vpr-card__img-wrap' +
+            imgWrapClass +
+            '">' +
             logoHtml(it) +
             (badge ? '<span class="vpr-card__badge">' + escapeHtml(badge) + "</span>" : "") +
+            registeredOverlay +
             "</div>" +
             '<div class="vpr-card__body">' +
             nameHtml +

@@ -1,3 +1,27 @@
+/* 업체·예비업체 카드 페이지 — 본문 폭·카드 크기 통일 */
+.page-main.page-main--vendor-cards {
+    max-width: min(76rem, 100%);
+    padding-left: 0.75rem;
+    padding-right: 0.75rem;
+    box-sizing: border-box;
+}
+.vpf-page.page-main--vendor-cards {
+    max-width: min(76rem, 100%);
+    padding-left: 0.75rem;
+    padding-right: 0.75rem;
+}
+.vpr-backfill-bar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.55rem 0.75rem;
+    margin: 0 0 0.65rem;
+}
+.vpr-backfill-hint {
+    margin: 0;
+    flex: 1 1 14rem;
+}
+
 /* 예비 업체 찾기 — 수도권 지역 카드·4열 그리드 */
 .vpr-region-cards {
     display: grid;
@@ -112,6 +136,7 @@
     display: grid;
     grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: 0.85rem;
+    align-items: stretch;
 }
 .vpr-grid--cols3 {
     grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -135,6 +160,7 @@
     background: #fff;
     display: flex;
     flex-direction: column;
+    height: 100%;
     box-shadow: 0 1px 6px rgba(10, 40, 80, 0.05);
 }
 .vpr-card.is-selected {
@@ -143,6 +169,13 @@
 }
 .vpr-card__check {
     padding: 0.45rem 0.6rem 0;
+    min-height: 1.75rem;
+    box-sizing: border-box;
+    flex-shrink: 0;
+}
+.vpr-card__check--placeholder {
+    visibility: hidden;
+    pointer-events: none;
 }
 .vpr-card__img-wrap {
     position: relative;
@@ -168,6 +201,32 @@
     background: rgba(255, 255, 255, 0.92);
     color: #334155;
     border: 1px solid #e2e8f0;
+    z-index: 2;
+}
+.vpr-card__registered-overlay {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(220, 38, 38, 0.62);
+    color: #fff;
+    font-size: 0.82rem;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    text-decoration: none;
+    z-index: 3;
+}
+.vpr-card__registered-overlay:hover {
+    background: rgba(185, 28, 28, 0.72);
+    color: #fff;
+}
+.vpr-card__check--disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+}
+.vpr-card--registered {
+    opacity: 0.92;
 }
 .vpr-card__body {
     padding: 0.65rem 0.75rem 0.75rem;
@@ -197,6 +256,9 @@
     font-size: 0.72rem;
     color: #334155;
     margin-top: 0.25rem;
+    flex: 1;
+    min-height: 5.6rem;
+    align-content: start;
 }
 .vpr-card__meta dt {
     color: #64748b;
@@ -225,9 +287,12 @@
     flex-wrap: wrap;
     gap: 0.35rem;
     justify-content: flex-end;
-    margin-top: 0.45rem;
+    align-items: center;
+    margin-top: auto;
+    min-height: 2.75rem;
     padding-top: 0.55rem;
     border-top: 1px solid #e2e8f0;
+    flex-shrink: 0;
 }
 .vpr-card--list .vpr-card__btn {
     font-size: 0.72rem;

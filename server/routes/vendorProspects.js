@@ -21,23 +21,13 @@ const {
     searchFuneralHalls
 } = require("../lib/vendorExternalLookup");
 const { getRegionSummaries, getRegionItems, fetchFhiImageBuffer } = require("../lib/funeralHallInfoLookup");
+const { applyFhiMediaToDoc } = require("../lib/vendorFhiMedia");
+const { loadPartnerVendors, annotateFhiItems } = require("../lib/vendorFhiMatch");
 
 const router = express.Router();
 
 async function attachFhiProspectMedia(doc, row) {
-    const fhiId = String((row && row.fhi_id) || "").trim();
-    if (!/^\d+$/.test(fhiId)) return doc;
-    doc.fhi_id = fhiId;
-    const pubType = String((row && row.vn_public_type) || "").trim();
-    if (pubType) doc.vn_public_type = pubType;
-    try {
-        const img = await fetchFhiImageBuffer(fhiId);
-        const mime = img.type || "image/webp";
-        doc[F.logo] = "data:" + mime + ";base64," + img.buf.toString("base64");
-    } catch (e) {
-        console.warn("[vendor_prospects] fhi image skip:", fhiId, e && e.message);
-    }
-    return doc;
+    return applyFhiMediaToDoc(doc, row);
 }
 
 function optionalAuth(req) {
@@ -217,11 +207,17 @@ router.get("/fhi-region", requireRole("admin"), async function (req, res) {
         const refresh = String(req.query.refresh || "") === "1";
         const withPhones = String(req.query.phones || "1") !== "0";
         const result = await getRegionItems(region, { refresh: refresh, withPhones: withPhones });
+        const db = getDb();
+        const partnerVendors = await loadPartnerVendors(db);
+        const items = annotateFhiItems(result.items || [], partnerVendors);
         res.json({
             ok: true,
             region: result.region,
-            items: result.items || [],
+            items: items,
             cached: !!result.cached,
+            registeredCount: items.filter(function (row) {
+                return row.registered_vendor;
+            }).length,
             source: "funeralhallinfo"
         });
     } catch (e) {
