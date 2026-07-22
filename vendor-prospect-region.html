@@ -49,7 +49,8 @@
                 <button type="button" class="btn btn-secondary" id="vpr-refresh-btn">새로고침</button>
                 <button type="button" class="btn btn-primary" id="vpr-import-btn" disabled>선택 항목 예비거래처 DB에 저장</button>
             </div>
-            <div id="vpr-grid" class="vpr-grid" aria-live="polite"></div>
+            <div id="vpr-districts" class="vpr-district-bar" hidden aria-label="시·구·군 필터"></div>
+            <div id="vpr-grid" class="vpr-district-wrap" aria-live="polite"></div>
             <div id="vpr-result" class="vei-result" hidden></div>
         </section>
 
@@ -66,6 +67,7 @@
             <p class="site-footer-company-msg" id="siteFooterCompanyMsg" hidden></p>
         </div>
     </footer>
+    <script src="vendor-prospect-district.js"></script>
     <script src="vendor-prospect-region.js"></script>
 </body>
 </html>

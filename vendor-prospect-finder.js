@@ -14,6 +14,7 @@
         subtitle: "vpf-detail-subtitle",
         status: "vpf-detail-status",
         count: "vpf-detail-count",
+        districts: "vpf-detail-districts",
         grid: "vpf-detail-grid",
         checkAll: "vpf-detail-check-all",
         refreshBtn: "vpf-detail-refresh-btn",

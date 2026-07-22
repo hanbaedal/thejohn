@@ -49,6 +49,41 @@ function findRegionMeta(slug) {
     return null;
 }
 
+/** 주소에서 시·구·군(읍·면) 추출 */
+function parseDistrictFromAddr(addr) {
+    var s = String(addr || "")
+        .trim()
+        .replace(/\([^)]*\)/g, "")
+        .trim();
+    if (!s) return "기타";
+
+    var m;
+    m = s.match(/^서울특별시\s+(\S+?[구군])/);
+    if (m) return m[1];
+
+    m = s.match(/^인천광역시\s+(\S+?[구군])/);
+    if (m) return m[1];
+
+    m = s.match(/^경기도\s+(\S+?[시군])\s+(\S+?[구읍면])/);
+    if (m && /[구읍면]$/.test(m[2])) return m[1] + " " + m[2];
+
+    m = s.match(/^경기도\s+(\S+?[시군])/);
+    if (m) return m[1];
+
+    var parts = s.split(/\s+/);
+    if (parts.length >= 2 && /(?:특별시|광역시|도)$/.test(parts[0])) return parts[1];
+    return "기타";
+}
+
+function attachDistricts(items) {
+    for (var i = 0; i < items.length; i++) {
+        if (!items[i].district) {
+            items[i].district = parseDistrictFromAddr(items[i].vn_addr);
+        }
+    }
+    return items;
+}
+
 async function fetchHtml(path) {
     var url = path.indexOf("http") === 0 ? path : FHI_BASE + path;
     var controller = new AbortController();
@@ -93,10 +128,12 @@ function parseListCards(html) {
         if (!roomMatch) roomMatch = chunk.match(/빈소\s*(\d+)\s*실/);
         var mortMatch = chunk.match(/안치실\s*<!--\s*-->\s*(\d+)\s*<!--\s*-->\s*실/);
         if (!mortMatch) mortMatch = chunk.match(/안치실\s*(\d+)\s*실/);
+        var addr = stripTags(addrMatch ? addrMatch[1] : "");
         items.push({
             fhi_id: fid,
             vn_company: name,
-            vn_addr: stripTags(addrMatch ? addrMatch[1] : ""),
+            vn_addr: addr,
+            district: parseDistrictFromAddr(addr),
             vn_public_type: typeMatch ? typeMatch[1] : "",
             vn_room_count: roomMatch ? roomMatch[1] : "",
             vn_mortuary_count: mortMatch ? mortMatch[1] : "",
@@ -236,11 +273,11 @@ async function getRegionItems(region, options) {
     var now = Date.now();
     var cached = cache.regions[slug];
     if (!options.refresh && cached && cached.items && now - cached.at < CACHE_TTL_MS) {
-        return { region: meta, items: cached.items, cached: true };
+        return { region: meta, items: attachDistricts(cached.items.slice()), cached: true };
     }
 
     var html = await fetchHtml("/regions/" + encodeURIComponent(slug) + "/");
-    var items = parseListCards(html);
+    var items = attachDistricts(parseListCards(html));
     if (options.withPhones !== false) {
         await enrichPhones(items);
     }
@@ -254,5 +291,6 @@ module.exports = {
     getRegionSummaries,
     getRegionItems,
     fetchFhiImageBuffer,
+    parseDistrictFromAddr,
     normRegionKey
 };

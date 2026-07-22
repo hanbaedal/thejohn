@@ -4,6 +4,7 @@
         subtitle: "vpr-subtitle",
         status: "vpr-status",
         count: "vpr-count",
+        districts: "vpr-districts",
         grid: "vpr-grid",
         checkAll: "vpr-check-all",
         refreshBtn: "vpr-refresh-btn",
@@ -17,6 +18,7 @@
         options = options || {};
         var api = global.THEJHON_API;
         var MAP = global.THEJHON_EXCEL_IMPORT_MAP;
+        var DIST = global.THEJHON_VENDOR_DISTRICT;
         var ids = options.ids || DEFAULT_IDS;
         var regionParam = String(options.region || "서울").trim();
 
@@ -28,6 +30,7 @@
         var subtitleEl = el("subtitle");
         var statusEl = el("status");
         var countEl = el("count");
+        var districtsEl = el("districts");
         var gridEl = el("grid");
         var checkAllEl = el("checkAll");
         var refreshBtn = el("refreshBtn");
@@ -38,6 +41,7 @@
 
         var items = [];
         var selected = {};
+        var activeDistrict = "";
         var bound = false;
 
         function setStatus(msg, kind) {
@@ -64,12 +68,35 @@
             return MAP && MAP.normalizeImportRow ? MAP.normalizeImportRow(row || {}) : row || {};
         }
 
+        function enrichDistricts() {
+            if (DIST && DIST.enrichItems) DIST.enrichItems(items);
+            else if (DIST && DIST.parse) {
+                items.forEach(function (row) {
+                    if (!row.district) row.district = DIST.parse(row.vn_addr);
+                });
+            }
+        }
+
+        function getVisibleItems() {
+            enrichDistricts();
+            if (!activeDistrict) return items;
+            return items.filter(function (row) {
+                return (row.district || "기타") === activeDistrict;
+            });
+        }
+
         function updateImportBtn() {
+            var visible = getVisibleItems();
             var n = Object.keys(selected).filter(function (k) {
                 return selected[k];
             }).length;
             if (importBtn) importBtn.disabled = n === 0;
-            if (countEl) countEl.textContent = "총 " + items.length + "건 · 선택 " + n + "건";
+            if (countEl) {
+                var txt = "총 " + items.length + "건";
+                if (activeDistrict) txt += " · " + activeDistrict + " " + visible.length + "건";
+                txt += " · 선택 " + n + "건";
+                countEl.textContent = txt;
+            }
         }
 
         function cardImageHtml(row) {
@@ -89,61 +116,57 @@
             );
         }
 
-        function renderGrid() {
-            if (!gridEl) return;
-            if (!items.length) {
-                gridEl.innerHTML = '<p class="vpr-loading">표시할 장례식장이 없습니다.</p>';
-                updateImportBtn();
-                return;
-            }
-            gridEl.innerHTML = items
-                .map(function (row, idx) {
-                    var id = String(row.fhi_id || idx);
-                    var checked = !!selected[id];
-                    var img = cardImageHtml(row);
-                    return (
-                        '<article class="vpr-card' +
-                        (checked ? " is-selected" : "") +
-                        '" data-id="' +
-                        escapeAttr(id) +
-                        '">' +
-                        '<label class="vpr-card__check"><input type="checkbox" class="vpr-item-check" data-id="' +
-                        escapeAttr(id) +
-                        '"' +
-                        (checked ? " checked" : "") +
-                        "> 선택</label>" +
-                        '<div class="vpr-card__img-wrap">' +
-                        img +
-                        (row.vn_public_type
-                            ? '<span class="vpr-card__badge">' + escapeHtml(row.vn_public_type) + "</span>"
-                            : "") +
-                        "</div>" +
-                        '<div class="vpr-card__body">' +
-                        '<h3 class="vpr-card__name">' +
-                        escapeHtml(row.vn_company) +
-                        "</h3>" +
-                        '<p class="vpr-card__addr">' +
-                        escapeHtml(row.vn_addr) +
-                        "</p>" +
-                        '<dl class="vpr-card__meta">' +
-                        "<dt>시설 형태</dt><dd>" +
-                        escapeHtml(row.vn_public_type || "-") +
-                        "</dd>" +
-                        "<dt>안치능력</dt><dd>" +
-                        (row.vn_mortuary_count ? escapeHtml(row.vn_mortuary_count) + "구" : "-") +
-                        "</dd>" +
-                        "<dt>빈소 정보</dt><dd>" +
-                        (row.vn_room_count ? escapeHtml(row.vn_room_count) + "개" : "-") +
-                        "</dd>" +
-                        "<dt>전화번호</dt><dd>" +
-                        escapeHtml(row.vn_phone || "-") +
-                        "</dd>" +
-                        "</dl></div></article>"
-                    );
-                })
-                .join("");
+        function renderCardHtml(row, idx) {
+            var id = String(row.fhi_id || idx);
+            var checked = !!selected[id];
+            var img = cardImageHtml(row);
+            return (
+                '<article class="vpr-card' +
+                (checked ? " is-selected" : "") +
+                '" data-id="' +
+                escapeAttr(id) +
+                '">' +
+                '<label class="vpr-card__check"><input type="checkbox" class="vpr-item-check" data-id="' +
+                escapeAttr(id) +
+                '"' +
+                (checked ? " checked" : "") +
+                "> 선택</label>" +
+                '<div class="vpr-card__img-wrap">' +
+                img +
+                (row.vn_public_type
+                    ? '<span class="vpr-card__badge">' + escapeHtml(row.vn_public_type) + "</span>"
+                    : "") +
+                "</div>" +
+                '<div class="vpr-card__body">' +
+                '<h3 class="vpr-card__name">' +
+                escapeHtml(row.vn_company) +
+                "</h3>" +
+                '<p class="vpr-card__addr">' +
+                escapeHtml(row.vn_addr) +
+                "</p>" +
+                '<dl class="vpr-card__meta">' +
+                "<dt>시·구·군</dt><dd>" +
+                escapeHtml(row.district || "-") +
+                "</dd>" +
+                "<dt>시설 형태</dt><dd>" +
+                escapeHtml(row.vn_public_type || "-") +
+                "</dd>" +
+                "<dt>안치능력</dt><dd>" +
+                (row.vn_mortuary_count ? escapeHtml(row.vn_mortuary_count) + "구" : "-") +
+                "</dd>" +
+                "<dt>빈소 정보</dt><dd>" +
+                (row.vn_room_count ? escapeHtml(row.vn_room_count) + "개" : "-") +
+                "</dd>" +
+                "<dt>전화번호</dt><dd>" +
+                escapeHtml(row.vn_phone || "-") +
+                "</dd>" +
+                "</dl></div></article>"
+            );
+        }
 
-            gridEl.querySelectorAll(".vpr-item-check").forEach(function (inp) {
+        function bindCardChecks(root) {
+            if (!root) return;
+            root.querySelectorAll(".vpr-item-check").forEach(function (inp) {
                 inp.addEventListener("change", function () {
                     var id = inp.getAttribute("data-id");
                     selected[id] = inp.checked;
@@ -153,15 +176,138 @@
                     syncCheckAll();
                 });
             });
+        }
+
+        function renderDistrictBar() {
+            if (!districtsEl) return;
+            if (!items.length) {
+                districtsEl.hidden = true;
+                districtsEl.innerHTML = "";
+                return;
+            }
+            enrichDistricts();
+            var counts = DIST && DIST.countByDistrict ? DIST.countByDistrict(items) : {};
+            var keys =
+                DIST && DIST.sortDistrictKeys
+                    ? DIST.sortDistrictKeys(Object.keys(counts))
+                    : Object.keys(counts).sort();
+            if (keys.length <= 1) {
+                districtsEl.hidden = true;
+                districtsEl.innerHTML = "";
+                return;
+            }
+            districtsEl.hidden = false;
+            districtsEl.innerHTML =
+                '<p class="vpr-district-bar__label">시·구·군</p><div class="vpr-district-bar__chips" role="tablist">' +
+                '<button type="button" class="vpr-district-chip' +
+                (!activeDistrict ? " is-active" : "") +
+                '" data-district="" role="tab" aria-selected="' +
+                (!activeDistrict ? "true" : "false") +
+                '">전체 <span class="vpr-district-chip__count">' +
+                items.length +
+                "</span></button>" +
+                keys
+                    .map(function (key) {
+                        var on = activeDistrict === key;
+                        return (
+                            '<button type="button" class="vpr-district-chip' +
+                            (on ? " is-active" : "") +
+                            '" data-district="' +
+                            escapeAttr(key) +
+                            '" role="tab" aria-selected="' +
+                            (on ? "true" : "false") +
+                            '">' +
+                            escapeHtml(key) +
+                            ' <span class="vpr-district-chip__count">' +
+                            counts[key] +
+                            "</span></button>"
+                        );
+                    })
+                    .join("") +
+                "</div>";
+            districtsEl.querySelectorAll(".vpr-district-chip").forEach(function (btn) {
+                btn.addEventListener("click", function () {
+                    activeDistrict = btn.getAttribute("data-district") || "";
+                    renderGrid();
+                });
+            });
+        }
+
+        function renderGrid() {
+            if (!gridEl) return;
+            if (!items.length) {
+                gridEl.className = "vpr-district-wrap";
+                gridEl.innerHTML = '<p class="vpr-loading">표시할 장례식장이 없습니다.</p>';
+                if (districtsEl) {
+                    districtsEl.hidden = true;
+                    districtsEl.innerHTML = "";
+                }
+                updateImportBtn();
+                return;
+            }
+
+            renderDistrictBar();
+            var visible = getVisibleItems();
+            if (!visible.length) {
+                gridEl.className = "vpr-district-wrap";
+                gridEl.innerHTML =
+                    '<p class="vpr-loading">선택한 시·구·군에 표시할 장례식장이 없습니다.</p>';
+                updateImportBtn();
+                syncCheckAll();
+                return;
+            }
+
+            if (!activeDistrict && DIST && DIST.groupByDistrict) {
+                var groups = DIST.groupByDistrict(items);
+                gridEl.className = "vpr-district-wrap";
+                gridEl.innerHTML = groups
+                    .map(function (group) {
+                        return (
+                            '<section class="vpr-district-group" id="vpr-district-' +
+                            escapeAttr(group.district) +
+                            '">' +
+                            '<h3 class="vpr-district-title">' +
+                            escapeHtml(group.district) +
+                            ' <span class="vpr-district-count">' +
+                            group.items.length +
+                            "개소</span></h3>" +
+                            '<div class="vpr-grid">' +
+                            group.items
+                                .map(function (row, idx) {
+                                    return renderCardHtml(row, idx);
+                                })
+                                .join("") +
+                            "</div></section>"
+                        );
+                    })
+                    .join("");
+            } else {
+                gridEl.className = "vpr-district-wrap";
+                gridEl.innerHTML =
+                    '<div class="vpr-grid">' +
+                    visible
+                        .map(function (row, idx) {
+                            return renderCardHtml(row, idx);
+                        })
+                        .join("") +
+                    "</div>";
+            }
+
+            bindCardChecks(gridEl);
             updateImportBtn();
+            syncCheckAll();
         }
 
         function syncCheckAll() {
-            if (!checkAllEl || !items.length) return;
-            var all = items.every(function (row) {
+            if (!checkAllEl) return;
+            var visible = getVisibleItems();
+            if (!visible.length) {
+                checkAllEl.checked = false;
+                return;
+            }
+            checkAllEl.checked = visible.every(function (row) {
                 return selected[String(row.fhi_id)];
             });
-            checkAllEl.checked = all;
         }
 
         function toImportRows() {
@@ -196,12 +342,18 @@
                 return Promise.reject(new Error("API"));
             }
             if (gridEl) {
+                gridEl.className = "vpr-district-wrap";
                 gridEl.innerHTML =
                     '<p class="vpr-loading">목록을 불러오는 중입니다. 전화번호 조회는 최초 1회만 시간이 걸릴 수 있습니다…</p>';
+            }
+            if (districtsEl) {
+                districtsEl.hidden = true;
+                districtsEl.innerHTML = "";
             }
             setStatus(refresh ? "새로고침 중…" : "장례식장 목록 불러오는 중…");
             if (importBtn) importBtn.disabled = true;
             selected = {};
+            activeDistrict = "";
             if (checkAllEl) checkAllEl.checked = false;
             if (resultEl) {
                 resultEl.hidden = true;
@@ -212,12 +364,13 @@
                 .getFhiRegionItems(regionParam, { refresh: !!refresh, phones: true })
                 .then(function (data) {
                     items = data.items || [];
+                    enrichDistricts();
                     var meta = data.region || {};
                     if (titleEl) titleEl.textContent = (meta.label || regionParam) + " 장례식장";
                     if (subtitleEl) {
                         subtitleEl.textContent =
                             (meta.sub || "") +
-                            " — 신규 발굴용 목록입니다. 저장할 시설만 선택하세요." +
+                            " — 시·구·군별로 분류되어 있습니다. 저장할 시설만 선택하세요." +
                             (data.cached ? " (캐시)" : "");
                     }
                     renderGrid();
@@ -240,7 +393,7 @@
             if (checkAllEl) {
                 checkAllEl.addEventListener("change", function () {
                     var on = checkAllEl.checked;
-                    items.forEach(function (row) {
+                    getVisibleItems().forEach(function (row) {
                         selected[String(row.fhi_id)] = on;
                     });
                     renderGrid();
@@ -294,6 +447,7 @@
 
         function setRegion(nextRegion) {
             regionParam = String(nextRegion || "").trim() || regionParam;
+            activeDistrict = "";
         }
 
         bindEvents();

@@ -1,5 +1,5 @@
 /**
- * 업체·신규업체·예비업체 리스트 — 예비업체 찾기 상세보기와 동일 카드 그리드
+ * 업체·신규업체·예비업체 리스트 — 예비업체 찾기 상세보기와 동일 카드
  */
 (function (global) {
     function escapeHtml(s) {
@@ -42,18 +42,31 @@
     function buildMeta(it, opts) {
         var rows = [];
         var mode = opts.mode || "prospect";
+
         if (mode === "prospect") {
-            rows.push(metaRow("전화번호", it.vn_phone));
+            rows.push(metaRow("시·구·군", opts.district));
+            rows.push(metaRow("시설 형태", opts.facilityType || "예비"));
             rows.push(
-                metaRow("빈소", it.vn_room_count ? String(it.vn_room_count) + "개" : "")
+                metaRow(
+                    "안치능력",
+                    it.vn_mortuary_count ? String(it.vn_mortuary_count) + "구" : ""
+                )
             );
-            if (it.vn_ceo) rows.push(metaRow("대표자", it.vn_ceo));
-            if (it.vn_ceo_tel) rows.push(metaRow("대표 연락처", it.vn_ceo_tel));
+            rows.push(
+                metaRow(
+                    "빈소 정보",
+                    it.vn_room_count ? String(it.vn_room_count) + "개" : ""
+                )
+            );
+            rows.push(metaRow("전화번호", it.vn_phone));
         } else {
             rows.push(metaRow("사업부문", opts.deptLabel));
             rows.push(metaRow("등급", opts.gradeLabel));
             rows.push(
-                metaRow("빈소", it.vn_room_count ? String(it.vn_room_count) + "개" : "")
+                metaRow(
+                    "빈소 정보",
+                    it.vn_room_count ? String(it.vn_room_count) + "개" : ""
+                )
             );
             rows.push(metaRow("전화번호", it.vn_phone));
             if (it.loginId) rows.push(metaRow("아이디", it.loginId));
@@ -68,25 +81,25 @@
         var editHref = opts.editHref || "";
         var canWrite = opts.canWrite !== false;
         var badge = String(opts.badge || "").trim();
-        var actions = "";
+        var footActions = "";
 
         if (opts.showActions) {
-            actions = '<div class="vpr-card__toolbar">';
+            footActions = '<div class="vpr-card__actions">';
             if (editHref) {
-                actions +=
+                footActions +=
                     '<a class="btn btn-secondary vpr-card__btn" href="' +
                     escapeAttr(editHref) +
                     '">수정</a>';
             }
             if (canWrite && opts.deleteId) {
-                actions +=
+                footActions +=
                     '<button type="button" class="btn vpr-card__btn vpr-card__btn--del" data-vl-delete="' +
                     escapeAttr(opts.deleteId) +
                     '" data-vl-name="' +
                     escapeAttr(name) +
                     '">삭제</button>';
             }
-            actions += "</div>";
+            footActions += "</div>";
         }
 
         var nameHtml = editHref
@@ -99,7 +112,6 @@
 
         return (
             '<article class="vpr-card vpr-card--list">' +
-            actions +
             '<div class="vpr-card__img-wrap">' +
             logoHtml(it) +
             (badge ? '<span class="vpr-card__badge">' + escapeHtml(badge) + "</span>" : "") +
@@ -111,14 +123,16 @@
             "</p>" +
             '<dl class="vpr-card__meta">' +
             buildMeta(it, opts) +
-            "</dl></div></article>"
+            "</dl>" +
+            footActions +
+            "</div></article>"
         );
     }
 
     function renderGrid(container, items, options) {
         if (!container) return;
         options = options || {};
-        var gridClass = options.gridClass || "vpr-grid vpr-grid--vendor-list";
+        var gridClass = options.gridClass || "vpr-grid vpr-grid--cols3";
         if (!items || !items.length) {
             container.className = gridClass;
             container.innerHTML =

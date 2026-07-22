@@ -132,6 +132,7 @@
             return (b.updatedAt || 0) - (a.updatedAt || 0);
         });
         CARDS.renderGrid(listEl, items, {
+            gridClass: "vpr-grid vpr-grid--cols3",
             emptyHtml:
                 '<p class="vpr-loading">신규 업체가 없습니다. <a href="vendor-new-register.html">신규업체 등록</a>에서 추가해 주세요.</p>',
             cardOptions: function (it) {

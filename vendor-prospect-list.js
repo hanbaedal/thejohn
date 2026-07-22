@@ -1,6 +1,7 @@
 (function () {
     var api = window.THEJHON_API;
     var CARDS = window.THEJHON_VENDOR_LIST_CARDS;
+    var DIST = window.THEJHON_VENDOR_DISTRICT;
     var listEl = document.getElementById("vpl-list");
     var statusEl = document.getElementById("vpl-status");
     var cachedItems = [];
@@ -9,6 +10,12 @@
         if (!statusEl) return;
         statusEl.textContent = msg || "";
         statusEl.style.color = isError ? "#a12c2c" : "#3d5166";
+    }
+
+    function districtLabel(it) {
+        if (it.district) return it.district;
+        if (DIST && DIST.parse) return DIST.parse(it.vn_addr);
+        return "";
     }
 
     function bindDeleteButtons() {
@@ -40,13 +47,17 @@
 
     function renderList() {
         if (!CARDS || !listEl) return;
+        if (DIST && DIST.enrichItems) DIST.enrichItems(cachedItems);
         CARDS.renderGrid(listEl, cachedItems, {
+            gridClass: "vpr-grid vpr-grid--cols3",
             emptyHtml:
                 '<p class="vpr-loading">예비업체가 없습니다. <a href="vendor-prospect-finder.html">예비 업체 찾기</a>에서 추가해 주세요.</p>',
             cardOptions: function (it) {
                 return {
                     mode: "prospect",
                     badge: "예비",
+                    district: districtLabel(it),
+                    facilityType: "예비",
                     showActions: true,
                     canWrite: true,
                     deleteId: it.id
