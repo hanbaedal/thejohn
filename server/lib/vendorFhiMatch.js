@@ -1,8 +1,10 @@
 /**
  * e하늘 장례식장 ↔ 사업부문 업체(vendors) 매칭
  *
- * 정책: 이름(compact) 우선 매칭. 주소는 동명·유사명일 때만 보조.
- *       전화번호는 FHI·DB 간 다를 수 있어 사용하지 않음.
+ * 정책: 장례식장 이름이 완전히 같을 때만 동일 시설로 본다.
+ *       (공백·괄호·기호 차이만 정규화 후 비교)
+ *       이름 일부만 겹치면 다른 장례식장 — 매칭하지 않음.
+ *       fhi_id 가 저장돼 있으면 ID 우선. 전화번호는 사용하지 않음.
  */
 
 const { fromLegacyDoc, F } = require("./vendorFields");
@@ -14,12 +16,11 @@ function normText(v) {
         .toLowerCase();
 }
 
-/** 비교용 업체명 — 공백·괄호·장례식장 접미어 제거 */
+/** 비교용 업체명 — 공백·괄호·기호만 정규화 (이름 전체가 같아야 함) */
 function compactCompanyKey(name) {
     return normText(name)
         .replace(/[\(\（][^\)\）]*[\)\）]/g, " ")
         .replace(/\s+/g, "")
-        .replace(/장례식장/g, "")
         .replace(/[^\uac00-\ud7a3a-z0-9]/gi, "");
 }
 
@@ -54,23 +55,24 @@ function normalizeVendorForMatch(doc) {
     };
 }
 
-/** 0=없음, 1=유사, 2=포함, 3=compact 완전일치 */
+/** 이름 완전 일치 여부 (부분 포함·유사명 제외) */
+function namesMatchExactly(vendor, fhiRow) {
+    const vName = pickCompany(vendor);
+    const fName = pickCompany(fhiRow);
+    if (!vName || !fName) return false;
+
+    const vNorm = normText(vName).replace(/\s+/g, "");
+    const fNorm = normText(fName).replace(/\s+/g, "");
+    if (vNorm && fNorm && vNorm === fNorm) return true;
+
+    const vCompact = compactCompanyKey(vName);
+    const fCompact = compactCompanyKey(fName);
+    return !!(vCompact && fCompact && vCompact === fCompact);
+}
+
+/** 0=없음, 3=완전일치 */
 function nameMatchLevel(vendor, fhiRow) {
-    const vCompact = compactCompanyKey(pickCompany(vendor));
-    const fCompact = compactCompanyKey(pickCompany(fhiRow));
-    if (vCompact && fCompact) {
-        if (vCompact === fCompact) return 3;
-        if (vCompact.length >= 3 && fCompact.length >= 3) {
-            if (vCompact.indexOf(fCompact) >= 0 || fCompact.indexOf(vCompact) >= 0) return 2;
-        }
-    }
-    const vNorm = normText(pickCompany(vendor));
-    const fNorm = normText(pickCompany(fhiRow));
-    if (vNorm && fNorm) {
-        if (vNorm === fNorm) return 3;
-        if (vNorm.indexOf(fNorm) >= 0 || fNorm.indexOf(vNorm) >= 0) return 2;
-    }
-    return 0;
+    return namesMatchExactly(vendor, fhiRow) ? 3 : 0;
 }
 
 function addrMatches(vendor, fhiRow) {
@@ -80,11 +82,10 @@ function addrMatches(vendor, fhiRow) {
     return a === b || a.indexOf(b) >= 0 || b.indexOf(a) >= 0;
 }
 
-/** 이름·주소만 사용 (전화번호 제외) */
+/** 이름 완전 일치 시에만 점수 (주소는 동명 후보 tie-break 용) */
 function scoreFhiMatch(vendor, fhiRow) {
-    const level = nameMatchLevel(vendor, fhiRow);
-    if (!level) return 0;
-    let score = level * 10;
+    if (!namesMatchExactly(vendor, fhiRow)) return 0;
+    let score = 30;
     if (addrMatches(vendor, fhiRow)) score += 5;
     return score;
 }
@@ -169,17 +170,6 @@ function matchByCompactName(fhiRow, index) {
         if (vendor) return { vendor: vendor, score: 100 };
     }
 
-    if (fhiCompact.length >= 3) {
-        const keys = Object.keys(index.byCompact);
-        for (let i = 0; i < keys.length; i++) {
-            const key = keys[i];
-            if (key.length < 3) continue;
-            if (fhiCompact === key || fhiCompact.indexOf(key) >= 0 || key.indexOf(fhiCompact) >= 0) {
-                const vendor = pickFromCandidates(index.byCompact[key], fhiRow);
-                if (vendor) return { vendor: vendor, score: 90 };
-            }
-        }
-    }
     return null;
 }
 
@@ -226,9 +216,8 @@ function findBestFhiMatch(vendor, fhiItems) {
     if (vendorCompact.length >= 2) {
         for (let i = 0; i < fhiItems.length; i++) {
             const row = fhiItems[i];
-            const level = nameMatchLevel(vendor, row);
-            if (level >= 2) {
-                return Object.assign({}, row, { score: level >= 3 ? 100 : 90 });
+            if (namesMatchExactly(vendor, row)) {
+                return Object.assign({}, row, { score: 100 });
             }
         }
     }
@@ -316,6 +305,7 @@ module.exports = {
     compactCompanyKey,
     normalizeVendorForMatch,
     nameMatchLevel,
+    namesMatchExactly,
     addrMatches,
     scoreFhiMatch,
     hasVendorLogo,
