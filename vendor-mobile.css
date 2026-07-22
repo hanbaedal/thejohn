@@ -1,0 +1,266 @@
+/**
+ * 업체관리 — 스마트폰·태블릿 유연 레이아웃 (Galaxy S25 ~ 360px 기준)
+ */
+
+/* ── 업체관리 허브 (vendor-manage.html) ── */
+.vm-rows {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+}
+.vm-group + .vm-group {
+    margin-top: 2.7rem;
+}
+.vm-row {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.95rem;
+}
+.vm-row--single {
+    grid-template-columns: 1fr;
+    margin-top: 0.95rem;
+}
+
+@media (max-width: 720px) {
+    .company-main--support-hub.company-main:has(.vm-rows) {
+        padding-top: 0.65rem;
+        padding-bottom: max(0.85rem, env(safe-area-inset-bottom, 0));
+    }
+    .company-main--support-hub .vm-rows .company-divisions,
+    .company-main--support-hub .vm-rows {
+        max-width: 100%;
+        padding-left: max(0.5rem, env(safe-area-inset-left, 0));
+        padding-right: max(0.5rem, env(safe-area-inset-right, 0));
+    }
+    .company-main--support-hub .vm-group + .vm-group {
+        margin-top: 1.15rem;
+    }
+    .company-main--support-hub .vm-row {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 0.55rem;
+    }
+    .company-main--support-hub .vm-row--single {
+        grid-template-columns: 1fr;
+        margin-top: 0.55rem;
+    }
+    .company-main--support-hub .vm-rows a.company-division-card {
+        padding: clamp(0.5rem, 2.2vh, 0.62rem) 0.55rem;
+        min-height: 2.75rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+    }
+    .company-main--support-hub .vm-rows a.company-division-card h2 {
+        font-size: clamp(0.78rem, 3.4vw, 0.92rem);
+        line-height: 1.25;
+        margin: 0;
+    }
+}
+
+@media (max-width: 320px) {
+    .company-main--support-hub .vm-row {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* ── 본문·패널 ── */
+@media (max-width: 720px) {
+    .page-main.page-main--vendor-cards,
+    main.page-main.vei-main {
+        padding-top: 1rem;
+        padding-bottom: 1.5rem;
+        padding-left: max(0.5rem, env(safe-area-inset-left, 0));
+        padding-right: max(0.5rem, env(safe-area-inset-right, 0));
+    }
+    .page-main.page-main--vendor-cards h1 {
+        font-size: clamp(1.15rem, 5vw, 1.35rem);
+        margin-bottom: 0.5rem;
+    }
+    .page-main--vendor-cards .am-subnav {
+        font-size: 0.78rem;
+        margin-bottom: 0.45rem;
+    }
+    .page-main--vendor-cards .vei-hint,
+    .page-main--vendor-cards .vei-status {
+        font-size: 0.78rem;
+        line-height: 1.45;
+    }
+    .page-main--vendor-cards .vei-panel {
+        padding: 0.75rem 0.65rem;
+    }
+    .vpf-page.page-main--vendor-cards {
+        padding-left: max(0.35rem, env(safe-area-inset-left, 0));
+        padding-right: max(0.35rem, env(safe-area-inset-right, 0));
+    }
+    .vpr-backfill-bar {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    .vpr-backfill-bar .btn {
+        width: 100%;
+        font-size: 0.78rem;
+    }
+    .vpr-backfill-hint {
+        flex: none;
+    }
+}
+
+/* ── 지역 선택 카드: S25 포함 스마트폰에서도 3열 유지 ── */
+.vpr-region-cards {
+    gap: clamp(0.4rem, 2.5vw, 1rem);
+}
+
+@media (max-width: 520px) {
+    .vpr-region-card {
+        padding: 0.5rem 0.4rem 0.45rem;
+        border-radius: 10px;
+    }
+    .vpr-region-card__head {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 0.2rem;
+        margin-bottom: 0;
+    }
+    .vpr-region-card__title-wrap {
+        gap: 0.3rem;
+        align-items: center;
+    }
+    .vpr-region-card__icon {
+        font-size: clamp(1rem, 4.2vw, 1.25rem);
+        flex-shrink: 0;
+    }
+    .vpr-region-card__label {
+        font-size: clamp(0.76rem, 3.3vw, 0.9rem);
+        line-height: 1.2;
+    }
+    .vpr-region-card__sub,
+    .vpr-region-card__foot {
+        display: none;
+    }
+    .vpr-region-card__count {
+        text-align: left;
+        line-height: 1.2;
+    }
+    .vpr-region-card__count-num {
+        font-size: clamp(0.82rem, 3.6vw, 1rem);
+        display: inline;
+    }
+    .vpr-region-card__count-unit {
+        font-size: 0.62rem;
+        display: inline;
+        margin-left: 0.08rem;
+    }
+}
+
+/* ── 장례식장·업체 카드 그리드 ── */
+@media (max-width: 720px) {
+    .vpr-grid,
+    .vpr-grid--cols3 {
+        gap: 0.65rem;
+    }
+}
+
+@media (max-width: 520px) {
+    .vpr-grid,
+    .vpr-grid--cols3 {
+        grid-template-columns: 1fr;
+        gap: 0.55rem;
+    }
+    .vpr-card__name {
+        font-size: 0.84rem;
+    }
+    .vpr-card__addr {
+        font-size: 0.7rem;
+        min-height: auto;
+    }
+    .vpr-card__meta {
+        font-size: 0.68rem;
+        min-height: 5rem;
+    }
+    .vpr-card--list .vpr-card__btn {
+        flex: 1 1 auto;
+        min-width: 3.5rem;
+        text-align: center;
+    }
+}
+
+@media (min-width: 521px) and (max-width: 900px) {
+    .vpr-grid,
+    .vpr-grid--cols3 {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+/* ── 툴바·필터 ── */
+@media (max-width: 520px) {
+    .vpr-toolbar {
+        gap: 0.45rem;
+    }
+    .vpr-check-all {
+        flex: 1 1 100%;
+        margin-right: 0;
+        font-size: 0.78rem;
+    }
+    .vpr-toolbar .btn {
+        flex: 1 1 calc(50% - 0.25rem);
+        min-width: 0;
+        font-size: 0.72rem;
+        padding: 0.42rem 0.45rem;
+        line-height: 1.25;
+        white-space: normal;
+        text-align: center;
+    }
+    .vpr-toolbar .btn-primary {
+        flex: 1 1 100%;
+    }
+    .vpr-list-head {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.25rem;
+    }
+    .vpr-district-bar {
+        padding: 0.55rem 0.6rem;
+    }
+    .vpr-district-chip {
+        font-size: 0.7rem;
+        padding: 0.24rem 0.55rem;
+    }
+    .am-dept-picker-btns {
+        flex-wrap: wrap;
+        overflow-x: visible;
+    }
+    .am-dept-btn {
+        flex: 1 1 calc(33.333% - 0.35rem);
+        min-width: 2.75rem;
+    }
+    .am-filter-bar .vr-select {
+        max-width: 100% !important;
+        width: 100%;
+    }
+}
+
+/* ── 예비 업체 찾기 전용 ── */
+@media (max-width: 720px) {
+    .vpf-sticky h1 {
+        font-size: clamp(1.1rem, 5vw, 1.3rem);
+    }
+    .vpf-region-panel .vei-hint.vpf-region-hint {
+        font-size: 0.74rem;
+    }
+    body.vpf-body {
+        overflow: auto;
+    }
+    .vpf-page {
+        height: auto;
+        min-height: calc(100dvh - 76px);
+        overflow: visible;
+    }
+    .vpf-detail {
+        overflow-y: visible;
+        max-height: none;
+    }
+    body.vpf-detail-open .vpf-footer {
+        display: block;
+    }
+}

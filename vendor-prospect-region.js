@@ -380,7 +380,7 @@
                             (meta.sub || "") +
                             " — 시·구·군별로 분류되어 있습니다. 저장할 시설만 선택하세요." +
                             (data.registeredCount
-                                ? " · 사업부문 등록 " + data.registeredCount + "곳(빨간 표시)"
+                                ? " · 사업부문 등록 " + data.registeredCount + "곳(빨간 「등록업체」)"
                                 : "") +
                             (data.cached ? " (캐시)" : "");
                     }

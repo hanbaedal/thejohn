@@ -150,7 +150,7 @@
         var imgWrapClass = registered ? " vpr-card__img-wrap--registered" : "";
         var registeredOverlay = "";
         if (registered) {
-            var regLabel = "등록됨";
+            var regLabel = "등록업체";
             var regTitle = String(registered.vn_company || name).trim();
             var regHref = registered.id
                 ? "vendor-edit.html?id=" + encodeURIComponent(registered.id)

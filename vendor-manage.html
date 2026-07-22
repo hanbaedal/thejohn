@@ -14,30 +14,7 @@
     <title>업체관리 — 더존</title>
     <link rel="stylesheet" href="common.css">
     <link rel="stylesheet" href="staff-hub.css">
-    <style>
-        .vm-rows {
-            display: flex;
-            flex-direction: column;
-            gap: 0;
-        }
-        .vm-group + .vm-group {
-            margin-top: 2.7rem;
-        }
-        .vm-row {
-            display: grid;
-            grid-template-columns: repeat(2, minmax(0, 1fr));
-            gap: 0.95rem;
-        }
-        @media (max-width: 720px) {
-            .vm-row {
-                grid-template-columns: 1fr;
-            }
-        }
-        .vm-row--single {
-            grid-template-columns: 1fr;
-            margin-top: 0.95rem;
-        }
-    </style>
+    <link rel="stylesheet" href="vendor-mobile.css?v=20260722-mob">
     <script src="api-config.js"></script>
     <script src="thejhon-api.js"></script>
     <script src="auth.js"></script>

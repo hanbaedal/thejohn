@@ -29,11 +29,6 @@
     gap: 1rem;
     margin-top: 0.5rem;
 }
-@media (max-width: 900px) {
-    .vpr-region-cards {
-        grid-template-columns: 1fr;
-    }
-}
 .vpr-region-card {
     display: block;
     width: 100%;
@@ -140,18 +135,6 @@
 }
 .vpr-grid--cols3 {
     grid-template-columns: repeat(3, minmax(0, 1fr));
-}
-@media (max-width: 900px) {
-    .vpr-grid,
-    .vpr-grid--cols3 {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-    }
-}
-@media (max-width: 560px) {
-    .vpr-grid,
-    .vpr-grid--cols3 {
-        grid-template-columns: 1fr;
-    }
 }
 .vpr-card {
     border: 1px solid #e2e8f0;
