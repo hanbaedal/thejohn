@@ -152,6 +152,45 @@
     }
 
     function bindBackfillButton() {
+        var fieldsBtn = document.getElementById("vpf-backfill-fields-btn");
+        if (fieldsBtn && api && api.backfillVendorFhiFields) {
+            fieldsBtn.addEventListener("click", function () {
+                if (
+                    !window.confirm(
+                        "등록된 사업부문 업체를 e하늘(예비업체 찾기) 데이터와 비교해\n빈 항목(빈소·전화·팩스·주차·편의시설·로고 등)만 채워 저장합니다.\n\n기존에 입력된 값은 덮어쓰지 않습니다.\n\n계속할까요?"
+                    )
+                ) {
+                    return;
+                }
+                fieldsBtn.disabled = true;
+                setStatus("e하늘 정보 보강 중… (수도권 장례식장 목록과 비교)");
+                api.backfillVendorFhiFields({ dryRun: false, includeLogo: true, onlyMissing: true })
+                    .then(function (res) {
+                        var msg =
+                            "완료 — 대상 " +
+                            (res.targetCount || 0) +
+                            "건 · 업데이트 " +
+                            (res.updated || 0) +
+                            "건 · 변경 없음 " +
+                            (res.skipped || 0) +
+                            "건 · 매칭 없음 " +
+                            (res.noMatch || 0) +
+                            "건";
+                        if (res.failed) msg += " · 실패 " + res.failed + "건";
+                        setStatus(msg, "ok");
+                        if (detailPanel && activeSlug) {
+                            detailPanel.load(true);
+                        }
+                    })
+                    .catch(function (err) {
+                        setStatus((err && err.message) || "e하늘 정보 보강에 실패했습니다.", "error");
+                    })
+                    .finally(function () {
+                        fieldsBtn.disabled = false;
+                    });
+            });
+        }
+
         var btn = document.getElementById("vpf-backfill-logos-btn");
         if (!btn || !api || !api.backfillVendorFhiLogos) return;
         btn.addEventListener("click", function () {

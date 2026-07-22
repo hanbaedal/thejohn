@@ -29,6 +29,7 @@ const {
     loadPartnerVendors
 } = require("../lib/vendorFhiMatch");
 const { applyFhiLogoToBuilt } = require("../lib/vendorFhiMedia");
+const { backfillPartnerVendorsFromFhi } = require("../lib/vendorFhiBackfill");
 
 function isNewVendorRecordBody(body) {
     return (
@@ -259,6 +260,24 @@ router.post("/backfill-fhi-logos", requireRole("supervisor", "admin"), async (re
     } catch (e) {
         console.error("POST /api/vendors/backfill-fhi-logos", e);
         res.status(500).json({ ok: false, error: "업체 이미지 보강에 실패했습니다." });
+    }
+});
+
+/** 슈퍼바이저/관리자 — e하늘과 비교해 빈 업체 필드 보강 */
+router.post("/backfill-fhi-fields", requireRole("supervisor", "admin"), async (req, res) => {
+    try {
+        const body = req.body || {};
+        const result = await backfillPartnerVendorsFromFhi(getDb(), {
+            dryRun: !!body.dryRun,
+            force: !!body.force,
+            includeLogo: body.includeLogo !== false,
+            onlyMissing: body.onlyMissing !== false,
+            minScore: body.minScore
+        });
+        res.json(result);
+    } catch (e) {
+        console.error("POST /api/vendors/backfill-fhi-fields", e);
+        res.status(500).json({ ok: false, error: "업체 e하늘 정보 보강에 실패했습니다." });
     }
 });
 

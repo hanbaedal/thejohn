@@ -398,6 +398,16 @@
                 force: !!options.force
             });
         },
+        backfillVendorFhiFields: function (options) {
+            options = options || {};
+            return request("POST", "/api/vendors/backfill-fhi-fields", {
+                dryRun: !!options.dryRun,
+                force: !!options.force,
+                includeLogo: options.includeLogo !== false,
+                onlyMissing: options.onlyMissing !== false,
+                minScore: options.minScore
+            });
+        },
         fhiImageUrl: function (fhiId, fileurl) {
             var id = String(fhiId || "").trim();
             if (!id) return "";

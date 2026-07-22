@@ -56,6 +56,30 @@ const F = {
 const RECORD_PARTNER = "partner";
 const RECORD_NEW = "new";
 
+const FHI_EXTRA_KEYS = [
+    "fhi_id",
+    "vn_public_type",
+    "vn_fax",
+    "vn_mortuary_count",
+    "vn_park_count",
+    "fileurl",
+    "mealroomyn",
+    "waitroomyn",
+    "parkyn",
+    "superyn",
+    "imparyn"
+];
+
+function copyFhiExtrasToDoc(doc, existing) {
+    if (!existing || !doc) return doc;
+    FHI_EXTRA_KEYS.forEach(function (key) {
+        if (existing[key] != null && str(existing[key])) {
+            doc[key] = existing[key];
+        }
+    });
+    return doc;
+}
+
 function normalizeRecordType(v) {
     return String(v || "")
         .trim()
@@ -225,7 +249,16 @@ function toPublic(doc, options) {
         vn_promoted_vendor_id: str(doc.vn_promoted_vendor_id || ""),
         vn_promoted_at: doc.vn_promoted_at || 0,
         fhi_id: str(doc.fhi_id || ""),
-        vn_public_type: str(doc.vn_public_type || "")
+        vn_public_type: str(doc.vn_public_type || ""),
+        vn_fax: str(doc.vn_fax || ""),
+        vn_mortuary_count: str(doc.vn_mortuary_count || ""),
+        vn_park_count: str(doc.vn_park_count || ""),
+        fileurl: str(doc.fileurl || ""),
+        mealroomyn: str(doc.mealroomyn || ""),
+        waitroomyn: str(doc.waitroomyn || ""),
+        parkyn: str(doc.parkyn || ""),
+        superyn: str(doc.superyn || ""),
+        imparyn: str(doc.imparyn || "")
     };
     if (opts.includePassword) {
         pub.password = getVendorStoredPassword(doc);
@@ -344,6 +377,7 @@ function toDbDoc(id, built, existing) {
             doc.password = String(existing.password);
         }
     }
+    copyFhiExtrasToDoc(doc, existing);
     return doc;
 }
 
@@ -504,6 +538,8 @@ async function migrateVendorsCollection(db) {
 
 module.exports = {
     F,
+    FHI_EXTRA_KEYS,
+    copyFhiExtrasToDoc,
     fromLegacyDoc,
     toPublic,
     buildFromBody,
