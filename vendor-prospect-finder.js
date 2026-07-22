@@ -190,42 +190,6 @@
                     });
             });
         }
-
-        var btn = document.getElementById("vpf-backfill-logos-btn");
-        if (!btn || !api || !api.backfillVendorFhiLogos) return;
-        btn.addEventListener("click", function () {
-            if (
-                !window.confirm(
-                    "로고(이미지)가 없는 사업부문 업체를 e하늘 데이터와 비교해 이미지를 저장합니다.\n\n계속할까요?"
-                )
-            ) {
-                return;
-            }
-            btn.disabled = true;
-            setStatus("업체 이미지 보강 중… (수도권 FHI 목록과 비교)");
-            api.backfillVendorFhiLogos({ dryRun: false })
-                .then(function (res) {
-                    var msg =
-                        "완료 — 대상 " +
-                        (res.total || 0) +
-                        "건 · 업데이트 " +
-                        (res.updated || 0) +
-                        "건 · 매칭 없음 " +
-                        (res.skipped || 0) +
-                        "건";
-                    if (res.failed) msg += " · 실패 " + res.failed + "건";
-                    setStatus(msg, "ok");
-                    if (detailPanel && activeSlug) {
-                        detailPanel.load(true);
-                    }
-                })
-                .catch(function (err) {
-                    setStatus((err && err.message) || "이미지 보강에 실패했습니다.", "error");
-                })
-                .finally(function () {
-                    btn.disabled = false;
-                });
-        });
     }
 
     var access =
