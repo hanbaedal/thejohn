@@ -1,6 +1,7 @@
 (function (g) {
     var MAX_BODY = 256;
     var MAX_PHOTOS = 3;
+    var SITE_NEWS_DEPT = "thejohn";
 
     function escapeHtml(s) {
         return String(s)
@@ -31,10 +32,20 @@
         }
     }
 
-    function deptLabel(deptId) {
+    function normalizeNewsDept(deptId) {
+        var raw = String(deptId || "").trim().toLowerCase();
+        if (raw === SITE_NEWS_DEPT || raw === "더존소식") return SITE_NEWS_DEPT;
         var cat = g.THEJHON_PRODUCT_CATALOG;
-        if (!cat || !deptId) return "사업부문 미선택";
-        var d = cat.getDept(deptId);
+        return cat && cat.normalizeDept ? cat.normalizeDept(deptId || "") : "";
+    }
+
+    function deptLabel(deptId) {
+        var norm = normalizeNewsDept(deptId);
+        if (!norm) return "사업부문 미선택";
+        if (norm === SITE_NEWS_DEPT) return "더존소식";
+        var cat = g.THEJHON_PRODUCT_CATALOG;
+        if (!cat) return String(deptId);
+        var d = cat.getDept(norm);
         return d ? d.label : String(deptId);
     }
 
@@ -45,7 +56,9 @@
         var modal = options.modal;
         var modalBtns = options.modalBtns;
         var includeAll = !!options.includeAll;
-        var openOnHover = options.openOnHover !== false;
+        var openOnHover = options.openOnHover === true;
+        var siteNewsDept = options.siteNewsDept || "";
+        var siteNewsLabel = options.siteNewsLabel || "더존소식";
         var onSelect = options.onSelect;
 
         if (!catalog || !displayInput || !hiddenInput || !modal || !modalBtns) {
@@ -66,15 +79,19 @@
 
         function openModal() {
             modal.hidden = false;
-            var current = catalog.normalizeDept(hiddenInput.value || "");
+            var current = normalizeNewsDept(hiddenInput.value || "");
             modalBtns.querySelectorAll(".sn-dept-opt").forEach(function (btn) {
                 var dept = btn.getAttribute("data-dept") || "";
                 btn.classList.toggle("is-selected", dept === current);
             });
+            var siteNewsBtn = modal.querySelector(".sn-dept-modal__site-news");
+            if (siteNewsBtn && siteNewsDept) {
+                siteNewsBtn.classList.toggle("is-selected", current === normalizeNewsDept(siteNewsDept));
+            }
         }
 
         function setDept(deptId) {
-            var norm = catalog.normalizeDept(deptId || "");
+            var norm = normalizeNewsDept(deptId || "");
             hiddenInput.value = norm;
             setDisplayText(norm ? deptLabel(norm) : includeAll ? "전체" : "");
             closeModal();
@@ -105,11 +122,24 @@
             modalBtns.appendChild(btn);
         });
 
-        displayInput.addEventListener("focus", openModal);
         if (openOnHover) {
             displayInput.addEventListener("mouseenter", openModal);
+            displayInput.addEventListener("click", openModal);
+        } else {
+            displayInput.addEventListener("focusin", function () {
+                if (document.activeElement !== displayInput) return;
+                openModal();
+            });
+            displayInput.addEventListener("focusout", function (e) {
+                var next = e.relatedTarget;
+                if (next && modal.contains(next)) return;
+                window.setTimeout(function () {
+                    if (modal.contains(document.activeElement)) return;
+                    if (document.activeElement === displayInput) return;
+                    closeModal();
+                }, 150);
+            });
         }
-        displayInput.addEventListener("click", openModal);
         displayInput.addEventListener("keydown", function (e) {
             if (e.key === "Enter" || e.key === " ") {
                 e.preventDefault();
@@ -120,6 +150,13 @@
         modal.addEventListener("click", function (e) {
             if (e.target === modal) closeModal();
         });
+        var siteNewsBtn = modal.querySelector(".sn-dept-modal__site-news");
+        if (siteNewsBtn && siteNewsDept) {
+            siteNewsBtn.textContent = siteNewsLabel;
+            siteNewsBtn.addEventListener("click", function () {
+                setDept(siteNewsDept);
+            });
+        }
         var closeBtn = modal.querySelector(".sn-dept-modal__close");
         if (closeBtn) {
             closeBtn.addEventListener("click", closeModal);
@@ -130,7 +167,7 @@
 
         return {
             getValue: function () {
-                return catalog.normalizeDept(hiddenInput.value || "");
+                return normalizeNewsDept(hiddenInput.value || "");
             },
             setValue: function (deptId) {
                 setDept(deptId || "");
@@ -568,11 +605,13 @@
     }
 
     g.THEJHON_SUPPORT_NEWS = {
+        SITE_NEWS_DEPT: SITE_NEWS_DEPT,
         MAX_BODY: MAX_BODY,
         MAX_PHOTOS: MAX_PHOTOS,
         escapeHtml: escapeHtml,
         escapeMultiline: escapeMultiline,
         formatDateKo: formatDateKo,
+        normalizeNewsDept: normalizeNewsDept,
         deptLabel: deptLabel,
         initDeptModalPicker: initDeptModalPicker,
         initPhotoManager: initPhotoManager,

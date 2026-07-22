@@ -1,8 +1,9 @@
 const express = require("express");
 const { getDb } = require("../db");
 const { requireRole } = require("../middleware/auth");
-const { normalizeDept } = require("../lib/productDept");
 const {
+    SITE_NEWS_DEPT,
+    normalizeNewsDept,
     buildFromBody,
     toPublic,
     toDbDoc,
@@ -81,8 +82,13 @@ async function enrichList(items) {
 
 router.get("/", async function (req, res) {
     try {
-        const dept = normalizeDept(req.query.dept || "");
-        const query = dept ? { sn_dept: dept } : {};
+        const dept = normalizeNewsDept(req.query.dept || "");
+        let query = {};
+        if (dept && dept !== SITE_NEWS_DEPT) {
+            query = { sn_dept: { $in: [dept, SITE_NEWS_DEPT] } };
+        } else if (dept === SITE_NEWS_DEPT) {
+            query = { sn_dept: SITE_NEWS_DEPT };
+        }
         const rows = await getDb()
             .collection(COL)
             .find(query)

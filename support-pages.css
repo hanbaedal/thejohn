@@ -499,6 +499,7 @@
     color: var(--dz-blue);
 }
 .sn-dept-modal__close,
+.sn-dept-modal__site-news,
 .sn-detail-modal__close {
     margin-top: 0.65rem;
     width: 100%;
@@ -509,6 +510,17 @@
     font: inherit;
     font-weight: 600;
     cursor: pointer;
+}
+.sn-dept-modal__site-news {
+    border-color: var(--dz-blue);
+    background: #eef4fc;
+    font-weight: 700;
+    color: var(--dz-blue);
+}
+.sn-dept-modal__site-news:hover,
+.sn-dept-modal__site-news.is-selected {
+    background: var(--dz-blue);
+    color: #fff;
 }
 .sn-filter-bar {
     max-width: min(100%, 42rem);

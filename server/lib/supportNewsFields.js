@@ -1,5 +1,13 @@
 const { normalizeDept } = require("./productDept");
 
+const SITE_NEWS_DEPT = "thejohn";
+
+function normalizeNewsDept(v) {
+    const raw = String(v ?? "").trim().toLowerCase();
+    if (raw === SITE_NEWS_DEPT || raw === "더존소식") return SITE_NEWS_DEPT;
+    return normalizeDept(v);
+}
+
 const F = {
     dept: "sn_dept",
     body: "sn_body",
@@ -28,7 +36,7 @@ function sanitizeImages(raw) {
 
 function buildFromBody(body) {
     return {
-        sn_dept: normalizeDept(body.sn_dept != null ? body.sn_dept : body.dept),
+        sn_dept: normalizeNewsDept(body.sn_dept != null ? body.sn_dept : body.dept),
         sn_body: str(body.sn_body != null ? body.sn_body : body.body),
         sn_images: sanitizeImages(body.sn_images != null ? body.sn_images : body.images)
     };
@@ -38,7 +46,7 @@ function toPublic(doc) {
     if (!doc || !doc.id) return null;
     return {
         id: doc.id,
-        sn_dept: normalizeDept(doc[F.dept] || doc.sn_dept),
+        sn_dept: normalizeNewsDept(doc[F.dept] || doc.sn_dept),
         sn_body: str(doc[F.body] || doc.sn_body),
         sn_images: sanitizeImages(doc[F.images] || doc.sn_images),
         sn_created_by: str(doc[F.createdBy] || doc.sn_created_by),
@@ -84,8 +92,10 @@ function validateBuilt(built) {
 
 module.exports = {
     F,
+    SITE_NEWS_DEPT,
     MAX_BODY,
     MAX_IMAGES,
+    normalizeNewsDept,
     buildFromBody,
     toPublic,
     toDbDoc,

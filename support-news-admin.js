@@ -21,7 +21,10 @@
         displayInput: deptDisplay,
         hiddenInput: deptHidden,
         modal: document.getElementById("sn-dept-modal"),
-        modalBtns: document.getElementById("sn-dept-modal-btns")
+        modalBtns: document.getElementById("sn-dept-modal-btns"),
+        openOnHover: false,
+        siteNewsDept: SN.SITE_NEWS_DEPT,
+        siteNewsLabel: "더존소식"
     });
 
     var photoManager = SN.initPhotoManager({
