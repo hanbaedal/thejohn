@@ -135,7 +135,7 @@ router.delete("/:id", requireRole("supervisor", "admin"), async function (req, r
     }
 });
 
-/** 관리자 — 도시명/장례식장명으로 장례식장 조회 (외부 웹) */
+/** 관리자 — 도시명/장례식장명으로 장례식장 조회 (한국장례협회 FTA) */
 router.get("/search-funeral-halls", requireRole("admin"), async function (req, res) {
     try {
         const q = String(req.query.q || "").trim();
@@ -147,23 +147,20 @@ router.get("/search-funeral-halls", requireRole("admin"), async function (req, r
             });
         }
         const found = await searchFuneralHalls(q, mode);
-        if (!found.configured) {
-            return res.status(400).json({
-                ok: false,
-                error: "네이버 조회 키가 설정되지 않았습니다."
-            });
-        }
         if (!Array.isArray(found.items) || !found.items.length) {
+            var unknownCity =
+                found.lastErr && String(found.lastErr).indexOf("UNKNOWN_CITY:") === 0;
             return res.status(404).json({
                 ok: false,
-                error:
-                    mode === "name"
-                        ? "조회 결과가 없습니다. 장례식장 이름을 정확히 입력하거나 일부 키워드로 다시 시도해 주세요."
-                        : "조회 결과가 없습니다. 도시명을 줄여서 입력하거나(예: 서울, 창원), 네이버 API 권한/쿼터를 확인해 주세요.",
+                error: unknownCity
+                    ? "지원하지 않는 도시명입니다. FTA 도/시 목록(서울, 부산, 대구, 인천, 광주, 대전, 울산, 세종, 경기, 강원, 충북, 충남, 전북, 전남, 경북, 경남, 제주)으로 입력해 주세요."
+                    : mode === "name"
+                      ? "조회 결과가 없습니다. 장례식장 이름을 정확히 입력하거나 일부 키워드로 다시 시도해 주세요."
+                      : "조회 결과가 없습니다. 도시명을 FTA 기준(예: 서울, 경기, 전남)으로 입력해 주세요.",
                 hint: found.lastErr ? "debug: " + found.lastErr : ""
             });
         }
-        res.json({ ok: true, items: found.items || [], q: q, mode: mode });
+        res.json({ ok: true, items: found.items || [], q: q, mode: mode, source: "fta_board" });
     } catch (e) {
         console.error("GET /api/vendor-prospects/search-funeral-halls", e);
         res.status(500).json({ ok: false, error: "장례식장 조회에 실패했습니다." });

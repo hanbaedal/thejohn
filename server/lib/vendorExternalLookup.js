@@ -128,71 +128,225 @@ async function findExternalVendorInfo(built) {
     return null;
 }
 
+var FTA_BOARD = "http://www.fta.or.kr/bbs/board.php";
+var FTA_CITY_CODES = [
+    "서울",
+    "부산",
+    "대구",
+    "인천",
+    "광주",
+    "대전",
+    "울산",
+    "세종",
+    "경기",
+    "강원",
+    "충북",
+    "충남",
+    "전북",
+    "전남",
+    "경북",
+    "경남",
+    "제주"
+];
+var FTA_CITY_ALIASES = {
+    서울: "서울",
+    서울특별시: "서울",
+    부산: "부산",
+    부산광역시: "부산",
+    대구: "대구",
+    대구광역시: "대구",
+    인천: "인천",
+    인천광역시: "인천",
+    광주: "광주",
+    광주광역시: "광주",
+    대전: "대전",
+    대전광역시: "대전",
+    울산: "울산",
+    울산광역시: "울산",
+    세종: "세종",
+    세종특별자치시: "세종",
+    경기: "경기",
+    경기도: "경기",
+    강원: "강원",
+    강원도: "강원",
+    강원특별자치도: "강원",
+    충북: "충북",
+    충청북도: "충북",
+    충남: "충남",
+    충청남도: "충남",
+    전북: "전북",
+    전라북도: "전북",
+    전북특별자치도: "전북",
+    전남: "전남",
+    전라남도: "전남",
+    경북: "경북",
+    경상북도: "경북",
+    경남: "경남",
+    경상남도: "경남",
+    제주: "제주",
+    제주특별자치도: "제주"
+};
+
+function decodeHtmlEntities(s) {
+    return String(s || "")
+        .replace(/&amp;/g, "&")
+        .replace(/&lt;/g, "<")
+        .replace(/&gt;/g, ">")
+        .replace(/&quot;/g, '"')
+        .replace(/&#39;/g, "'")
+        .replace(/&nbsp;/g, " ");
+}
+
+function stripTags(s) {
+    return decodeHtmlEntities(String(s || "").replace(/<[^>]+>/g, " "))
+        .replace(/\s+/g, " ")
+        .trim();
+}
+
+function normalizeFtaCity(keyword) {
+    var raw = String(keyword || "").trim();
+    if (!raw) return "";
+    if (FTA_CITY_ALIASES[raw]) return FTA_CITY_ALIASES[raw];
+    for (var i = 0; i < FTA_CITY_CODES.length; i++) {
+        var code = FTA_CITY_CODES[i];
+        if (raw.indexOf(code) === 0) return code;
+    }
+    return raw;
+}
+
+function parseFtaRows(html) {
+    var items = [];
+    var chunks = String(html || "").split(/<tr\b[^>]*>/i);
+    for (var i = 1; i < chunks.length; i++) {
+        var tr = chunks[i].split(/<\/tr>/i)[0];
+        var tds = [];
+        var tdRe = /<td\b[^>]*>([\s\S]*?)(?=<td\b|<\/tr>|$)/gi;
+        var tm;
+        while ((tm = tdRe.exec(tr))) tds.push(tm[1]);
+        if (tds.length < 3) continue;
+        var nameLink = tds[0].match(/wr_id=(\d+)[^>]*>\s*([\s\S]*?)<\/a>/i);
+        var name = stripTags(nameLink ? nameLink[2] : tds[0]);
+        if (!name || /자료가 없습니다|게시물이 없습니다/i.test(name)) continue;
+        var phone = stripTags(tds[1]);
+        var addr = stripTags(tds[2]);
+        var web = "";
+        var webMatch = (tds[3] || "").match(/href=["']([^"']+)["']/i);
+        if (webMatch) {
+            web = decodeHtmlEntities(webMatch[1]).trim();
+            if (/fta\.or\.kr|board\.php/i.test(web)) web = "";
+        }
+        items.push({
+            wr_id: nameLink ? nameLink[1] : "",
+            vn_company: name,
+            vn_phone: phone,
+            vn_addr: addr,
+            vn_web: web
+        });
+    }
+    return items;
+}
+
+function parseFtaLastPage(html) {
+    var m = String(html || "").match(/page=(\d+)[^>]*>\s*맨끝/i);
+    if (m) return parseInt(m[1], 10);
+    var max = 1;
+    var re = /[?&]page=(\d+)/gi;
+    var pm;
+    while ((pm = re.exec(html))) max = Math.max(max, parseInt(pm[1], 10));
+    return max;
+}
+
+function buildFtaListUrl(params) {
+    var qs = new URLSearchParams(Object.assign({ bo_table: "sub03_01" }, params));
+    return FTA_BOARD + "?" + qs.toString();
+}
+
+async function fetchFtaHtml(params) {
+    var url = buildFtaListUrl(params);
+    var controller = new AbortController();
+    var timer = setTimeout(function () {
+        controller.abort();
+    }, 15000);
+    try {
+        var res = await fetch(url, {
+            method: "GET",
+            headers: {
+                "User-Agent":
+                    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+                Accept: "text/html,application/xhtml+xml"
+            },
+            signal: controller.signal
+        });
+        if (!res.ok) throw new Error("FTA_HTTP_" + res.status);
+        return await res.text();
+    } finally {
+        clearTimeout(timer);
+    }
+}
+
+async function fetchFtaPages(baseParams) {
+    var html = await fetchFtaHtml(Object.assign({}, baseParams, { page: "1" }));
+    var lastPage = parseFtaLastPage(html);
+    var rows = parseFtaRows(html);
+    for (var page = 2; page <= lastPage; page++) {
+        var pageHtml = await fetchFtaHtml(Object.assign({}, baseParams, { page: String(page) }));
+        rows = rows.concat(parseFtaRows(pageHtml));
+    }
+    return rows;
+}
+
 async function searchFuneralHalls(keyword, mode) {
-    if (!canUseNaver()) return { items: [], configured: false };
     var q = String(keyword || "").trim();
     var searchMode = String(mode || "city").toLowerCase() === "name" ? "name" : "city";
-    if (!q) return { items: [], configured: true };
-    var queries =
-        searchMode === "name"
-            ? [q, q + " 장례식장", q + " 장례문화원"]
-            : [q + " 장례식장", q + " 장례", q + " 장례문화원"];
-    var out = [];
-    var seen = new Set();
-    var lastErr = "";
-
-    function pushLocalItem(it) {
-        var name = stripHtml(it.title || "");
-        if (!name) return;
-        var key = normText(name);
-        if (seen.has(key)) return;
-        seen.add(key);
-        out.push({
-            vn_company: name,
-            vn_phone: String(it.telephone || "").trim(),
-            vn_addr: String(it.roadAddress || it.address || "").trim(),
-            vn_web: String(it.link || "").trim(),
-            vn_record_type: "new",
-            source: "naver_local"
-        });
-    }
-
-    function pushWebItem(it) {
-        var title = stripHtml(it.title || "");
-        if (!title || title.indexOf("장례") < 0) return;
-        var name = title
-            .replace(/\s*\|\s*.*$/, "")
-            .replace(/\s*-\s*.*$/, "")
-            .trim();
-        if (!name) return;
-        var key = normText(name);
-        if (seen.has(key)) return;
-        seen.add(key);
-        out.push({
-            vn_company: name,
-            vn_phone: "",
-            vn_addr: "",
-            vn_web: String(it.link || "").trim(),
-            vn_record_type: "new",
-            source: "naver_web"
-        });
-    }
+    if (!q) return { items: [], configured: true, lastErr: "" };
 
     try {
-        for (var q = 0; q < queries.length; q++) {
-            var rawLocal = await fetchNaverSearch("local", queries[q], 30);
-            for (var i = 0; i < rawLocal.length; i++) {
-                pushLocalItem(rawLocal[i] || {});
+        var params;
+        if (searchMode === "name") {
+            params = {
+                sca: "",
+                sop: "or",
+                sfl: "wr_subject||wr_content",
+                stx: q
+            };
+        } else {
+            var city = normalizeFtaCity(q);
+            if (FTA_CITY_CODES.indexOf(city) < 0) {
+                return {
+                    items: [],
+                    configured: true,
+                    lastErr: "UNKNOWN_CITY:" + q
+                };
             }
-            var rawWeb = await fetchNaverSearch("webkr", queries[q], 30);
-            for (var w = 0; w < rawWeb.length; w++) {
-                pushWebItem(rawWeb[w] || {});
-            }
+            params = { sca: city };
+        }
+
+        var rawRows = await fetchFtaPages(params);
+        var out = [];
+        var seen = new Set();
+        for (var i = 0; i < rawRows.length; i++) {
+            var row = rawRows[i] || {};
+            var name = String(row.vn_company || "").trim();
+            if (!name) continue;
+            var key = normText(name);
+            if (seen.has(key)) continue;
+            seen.add(key);
+            out.push({
+                vn_company: name,
+                vn_phone: String(row.vn_phone || "").trim(),
+                vn_addr: String(row.vn_addr || "").trim(),
+                vn_web: String(row.vn_web || "").trim(),
+                vn_record_type: "new",
+                source: "fta_board"
+            });
         }
         return { items: out, configured: true, lastErr: "" };
     } catch (e) {
-        lastErr = String((e && e.message) || "NAVER_LOCAL_UNKNOWN");
-        return { items: [], configured: true, lastErr: lastErr };
+        return {
+            items: [],
+            configured: true,
+            lastErr: String((e && e.message) || "FTA_UNKNOWN")
+        };
     }
 }
 
