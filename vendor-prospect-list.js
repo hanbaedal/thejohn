@@ -1,6 +1,6 @@
 (function () {
     var api = window.THEJHON_API;
-    var PF = window.THEJHON_PRODUCT_FORM;
+    var CARDS = window.THEJHON_VENDOR_LIST_CARDS;
     var listEl = document.getElementById("vpl-list");
     var statusEl = document.getElementById("vpl-status");
     var cachedItems = [];
@@ -11,21 +11,12 @@
         statusEl.style.color = isError ? "#a12c2c" : "#3d5166";
     }
 
-    function html(s) {
-        if (PF && PF.escapeHtml) return PF.escapeHtml(s);
-        return String(s || "")
-            .replace(/&/g, "&amp;")
-            .replace(/</g, "&lt;")
-            .replace(/>/g, "&gt;")
-            .replace(/"/g, "&quot;");
-    }
-
     function bindDeleteButtons() {
         if (!listEl || !api || !api.deleteVendorProspect) return;
-        listEl.querySelectorAll("[data-vpl-delete]").forEach(function (btn) {
+        listEl.querySelectorAll("[data-vl-delete]").forEach(function (btn) {
             btn.addEventListener("click", function () {
-                var id = btn.getAttribute("data-vpl-delete");
-                var name = btn.getAttribute("data-vpl-name") || "이 예비업체";
+                var id = btn.getAttribute("data-vl-delete");
+                var name = btn.getAttribute("data-vl-name") || "이 예비업체";
                 if (!id) return;
                 if (!window.confirm("「" + name + "」을(를) 삭제할까요?\n\n삭제 후에는 복구할 수 없습니다.")) {
                     return;
@@ -48,44 +39,21 @@
     }
 
     function renderList() {
-        if (!listEl) return;
-        if (!cachedItems.length) {
-            listEl.innerHTML =
-                '<p class="am-list-empty">예비업체가 없습니다. <a href="vendor-prospect-finder.html">예비 업체 찾기</a>에서 추가해 주세요.</p>';
-            return;
-        }
-        listEl.innerHTML =
-            '<ul class="vl-admin-list">' +
-            cachedItems
-                .map(function (it) {
-                    var company = String(it.vn_company || "(업체명 없음)");
-                    var phone = String(it.vn_phone || "전화번호 미입력");
-                    var addr = String(it.vn_addr || "주소 미입력");
-                    var roomTxt = it.vn_room_count ? String(it.vn_room_count) + "빈소" : "빈소 미입력";
-                    return (
-                        '<li class="vl-admin-row">' +
-                        '<div class="vl-admin-row__main">' +
-                        '<span class="vl-admin-name">' +
-                        html(company) +
-                        '</span><span class="vl-admin-meta">' +
-                        html(phone) +
-                        " · " +
-                        html(addr) +
-                        " · " +
-                        html(roomTxt) +
-                        "</span></div>" +
-                        '<div class="vl-admin-row__actions">' +
-                        '<button type="button" class="btn vl-admin-del" data-vpl-delete="' +
-                        html(it.id) +
-                        '" data-vpl-name="' +
-                        html(company) +
-                        '">삭제</button>' +
-                        "</div></li>"
-                    );
-                })
-                .join("") +
-            "</ul>";
-        bindDeleteButtons();
+        if (!CARDS || !listEl) return;
+        CARDS.renderGrid(listEl, cachedItems, {
+            emptyHtml:
+                '<p class="vpr-loading">예비업체가 없습니다. <a href="vendor-prospect-finder.html">예비 업체 찾기</a>에서 추가해 주세요.</p>',
+            cardOptions: function (it) {
+                return {
+                    mode: "prospect",
+                    badge: "예비",
+                    showActions: true,
+                    canWrite: true,
+                    deleteId: it.id
+                };
+            },
+            onBind: bindDeleteButtons
+        });
     }
 
     function loadList() {

@@ -15,65 +15,7 @@
     <link rel="stylesheet" href="common.css">
     <link rel="stylesheet" href="staff-hub.css">
     <link rel="stylesheet" href="admin-manage.css">
-    <style>
-        .vl-admin-list { list-style: none; margin: 0; padding: 0; }
-        .vl-admin-row {
-            display: flex;
-            align-items: center;
-            gap: 0.65rem;
-            padding: 0.75rem 0.85rem;
-            border: 1px solid #e0e6ed;
-            border-radius: 8px;
-            margin-bottom: 0.5rem;
-            background: #fff;
-        }
-        .vl-admin-row:hover { border-color: #b8c8dc; background: #f8fbff; }
-        .vl-admin-row__main {
-            flex: 1;
-            min-width: 0;
-            text-decoration: none;
-            color: inherit;
-        }
-        .vl-admin-row__main:hover .vl-admin-name { color: var(--dz-blue); }
-        .vl-admin-name { display: block; font-weight: 700; color: #052a4d; margin-bottom: 0.2rem; }
-        .vl-admin-meta { font-size: 0.85rem; color: #5a6d7e; }
-        .vl-admin-row__actions {
-            flex: 0 0 auto;
-            display: flex;
-            flex-wrap: wrap;
-            gap: 0.35rem;
-            justify-content: flex-end;
-        }
-        .vl-admin-row__actions .btn {
-            font-size: 0.82rem;
-            padding: 0.4rem 0.7rem;
-            min-height: 2.25rem;
-            white-space: nowrap;
-        }
-        .vl-admin-del {
-            border-color: #e8b4b4;
-            color: #a12c2c;
-            background: #fff;
-        }
-        .vl-admin-del:hover {
-            background: #fef5f5;
-            border-color: #c44;
-        }
-        .vl-status { margin: 0 0 1rem; font-size: 0.85rem; color: #3d5166; min-height: 1.25rem; }
-        @media (max-width: 520px) {
-            .vl-admin-row {
-                flex-wrap: wrap;
-                align-items: flex-start;
-            }
-            .vl-admin-row__actions {
-                width: 100%;
-                justify-content: stretch;
-            }
-            .vl-admin-row__actions .btn {
-                flex: 1 1 calc(50% - 0.2rem);
-            }
-        }
-    </style>
+    <link rel="stylesheet" href="vendor-prospect-region.css">
     <script src="api-config.js"></script>
     <script src="thejhon-api.js"></script>
     <script src="auth.js"></script>
@@ -110,7 +52,7 @@
             <input type="hidden" id="vl-filter-dept" value="">
             <div id="vl-dept-filter" class="am-dept-picker-btns"></div>
         </div>
-        <div id="vl-list"></div>
+        <div id="vl-list" class="vpr-grid vpr-grid--vendor-list" aria-live="polite"></div>
     </main>
         <footer class="site-footer">
         <div class="site-footer-inner">
@@ -131,6 +73,7 @@
             }
         })();
     </script>
+    <script src="vendor-list-cards.js"></script>
     <script src="vendor-list-admin.js"></script>
 </body>
 </html>

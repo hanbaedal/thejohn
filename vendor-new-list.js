@@ -2,6 +2,7 @@
     var api = window.THEJHON_API;
     var PF = window.THEJHON_PRODUCT_FORM;
     var VA = window.THEJHON_VENDOR_ADMIN;
+    var CARDS = window.THEJHON_VENDOR_LIST_CARDS;
     var catalog = window.THEJHON_PRODUCT_CATALOG;
 
     var filterRoot = document.getElementById("vl-dept-filter");
@@ -64,16 +65,27 @@
         });
     }
 
-    function registrarSuffix(it) {
+    function registrarText(it) {
         if (!VA || !VA.registeredByMeta) return "";
         var meta = VA.registeredByMeta(it);
-        return meta ? " · " + meta : "";
+        if (!meta) return "";
+        return meta.replace(/^담당:\s*/, "");
+    }
+
+    function gradeLabel(it) {
+        return VA && VA.vendorGradeLabel
+            ? VA.vendorGradeLabel(it.vn_grade)
+            : ({ 1: "Silver", 2: "Gold", 3: "Diamond" }[parseInt(it.vn_grade, 10)] || "Silver");
     }
 
     function editHref(it) {
-        return (
-            "vendor-edit.html?id=" + encodeURIComponent(it.id) + "&from=new"
-        );
+        return "vendor-edit.html?id=" + encodeURIComponent(it.id) + "&from=new";
+    }
+
+    function canWriteItem(it) {
+        return VA && VA.canWriteRegisteredItem
+            ? VA.canWriteRegisteredItem(it, "vn_registered_by")
+            : true;
     }
 
     function bindDeleteButtons() {
@@ -115,60 +127,33 @@
     }
 
     function renderList() {
-        if (!listEl) return;
+        if (!CARDS || !listEl) return;
         var items = filteredItems().sort(function (a, b) {
             return (b.updatedAt || 0) - (a.updatedAt || 0);
         });
+        CARDS.renderGrid(listEl, items, {
+            emptyHtml:
+                '<p class="vpr-loading">신규 업체가 없습니다. <a href="vendor-new-register.html">신규업체 등록</a>에서 추가해 주세요.</p>',
+            cardOptions: function (it) {
+                return {
+                    mode: "new",
+                    badge: "신규",
+                    gradeLabel: gradeLabel(it),
+                    deptLabel: vendorDeptLabels(it) || "미지정",
+                    registrar: registrarText(it),
+                    editHref: editHref(it),
+                    showActions: true,
+                    canWrite: canWriteItem(it),
+                    deleteId: it.id
+                };
+            },
+            onBind: bindDeleteButtons
+        });
         if (!items.length) {
-            listEl.innerHTML =
-                '<p class="am-list-empty">신규 업체가 없습니다. <a href="vendor-new-register.html">신규업체 등록</a>에서 추가해 주세요.</p>';
             setStatus(
                 (filterDept ? PF.deptLabel(catalog, filterDept) + " · " : "전체 · ") + "0건"
             );
-            return;
         }
-        listEl.innerHTML =
-            '<ul class="vl-admin-list">' +
-            items
-                .map(function (it) {
-                    var href = editHref(it);
-                    var deptTxt = vendorDeptLabels(it) || "미지정";
-                    var gradeTxt =
-                        VA && VA.vendorGradeLabel
-                            ? VA.vendorGradeLabel(it.vn_grade)
-                            : ({ 1: "Silver", 2: "Gold", 3: "Diamond" }[parseInt(it.vn_grade, 10)] || "Silver");
-                    var roomTxt = it.vn_room_count ? String(it.vn_room_count) + "빈소" : "빈소 미입력";
-                    var namePlain = String(it.vn_company || "(이름 없음)");
-                    return (
-                        '<li class="vl-admin-row">' +
-                        '<a class="vl-admin-row__main" href="' +
-                        PF.escapeHtml(href) +
-                        '"><span class="vl-admin-name">' +
-                        PF.escapeHtml(namePlain) +
-                        '</span><span class="vl-admin-meta">' +
-                        PF.escapeHtml(deptTxt) +
-                        " · " +
-                        PF.escapeHtml(gradeTxt) +
-                        " · " +
-                        PF.escapeHtml(roomTxt) +
-                        (it.loginId ? " · " + PF.escapeHtml(String(it.loginId)) : "") +
-                        PF.escapeHtml(registrarSuffix(it)) +
-                        "</span></a>" +
-                        '<div class="vl-admin-row__actions">' +
-                        '<a class="btn" href="' +
-                        PF.escapeHtml(href) +
-                        '">수정</a>' +
-                        '<button type="button" class="btn vl-admin-del" data-vl-delete="' +
-                        PF.escapeHtml(it.id) +
-                        '" data-vl-name="' +
-                        PF.escapeHtml(namePlain) +
-                        '">삭제</button>' +
-                        "</div></li>"
-                    );
-                })
-                .join("") +
-            "</ul>";
-        bindDeleteButtons();
     }
 
     function loadVendors() {
@@ -194,6 +179,10 @@
             onSelect: function (deptId) {
                 filterDept = deptId;
                 renderList();
+                var n = filteredItems().length;
+                setStatus(
+                    (filterDept ? PF.deptLabel(catalog, filterDept) + " · " : "전체 · ") + n + "건"
+                );
             }
         });
     }
@@ -214,6 +203,10 @@
             onChange: function (val) {
                 filterStaff = val || "all";
                 renderList();
+                var n = filteredItems().length;
+                setStatus(
+                    (filterDept ? PF.deptLabel(catalog, filterDept) + " · " : "전체 · ") + n + "건"
+                );
             }
         });
     }
