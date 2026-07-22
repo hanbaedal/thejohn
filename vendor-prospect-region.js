@@ -321,7 +321,9 @@
                         vn_phone: row.vn_phone,
                         vn_addr: row.vn_addr,
                         vn_room_count: row.vn_room_count,
-                        vn_record_type: "new"
+                        vn_record_type: "new",
+                        fhi_id: row.fhi_id || "",
+                        vn_public_type: row.vn_public_type || ""
                     })
                 );
             });

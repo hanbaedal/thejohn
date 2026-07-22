@@ -223,7 +223,9 @@ function toPublic(doc, options) {
         vn_registered_at: d[F.registeredAt] || 0,
         updatedAt: d.updatedAt || 0,
         vn_promoted_vendor_id: str(doc.vn_promoted_vendor_id || ""),
-        vn_promoted_at: doc.vn_promoted_at || 0
+        vn_promoted_at: doc.vn_promoted_at || 0,
+        fhi_id: str(doc.fhi_id || ""),
+        vn_public_type: str(doc.vn_public_type || "")
     };
     if (opts.includePassword) {
         pub.password = getVendorStoredPassword(doc);

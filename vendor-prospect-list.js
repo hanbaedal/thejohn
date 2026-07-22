@@ -55,9 +55,9 @@
             cardOptions: function (it) {
                 return {
                     mode: "prospect",
-                    badge: "예비",
+                    badge: it.vn_public_type || "예비",
                     district: districtLabel(it),
-                    facilityType: "예비",
+                    facilityType: it.vn_public_type || "예비",
                     showActions: true,
                     canWrite: true,
                     deleteId: it.id

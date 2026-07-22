@@ -15,6 +15,20 @@
     }
 
     function logoHtml(it) {
+        var api = global.THEJHON_API;
+        var fhiId = String((it && it.fhi_id) || "").trim();
+        if (fhiId && api && api.fhiImageUrl) {
+            var fhiSrc = api.fhiImageUrl(fhiId);
+            if (fhiSrc) {
+                return (
+                    '<img class="vpr-card__img" src="' +
+                    escapeAttr(fhiSrc) +
+                    '" alt="' +
+                    escapeAttr(it.vn_company || "") +
+                    '" loading="lazy">'
+                );
+            }
+        }
         var src = String((it && it.vn_logo) || "").trim();
         if (!src) {
             return '<div class="vpr-card__img vpr-card__img--empty"></div>';

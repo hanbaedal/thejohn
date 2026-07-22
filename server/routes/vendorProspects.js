@@ -24,6 +24,22 @@ const { getRegionSummaries, getRegionItems, fetchFhiImageBuffer } = require("../
 
 const router = express.Router();
 
+async function attachFhiProspectMedia(doc, row) {
+    const fhiId = String((row && row.fhi_id) || "").trim();
+    if (!/^\d+$/.test(fhiId)) return doc;
+    doc.fhi_id = fhiId;
+    const pubType = String((row && row.vn_public_type) || "").trim();
+    if (pubType) doc.vn_public_type = pubType;
+    try {
+        const img = await fetchFhiImageBuffer(fhiId);
+        const mime = img.type || "image/webp";
+        doc[F.logo] = "data:" + mime + ";base64," + img.buf.toString("base64");
+    } catch (e) {
+        console.warn("[vendor_prospects] fhi image skip:", fhiId, e && e.message);
+    }
+    return doc;
+}
+
 function optionalAuth(req) {
     const q = req.query || {};
     const token =
@@ -366,6 +382,7 @@ router.post("/import", requireRole("supervisor", "admin"), async function (req, 
             applyMatchedFields(check.built, matched);
 
             let doc = toImportDbDoc(newProspectId(), check.built, null);
+            doc = await attachFhiProspectMedia(doc, rows[i]);
             if (!registration) {
                 doc = await stampNewVendorRegistration(doc, req.auth);
                 registration = {
