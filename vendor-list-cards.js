@@ -20,7 +20,9 @@
         var stored = String((it && it.vn_logo) || "").trim();
         if (stored) {
             return (
-                '<img class="vpr-card__img" src="' +
+                '<img class="vpr-card__img' +
+                (opts.imgContain ? " vpr-card__img--contain" : "") +
+                '" src="' +
                 escapeAttr(stored) +
                 '" alt="' +
                 alt +
@@ -34,7 +36,9 @@
             var fhiSrc = api.fhiImageUrl(fhiId, fileurl);
             if (fhiSrc) {
                 return (
-                    '<img class="vpr-card__img" src="' +
+                    '<img class="vpr-card__img' +
+                    (opts.imgContain ? " vpr-card__img--contain" : "") +
+                    '" src="' +
                     escapeAttr(fhiSrc) +
                     '" alt="' +
                     alt +
@@ -53,6 +57,125 @@
             "</dt><dd>" +
             escapeHtml(v || "-") +
             "</dd>"
+        );
+    }
+
+    function eskyFlagOn(v) {
+        return String(v || "").trim() === "TBC1300001";
+    }
+
+    function convenienceItems(it) {
+        var row = it || {};
+        var out = [];
+        if (eskyFlagOn(row.mealroomyn)) out.push({ icon: "🍽️", label: "식당" });
+        if (eskyFlagOn(row.waitroomyn)) out.push({ icon: "🛋️", label: "유족대기실" });
+        if (eskyFlagOn(row.parkyn)) out.push({ icon: "🅿️", label: "주차장" });
+        if (eskyFlagOn(row.superyn)) out.push({ icon: "🏪", label: "매점" });
+        return out;
+    }
+
+    function convenienceHtml(it) {
+        var items = convenienceItems(it);
+        if (!items.length) {
+            return '<span class="vpr-hover-panel__empty">-</span>';
+        }
+        return items
+            .map(function (item) {
+                return (
+                    '<span class="vpr-hover-panel__amenity" title="' +
+                    escapeAttr(item.label) +
+                    '"><span class="vpr-hover-panel__amenity-icon" aria-hidden="true">' +
+                    item.icon +
+                    '</span><span class="vpr-hover-panel__amenity-label">' +
+                    escapeHtml(item.label) +
+                    "</span></span>"
+                );
+            })
+            .join("");
+    }
+
+    function roomCountLabel(it) {
+        var n = String((it && it.vn_room_count) || "").trim();
+        if (!n) return "";
+        return "빈소 " + n + "실";
+    }
+
+    function renderProspectBrowseCard(it, opts) {
+        opts = opts || {};
+        var name = String((it && it.vn_company) || "").trim() || "(업체명 없음)";
+        var cardId = String(opts.cardId || opts.checkId || "").trim();
+        var cardClass = "vpr-card vpr-card--browse";
+        if (opts.selected) cardClass += " is-selected";
+        if (opts.registeredVendor && opts.registeredVendor.id) {
+            cardClass += " vpr-card--registered";
+        }
+
+        var checkHtml = "";
+        if (opts.showCheck) {
+            var isRegistered = !!(opts.registeredVendor && opts.registeredVendor.id);
+            checkHtml =
+                '<label class="vpr-card__check' +
+                (isRegistered ? " vpr-card__check--disabled" : "") +
+                '"><input type="checkbox" class="vpr-item-check" data-id="' +
+                escapeAttr(opts.checkId || cardId) +
+                '"' +
+                (opts.selected ? " checked" : "") +
+                (isRegistered ? " disabled" : "") +
+                "> 선택</label>";
+        }
+
+        var registered = opts.registeredVendor || null;
+        var imgWrapClass = registered ? " vpr-card__img-wrap--registered" : "";
+        var registeredOverlay = "";
+        if (registered) {
+            var regLabel = "등록업체";
+            var regTitle = String(registered.vn_company || name).trim();
+            var regHref = registered.id
+                ? "vendor-edit.html?id=" + encodeURIComponent(registered.id)
+                : "";
+            if (regHref) {
+                registeredOverlay =
+                    '<a class="vpr-card__registered-overlay" href="' +
+                    escapeAttr(regHref) +
+                    '" title="' +
+                    escapeAttr(regTitle) +
+                    '">' +
+                    escapeHtml(regLabel) +
+                    "</a>";
+            } else {
+                registeredOverlay =
+                    '<span class="vpr-card__registered-overlay" title="' +
+                    escapeAttr(regTitle) +
+                    '">' +
+                    escapeHtml(regLabel) +
+                    "</span>";
+            }
+        }
+
+        var rooms = roomCountLabel(it);
+        var roomsHtml = rooms
+            ? '<p class="vpr-card__rooms">' + escapeHtml(rooms) + "</p>"
+            : '<p class="vpr-card__rooms vpr-card__rooms--empty">빈소 정보 없음</p>';
+
+        return (
+            "<article" +
+            (cardId ? ' data-id="' + escapeAttr(cardId) + '"' : "") +
+            ' class="' +
+            cardClass +
+            '">' +
+            checkHtml +
+            '<div class="vpr-card__img-wrap' +
+            imgWrapClass +
+            '">' +
+            logoHtml(it, Object.assign({}, opts, { imgContain: true })) +
+            registeredOverlay +
+            "</div>" +
+            '<div class="vpr-card__body vpr-card__body--browse">' +
+            '<h3 class="vpr-card__name">' +
+            escapeHtml(name) +
+            "</h3>" +
+            roomsHtml +
+            "</div></article>"
         );
     }
 
@@ -93,6 +216,9 @@
 
     function renderCard(it, opts) {
         opts = opts || {};
+        if (opts.layout === "prospectBrowse") {
+            return renderProspectBrowseCard(it, opts);
+        }
         var name = String((it && it.vn_company) || "").trim() || "(업체명 없음)";
         var editHref = opts.editHref || "";
         var canWrite = opts.canWrite !== false;
@@ -252,6 +378,9 @@
         escapeHtml: escapeHtml,
         escapeAttr: escapeAttr,
         logoHtml: logoHtml,
+        convenienceItems: convenienceItems,
+        convenienceHtml: convenienceHtml,
+        roomCountLabel: roomCountLabel,
         renderCard: renderCard,
         renderGrid: renderGrid
     };

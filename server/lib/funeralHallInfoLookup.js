@@ -154,6 +154,13 @@ function mapListRow(row) {
         fileurl: fileurl,
         image_url: fileurl && fileurl !== "/BCUser/" ? ESKY_BASE + fileurl : "",
         sanbundiv: String(row.sanbundiv || "N").trim() || "N",
+        mealroomyn: String(row.mealroomyn || "").trim(),
+        waitroomyn: String(row.waitroomyn || "").trim(),
+        parkyn: String(row.parkyn || "").trim(),
+        superyn: String(row.superyn || "").trim(),
+        imparyn: String(row.imparyn || "").trim(),
+        vn_fax: "",
+        vn_park_count: "",
         source: "esky"
     };
 }
@@ -197,7 +204,14 @@ async function fetchFacilityDetail(facilitycd, sanbundiv) {
         vn_room_count: detail.charnelabilitycnt != null ? String(detail.charnelabilitycnt) : "",
         vn_mortuary_count: detail.mortuaycnt != null ? String(detail.mortuaycnt) : "",
         vn_phone: String(detail.telephone || "").trim(),
-        vn_web: normalizeHomepage(detail.homepage)
+        vn_web: normalizeHomepage(detail.homepage),
+        vn_fax: String(detail.faxnum || "").trim(),
+        vn_park_count: detail.parkcnt != null && detail.parkcnt !== "" ? String(detail.parkcnt) : "",
+        mealroomyn: String(detail.mealroomyn || "").trim(),
+        waitroomyn: String(detail.waitroomyn || "").trim(),
+        parkyn: String(detail.parkyn || "").trim(),
+        superyn: String(detail.superyn || "").trim(),
+        imparyn: String(detail.imparyn || "").trim()
     };
 }
 
@@ -232,6 +246,13 @@ async function enrichDetails(items) {
                 if (extra.vn_mortuary_count) row.vn_mortuary_count = extra.vn_mortuary_count;
                 if (extra.vn_phone) row.vn_phone = extra.vn_phone;
                 if (extra.vn_web) row.vn_web = extra.vn_web;
+                row.vn_fax = extra.vn_fax || "";
+                row.vn_park_count = extra.vn_park_count || "";
+                if (extra.mealroomyn) row.mealroomyn = extra.mealroomyn;
+                if (extra.waitroomyn) row.waitroomyn = extra.waitroomyn;
+                if (extra.parkyn) row.parkyn = extra.parkyn;
+                if (extra.superyn) row.superyn = extra.superyn;
+                if (extra.imparyn) row.imparyn = extra.imparyn;
             } catch (e) {
                 /* 상세 없으면 목록 값 유지 */
             }

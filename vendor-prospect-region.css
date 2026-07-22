@@ -439,3 +439,124 @@ body.vpf-detail-open .vpf-footer {
         height: calc(100dvh - 76px);
     }
 }
+
+/* 예비 업체 찾기 — 상세보기 간략 카드 + hover 정보 */
+.vpr-card--browse .vpr-card__img-wrap {
+    height: 132px;
+    background: #eef2f6;
+}
+.vpr-card--browse .vpr-card__img--contain {
+    object-fit: contain;
+    object-position: center center;
+}
+.vpr-card--browse .vpr-card__body--browse {
+    padding: 0.5rem 0.65rem 0.65rem;
+    gap: 0.2rem;
+    min-height: 0;
+}
+.vpr-card--browse .vpr-card__name {
+    font-size: 0.84rem;
+    line-height: 1.35;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    min-height: 2.7em;
+}
+.vpr-card--browse .vpr-card__rooms {
+    margin: 0;
+    font-size: 0.78rem;
+    font-weight: 700;
+    color: #8b5e3c;
+    letter-spacing: 0.01em;
+}
+.vpr-card--browse .vpr-card__rooms--empty {
+    color: #94a3b8;
+    font-weight: 600;
+}
+.vpr-card--browse:hover {
+    border-color: #94a3b8;
+    box-shadow: 0 4px 14px rgba(10, 40, 80, 0.1);
+}
+
+.vpr-hover-panel {
+    position: fixed;
+    z-index: 10050;
+    width: min(20rem, calc(100vw - 1rem));
+    pointer-events: auto;
+}
+.vpr-hover-panel[hidden] {
+    display: none !important;
+}
+.vpr-hover-panel__inner {
+    background: #fff;
+    border: 1px solid #cbd5e1;
+    border-radius: 10px;
+    box-shadow: 0 14px 32px rgba(15, 40, 80, 0.18);
+    padding: 0.75rem 0.85rem;
+}
+.vpr-hover-panel__title {
+    margin: 0 0 0.55rem;
+    font-size: 0.88rem;
+    font-weight: 800;
+    color: #0f172a;
+    line-height: 1.35;
+}
+.vpr-hover-panel__list {
+    margin: 0;
+    display: grid;
+    gap: 0.35rem;
+}
+.vpr-hover-panel__row {
+    display: grid;
+    grid-template-columns: 5.2rem 1fr;
+    gap: 0.35rem;
+    font-size: 0.74rem;
+    line-height: 1.4;
+}
+.vpr-hover-panel__row dt {
+    margin: 0;
+    color: #64748b;
+    font-weight: 600;
+}
+.vpr-hover-panel__row dd {
+    margin: 0;
+    color: #0f172a;
+    font-weight: 600;
+    word-break: keep-all;
+}
+.vpr-hover-panel__amenities {
+    margin-top: 0.6rem;
+    padding-top: 0.55rem;
+    border-top: 1px solid #e2e8f0;
+}
+.vpr-hover-panel__amenities-label {
+    margin: 0 0 0.35rem;
+    font-size: 0.72rem;
+    font-weight: 700;
+    color: #64748b;
+}
+.vpr-hover-panel__amenity-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem;
+}
+.vpr-hover-panel__amenity {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.2rem;
+    padding: 0.22rem 0.45rem;
+    border-radius: 999px;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    font-size: 0.72rem;
+    color: #334155;
+}
+.vpr-hover-panel__amenity-icon {
+    font-size: 0.95rem;
+    line-height: 1;
+}
+.vpr-hover-panel__empty {
+    color: #94a3b8;
+    font-size: 0.74rem;
+}
