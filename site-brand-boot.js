@@ -22,6 +22,24 @@
     var DEFAULT_MANIFEST = "manifest.json";
     var DEFAULT_APP_NAME = "더존";
     var pwaManifestBlobUrl = "";
+    var pwaManifestCacheKey = "";
+
+    function siteOrigin() {
+        try {
+            return String(global.location.origin || "").replace(/\/$/, "");
+        } catch (e) {
+            return "";
+        }
+    }
+
+    function toAbsoluteUrl(src) {
+        var s = String(src || "").trim();
+        if (!s) return s;
+        if (/^(https?:|data:|blob:)/i.test(s)) return s;
+        var origin = siteOrigin();
+        if (!origin) return s;
+        return origin + (s.charAt(0) === "/" ? s : "/" + s);
+    }
 
     function iconMime(src) {
         var s = String(src || "");
@@ -56,6 +74,7 @@
                 } catch (e) {}
                 pwaManifestBlobUrl = "";
             }
+            pwaManifestCacheKey = "";
             link.href = DEFAULT_MANIFEST;
             setAppleWebAppTitle(DEFAULT_APP_NAME);
             return;
@@ -63,22 +82,29 @@
 
         var name = String(companyName || "").trim() || DEFAULT_APP_NAME;
         var shortName = name.length > 12 ? name.slice(0, 12) : name;
+        var cacheKey = custom + "\0" + name;
+        if (cacheKey === pwaManifestCacheKey && pwaManifestBlobUrl) {
+            setAppleWebAppTitle(shortName);
+            return;
+        }
         var mime = iconMime(custom);
+        var iconSrc = toAbsoluteUrl(custom);
+        var origin = siteOrigin();
         var manifest = {
             name: name,
             short_name: shortName,
             description: name,
-            id: "/",
-            start_url: "/index.html",
-            scope: "/",
+            id: origin ? origin + "/" : "/",
+            start_url: origin ? origin + "/index.html" : "/index.html",
+            scope: origin ? origin + "/" : "/",
             display: "standalone",
             background_color: "#f4f6f9",
             theme_color: "#0a4d9c",
             lang: "ko",
             icons: [
-                { src: custom, sizes: "192x192", type: mime, purpose: "any" },
-                { src: custom, sizes: "512x512", type: mime, purpose: "any" },
-                { src: custom, sizes: "512x512", type: mime, purpose: "maskable" }
+                { src: iconSrc, sizes: "192x192", type: mime, purpose: "any" },
+                { src: iconSrc, sizes: "512x512", type: mime, purpose: "any" },
+                { src: iconSrc, sizes: "512x512", type: mime, purpose: "maskable" }
             ]
         };
 
@@ -90,6 +116,7 @@
         pwaManifestBlobUrl = URL.createObjectURL(
             new Blob([JSON.stringify(manifest)], { type: "application/manifest+json" })
         );
+        pwaManifestCacheKey = cacheKey;
         link.href = pwaManifestBlobUrl;
         setAppleWebAppTitle(shortName);
     }
