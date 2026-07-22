@@ -20,6 +20,7 @@ const {
     canUseNaver,
     searchFuneralHalls
 } = require("../lib/vendorExternalLookup");
+const { getRegionSummaries, getRegionItems } = require("../lib/funeralHallInfoLookup");
 
 const router = express.Router();
 
@@ -164,6 +165,43 @@ router.get("/search-funeral-halls", requireRole("admin"), async function (req, r
     } catch (e) {
         console.error("GET /api/vendor-prospects/search-funeral-halls", e);
         res.status(500).json({ ok: false, error: "장례식장 조회에 실패했습니다." });
+    }
+});
+
+/** 관리자 — funeralhallinfo 수도권 지역 요약 (서울·경기·인천) */
+router.get("/fhi-regions", requireRole("admin"), async function (req, res) {
+    try {
+        const regions = await getRegionSummaries();
+        res.json({ ok: true, regions: regions, source: "funeralhallinfo" });
+    } catch (e) {
+        console.error("GET /api/vendor-prospects/fhi-regions", e);
+        res.status(500).json({ ok: false, error: "지역 정보를 불러오지 못했습니다." });
+    }
+});
+
+/** 관리자 — funeralhallinfo 지역별 장례식장 목록 */
+router.get("/fhi-region", requireRole("admin"), async function (req, res) {
+    try {
+        const region = String(req.query.region || "").trim();
+        if (!region) {
+            return res.status(400).json({ ok: false, error: "지역을 선택해 주세요." });
+        }
+        const refresh = String(req.query.refresh || "") === "1";
+        const withPhones = String(req.query.phones || "1") !== "0";
+        const result = await getRegionItems(region, { refresh: refresh, withPhones: withPhones });
+        res.json({
+            ok: true,
+            region: result.region,
+            items: result.items || [],
+            cached: !!result.cached,
+            source: "funeralhallinfo"
+        });
+    } catch (e) {
+        if (String((e && e.message) || "") === "UNKNOWN_REGION") {
+            return res.status(400).json({ ok: false, error: "지원하지 않는 지역입니다." });
+        }
+        console.error("GET /api/vendor-prospects/fhi-region", e);
+        res.status(500).json({ ok: false, error: "장례식장 목록을 불러오지 못했습니다." });
     }
 });
 

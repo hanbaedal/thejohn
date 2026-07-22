@@ -793,7 +793,8 @@
         "vendor-dm-print.html",
         "vendor-prospect-list.html",
         "vendor-excel-import.html",
-        "vendor-prospect-finder.html"
+        "vendor-prospect-finder.html",
+        "vendor-prospect-region.html"
     ];
     var ORDER_MANAGE_HUB_PAGE = "order-manage-hub.html";
     var ORDER_MANAGE_PAGES = ["order-list-admin.html"];
@@ -1521,6 +1522,7 @@
         var file = staffNavHrefFile(href);
         if (file === "order-list-admin.html") return canShowOrderManageMenu();
         if (file === "vendor-prospect-finder.html") return getRole() === "admin";
+        if (file === "vendor-prospect-region.html") return getRole() === "admin";
         return true;
     }
 
@@ -2938,6 +2940,12 @@
             return;
         }
         if (page === "vendor-prospect-finder.html") {
+            if (!getProspectFinderAccess().allowed) {
+                redirectFromProtectedPage(isLoggedIn());
+            }
+            return;
+        }
+        if (page === "vendor-prospect-region.html") {
             if (!getProspectFinderAccess().allowed) {
                 redirectFromProtectedPage(isLoggedIn());
             }

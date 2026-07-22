@@ -370,6 +370,26 @@
         importVendorProspects: function (rows) {
             return request("POST", "/api/vendor-prospects/import", { rows: rows || [] });
         },
+        getFhiRegions: function () {
+            return request("GET", "/api/vendor-prospects/fhi-regions").then(function (d) {
+                return d.regions || [];
+            });
+        },
+        getFhiRegionItems: function (region, options) {
+            options = options || {};
+            var q =
+                "?region=" +
+                encodeURIComponent(String(region || "")) +
+                (options.refresh ? "&refresh=1" : "") +
+                (options.phones === false ? "&phones=0" : "");
+            return request("GET", "/api/vendor-prospects/fhi-region" + q).then(function (d) {
+                return {
+                    region: d.region,
+                    items: d.items || [],
+                    cached: d.cached
+                };
+            });
+        },
         sendVendorBroadcastEmail: function (payload) {
             return request("POST", "/api/vendor-email/broadcast", payload || {});
         },
