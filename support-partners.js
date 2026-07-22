@@ -52,6 +52,28 @@
         );
     }
 
+    function bindPartnerCardClicks() {
+        if (!root) return;
+        root.querySelectorAll(".vpr-card--clickable").forEach(function (card) {
+            if (card.getAttribute("data-sp-card-bound") === "1") return;
+            card.setAttribute("data-sp-card-bound", "1");
+            card.addEventListener("click", function (e) {
+                var href =
+                    card.getAttribute("data-href") ||
+                    (card.querySelector(".vpr-card__overlay-link") &&
+                        card.querySelector(".vpr-card__overlay-link").getAttribute("href"));
+                if (!href) return;
+                window.location.href = href;
+            });
+            card.addEventListener("keydown", function (e) {
+                if (e.key !== "Enter" && e.key !== " ") return;
+                e.preventDefault();
+                var href = card.getAttribute("data-href");
+                if (href) window.location.href = href;
+            });
+        });
+    }
+
     function render(items) {
         if (!CARDS || !root) return;
         var vendors = (items || [])
@@ -75,9 +97,11 @@
                     deptLabel: vendorDeptLabels(it) || "미지정",
                     registrar: it.vn_mgr_name || "",
                     editHref: detailHref(it.id),
+                    cardLink: true,
                     showActions: false
                 };
-            }
+            },
+            onBind: bindPartnerCardClicks
         });
     }
 

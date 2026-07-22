@@ -57,6 +57,12 @@
             '">파트너회사 소개</a>으로 돌아가 주세요.</p>';
     }
 
+    function syncFixedHeaderOffset() {
+        if (window.SUPPORT_LAYOUT && SUPPORT_LAYOUT.syncSupportHeaderOffset) {
+            SUPPORT_LAYOUT.syncSupportHeaderOffset();
+        }
+    }
+
     function backLinkHtml() {
         return (
             '<a class="sp-back-link" href="' +
@@ -215,6 +221,7 @@
             "</div></div>";
 
         requestAnimationFrame(function () {
+            syncFixedHeaderOffset();
             scrollToVendor(focusId);
         });
     }

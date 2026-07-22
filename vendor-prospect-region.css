@@ -299,6 +299,33 @@
 .vpr-card__name-link:hover {
     color: #0a4d9c;
 }
+.vpr-card--clickable {
+    position: relative;
+    cursor: pointer;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+.vpr-card--clickable:hover {
+    border-color: #94a3b8;
+    box-shadow: 0 4px 14px rgba(10, 40, 80, 0.1);
+}
+.vpr-card--clickable:focus-within {
+    border-color: #0a4d9c;
+    box-shadow: 0 0 0 2px rgba(10, 77, 156, 0.15);
+}
+.vpr-card__overlay-link {
+    position: absolute;
+    inset: 0;
+    z-index: 5;
+    border-radius: inherit;
+}
+.vpr-card--clickable .vpr-card__img-wrap,
+.vpr-card--clickable .vpr-card__body {
+    pointer-events: none;
+}
+.vpr-card--clickable .vpr-card__badge {
+    z-index: 6;
+    pointer-events: none;
+}
 .vl-status {
     margin: 0 0 0.75rem;
     font-size: 0.85rem;

@@ -32,7 +32,7 @@
 }
 .sp-feed-toolbar {
     position: sticky;
-    top: 0;
+    top: var(--support-header-h, 0);
     z-index: 5;
     padding: 0.35rem 0.5rem 0.5rem;
     margin-bottom: 0.5rem;
@@ -171,7 +171,7 @@
     border-radius: 12px;
     overflow: hidden;
     box-shadow: 0 2px 14px rgba(10, 77, 156, 0.08);
-    scroll-margin-top: 4.5rem;
+    scroll-margin-top: calc(var(--support-header-h, 4.5rem) + 3.5rem);
 }
 .sp-article.is-current {
     border-color: var(--dz-blue);

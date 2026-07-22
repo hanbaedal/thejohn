@@ -1,0 +1,37 @@
+/* 고객센터 공통 — 헤더·서브메뉴 상단 고정(본문만 스크롤) */
+body.page-support {
+    --support-header-h: 6.25rem;
+}
+
+body.page-support .site-header {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 300;
+}
+
+body.page-support .page-main {
+    padding-top: calc(var(--support-header-h, 6.25rem) + 0.75rem);
+    box-sizing: border-box;
+}
+
+body.page-support .page-main--partners {
+    padding-top: calc(var(--support-header-h, 6.25rem) + 0.75rem);
+}
+
+body.page-support .page-main--partner-detail {
+    padding-top: calc(var(--support-header-h, 6.25rem) + 0.75rem);
+}
+
+body.page-support .company-main--support-hub.company-main:has(.company-divisions) {
+    padding-top: calc(var(--support-header-h, 6.25rem) + 0.85rem);
+}
+
+body.page-support .sp-feed-toolbar {
+    top: var(--support-header-h, 6.25rem);
+}
+
+body.page-support .sp-article {
+    scroll-margin-top: calc(var(--support-header-h, 6.25rem) + 3.5rem);
+}

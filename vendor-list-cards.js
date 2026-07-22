@@ -138,13 +138,19 @@
             footActions += "</div>";
         }
 
-        var nameHtml = editHref
-            ? '<h3 class="vpr-card__name"><a class="vpr-card__name-link" href="' +
-              escapeAttr(editHref) +
-              '">' +
-              escapeHtml(name) +
-              "</a></h3>"
-            : '<h3 class="vpr-card__name">' + escapeHtml(name) + "</h3>";
+        var cardLink = !!(opts.cardLink && editHref && !opts.showActions);
+        if (cardLink) {
+            cardClass += " vpr-card--clickable";
+        }
+
+        var nameHtml =
+            editHref && !cardLink
+                ? '<h3 class="vpr-card__name"><a class="vpr-card__name-link" href="' +
+                  escapeAttr(editHref) +
+                  '">' +
+                  escapeHtml(name) +
+                  "</a></h3>"
+                : '<h3 class="vpr-card__name">' + escapeHtml(name) + "</h3>";
 
         var registered = opts.registeredVendor || null;
         var imgWrapClass = registered ? " vpr-card__img-wrap--registered" : "";
@@ -174,9 +180,19 @@
             }
         }
 
+        var overlayLink = cardLink
+            ? '<a class="vpr-card__overlay-link" href="' +
+              escapeAttr(editHref) +
+              '" aria-label="' +
+              escapeAttr(name) +
+              ' 상세보기"></a>'
+            : "";
+
         return (
             "<article" +
             (cardId ? ' data-id="' + escapeAttr(cardId) + '"' : "") +
+            (cardLink ? ' data-href="' + escapeAttr(editHref) + '"' : "") +
+            (cardLink ? ' tabindex="0" role="link"' : "") +
             ' class="' +
             cardClass +
             '">' +
@@ -197,7 +213,9 @@
             buildMeta(it, opts) +
             "</dl>" +
             footActions +
-            "</div></article>"
+            "</div>" +
+            overlayLink +
+            "</article>"
         );
     }
 
