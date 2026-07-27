@@ -9,8 +9,6 @@
     var MEMBERS_MSG = "회원 전용입니다.";
     var membersModalTimer = null;
 
-    var GRADE_NAMES = { 1: "Silver", 2: "Gold", 3: "Diamond" };
-
     function detailHref(id) {
         return DETAIL_HREF + "?id=" + encodeURIComponent(String(id || ""));
     }
@@ -101,13 +99,6 @@
         return labels.join(", ");
     }
 
-    function gradeLabel(it) {
-        var n = parseInt(it && it.vn_grade, 10);
-        if (n === 4) n = 3;
-        if (n >= 1 && n <= 3) return GRADE_NAMES[n];
-        return GRADE_NAMES[1];
-    }
-
     function isPartnerVendor(it) {
         return (
             String((it && it.vn_record_type) || "partner")
@@ -154,15 +145,10 @@
             emptyHtml:
                 '<p class="sp-partners-empty">등록된 업체가 없습니다. <a href="vendor-register.html">업체등록</a>에서 정보를 등록하면 이곳에 표시됩니다.</p>',
             cardOptions: function (it) {
-                var canSeeGrade =
-                    window.THEJHON_AUTH &&
-                    THEJHON_AUTH.isStaffRole &&
-                    THEJHON_AUTH.isStaffRole();
-                var g = canSeeGrade ? gradeLabel(it) : "";
                 return {
                     mode: "partner",
-                    badge: g,
-                    gradeLabel: g,
+                    badge: "",
+                    gradeLabel: "",
                     deptLabel: vendorDeptLabels(it) || "미지정",
                     registrar: it.vn_mgr_name || "",
                     editHref: detailHref(it.id),
