@@ -251,6 +251,27 @@
     color: #052a4d;
     line-height: 1.32;
 }
+.sp-facility-summary {
+    margin: 0.15rem 0 0;
+    font-size: 0.92rem;
+    font-weight: 600;
+    color: #2a4a5e;
+    line-height: 1.45;
+}
+.sp-facility-summary--empty {
+    color: #8a9bab;
+    font-weight: 500;
+}
+.sp-address {
+    margin: 0.1rem 0 0;
+    font-size: 0.92rem;
+    line-height: 1.5;
+    color: #3d5166;
+    word-break: break-word;
+}
+.sp-address--empty {
+    color: #8a9bab;
+}
 .sp-web {
     margin: 0;
     font-size: 0.92rem;
@@ -275,7 +296,7 @@
     border: 1px solid #e0e8f2;
     border-radius: 8px;
     display: grid;
-    grid-template-columns: 4.25rem minmax(0, 1fr);
+    grid-template-columns: 5.25rem minmax(0, 1fr);
     gap: 0.3rem 0.55rem;
     font-size: 0.92rem;
 }
@@ -335,7 +356,11 @@
     }
     .sp-contact {
         font-size: 0.84rem;
-        grid-template-columns: 3.6rem minmax(0, 1fr);
+        grid-template-columns: 4.5rem minmax(0, 1fr);
+    }
+    .sp-facility-summary,
+    .sp-address {
+        font-size: 0.86rem;
     }
     .sp-content {
         font-size: 0.86rem;

@@ -442,7 +442,7 @@
             rows.push(metaRow("전화번호", it.vn_phone));
         } else {
             rows.push(metaRow("사업부문", opts.deptLabel));
-            rows.push(metaRow("등급", opts.gradeLabel));
+            if (opts.gradeLabel) rows.push(metaRow("등급", opts.gradeLabel));
             rows.push(
                 metaRow(
                     "빈소 정보",

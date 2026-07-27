@@ -96,7 +96,14 @@ router.get("/", async (req, res) => {
             .find(query)
             .sort({ updatedAt: -1 })
             .toArray();
-        res.json({ ok: true, items: items.map(toPublic), scope: auth && isStaffAuth(auth) ? "staff" : "public" });
+        const staff = !!(auth && isStaffAuth(auth));
+        res.json({
+            ok: true,
+            items: items.map(function (doc) {
+                return toPublic(doc, { includeGrade: staff });
+            }),
+            scope: staff ? "staff" : "public"
+        });
     } catch (e) {
         console.error("GET /api/vendors", e);
         res.status(500).json({ ok: false, error: "업체 목록을 불러오지 못했습니다." });
@@ -289,8 +296,14 @@ router.get("/:id", async (req, res) => {
         if (auth && isStaffAuth(auth) && !canReadVendor(auth, doc)) {
             return res.status(403).json({ ok: false, error: "이 업체를 조회할 권한이 없습니다." });
         }
-        const includePassword = !!(auth && isStaffAuth(auth) && canReadVendor(auth, doc));
-        res.json({ ok: true, item: toPublic(doc, { includePassword }) });
+        const staffCanRead = !!(auth && isStaffAuth(auth) && canReadVendor(auth, doc));
+        res.json({
+            ok: true,
+            item: toPublic(doc, {
+                includePassword: staffCanRead,
+                includeGrade: staffCanRead
+            })
+        });
     } catch (e) {
         console.error("GET /api/vendors/:id", e);
         res.status(500).json({ ok: false, error: "업체를 불러오지 못했습니다." });

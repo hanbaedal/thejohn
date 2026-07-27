@@ -154,10 +154,15 @@
             emptyHtml:
                 '<p class="sp-partners-empty">등록된 업체가 없습니다. <a href="vendor-register.html">업체등록</a>에서 정보를 등록하면 이곳에 표시됩니다.</p>',
             cardOptions: function (it) {
+                var canSeeGrade =
+                    window.THEJHON_AUTH &&
+                    THEJHON_AUTH.isStaffRole &&
+                    THEJHON_AUTH.isStaffRole();
+                var g = canSeeGrade ? gradeLabel(it) : "";
                 return {
                     mode: "partner",
-                    badge: gradeLabel(it),
-                    gradeLabel: gradeLabel(it),
+                    badge: g,
+                    gradeLabel: g,
                     deptLabel: vendorDeptLabels(it) || "미지정",
                     registrar: it.vn_mgr_name || "",
                     editHref: detailHref(it.id),

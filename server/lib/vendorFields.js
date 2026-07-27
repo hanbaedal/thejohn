@@ -225,7 +225,6 @@ function toPublic(doc, options) {
         vn_depts: Array.isArray(d[F.depts]) ? d[F.depts] : [],
         vn_ceo: str(d[F.ceo]),
         vn_ceo_tel: str(d[F.ceoTel]),
-        vn_grade: parseGrade(d[F.grade]) || "1",
         vn_room_count: parseRoomCount(d[F.roomCount]),
         vn_web: str(d[F.web]),
         vn_email: str(d[F.email]),
@@ -260,6 +259,10 @@ function toPublic(doc, options) {
         superyn: str(doc.superyn || ""),
         imparyn: str(doc.imparyn || "")
     };
+    /* 업체등급 — 관리자·슈퍼바이저만 (includeGrade !== false 이고 staff 호출 시) */
+    if (opts.includeGrade !== false) {
+        pub.vn_grade = parseGrade(d[F.grade]) || "1";
+    }
     if (opts.includePassword) {
         pub.password = getVendorStoredPassword(doc);
     }

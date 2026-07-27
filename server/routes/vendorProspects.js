@@ -154,8 +154,8 @@ router.delete("/:id", requireRole("supervisor", "admin"), async function (req, r
     }
 });
 
-/** 관리자 — 도시명/장례식장명으로 장례식장 조회 (한국장례협회 FTA) */
-router.get("/search-funeral-halls", requireRole("admin"), async function (req, res) {
+/** 관리자·슈퍼바이저 — 도시명/장례식장명으로 장례식장 조회 (한국장례협회 FTA) */
+router.get("/search-funeral-halls", requireRole("supervisor", "admin"), async function (req, res) {
     try {
         const q = String(req.query.q || "").trim();
         const mode = String(req.query.mode || "city").trim().toLowerCase() === "name" ? "name" : "city";
@@ -186,8 +186,8 @@ router.get("/search-funeral-halls", requireRole("admin"), async function (req, r
     }
 });
 
-/** 관리자 — e하늘 수도권 지역 요약 (서울·경기·인천) */
-router.get("/fhi-regions", requireRole("admin"), async function (req, res) {
+/** 관리자·슈퍼바이저 — e하늘 수도권 지역 요약 (서울·경기·인천) */
+router.get("/fhi-regions", requireRole("supervisor", "admin"), async function (req, res) {
     try {
         const regions = await getRegionSummaries();
         res.json({ ok: true, regions: regions, source: "esky" });
@@ -197,8 +197,8 @@ router.get("/fhi-regions", requireRole("admin"), async function (req, res) {
     }
 });
 
-/** 관리자 — e하늘 지역별 장례식장 목록 */
-router.get("/fhi-region", requireRole("admin"), async function (req, res) {
+/** 관리자·슈퍼바이저 — e하늘 지역별 장례식장 목록 */
+router.get("/fhi-region", requireRole("supervisor", "admin"), async function (req, res) {
     try {
         const region = String(req.query.region || "").trim();
         if (!region) {
@@ -235,11 +235,11 @@ router.get("/fhi-region", requireRole("admin"), async function (req, res) {
     }
 });
 
-/** 관리자 — e하늘 장례식장 이미지 프록시 */
+/** 관리자·슈퍼바이저 — e하늘 장례식장 이미지 프록시 */
 router.get("/fhi-image/:id", async function (req, res) {
     try {
         const auth = optionalAuth(req);
-        if (!auth || auth.role !== "admin") {
+        if (!auth || (auth.role !== "admin" && auth.role !== "supervisor")) {
             return res.status(401).end();
         }
         const id = String(req.params.id || "")

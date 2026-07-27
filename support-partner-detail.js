@@ -1,5 +1,7 @@
 (function () {
     var api = window.THEJHON_API;
+    var PF = window.THEJHON_PRODUCT_FORM;
+    var catalog = window.THEJHON_PRODUCT_CATALOG;
     var root = document.getElementById("spd-root");
     var LIST_HREF = "support-partners.html";
 
@@ -37,6 +39,76 @@
         if (d.indexOf("82") === 0) return "tel:+" + d;
         if (d.charAt(0) === "0") return "tel:+82" + d.slice(1);
         return "tel:+" + d;
+    }
+
+    function emptyDash() {
+        return '<span class="sp-contact-empty">—</span>';
+    }
+
+    function normalizeVendorDeptId(id) {
+        var n = String(id || "").trim().toLowerCase();
+        if (n === "uncontracted" || n === "미계약") return "uncontracted";
+        return catalog ? catalog.normalizeDept(id) : n;
+    }
+
+    function vendorDeptIds(it) {
+        var raw = it && it.vn_depts;
+        if (!Array.isArray(raw)) return [];
+        return raw.map(function (id) {
+            return normalizeVendorDeptId(id);
+        });
+    }
+
+    function vendorDeptLabels(it) {
+        var ids = vendorDeptIds(it);
+        var labels = [];
+        for (var i = 0; i < ids.length; i++) {
+            if (!ids[i]) continue;
+            var lbl = PF && PF.deptLabel ? PF.deptLabel(catalog, ids[i]) : ids[i];
+            if (lbl && labels.indexOf(lbl) < 0) labels.push(lbl);
+        }
+        return labels.join(", ");
+    }
+
+    function roomCountLabel(it) {
+        var n = parseInt(it && it.vn_room_count, 10);
+        if (!isFinite(n) || n <= 0) return "";
+        return String(n) + "개";
+    }
+
+    function formatAddress(it) {
+        var AF = window.THEJHON_ADDRESS_FIELDS;
+        if (AF && AF.formatFullAddress) {
+            return str(AF.formatFullAddress(it.vn_zip, it.vn_addr, it.vn_addr_detail));
+        }
+        return [it.vn_zip, it.vn_addr, it.vn_addr_detail]
+            .map(function (v) {
+                return str(v);
+            })
+            .filter(Boolean)
+            .join(" ");
+    }
+
+    function facilitySummaryHtml(it) {
+        var parts = [];
+        var dept = vendorDeptLabels(it);
+        var rooms = roomCountLabel(it);
+        if (dept) parts.push(dept);
+        if (rooms) parts.push("빈소 " + rooms);
+        if (!parts.length) {
+            return '<p class="sp-facility-summary sp-facility-summary--empty">사업부문 · 빈소 —</p>';
+        }
+        return (
+            '<p class="sp-facility-summary">' + escapeHtml(parts.join(" · ")) + "</p>"
+        );
+    }
+
+    function addressHtml(it) {
+        var full = formatAddress(it);
+        if (!full) {
+            return '<p class="sp-address sp-address--empty">주소: —</p>';
+        }
+        return '<p class="sp-address">주소: ' + escapeMultiline(full) + "</p>";
     }
 
     function getIdFromQuery() {
@@ -106,32 +178,36 @@
         );
     }
 
+    function telLinkHtml(tel) {
+        if (!tel) return emptyDash();
+        return (
+            '<a href="' +
+            escapeHtml(telHref(tel)) +
+            '">' +
+            escapeHtml(tel) +
+            "</a>"
+        );
+    }
+
     function contactHtml(it) {
+        var companyTel = str(it.vn_phone);
         var name = str(it.vn_mgr_name);
-        var tel = str(it.vn_mgr_tel) || str(it.vn_phone);
+        var mgrTel = str(it.vn_mgr_tel);
         var email = str(it.vn_mgr_email) || str(it.vn_email);
-        var nameDd = name ? escapeHtml(name) : '<span class="sp-contact-empty">—</span>';
-        var telDd;
-        if (tel) {
-            telDd =
-                '<a href="' +
-                escapeHtml(telHref(tel)) +
-                '">' +
-                escapeHtml(tel) +
-                "</a>";
-        } else {
-            telDd = '<span class="sp-contact-empty">—</span>';
-        }
+        var nameDd = name ? escapeHtml(name) : emptyDash();
         var emailDd = email
             ? '<a href="mailto:' + escapeHtml(email) + '">' + escapeHtml(email) + "</a>"
-            : '<span class="sp-contact-empty">—</span>';
+            : emptyDash();
         return (
             '<dl class="sp-contact">' +
+            "<dt>회사 전화</dt><dd>" +
+            telLinkHtml(companyTel) +
+            "</dd>" +
             "<dt>담당자</dt><dd>" +
             nameDd +
             "</dd>" +
-            "<dt>연락처</dt><dd>" +
-            telDd +
+            "<dt>담당 연락처</dt><dd>" +
+            telLinkHtml(mgrTel) +
             "</dd>" +
             "<dt>이메일</dt><dd>" +
             emailDd +
@@ -164,6 +240,8 @@
             '<h2 class="sp-title">' +
             escapeHtml(name) +
             "</h2>" +
+            facilitySummaryHtml(it) +
+            addressHtml(it) +
             webHtml(it) +
             contactHtml(it) +
             noteBlock +

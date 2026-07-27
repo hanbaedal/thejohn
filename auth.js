@@ -1521,8 +1521,8 @@
     function vendorSubnavItemAllowed(href) {
         var file = staffNavHrefFile(href);
         if (file === "order-list-admin.html") return canShowOrderManageMenu();
-        if (file === "vendor-prospect-finder.html") return getRole() === "admin";
-        if (file === "vendor-prospect-region.html") return getRole() === "admin";
+        if (file === "vendor-prospect-finder.html") return isStaffRole(getRole());
+        if (file === "vendor-prospect-region.html") return isStaffRole(getRole());
         return true;
     }
 
@@ -2396,8 +2396,11 @@
             return { allowed: false, reason: "로그인이 필요합니다. 관리자 로그인 후 이용해 주세요." };
         }
         if (!isLoggedIn()) return { allowed: false, reason: "로그인이 필요합니다." };
-        if (getRole() !== "admin") {
-            return { allowed: false, reason: "예비 업체 찾기는 관리자만 사용할 수 있습니다." };
+        if (!isStaffRole(getRole())) {
+            return {
+                allowed: false,
+                reason: "예비 업체 찾기는 관리자·슈퍼바이저만 사용할 수 있습니다."
+            };
         }
         return { allowed: true, reason: "" };
     }
@@ -3094,7 +3097,7 @@
             var finderLinks = nav.querySelectorAll(
                 'a[href="vendor-prospect-finder.html"], [data-nav-prospect-finder]'
             );
-            var showFinder = getRole() === "admin";
+            var showFinder = isStaffRole(getRole());
             for (var x = 0; x < excelLinks.length; x++) {
                 excelLinks[x].hidden = !showExcel;
                 excelLinks[x].setAttribute("aria-hidden", showExcel ? "false" : "true");
