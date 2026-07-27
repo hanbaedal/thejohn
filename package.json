@@ -9,6 +9,6 @@
     "vendor-app:apk": "cd vendor-app/android && gradlew.bat assembleDebug"
   },
   "engines": {
-    "node": ">=18"
+    "node": ">=20"
   }
 }

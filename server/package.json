@@ -15,7 +15,7 @@
     "migrate-images-to-r2": "node scripts/migrate-images-to-r2.js"
   },
   "engines": {
-    "node": ">=18"
+    "node": ">=20"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1067.0",
