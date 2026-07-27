@@ -1,8 +1,10 @@
 /**
- * 로그인 세션 저장 — 탭별 sessionStorage, PWA만 localStorage
+ * 로그인 세션 저장 — 탭별 sessionStorage, PWA·업체앱은 localStorage
  * 공개 페이지·로그인 게이트는 public-site-config.js 와 동일 규칙
  */
 (function (global) {
+    var VENDOR_APP_KEY = "thejhon_vendor_app";
+
     var SESSION_ONLY_KEYS = {
         thejhon_vendor_order_enabled: true,
         thejhon_staff_order_enabled: true
@@ -24,13 +26,58 @@
         return false;
     }
 
+    function persistVendorAppFlag() {
+        try {
+            localStorage.setItem(VENDOR_APP_KEY, "1");
+        } catch (e) {}
+    }
+
+    function isVendorAppMode() {
+        try {
+            if (localStorage.getItem(VENDOR_APP_KEY) === "1") return true;
+        } catch (e) {}
+        try {
+            if (new URLSearchParams(global.location.search).get("app") === "vendor") {
+                persistVendorAppFlag();
+                return true;
+            }
+        } catch (e2) {}
+        try {
+            if (
+                global.Capacitor &&
+                global.Capacitor.isNativePlatform &&
+                global.Capacitor.isNativePlatform()
+            ) {
+                persistVendorAppFlag();
+                return true;
+            }
+        } catch (e3) {}
+        return false;
+    }
+
+    function shouldPersistAuthSession() {
+        return isPwaStandalone() || isVendorAppMode();
+    }
+
+    function applyVendorAppDocumentClass() {
+        if (!isVendorAppMode()) return;
+        try {
+            document.documentElement.classList.add("vendor-app-mode");
+        } catch (e) {}
+    }
+
+    global.THEJHON_VENDOR_APP = {
+        KEY: VENDOR_APP_KEY,
+        isApp: isVendorAppMode
+    };
+
     function get(key) {
         try {
             var s = sessionStorage.getItem(key);
             if (s != null && s !== "") return s;
         } catch (e) {}
         if (isSessionOnlyKey(key)) return "";
-        if (isPwaStandalone()) {
+        if (shouldPersistAuthSession()) {
             try {
                 var v = localStorage.getItem(key);
                 if (v != null && v !== "") return v;
@@ -50,7 +97,7 @@
             } catch (eSo) {}
             return;
         }
-        if (isPwaStandalone()) {
+        if (shouldPersistAuthSession()) {
             try {
                 if (value == null || value === "") localStorage.removeItem(key);
                 else localStorage.setItem(key, String(value));
@@ -81,7 +128,7 @@
     }
 
     function hydrateSessionFromLocal(keys) {
-        if (!isPwaStandalone()) return;
+        if (!shouldPersistAuthSession()) return;
         var i;
         for (i = 0; i < keys.length; i++) {
             var key = keys[i];
@@ -126,7 +173,7 @@
 
     function isLoggedInEarly() {
         purgeLegacyGuestSession();
-        if (isPwaStandalone()) {
+        if (shouldPersistAuthSession()) {
             hydrateSessionFromLocal(AUTH_GATE_KEYS);
         }
         if (get(AUTH_KEY) !== "1" || !get(ROLE_KEY)) return false;
@@ -170,6 +217,8 @@
 
     global.THEJHON_AUTH_STORAGE = {
         isPwaStandalone: isPwaStandalone,
+        isVendorAppMode: isVendorAppMode,
+        shouldPersistAuthSession: shouldPersistAuthSession,
         get: get,
         set: set,
         remove: remove,
@@ -181,6 +230,7 @@
     };
 
     purgeLegacyGuestSession();
+    applyVendorAppDocumentClass();
     enforceSiteLoginEarly();
     applyLoggedInDocumentClass();
     if (document.readyState === "loading") {

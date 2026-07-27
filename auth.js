@@ -2665,6 +2665,17 @@
      */
     function getPostLoginLandingPath(role, nextRaw) {
         var r = normalizeLoginRole(role);
+        var vendorApp =
+            global.THEJHON_VENDOR_APP &&
+            THEJHON_VENDOR_APP.isApp &&
+            THEJHON_VENDOR_APP.isApp();
+        if (vendorApp && r === "vendor") {
+            if (nextRaw) {
+                var vendorDest = safeNextPath(nextRaw);
+                if (vendorDest) return vendorDest;
+            }
+            return "products.html";
+        }
         if (nextRaw) {
             var dest = safeNextPath(nextRaw);
             if (isStaffLandingRole(r) && isHomeLandingPath(dest)) {

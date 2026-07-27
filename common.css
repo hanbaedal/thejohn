@@ -1,4 +1,5 @@
 @import url("pdf-view-modal.css");
+@import url("vendor-app.css");
 
 :root {
     --dz-blue: #0a4d9c;

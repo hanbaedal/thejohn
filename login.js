@@ -8,6 +8,21 @@
         return document.getElementById(id);
     }
 
+    function applyVendorAppLoginUi() {
+        if (
+            !global.THEJHON_VENDOR_APP ||
+            !THEJHON_VENDOR_APP.isApp ||
+            !THEJHON_VENDOR_APP.isApp()
+        ) {
+            return;
+        }
+        document.title = "더존 업체 — 로그인";
+        var h1 = document.querySelector(".login-card h1");
+        if (h1) h1.textContent = "업체 로그인";
+    }
+
+    applyVendorAppLoginUi();
+
     function goNext(role) {
         var Auth = global.THEJHON_AUTH;
         var dest =

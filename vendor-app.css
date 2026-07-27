@@ -1,0 +1,20 @@
+/* 업체 전용 앱 — 관리·등록 메뉴 숨김, 주문·장바구니 중심 */
+html.vendor-app-mode .site-header-nav a[href="product-register.html"],
+html.vendor-app-mode .site-header-nav a[href="vendor-register.html"],
+html.vendor-app-mode .site-header-nav a[href="company.html"],
+html.vendor-app-mode .site-header-nav .nav-dropdown {
+    display: none !important;
+}
+
+html.vendor-app-mode .site-header-nav a[href="products.html"]::after {
+    content: " · 주문";
+    font-weight: 600;
+}
+
+html.vendor-app-mode body.page-login .login-about {
+    display: none !important;
+}
+
+html.vendor-app-mode body.page-login .login-header a[href="index.html"] {
+    pointer-events: none;
+}

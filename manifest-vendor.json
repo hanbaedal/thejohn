@@ -1,0 +1,26 @@
+{
+    "name": "더존 업체",
+    "short_name": "더존업체",
+    "description": "더존 등록 업체 주문·로그인",
+    "id": "/?app=vendor",
+    "start_url": "/login.html?app=vendor",
+    "scope": "/",
+    "display": "standalone",
+    "background_color": "#f4f6f9",
+    "theme_color": "#0a4d9c",
+    "lang": "ko",
+    "icons": [
+        {
+            "src": "img/icon-192.png",
+            "sizes": "192x192",
+            "type": "image/png",
+            "purpose": "any"
+        },
+        {
+            "src": "img/icon-512.png",
+            "sizes": "512x512",
+            "type": "image/png",
+            "purpose": "any"
+        }
+    ]
+}

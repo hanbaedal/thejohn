@@ -1,0 +1,19 @@
+{
+  "name": "thejohn-vendor-app",
+  "private": true,
+  "version": "1.0.0",
+  "description": "더존 업체 전용 Android 앱 (Capacitor)",
+  "scripts": {
+    "cap:sync": "cap sync android",
+    "cap:open": "cap open android",
+    "apk:debug": "cd android && gradlew.bat assembleDebug",
+    "apk:release": "cd android && gradlew.bat assembleRelease"
+  },
+  "dependencies": {
+    "@capacitor/android": "^7.2.0",
+    "@capacitor/core": "^7.2.0"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "^7.2.0"
+  }
+}

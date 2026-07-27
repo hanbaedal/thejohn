@@ -3,7 +3,10 @@
   "private": true,
   "scripts": {
     "start": "node server/index.js",
-    "build": "cd server && npm ci"
+    "build": "cd server && npm ci",
+    "vendor-app:install": "cd vendor-app && npm install",
+    "vendor-app:sync": "cd vendor-app && npx cap sync android",
+    "vendor-app:apk": "cd vendor-app/android && gradlew.bat assembleDebug"
   },
   "engines": {
     "node": ">=18"

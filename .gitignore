@@ -1,4 +1,9 @@
 node_modules/
+vendor-app/node_modules/
+vendor-app/android/
+vendor-app/.gradle/
+*.keystore
+dist/*.apk
 server/public/
 server/fonts/*.ttf
 server/fonts/*.otf

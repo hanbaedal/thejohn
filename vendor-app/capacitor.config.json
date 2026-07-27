@@ -1,0 +1,14 @@
+{
+  "appId": "kr.co.thejohn.vendor",
+  "appName": "더존 업체",
+  "webDir": "www",
+  "server": {
+    "url": "https://www.thejohn.co.kr/login.html?app=vendor",
+    "cleartext": false,
+    "androidScheme": "https"
+  },
+  "android": {
+    "allowMixedContent": false,
+    "backgroundColor": "#f4f6f9"
+  }
+}
