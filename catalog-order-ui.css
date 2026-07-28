@@ -9,6 +9,57 @@
     border-color: #1b5e20 !important;
 }
 
+.ps-order {
+    margin: 0.35rem 0 0;
+    padding: 0.4rem;
+}
+
+.ps-order-actions {
+    display: flex;
+    flex-wrap: nowrap;
+    gap: 0.3rem;
+    align-items: stretch;
+}
+
+/* 스마트폰 — 버튼 너비에 맞춰 글자 크기 자동 조절(한 줄) */
+.ps-order-actions .btn {
+    flex: 1 1 0;
+    min-width: 0;
+    container-type: inline-size;
+    white-space: nowrap;
+    font-size: clamp(0.5rem, 14cqi, 0.82rem);
+    padding: 0.45em 0.25em;
+    line-height: 1.15;
+    font-weight: 600;
+}
+
+@media (min-width: 640px) {
+    .ps-order-actions {
+        gap: 0.35rem;
+    }
+    .ps-order-actions .btn {
+        font-size: clamp(0.68rem, 10cqi, 0.82rem);
+        padding: 0.4rem 0.5rem;
+    }
+}
+
+.pd-summary .ps-order {
+    margin: 0.5rem 0 0;
+    padding: 0;
+}
+
+.pd-summary .ps-order-actions .btn {
+    font-size: clamp(0.58rem, 12cqi, 0.88rem);
+    padding: 0.48em 0.35em;
+}
+
+@media (min-width: 640px) {
+    .pd-summary .ps-order-actions .btn {
+        font-size: clamp(0.75rem, 8cqi, 0.88rem);
+        padding: 0.5rem 0.65rem;
+    }
+}
+
 /* 게스트 — 주문·장바구니 UI 숨김 (업체 전용) */
 html.is-public .ps-order,
 html.is-public [data-ps-order],
