@@ -213,35 +213,92 @@ body.page-work-hub .header-session-company--mobile {
 }
 
 .wh-card {
-    display: block;
-    padding: 1rem 1.05rem;
+    display: flex;
+    flex-direction: column;
+    padding: 1rem 1.05rem 0.85rem;
     text-decoration: none;
     color: inherit;
-    background: #fff;
-    border: 1px solid #d5e2ee;
-    border-radius: 10px;
+    border: 1px solid transparent;
+    border-radius: 12px;
     box-shadow: 0 1px 4px rgba(10, 77, 156, 0.06);
 }
 
-.wh-card:hover,
-.wh-card:focus-visible {
-    border-color: #0a4d9c;
-    background: #f8fbff;
-    outline: none;
+.wh-card--tone-0 {
+    background: #dceefc;
+    border-color: #c5e0f5;
+}
+.wh-card--tone-1 {
+    background: #d8f3ea;
+    border-color: #c0e8d8;
+}
+.wh-card--tone-2 {
+    background: #fde8d4;
+    border-color: #f5d4b5;
+}
+.wh-card--tone-3 {
+    background: #e8e0fb;
+    border-color: #d5caf3;
+}
+.wh-card--tone-4 {
+    background: #fce0e8;
+    border-color: #f3c8d4;
+}
+.wh-card--tone-5 {
+    background: #e4f0d8;
+    border-color: #cfe4b8;
+}
+.wh-card--tone-6 {
+    background: #d9f0f4;
+    border-color: #bfe4ea;
+}
+.wh-card--tone-7 {
+    background: #f6ecd4;
+    border-color: #ead9b0;
 }
 
 .wh-card h2 {
-    margin: 0 0 0.35rem;
+    margin: 0 0 0.55rem;
     font-size: 1rem;
     font-weight: 800;
     color: #052a4d;
 }
 
-.wh-card p {
+.wh-card-title {
+    color: inherit;
+    text-decoration: none;
+}
+
+.wh-card-title:hover,
+.wh-card-title:focus-visible {
+    text-decoration: underline;
+    outline: none;
+}
+
+.wh-card-subs {
     margin: 0;
-    font-size: 0.8125rem;
-    line-height: 1.45;
-    color: #5a6d7e;
+    padding: 0;
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 0.28rem;
+}
+
+.wh-card-subs a {
+    display: block;
+    padding: 0.38rem 0.5rem;
+    border-radius: 7px;
+    background: rgba(255, 255, 255, 0.55);
+    color: #1f3d55;
+    text-decoration: none;
+    font-size: 0.875rem;
+    font-weight: 600;
+}
+
+.wh-card-subs a:hover,
+.wh-card-subs a:focus-visible {
+    background: rgba(255, 255, 255, 0.92);
+    color: #0a4d9c;
+    outline: none;
 }
 
 .wh-sidebar-backdrop {

@@ -146,13 +146,35 @@ function getLastDbError() {
     return lastDbError;
 }
 
+function isDisconnectedIndexError(err) {
+    var msg = String((err && err.message) || err || "");
+    return /must be connected|Topology is closed|connection closed|not currently connected/i.test(
+        msg
+    );
+}
+
+function isIgnorableIndexConflict(err) {
+    var code = err && (err.code || err.codeName);
+    return (
+        code === 85 ||
+        code === 86 ||
+        code === "IndexOptionsConflict" ||
+        code === "IndexKeySpecsConflict"
+    );
+}
+
 async function safeCreateIndex(collection, spec, options) {
     try {
+        if (!ready || !db || !client) {
+            throw new Error("Client must be connected before running operations");
+        }
         await collection.createIndex(spec, options);
     } catch (e) {
-        var code = e && (e.code || e.codeName);
-        if (code === 85 || code === 86 || code === "IndexOptionsConflict" || code === "IndexKeySpecsConflict") {
+        if (isIgnorableIndexConflict(e)) {
             return;
+        }
+        if (isDisconnectedIndexError(e)) {
+            throw e;
         }
         console.warn("[thejohn] index warning:", e.message);
     }
@@ -306,21 +328,44 @@ async function runStartupMigrations(database) {
     }
 }
 
-function scheduleStartupMigrations(database) {
+let migrateTimer = null;
+
+function scheduleStartupMigrations() {
     if (migrationsRunning || migrationsDone) return;
-    migrationsRunning = true;
-    runStartupMigrations(database)
-        .then(function () {
-            migrationsDone = true;
-            console.log("[thejohn] MongoDB startup migrations OK");
-        })
-        .catch(function (e) {
-            migrationsDone = false;
-            console.error("[thejohn] MongoDB startup migrations failed:", e.message);
-        })
-        .finally(function () {
-            migrationsRunning = false;
-        });
+    if (migrateTimer) {
+        clearTimeout(migrateTimer);
+        migrateTimer = null;
+    }
+    migrateTimer = setTimeout(function () {
+        migrateTimer = null;
+        if (migrationsRunning || migrationsDone) return;
+        if (!ready || !db) {
+            return;
+        }
+        migrationsRunning = true;
+        var database = db;
+        runStartupMigrations(database)
+            .then(function () {
+                migrationsDone = true;
+                console.log("[thejohn] MongoDB startup migrations OK");
+            })
+            .catch(function (e) {
+                migrationsDone = false;
+                if (isDisconnectedIndexError(e)) {
+                    console.warn(
+                        "[thejohn] MongoDB startup migrations deferred (client not connected)"
+                    );
+                } else {
+                    console.error("[thejohn] MongoDB startup migrations failed:", e.message);
+                }
+                setTimeout(function () {
+                    if (!migrationsDone && ready) scheduleStartupMigrations();
+                }, 20000);
+            })
+            .finally(function () {
+                migrationsRunning = false;
+            });
+    }, 15000);
 }
 
 async function connectDbOnce() {
@@ -345,19 +390,18 @@ async function connectDbOnce() {
 
             const database = newClient.db(dbName);
 
-            if (client) {
-                try {
-                    await client.close();
-                } catch (e) {}
-            }
+            var oldClient = client;
             client = newClient;
             db = database;
             ready = true;
             lastDbError = "";
             console.log("[thejohn] MongoDB OK (" + c.label + ")");
-            setTimeout(function () {
-                scheduleStartupMigrations(database);
-            }, 15000);
+            if (oldClient && oldClient !== newClient && !migrationsRunning) {
+                try {
+                    await oldClient.close();
+                } catch (e) {}
+            }
+            scheduleStartupMigrations();
             return db;
         } catch (e) {
             lastErr = e;

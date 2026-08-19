@@ -303,26 +303,46 @@
     function renderHome(tree) {
         if (!homeEl) return;
         homeEl.innerHTML = "";
+        var tone = 0;
         tree.forEach(function (section) {
             section.items.forEach(function (item) {
-                var a = document.createElement("a");
-                a.className = "wh-card";
-                a.href = item.href || (item.children && item.children[0] ? item.children[0].href : HUB_PAGE);
+                var card = document.createElement("article");
+                card.className = "wh-card wh-card--tone-" + (tone % 8);
+                tone += 1;
+
                 var h = document.createElement("h2");
-                h.textContent = item.label;
-                var p = document.createElement("p");
-                if (item.children && item.children.length) {
-                    p.textContent = item.children
-                        .map(function (ch) {
-                            return ch.label;
-                        })
-                        .join(" · ");
+                if (item.href) {
+                    var titleLink = document.createElement("a");
+                    titleLink.className = "wh-card-title";
+                    titleLink.href = item.href;
+                    titleLink.textContent = item.label;
+                    h.appendChild(titleLink);
                 } else {
-                    p.textContent = section.title;
+                    h.textContent = item.label;
                 }
-                a.appendChild(h);
-                a.appendChild(p);
-                homeEl.appendChild(a);
+                card.appendChild(h);
+
+                var list = document.createElement("ul");
+                list.className = "wh-card-subs";
+                if (item.children && item.children.length) {
+                    item.children.forEach(function (ch) {
+                        var li = document.createElement("li");
+                        var a = document.createElement("a");
+                        a.href = ch.href;
+                        a.textContent = ch.label;
+                        li.appendChild(a);
+                        list.appendChild(li);
+                    });
+                } else if (item.href) {
+                    var only = document.createElement("li");
+                    var onlyA = document.createElement("a");
+                    onlyA.href = item.href;
+                    onlyA.textContent = section.title;
+                    only.appendChild(onlyA);
+                    list.appendChild(only);
+                }
+                card.appendChild(list);
+                homeEl.appendChild(card);
             });
         });
     }

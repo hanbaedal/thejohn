@@ -31,6 +31,9 @@ async function safeIndex(col, spec, options) {
         if (code === 85 || code === 86 || code === "IndexOptionsConflict" || code === "IndexKeySpecsConflict") {
             return;
         }
+        if (/must be connected|Topology is closed|connection closed/i.test(String(e.message || ""))) {
+            throw e;
+        }
         console.warn("[thejohn] vendor_new index warning:", e.message);
     }
 }
