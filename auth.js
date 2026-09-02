@@ -874,7 +874,9 @@
         "sales-ledger-register.html": true,
         "sales-by-product.html": true,
         "sales-by-vendor.html": true,
-        "tax-invoice.html": true
+        "tax-invoice.html": true,
+        "marketing-material-register.html": true,
+        "marketing-material-list.html": true
     };
     var STAFF_NAV_PRODUCT_PAGES = {};
     var STAFF_NAV_VENDOR_PAGES = {};

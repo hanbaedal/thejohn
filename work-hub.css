@@ -2,10 +2,13 @@
 
 body.page-work-hub,
 body.page-admin-shell {
+    height: 100dvh;
+    max-height: 100dvh;
     min-height: 100dvh;
     display: flex;
     flex-direction: column;
     margin: 0;
+    overflow: hidden;
     background: #eef2f6;
 }
 
@@ -92,15 +95,21 @@ body.page-admin-shell .company-branch-back {
     flex: 1 1 auto;
     display: flex;
     min-height: 0;
+    overflow: hidden;
     position: relative;
 }
 
 .wh-sidebar {
     flex: 0 0 248px;
     width: 248px;
+    min-height: 0;
+    align-self: stretch;
     background: #12324f;
     color: #e8f0f6;
+    overflow-x: hidden;
     overflow-y: auto;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
     box-shadow: inset -1px 0 0 rgba(0, 0, 0, 0.12);
 }
 
