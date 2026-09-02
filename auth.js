@@ -912,6 +912,9 @@
     function isAdminShellPage(file) {
         if (!file) file = currentPageFile();
         if (!file || file === "login.html" || file === "index.html") return false;
+        if (file === "support-inquiry.html" && isStaffRole(getRole()) && canManageRegisters()) {
+            return true;
+        }
         if (isSitePublicPage(file)) return false;
         if (file === WORK_HUB_PAGE) return true;
         if (STAFF_NAV_MANAGE_HOME_PAGES[file]) return true;
@@ -2047,6 +2050,7 @@
             document.body.classList.add("page-admin-shell");
             var shellNav = document.querySelector(".site-header-nav");
             if (shellNav) shellNav.setAttribute("aria-hidden", "true");
+            bootAdminShell();
             return;
         }
         if (!isStaffRole(getRole())) {
@@ -3137,9 +3141,7 @@
         if (STAFF_NAV_VENDOR_PAGES[file]) return true;
         if (STAFF_NAV_WORK_PAGES[file]) return true;
         if (!STAFF_NAV_MANAGE_HOME_PAGES[file]) return false;
-        if (file === "support-inquiry.html") {
-            return isStaffRole(getRole()) && resolveStaffNavMode() === "manage-home";
-        }
+        if (file === "support-inquiry.html") return isAdminShellPage(file);
         return true;
     }
 
