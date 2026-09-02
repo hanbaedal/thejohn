@@ -27,7 +27,6 @@
 
     if (!listEl) return;
 
-    var backLink = document.querySelector(".company-branch-back a");
     var pageHeading = document.querySelector("main.page-main > h1");
 
     function isManageHomeEntry() {
@@ -39,10 +38,6 @@
 
     function applyManageHomeUi() {
         if (!isAdmin() || !isManageHomeEntry()) return;
-        if (backLink) {
-            backLink.href = "homepage-manage-hub.html#home";
-            backLink.textContent = "← 홈페이지관리";
-        }
         if (pageHeading) pageHeading.textContent = "문의사항 답변";
         if (writeBtn) writeBtn.hidden = true;
     }
