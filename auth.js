@@ -909,6 +909,90 @@
         STAFF_NAV_VENDOR_PAGES[f] = true;
     });
 
+    function isAdminShellPage(file) {
+        if (!file) file = currentPageFile();
+        if (!file || file === "login.html" || file === "index.html") return false;
+        if (isSitePublicPage(file)) return false;
+        if (file === WORK_HUB_PAGE) return true;
+        if (STAFF_NAV_MANAGE_HOME_PAGES[file]) return true;
+        if (STAFF_NAV_ORDER_PAGES[file]) return true;
+        if (STAFF_NAV_PRODUCT_PAGES[file]) return true;
+        if (STAFF_NAV_VENDOR_PAGES[file]) return true;
+        if (STAFF_NAV_WORK_PAGES[file]) return true;
+        if (file === "staff-self-edit.html" || file === "staff-company-intro.html") return true;
+        return false;
+    }
+
+    var ADMIN_HUB_REDIRECTS = {
+        "homepage-manage-hub.html": "support-news-admin.html",
+        "product-manage.html": "product-register.html",
+        "vendor-manage.html": "vendor-register.html",
+        "staff-manage-hub.html": "staff-manage.html",
+        "sales-ledger-hub.html": "sales-ledger-by-vendor.html"
+    };
+
+    function redirectAdminHubPageIfNeeded() {
+        var page = currentPageFile();
+        if (page === ORDER_MANAGE_HUB_PAGE) {
+            var links = getOrderManageHubLinks();
+            if (links && links.list) {
+                window.location.replace(links.list);
+                return true;
+            }
+        }
+        var target = ADMIN_HUB_REDIRECTS[page];
+        if (target) {
+            window.location.replace(target);
+            return true;
+        }
+        return false;
+    }
+
+    var adminShellAssetsLoading = false;
+
+    function loadScriptOnce(src, onload) {
+        var base = src.split("?")[0];
+        var existing = document.querySelector('script[src*="' + base + '"]');
+        if (existing) {
+            if (onload) onload();
+            return;
+        }
+        var s = document.createElement("script");
+        s.src = src;
+        s.onload = function () {
+            if (onload) onload();
+        };
+        document.head.appendChild(s);
+    }
+
+    function ensureAdminShellStyles() {
+        if (document.querySelector("link[data-admin-shell-css]")) return;
+        var link = document.createElement("link");
+        link.rel = "stylesheet";
+        link.href = "work-hub.css?v=20260902-shell";
+        link.setAttribute("data-admin-shell-css", "1");
+        document.head.appendChild(link);
+    }
+
+    function bootAdminShell() {
+        if (typeof document === "undefined") return;
+        if (!isAdminShellPage()) return;
+        if (!isStaffRole(getRole())) return;
+        ensureAdminShellStyles();
+        if (window.THEJHON_ADMIN_SHELL) {
+            window.THEJHON_ADMIN_SHELL.init();
+            return;
+        }
+        if (adminShellAssetsLoading) return;
+        adminShellAssetsLoading = true;
+        loadScriptOnce("work-hub-tree.js?v=20260902-shell", function () {
+            loadScriptOnce("admin-shell.js?v=20260902-shell", function () {
+                adminShellAssetsLoading = false;
+                if (window.THEJHON_ADMIN_SHELL) window.THEJHON_ADMIN_SHELL.init();
+            });
+        });
+    }
+
     function staffNavGet() {
         try {
             return String(sessionStorage.getItem(STAFF_NAV_MODE_KEY) || "").trim();
@@ -1959,6 +2043,12 @@
 
     function applyStaffNavMode(forceMode) {
         syncStaffLogoToHub();
+        if (isAdminShellPage(currentPageFile())) {
+            document.body.classList.add("page-admin-shell");
+            var shellNav = document.querySelector(".site-header-nav");
+            if (shellNav) shellNav.setAttribute("aria-hidden", "true");
+            return;
+        }
         if (!isStaffRole(getRole())) {
             document.body.classList.remove(
                 "staff-nav-hub",
@@ -2916,6 +3006,7 @@
     }
 
     function enforceRegisterPages() {
+        if (redirectAdminHubPageIfNeeded()) return;
         var page = currentPageFile();
         if (page === WORK_HUB_PAGE || page === SYSTEM_STRUCTURE_DOCS_PAGE) {
             if (!getWorkHubAccess().allowed) {
@@ -3064,6 +3155,7 @@
             if (isStaffRole(getRole())) {
                 applyStaffNavMode();
                 applySiteFooterVisibility();
+                bootAdminShell();
                 return;
             }
             var showAdmin = canShowAdminNavMenus();
@@ -3280,6 +3372,9 @@
         enforceSiteLogin: enforceSiteLogin,
         trackPageViewIfNeeded: trackPageViewIfNeeded,
         applyNavRegisterVisibility: applyNavRegisterVisibility,
+        isAdminShellPage: isAdminShellPage,
+        redirectAdminHubPageIfNeeded: redirectAdminHubPageIfNeeded,
+        bootAdminShell: bootAdminShell,
         safeNextPath: safeNextPath,
         hasAccountSession: hasAccountSession,
         isSitePublicPage: isSitePublicPage,

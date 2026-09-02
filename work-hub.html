@@ -9,13 +9,15 @@
     <meta name="theme-color" content="#0a4d9c">
     <title>그룹 마케팅 관리 — 더존</title>
     <link rel="stylesheet" href="common.css">
-    <link rel="stylesheet" href="work-hub.css?v=20260819-wh-card">
+    <link rel="stylesheet" href="work-hub.css?v=20260902-shell">
     <script src="api-config.js"></script>
     <script src="thejhon-api.js"></script>
-    <script src="auth.js?v=20260605-wh22"></script>
-    <script src="nav.js?v=20260605-wh22" defer></script>
+    <script src="auth.js?v=20260902-shell"></script>
+    <script src="work-hub-tree.js?v=20260902-shell"></script>
+    <script src="admin-shell.js?v=20260902-shell"></script>
+    <script src="nav.js?v=20260902-shell" defer></script>
 </head>
-<body class="page-work-hub">
+<body class="page-work-hub page-admin-shell">
     <header class="site-header">
         <div class="site-header-brand">
             <button type="button" class="wh-menu-toggle" id="whMenuToggle" aria-label="메뉴 열기" aria-expanded="false" aria-controls="whSidebar">
@@ -40,10 +42,10 @@
         <main class="wh-main">
             <h1 class="wh-title">그룹 마케팅 관리</h1>
             <p id="whStatus" class="wh-status" role="status" aria-live="polite"></p>
-            <section class="wh-home" id="whHome" aria-label="바로가기"></section>
+            <section class="wh-welcome-wrap" id="whHome" aria-label="안내"></section>
         </main>
     </div>
 
-    <script src="work-hub.js?v=20260819-wh-card"></script>
+    <script src="work-hub.js?v=20260902-shell"></script>
 </body>
 </html>
