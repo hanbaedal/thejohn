@@ -224,14 +224,6 @@
 
         document.body.classList.add("page-admin-shell");
 
-        var file = pageFile();
-        if (file === "marketing-material-register.html" || file === "marketing-material-list.html") {
-            document.body.classList.add("page-keep-subnav");
-        }
-        if (file === "support-inquiry.html") {
-            document.body.classList.add("page-keep-branch-back");
-        }
-
         var menuEl = document.getElementById("whMenu");
         if (!menuEl) menuEl = wrapPageContent();
         if (!menuEl) return;
