@@ -61,8 +61,15 @@ body.page-admin-shell .site-header-nav {
     display: none !important;
 }
 
-body.page-admin-shell .shub-subnav,
-body.page-admin-shell .company-branch-back {
+body.page-admin-shell .am-subnav {
+    display: none !important;
+}
+
+body.page-admin-shell:not(.page-keep-subnav) .shub-subnav {
+    display: none !important;
+}
+
+body.page-admin-shell:not(.page-keep-branch-back) .company-branch-back {
     display: none !important;
 }
 
