@@ -31,6 +31,9 @@
     var pageHeading = document.querySelector("main.page-main > h1");
 
     function isManageHomeEntry() {
+        if (isAdmin() && A.isAdminShellPage && A.isAdminShellPage("support-inquiry.html")) {
+            return true;
+        }
         return A.getStaffNavMode && A.getStaffNavMode() === "manage-home";
     }
 

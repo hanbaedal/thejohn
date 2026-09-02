@@ -78,12 +78,52 @@
         }
     }
 
-    function renderWelcome() {
+    function renderHome(tree) {
         if (!homeEl) return;
-        homeEl.className = "wh-welcome";
-        homeEl.innerHTML =
-            '<p class="wh-welcome-lead">왼쪽 메뉴에서 작업할 항목을 선택하세요.</p>' +
-            '<p class="wh-welcome-hint">상품·업체·영업·홈페이지 관리 메뉴가 한곳에 모여 있습니다.</p>';
+        homeEl.className = "wh-home";
+        homeEl.innerHTML = "";
+        var tone = 0;
+        tree.forEach(function (section) {
+            section.items.forEach(function (item) {
+                var card = document.createElement("article");
+                card.className = "wh-card wh-card--tone-" + (tone % 8);
+                tone += 1;
+
+                var h = document.createElement("h2");
+                if (item.href) {
+                    var titleLink = document.createElement("a");
+                    titleLink.className = "wh-card-title";
+                    titleLink.href = item.href;
+                    titleLink.textContent = item.label;
+                    h.appendChild(titleLink);
+                } else {
+                    h.textContent = item.label;
+                }
+                card.appendChild(h);
+
+                var list = document.createElement("ul");
+                list.className = "wh-card-subs";
+                if (item.children && item.children.length) {
+                    item.children.forEach(function (ch) {
+                        var li = document.createElement("li");
+                        var a = document.createElement("a");
+                        a.href = ch.href;
+                        a.textContent = ch.label;
+                        li.appendChild(a);
+                        list.appendChild(li);
+                    });
+                } else if (item.href) {
+                    var only = document.createElement("li");
+                    var onlyA = document.createElement("a");
+                    onlyA.href = item.href;
+                    onlyA.textContent = section.title;
+                    only.appendChild(onlyA);
+                    list.appendChild(only);
+                }
+                card.appendChild(list);
+                homeEl.appendChild(card);
+            });
+        });
     }
 
     function roleLabel(role) {
@@ -111,7 +151,7 @@
         if (window.THEJHON_ADMIN_SHELL && menuEl) {
             window.THEJHON_ADMIN_SHELL.renderMenu(menuEl, sess.role);
         }
-        renderWelcome();
+        renderHome(Tree ? Tree.treeForRole(sess.role) : []);
 
         var tree = Tree ? Tree.treeForRole(sess.role) : [];
         setStatus(roleLabel(sess.role) + " · 메뉴 " + (Tree ? Tree.countLeaves(tree) : 0) + "개", false);
