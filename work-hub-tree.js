@@ -17,7 +17,7 @@
                     children: [
                         { id: "support-news", label: "최근소식 입력", href: "support-news-admin.html" },
                         { id: "support-qna", label: "자유게시판", href: "support-qna-admin.html" },
-                        { id: "support-inquiry", label: "문의사항 답변", href: "support-inquiry.html" }
+                        { id: "support-inquiry", label: "문의사항 답변", href: "support-inquiry.html?manage=1" }
                     ]
                 }
             ]

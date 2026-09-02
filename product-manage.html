@@ -71,18 +71,6 @@
                 if (logoutBtn) logoutBtn.hidden = !loggedIn;
             }
             syncAuthUi();
-            function syncSupportHubAdminCards() {
-                var hubNews = document.getElementById("support-hub-news-admin");
-                var admin =
-                    window.THEJHON_AUTH &&
-                    THEJHON_AUTH.canManageRegisters &&
-                    THEJHON_AUTH.canManageRegisters();
-                if (hubNews) {
-                    hubNews.hidden = !admin;
-                    hubNews.setAttribute("aria-hidden", admin ? "false" : "true");
-                }
-            }
-            syncSupportHubAdminCards();
         })();
     </script>
 </body>

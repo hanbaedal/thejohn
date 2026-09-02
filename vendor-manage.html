@@ -114,17 +114,12 @@
             }
             syncAuthUi();
             function syncSupportHubAdminCards() {
-                var hubNews = document.getElementById("support-hub-news-admin");
                 var migrateCard = document.getElementById("vm-data-migrate");
                 var finderCard = document.getElementById("vm-prospect-finder");
                 var admin =
                     window.THEJHON_AUTH &&
                     THEJHON_AUTH.canManageRegisters &&
                     THEJHON_AUTH.canManageRegisters();
-                if (hubNews) {
-                    hubNews.hidden = !admin;
-                    hubNews.setAttribute("aria-hidden", admin ? "false" : "true");
-                }
                 if (migrateCard) {
                     migrateCard.hidden = !admin;
                     migrateCard.setAttribute("aria-hidden", admin ? "false" : "true");
