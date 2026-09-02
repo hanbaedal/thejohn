@@ -1,6 +1,7 @@
 /* 그룹 마케팅 관리 — 사이드바 + 섹션/하위 메뉴 */
 
-body.page-work-hub {
+body.page-work-hub,
+body.page-admin-shell {
     min-height: 100dvh;
     display: flex;
     flex-direction: column;
@@ -8,7 +9,8 @@ body.page-work-hub {
     background: #eef2f6;
 }
 
-body.page-work-hub .site-header {
+body.page-work-hub .site-header,
+body.page-admin-shell .site-header {
     flex: 0 0 auto;
     z-index: 40;
     display: flex;
@@ -18,16 +20,19 @@ body.page-work-hub .site-header {
     border-bottom: 1px solid #d8e3ef;
 }
 
-body.page-work-hub .site-header-menu-scroll {
+body.page-work-hub .site-header-menu-scroll,
+body.page-admin-shell .site-header-menu-scroll {
     display: none !important;
 }
 
-body.page-work-hub .site-header > .site-header-actions {
+body.page-work-hub .site-header > .site-header-actions,
+body.page-admin-shell .site-header > .site-header-actions {
     display: flex !important;
     margin-left: auto;
 }
 
-body.page-work-hub .site-header-brand {
+body.page-work-hub .site-header-brand,
+body.page-admin-shell .site-header-brand {
     display: flex;
     align-items: center;
     gap: 0.65rem;
@@ -35,7 +40,8 @@ body.page-work-hub .site-header-brand {
     min-width: 0;
 }
 
-body.page-work-hub .header-session-company--hub:not([hidden]) {
+body.page-work-hub .header-session-company--hub:not([hidden]),
+body.page-admin-shell .header-session-company--hub:not([hidden]) {
     display: block;
     flex: 1 1 auto;
     min-width: 0;
@@ -45,7 +51,18 @@ body.page-work-hub .header-session-company--hub:not([hidden]) {
 }
 
 body.page-work-hub .header-session-company--wide,
-body.page-work-hub .header-session-company--mobile {
+body.page-work-hub .header-session-company--mobile,
+body.page-admin-shell .header-session-company--wide,
+body.page-admin-shell .header-session-company--mobile {
+    display: none !important;
+}
+
+body.page-admin-shell .site-header-nav {
+    display: none !important;
+}
+
+body.page-admin-shell .shub-subnav,
+body.page-admin-shell .company-branch-back {
     display: none !important;
 }
 
@@ -206,6 +223,38 @@ body.page-work-hub .header-session-company--mobile {
     color: #a12c2c;
 }
 
+.wh-child.is-current,
+.wh-leaf.is-current {
+    background: rgba(10, 77, 156, 0.45);
+    color: #fff;
+}
+
+.wh-body {
+    flex: 1 1 auto;
+    min-width: 0;
+    overflow-y: auto;
+    box-sizing: border-box;
+}
+
+.wh-welcome-wrap,
+.wh-welcome {
+    max-width: 36rem;
+}
+
+.wh-welcome-lead {
+    margin: 0 0 0.5rem;
+    font-size: 1.05rem;
+    font-weight: 700;
+    color: #1f3d55;
+}
+
+.wh-welcome-hint {
+    margin: 0;
+    font-size: 0.9rem;
+    color: #5a6d7e;
+    line-height: 1.5;
+}
+
 .wh-home {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
@@ -333,11 +382,13 @@ body.page-work-hub .header-session-company--mobile {
         box-shadow: 4px 0 24px rgba(0, 0, 0, 0.22);
     }
 
-    body.page-work-hub.wh-sidebar-open .wh-sidebar {
+    body.page-work-hub.wh-sidebar-open .wh-sidebar,
+    body.page-admin-shell.wh-sidebar-open .wh-sidebar {
         transform: translateX(0);
     }
 
-    .wh-main {
+    body.page-admin-shell .wh-body,
+    body.page-work-hub .wh-main {
         max-width: none;
         padding: 1.25rem 1rem 2rem;
     }
