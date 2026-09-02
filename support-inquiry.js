@@ -30,10 +30,7 @@
     var pageHeading = document.querySelector("main.page-main > h1");
 
     function isManageHomeEntry() {
-        if (isAdmin() && A.isAdminShellPage && A.isAdminShellPage("support-inquiry.html")) {
-            return true;
-        }
-        return A.getStaffNavMode && A.getStaffNavMode() === "manage-home";
+        return isAdmin() && A.isAdminShellPage && A.isAdminShellPage("support-inquiry.html");
     }
 
     function applyManageHomeUi() {
@@ -44,6 +41,10 @@
 
     function isAdmin() {
         return A.canManageRegisters && A.canManageRegisters();
+    }
+
+    function isAdminManageMode() {
+        return isAdmin() && isManageHomeEntry();
     }
 
     function loggedIn() {
@@ -102,14 +103,14 @@
     function canView(it) {
         if (!it) return false;
         if (it.canView) return true;
-        if (isAdmin()) return true;
+        if (isAdminManageMode()) return true;
         if (matchesAuthor(it)) return true;
         if (!it.hasPassword) return true;
         return getUnlockedIds().indexOf(it.id) !== -1;
     }
 
     function canDelete(it) {
-        if (isAdmin()) return true;
+        if (isAdminManageMode()) return true;
         return matchesAuthor(it);
     }
 
@@ -202,7 +203,7 @@
         if (viewTitle) viewTitle.textContent = title;
 
         var replyBlock = "";
-        if (it.reply && String(it.reply).trim() && !isAdmin()) {
+        if (it.reply && String(it.reply).trim() && !isAdminManageMode()) {
             replyBlock =
                 '<div class="si-reply-block">' +
                 '<h3 class="si-reply-block__title">답변</h3>' +
@@ -216,7 +217,7 @@
         }
 
         var adminBlock = "";
-        if (isAdmin()) {
+        if (isAdminManageMode()) {
             adminBlock =
                 '<div class="si-admin-reply">' +
                 '<h3 class="si-reply-block__title">관리자 답변</h3>' +

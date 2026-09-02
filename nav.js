@@ -1206,46 +1206,6 @@
     refreshVendorCartNav();
     window.addEventListener("thejhon-auth-permissions-updated", refreshVendorCartNav);
 
-    (function injectSupportAdminOnlyNav() {
-        var panel = document.getElementById("supportSubmenu");
-        if (!panel) return;
-        var Auth = window.THEJHON_AUTH;
-        var admin = Auth && Auth.canManageRegisters && Auth.canManageRegisters();
-        var seg = pageSegment();
-
-        var newsEl = document.getElementById("nav-support-news-admin");
-
-        if (!admin) {
-            if (newsEl) newsEl.remove();
-            return;
-        }
-
-        var libLink = panel.querySelector('a[href="support-library.html"]');
-        if (!newsEl) {
-            newsEl = document.createElement("a");
-            newsEl.id = "nav-support-news-admin";
-            newsEl.href = "support-news-admin.html";
-            newsEl.className = "nav-dropdown-item";
-            newsEl.setAttribute("role", "menuitem");
-            newsEl.textContent = "최근소식 입력";
-        }
-        if (libLink) {
-            panel.insertBefore(newsEl, libLink);
-        } else if (!panel.contains(newsEl)) {
-            panel.insertBefore(newsEl, panel.firstChild);
-        }
-
-        if (seg === "support-news-admin.html") {
-            var items = panel.querySelectorAll(".nav-dropdown-item");
-            for (var i = 0; i < items.length; i++) {
-                items[i].classList.remove("is-current");
-            }
-            newsEl.classList.add("is-current");
-        } else {
-            newsEl.classList.remove("is-current");
-        }
-    })();
-
     window.__thejhonEnsurePublicFooterShell = ensurePublicFooterShell;
     ensurePublicFooterShell();
     window.addEventListener("thejhon-auth-permissions-updated", ensurePublicFooterShell);

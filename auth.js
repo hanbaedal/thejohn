@@ -909,11 +909,27 @@
         STAFF_NAV_VENDOR_PAGES[f] = true;
     });
 
+    function isSupportInquiryManageMode() {
+        try {
+            return String(global.location.search || "").indexOf("manage=1") >= 0;
+        } catch (e) {
+            return false;
+        }
+    }
+
+    /** 스태프가 공개 홈·고객센터를 방문자와 동일한 상단 메뉴로 볼 때 */
+    function isStaffPublicBrowsingPage(file) {
+        if (!file) file = currentPageFile();
+        if (!isStaffNavPublicPage(file)) return false;
+        if (file === "support-inquiry.html") return !isSupportInquiryManageMode();
+        return true;
+    }
+
     function isAdminShellPage(file) {
         if (!file) file = currentPageFile();
         if (!file || file === "login.html" || file === "index.html") return false;
-        if (file === "support-inquiry.html" && isStaffRole(getRole()) && canManageRegisters()) {
-            return true;
+        if (file === "support-inquiry.html") {
+            return isStaffRole(getRole()) && canManageRegisters() && isSupportInquiryManageMode();
         }
         if (isSitePublicPage(file)) return false;
         if (file === WORK_HUB_PAGE) return true;
@@ -1022,9 +1038,7 @@
         if (STAFF_NAV_ORDER_PAGES[file]) return "order";
         if (STAFF_NAV_VENDOR_PAGES[file]) return "vendor-manage";
         if (file === "support-inquiry.html") {
-            var inquiryStored = staffNavGet();
-            if (inquiryStored === "manage-home") return "manage-home";
-            return "public";
+            return isSupportInquiryManageMode() ? "manage-home" : "public";
         }
         if (STAFF_NAV_MANAGE_HOME_PAGES[file]) return "manage-home";
         if (STAFF_NAV_WORK_PAGES[file]) return "work";
@@ -1194,7 +1208,7 @@
         return [
             { href: "support-news-admin.html", label: "최근소식 입력" },
             { href: "support-qna-admin.html", label: "자유게시판" },
-            { href: "support-inquiry.html", label: "문의사항 답변" }
+            { href: "support-inquiry.html?manage=1", label: "문의사항 답변" }
         ];
     }
 
@@ -2046,7 +2060,8 @@
 
     function applyStaffNavMode(forceMode) {
         syncStaffLogoToHub();
-        if (isAdminShellPage(currentPageFile())) {
+        var page = currentPageFile();
+        if (isAdminShellPage(page)) {
             document.body.classList.add("page-admin-shell");
             var shellNav = document.querySelector(".site-header-nav");
             if (shellNav) shellNav.setAttribute("aria-hidden", "true");
@@ -2064,6 +2079,9 @@
                 "staff-nav-work"
             );
             return;
+        }
+        if (isStaffPublicBrowsingPage(page)) {
+            forceMode = "public";
         }
         var mode =
             forceMode === "hub" ||
@@ -3380,6 +3398,8 @@
         safeNextPath: safeNextPath,
         hasAccountSession: hasAccountSession,
         isSitePublicPage: isSitePublicPage,
-        isStaffNavPublicPage: isStaffNavPublicPage
+        isStaffNavPublicPage: isStaffNavPublicPage,
+        isStaffPublicBrowsingPage: isStaffPublicBrowsingPage,
+        isSupportInquiryManageMode: isSupportInquiryManageMode
     };
 })(typeof window !== "undefined" ? window : this);

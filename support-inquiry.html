@@ -144,11 +144,6 @@
                 if (logoutBtn) logoutBtn.hidden = !loggedIn;
             }
             syncAuthUi();
-            var A = window.THEJHON_AUTH;
-            if (A && A.canManageRegisters && A.canManageRegisters()) {
-                if (A.setStaffNavMode) A.setStaffNavMode("manage-home");
-                if (A.applyStaffNavMode) A.applyStaffNavMode("manage-home");
-            }
         })();
     </script>
 </body>
