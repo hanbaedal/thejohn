@@ -990,7 +990,7 @@
         if (document.querySelector("link[data-admin-shell-css]")) return;
         var link = document.createElement("link");
         link.rel = "stylesheet";
-        link.href = "work-hub.css?v=20260902-scroll";
+        link.href = "work-hub.css?v=20260902-split-scroll";
         link.setAttribute("data-admin-shell-css", "1");
         document.head.appendChild(link);
     }

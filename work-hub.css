@@ -1,5 +1,11 @@
 /* 그룹 마케팅 관리 — 사이드바 + 섹션/하위 메뉴 */
 
+html:has(body.page-work-hub),
+html:has(body.page-admin-shell) {
+    height: 100%;
+    overflow: hidden;
+}
+
 body.page-work-hub,
 body.page-admin-shell {
     height: 100dvh;
@@ -94,6 +100,8 @@ body.page-admin-shell .company-branch-back {
 .wh-shell {
     flex: 1 1 auto;
     display: flex;
+    flex-direction: row;
+    align-items: stretch;
     min-height: 0;
     overflow: hidden;
     position: relative;
@@ -103,7 +111,7 @@ body.page-admin-shell .company-branch-back {
     flex: 0 0 248px;
     width: 248px;
     min-height: 0;
-    align-self: stretch;
+    max-height: 100%;
     background: #12324f;
     color: #e8f0f6;
     overflow-x: hidden;
@@ -208,11 +216,28 @@ body.page-admin-shell .company-branch-back {
     outline: none;
 }
 
-.wh-main {
+.wh-main,
+.wh-body {
     flex: 1 1 auto;
     min-width: 0;
-    padding: 1.5rem 1.25rem 2rem;
+    min-height: 0;
+    max-height: 100%;
+    overflow-x: hidden;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
     box-sizing: border-box;
+}
+
+.wh-main {
+    padding: 1.5rem 1.25rem 2rem;
+}
+
+/* 본문 스크롤은 wh-body/wh-main에서만 — 내부 page-main은 같이 스크롤 */
+body.page-admin-shell .wh-body > .page-main,
+body.page-admin-shell .wh-body > main.page-main,
+body.page-work-hub .wh-main {
+    overflow: visible;
 }
 
 .wh-title {
@@ -237,13 +262,6 @@ body.page-admin-shell .company-branch-back {
 .wh-leaf.is-current {
     background: rgba(10, 77, 156, 0.45);
     color: #fff;
-}
-
-.wh-body {
-    flex: 1 1 auto;
-    min-width: 0;
-    overflow-y: auto;
-    box-sizing: border-box;
 }
 
 .wh-welcome-wrap,
