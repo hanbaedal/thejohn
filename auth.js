@@ -874,7 +874,9 @@
         "sales-ledger-register.html": true,
         "sales-by-product.html": true,
         "sales-by-vendor.html": true,
-        "tax-invoice.html": true
+        "tax-invoice.html": true,
+        "marketing-material-register.html": true,
+        "marketing-material-list.html": true
     };
     var STAFF_NAV_PRODUCT_PAGES = {};
     var STAFF_NAV_VENDOR_PAGES = {};
@@ -988,7 +990,7 @@
         if (document.querySelector("link[data-admin-shell-css]")) return;
         var link = document.createElement("link");
         link.rel = "stylesheet";
-        link.href = "work-hub.css?v=20260902-shell";
+        link.href = "work-hub.css?v=20260902-scroll";
         link.setAttribute("data-admin-shell-css", "1");
         document.head.appendChild(link);
     }
